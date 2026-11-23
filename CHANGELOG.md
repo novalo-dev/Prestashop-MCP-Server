@@ -20,12 +20,14 @@ are:
 
 **Change a language.** The new tool somcp_update_language changes a language of
 International > Localization > Languages, as its Edit page and the Enabled
-switch of the list do: its name, its language code, its two date formats,
-whether it is written right to left, and whether it is offered. A shop that
-opens a second language can now give it its own date format, or switch it on
-and off, without the back office. The default language cannot be switched off,
+switch of the list do: its name, its ISO code, its language code, its two
+date formats, whether it is written right to left, and whether it is offered.
+A shop that opens a second language can now give it its own date format, or
+switch it on and off, without the back office. The default language cannot be switched off,
 and when a language is, the employees who used it move to the default language
-and the merchant is told how many.
+and the merchant is told how many. A new ISO code takes the translation files
+and e-mail templates of the language with it, and is refused when another
+language already has it.
 
 **Delete a language.** The new tool somcp_delete_language deletes a language of
 International > Localization > Languages, as the Delete of its row does. Every

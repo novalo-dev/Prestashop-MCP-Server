@@ -3516,12 +3516,12 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 
 **Does** - changes one language of **International > Localization >
 Languages**, as its **Edit** page and the **Enabled** switch of the list do:
-**Name**, **Language code**, **Date format**, **Date format (full)**, **RTL
-language** and **Status**. Only the fields that differ are written; a row of
-`somcp_list_languages` given back whole writes nothing.
+**Name**, **ISO code**, **Language code**, **Date format**, **Date format
+(full)**, **RTL language** and **Status**. Only the fields that differ are
+written; a row of `somcp_list_languages` given back whole writes nothing.
 
-**Do not use for** - the **ISO code** (part 2, #369), the **Flag** and the
-**"No-picture" image** (part 3, #370); deleting a language (→
+**Do not use for** - the **Flag** (part 3, #370) and the **"No-picture"
+image** (part 4, #376); deleting a language (→
 `somcp_delete_language`); translating a text (→ the update tool of that
 object).
 
@@ -3531,21 +3531,26 @@ object).
 |---|---|---|---|---|
 | `id_lang` | **ID** | integer | yes | from `somcp_list_languages`; otherwise `SomcpTool::notFound()` with that tool |
 | `name` | **Name** | string | no | `Validate::isGenericName()`, at most 32 characters (`SomcpTool::columnSize()`) |
+| `iso_code` | **ISO code** | string | no | two letters, `Validate::isLanguageIsoCode()` and the size of `Language::$definition`, stored in lower case; another language with that code: `iso_code: <code> is already the code of <name> (<id_lang>)` (`Language::getIdByIso()`) |
 | `language_code` | **Language code** | string | no | `Validate::isLanguageCode()`, at most 5 characters, stored in lower case as the help line asks |
 | `date_format` | **Date format** | string | no | `Validate::isPhpDateFormat()`, at most 32 characters; the key of `somcp_list_languages` (`date_format_lite` in the table) |
 | `date_format_full` | **Date format (full)** | string | no | the same checks |
 | `is_rtl` | **RTL language** | boolean | no | |
 | `active` | **Status** | boolean | no | `false` for the default language refused: `active: <name> is the default language of the shop - it cannot be disabled` |
 
-`iso_code`, `locale` and `default` are taken only when they equal the stored
-value, otherwise `<field>: worked out by the shop` (for `iso_code` until part
-2: `iso_code: changed by somcp_update_language part 2, not written yet`), the
-rule of `somcp_update_currency`. Unknown arguments through
+`locale` and `default` are taken only when they equal the stored value,
+otherwise `<field>: worked out by the shop`, the rule of
+`somcp_update_currency`. Unknown arguments through
 `SomcpTool::unknownFields()`. A text given empty is refused: every one of them
 is required by `Language::$definition` or the form.
 
 **Then** - the row is found through `SomcpToolListLanguages::language()`, the
 query of the list (`lang` joined to `lang_shop` on the shop of the token);
+when `iso_code` changes, `Language::moveToIso(<new code>)` moves the
+translation, e-mail and module folders of the old code first (the core handler
+passes it the language identifier instead, which leaves them under a folder
+named after a number), and `locale` follows from `Language::getLangDetails()`
+when the shop knows the code; a write that then fails moves the folders back;
 only the fields that differ are set on `new Language($id)`; when `active` goes
 to `false`, the employees whose `id_lang` it is move to the default language
 first, the query of `EditLanguageHandler::updateEmployeeLanguage()`; then
@@ -3557,6 +3562,7 @@ Log lines `language_updated` and `language_update_failed`.
 and `language`, the row read back as `somcp_list_languages` gives it.
 
 Warnings, beside the answer:
+- `iso_code` changed: `The translation files and e-mail templates of <old> now sit under <new>; a module or theme that ships files for <old> only will not find them.`;
 - `active` set to `false` with employees moved: `<n> employees used <name> in the back office; they now use <default name>.`;
 - any field changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `A language is shared by every shop: this change reaches every shop of this installation (<n + 1>).`
 
@@ -3566,6 +3572,7 @@ changed.`
 **Notes**
 - The texts of the shop in that language (products, categories, pages) are not touched: this is the language itself, not a translation.
 - **Locale** is not taken: PrestaShop derives it from the ISO code and 9.0.0 shows it read-only.
+- The change of the ISO code itself is not run on the CI shop: it moves real folders; the refusal of a code another language holds is.
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - 9.0.0 shows **Locale** read-only and its list has a **Locale** column; the handler, the checks and the table are the same.

@@ -1405,6 +1405,44 @@ if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall))
     }
 }
 
+// The ISO code of a language (#369): the default language given the code of
+// another language of the shop is refused. The change itself is not run: it
+// moves the real translation and e-mail folders of the CI shop. A shop
+// installed with one language has no other code to take, and says so.
+if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall)) {
+    ++$calls;
+    try {
+        $defaultIso = null;
+        $otherIso = null;
+        $idDefaultLang = 0;
+        foreach ($currencyCall($listLanguages, [])[1]['languages'] ?? [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            if (($row['default'] ?? false) === true) {
+                $idDefaultLang = (int) $row['id_lang'];
+                $defaultIso = (string) $row['iso_code'];
+            } elseif ($otherIso === null) {
+                $otherIso = (string) $row['iso_code'];
+            }
+        }
+        if ($idDefaultLang === 0) {
+            $failures[] = 'somcp_update_language (the ISO code of another language): somcp_list_languages gave no default language';
+        } elseif ($otherIso === null) {
+            printf("  %-6s %s\n", 'skip', 'somcp_update_language (the ISO code of another language): the shop has one language');
+        } else {
+            [$isoResult] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'iso_code' => $otherIso]);
+            if (empty($isoResult['isError']) || strpos(excerpt($isoResult), 'iso_code: ' . $otherIso . ' is already the code of') === false) {
+                $failures[] = 'somcp_update_language (the ISO code of another language): expected a refusal - ' . excerpt($isoResult);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_update_language (the ISO code of another language, refused)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_language (the ISO code of another language): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A language deleted (#371): the default language is refused; a language
 // added for the test, without any _lang row copied, is deleted with the tool
 // and gone after. The CI shop's own languages are never deleted; the test

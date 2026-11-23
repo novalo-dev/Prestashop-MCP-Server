@@ -20,13 +20,13 @@ declare(strict_types=1);
 /*
  * somcp_update_language - changes one language of International >
  * Localization > Languages, as its Edit page and the Enabled switch of the
- * list do: Name, Language code, the two date formats, RTL language and
- * Status.
+ * list do: Name, ISO code, Language code, the two date formats, RTL language
+ * and Status.
  *
  * A shop that opens a second language had its dates printed in the format of
  * the first, and could not switch a language on or off without the back
- * office. The ISO code, the flag and the "No-picture" image move files and
- * translations, and are left to their own parts.
+ * office. The flag and the "No-picture" image write pictures of their own, and
+ * are left to their own parts.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -38,13 +38,14 @@ class SomcpToolUpdateLanguage
     /**
      * The fields of the list the shop works out: taken only as the list gives them.
      */
-    private const COMPUTED = ['iso_code', 'locale', 'default'];
+    private const COMPUTED = ['locale', 'default'];
 
     /**
      * The text fields of the form, with the column of Language they are stored in.
      */
     private const TEXTS = [
         'name' => 'name',
+        'iso_code' => 'iso_code',
         'language_code' => 'language_code',
         'date_format' => 'date_format_lite',
         'date_format_full' => 'date_format_full',
@@ -61,8 +62,8 @@ class SomcpToolUpdateLanguage
         return new SomcpTool(
             'somcp_update_language',
             Somcp::t('Change a language'),
-            'Changes one language of International > Localization > Languages, as its Edit page: Name, Language '
-                . 'code, Date format, Date format (full), RTL language and Status. Take id_lang from '
+            'Changes one language of International > Localization > Languages, as its Edit page: Name, ISO code, '
+                . 'Language code, Date format, Date format (full), RTL language and Status. Take id_lang from '
                 . 'somcp_list_languages; a row of that list can be given back whole, only what differs is written. '
                 . 'The default language stays enabled. Not for the texts of a product or a page in that language: '
                 . 'the update tool of that object. To delete one, somcp_delete_language.',
@@ -102,7 +103,11 @@ class SomcpToolUpdateLanguage
                         'description' => 'Merchant. Status: false stops offering the language; the employees who use '
                             . 'it move to the default language. Left out, kept.',
                     ],
-                    'iso_code' => ['type' => 'string'] + $computed,
+                    'iso_code' => [
+                        'type' => 'string',
+                        'description' => 'Merchant. ISO code: two letters, for example fr, stored lower case; the '
+                            . 'translation files and e-mail templates of the language move with it. Left out, kept.',
+                    ],
                     'locale' => ['type' => 'string'] + $computed,
                     'default' => ['type' => 'boolean'] + $computed,
                 ],
@@ -158,6 +163,25 @@ class SomcpToolUpdateLanguage
             }
         }
 
+        if (isset($set['iso_code'])) {
+            // As the back office refuses it: two languages with one code would
+            // share their translation and e-mail folders.
+            $owner = (int) Language::getIdByIso($set['iso_code'], true);
+            if ($owner > 0 && $owner !== $idLang) {
+                $errors[] = 'iso_code: ' . $set['iso_code'] . ' is already the code of '
+                    . (string) (new Language($owner))->name . ' (' . $owner . ')';
+            } else {
+                // The locale follows the code when the shop knows it, as the
+                // Edit page sets it.
+                $details = Language::getLangDetails($set['iso_code']);
+                $locale = is_array($details) ? (string) ($details['locale'] ?? '') : '';
+                if ($locale !== '' && $row !== null && $locale !== $row['locale']) {
+                    $set['locale'] = $locale;
+                    self::record($changes, 'locale', $row['locale'], $locale);
+                }
+            }
+        }
+
         foreach (['is_rtl', 'active'] as $field) {
             if (!array_key_exists($field, $arguments) || $arguments[$field] === null) {
                 continue;
@@ -188,9 +212,7 @@ class SomcpToolUpdateLanguage
             if (!array_key_exists($field, $arguments) || $row === null || $arguments[$field] === $row[$field]) {
                 continue;
             }
-            $errors[] = $field === 'iso_code'
-                ? 'iso_code: changed by somcp_update_language part 2, not written yet'
-                : $field . ': worked out by the shop';
+            $errors[] = $field . ': worked out by the shop';
         }
         if ($errors !== [] || $stored === null || $row === null) {
             return SomcpTool::refused('changed', $errors);
@@ -206,14 +228,24 @@ class SomcpToolUpdateLanguage
         }
         $fields = array_column($changes, 'field');
 
-        // Only the fields that differ are set: the ISO code, the locale and
-        // the shops the language is tied to keep what the shop stored.
+        // Only the fields that differ are set: the shops the language is tied
+        // to keep what the shop stored.
         $language = new Language($idLang);
-        foreach ($set as $column => $value) {
-            $language->{$column} = $value;
-        }
+        $oldIso = (string) $language->iso_code;
+        $renamed = false;
         $moved = 0;
         try {
+            if (isset($set['iso_code'])) {
+                // The folders move first, while the object still holds the old
+                // code moveToIso() reads. The core handler passes it the
+                // language identifier instead, which leaves the e-mail
+                // templates under a folder named after a number.
+                $language->moveToIso($set['iso_code']);
+                $renamed = true;
+            }
+            foreach ($set as $column => $value) {
+                $language->{$column} = $value;
+            }
             if (($set['active'] ?? null) === false) {
                 // The employees of a disabled language move to the default
                 // first, as the Edit page does it: a back office in a language
@@ -237,6 +269,16 @@ class SomcpToolUpdateLanguage
             $done = false;
             $failure = $e->getMessage();
         }
+        if (!$done && $renamed) {
+            // The code was not stored: the folders go back under it, or no
+            // code would read them.
+            try {
+                $language->iso_code = (string) $set['iso_code'];
+                $language->moveToIso($oldIso);
+            } catch (Throwable $e) {
+                $failure .= ' - the translation folders could not be moved back to ' . $oldIso;
+            }
+        }
         if (!$done) {
             SomcpLogger::log('language_update_failed', SomcpLogger::OUTCOME_FAILURE, 'language ' . $idLang . ': '
                 . Tools::substr($failure, 0, 500), '', $idEmployee);
@@ -254,6 +296,10 @@ class SomcpToolUpdateLanguage
         $result = ['changed' => true, 'id_lang' => $idLang, 'changes' => $changes];
 
         $warnings = [];
+        if (isset($set['iso_code'])) {
+            $warnings[] = 'The translation files and e-mail templates of ' . $oldIso . ' now sit under '
+                . $set['iso_code'] . '; a module or theme that ships files for ' . $oldIso . ' only will not find them.';
+        }
         if ($moved > 0) {
             $defaultRow = SomcpToolListLanguages::language($idShop, $default);
             $warnings[] = $moved . ' employees used ' . $row['name'] . ' in the back office; they now use '
@@ -300,8 +346,9 @@ class SomcpToolUpdateLanguage
             return null;
         }
         $value = trim($arguments[$field]);
-        if ($field === 'language_code') {
-            // Lower case, as the help line of the form asks.
+        if ($field === 'language_code' || $field === 'iso_code') {
+            // Lower case, as the help line of the form asks and the core
+            // stores the ISO code.
             $value = Tools::strtolower($value);
         }
         if ($value === '') {
@@ -338,6 +385,8 @@ class SomcpToolUpdateLanguage
         switch ($field) {
             case 'name':
                 return 'a character PrestaShop refuses in a language name (< > = { })';
+            case 'iso_code':
+                return 'two letters, for example fr';
             case 'language_code':
                 return 'an IETF language tag, two letters and optionally a dash and two more, for example en-us';
             default:

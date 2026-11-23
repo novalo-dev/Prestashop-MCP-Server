@@ -98,6 +98,13 @@ zone for the carrier prices, or switch it off so the address form stops
 offering it. A state that addresses or tax rule rows use keeps its country, so
 those addresses never end up with a state of another country.
 
+**Delete a state.** The new tool somcp_delete_state deletes a state of
+International > Locations > States, as the Delete of its row does. A state
+created by mistake, or one the merchant never sells to, no longer has to be
+removed in the back office. A state an address or a tax rule row uses is
+kept, with the tax rules named, so no tax row is left pointing to a state
+that no longer exists.
+
 **List the countries.** The new tool somcp_list_countries lists the countries
 of International > Locations > Countries, with their ISO code, their zone,
 whether they are enabled, and what an address there must hold: a state, a

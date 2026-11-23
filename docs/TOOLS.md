@@ -2647,8 +2647,8 @@ states the install left can be used.
 
 **Do not use for** - the zone of a whole country (a later tool); the tax of a
 state (→ `somcp_add_country_rule`, which takes the state by its ISO code);
-changing or enabling a state (→ `somcp_update_state`); deleting one (a later
-tool).
+changing or enabling a state (→ `somcp_update_state`); deleting one (→
+`somcp_delete_state`).
 
 **Parameters**
 
@@ -2703,7 +2703,7 @@ bulk action **Assign to a new zone** do for one state: **Name**, **ISO code**,
 **Country**, **Zone** and **Status**. Only the fields given change.
 
 **Do not use for** - creating a state (→ `somcp_create_state`); deleting one
-(a later tool); the zone of a whole country (a later tool); the tax of a state
+(→ `somcp_delete_state`); the zone of a whole country (a later tool); the tax of a state
 (→ `somcp_update_country_rule`).
 
 **Parameters**
@@ -2749,6 +2749,50 @@ read `somcp_list_states` before calling again.
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), the help texts (9.0.0 only), **Assign to a new zone** (8.0.1 only, a bulk action) and the ISO code test (one country on 8.0.1, every country on 9.0.0, see `somcp_create_state`); the fields, the class and the table (`state`) are the same.
+
+#### `somcp_delete_state`
+**State**: written · [issue #358](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/358)
+**Nature**: `acts(DELETE, 'AdminStates')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one state of **International > Locations > States**, as
+the **Delete** of its row does (and **Delete selected** for one state). A
+state created by mistake with `somcp_create_state`, or one the merchant never
+sells to, no longer has to be removed in the back office.
+
+**Do not use for** - switching a state off for a while (→
+`somcp_update_state`, `active: false`); a tax rule row (→
+`somcp_delete_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_state` | - | integer | yes | the state to delete, from `somcp_list_states`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_state')`; unknown: `SomcpTool::notFound('id_state', 'state', $id, 'somcp_list_states')`, through `SomcpToolListStates::state()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Refused, every
+problem at once:
+- used by addresses (`State::countUsed()`, every `address` row, deleted ones and those of suppliers, brands and warehouses included): `id_state: state <id> is used by <n> addresses - PrestaShop keeps a state an address uses`, the words of the 8.0.1 message;
+- used by tax rule rows: `id_state: state <id> is used by <n> tax rule rows (tax rules <id_tax_rules_group>, ...) - delete them first with somcp_delete_country_rule`;
+- when the installation has more than one shop (`SomcpToolCreateTax::otherShops()`): `id_state: a state is not tied to a shop - deleting it here would remove it from the <n> other shops of this installation too`, the rule of `somcp_delete_zone`.
+
+The **tax rule rows** are refused while both back offices delete the state
+and leave them behind: such a row applies to no address and
+`somcp_get_tax_rule` could only list it with an empty `state`.
+
+**Returns** - `deleted: true`, `id_state`, and `state`, the row of
+`somcp_list_states` read before the deletion, so the assistant can recreate
+it with `somcp_create_state`.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`. A `State::delete()` that answers `false` (an address added between
+the check and the call) is reported with a hint to read `somcp_list_states`
+before calling again.
+
+**Notes**
+- Not replayable: a second call answers that the state is unknown.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0) and the message of a used state (a sentence on 8.0.1, the generic error of `DeleteStateException` on 9.0.0); the class, the test of the addresses and the table (`state`) are the same.
 
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)

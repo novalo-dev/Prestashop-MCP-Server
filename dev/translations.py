@@ -1118,6 +1118,10 @@ T = {
  "Modifier un état",
  "Modificar un estado",
  "Einen Staat ändern"),
+"Delete a state": (
+ "Supprimer un état",
+ "Eliminar un estado",
+ "Einen Staat löschen"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

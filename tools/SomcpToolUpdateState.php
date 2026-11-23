@@ -52,7 +52,7 @@ class SomcpToolUpdateState
                 . 'Name, ISO code, Country, Zone, Status. Take id_state from somcp_list_states; a row of it can '
                 . 'be given back whole, and only what differs is written. A state used by addresses or tax rule '
                 . 'rows keeps its country. The zone is the merchant\'s choice. To create a state use '
-                . 'somcp_create_state; for its tax, somcp_update_country_rule.',
+                . 'somcp_create_state, to delete one somcp_delete_state, for its tax somcp_update_country_rule.',
             [
                 'type' => 'object',
                 'properties' => [

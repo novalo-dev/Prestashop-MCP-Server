@@ -1407,6 +1407,11 @@
       <source>Change a state</source>
       <target>Change a state</target>
     </trans-unit>
+    <!-- Delete a state -->
+    <trans-unit id="94d97d7be65301240bdce78d0f90629d" resname="Delete a state">
+      <source>Delete a state</source>
+      <target>Delete a state</target>
+    </trans-unit>
     <!-- List currencies -->
     <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">
       <source>List currencies</source>

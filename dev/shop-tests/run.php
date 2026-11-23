@@ -1269,6 +1269,62 @@ if ($updateState !== null) {
     }
 }
 
+// A state deleted, then deleted again (#358): the JSON scenario cannot create
+// the state it deletes, and every demo state is used by an address or a tax
+// rule row, or is one the next tools may read. Made as the check of
+// somcp_create_state makes it.
+$deleteState = $registry->get('somcp_delete_state');
+if ($deleteState !== null) {
+    $calls += 2;
+    $state = new State();
+    $state->id_country = (int) Country::getByIso('IT');
+    $state->id_zone = 1;
+    $state->name = 'somcp state';
+    $state->iso_code = 'ZZ';
+    $state->active = true;
+    $idState = $state->add() ? (int) $state->id : 0;
+    $stateContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $deleteState->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    try {
+        foreach ([
+            'a state no address uses' => [false, ['"deleted": true', '"iso_code": "ZZ"']],
+            'the same state again' => [true, ['Nothing was deleted.', 'no state of this shop has the identifier']],
+        ] as $label => [$error, $needles]) {
+            $result = $deleteState->call(['id_state' => $idState], $stateContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            if ($idState === 0 || !empty($result['isError']) !== $error || $missing !== []) {
+                $failures[] = 'somcp_delete_state (' . $label . '): expected ' . implode(', ', $missing ?: [$error ? 'an error' : 'no error']) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_state (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_state: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idState > 0) {
+            $left = new State($idState);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
 // A carrier read, given back, changed and put back (#320): the JSON scenario
 // cannot give a read back nor compare two reads. Demo carrier 3 is used by no
 // order, so it is changed in place and keeps its identifier; no call is made

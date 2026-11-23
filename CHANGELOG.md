@@ -27,7 +27,8 @@ switch it on and off, without the back office. The default language cannot be sw
 and when a language is, the employees who used it move to the default language
 and the merchant is told how many. A new ISO code takes the translation files
 and e-mail templates of the language with it, and is refused when another
-language already has it.
+language already has it. Its flag is replaced from an address or a file sent in
+the chat.
 
 **Delete a language.** The new tool somcp_delete_language deletes a language of
 International > Localization > Languages, as the Delete of its row does. Every
@@ -173,8 +174,8 @@ currencies.
 
 **List the languages.** The new tool somcp_list_languages lists the languages
 of International > Localization > Languages, with their ISO code, language
-code, locale and date formats, whether they are enabled, and which one is the
-shop default. Until now the assistant only read the codes in one line of the
+code, locale and date formats, whether they are enabled, which one is the
+shop default, and the flag of each, which the assistant can show. Until now the assistant only read the codes in one line of the
 connection check, without the disabled languages, so it could not tell the
 merchant why a language was refused.
 

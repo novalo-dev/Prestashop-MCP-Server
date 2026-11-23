@@ -47,7 +47,8 @@ class SomcpToolListLanguages
             'somcp_list_languages',
             Somcp::t('List languages'),
             'Lists the languages of International > Localization > Languages, by identifier as that list: '
-                . 'id_lang, name, iso_code, language code, locale, date formats, Enabled, and the shop default. '
+                . 'id_lang, name, iso_code, language code, locale, date formats, Enabled, the shop default and the '
+                . 'flag, a download_ref for somcp_download_file. '
                 . 'The iso_code is what the language and languages of every other tool take, and only an '
                 . 'enabled language is accepted there; a tool reads in the default when language is left out.',
             [
@@ -135,7 +136,7 @@ class SomcpToolListLanguages
         $default = self::defaultLanguage($idShop);
         $languages = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
-            $languages[] = self::row($row, $default);
+            $languages[] = self::row($row, $default, $idShop);
         }
 
         return SomcpTool::json([
@@ -172,10 +173,11 @@ class SomcpToolListLanguages
      *
      * @param array<string, mixed> $row a row of query()
      * @param int $default the identifier of the shop default language
+     * @param int $idShop the shop of the token, the one a download_ref is made for
      *
      * @return array<string, mixed>
      */
-    public static function row(array $row, int $default): array
+    public static function row(array $row, int $default, int $idShop): array
     {
         return [
             'id_lang' => (int) $row['id_lang'],
@@ -188,6 +190,9 @@ class SomcpToolListLanguages
             'active' => (bool) $row['active'],
             'is_rtl' => (bool) $row['is_rtl'],
             'default' => (int) $row['id_lang'] === $default,
+            // The Flag of the Edit page, given as every file is, so a row
+            // given back to somcp_update_language is recognised as no change.
+            'flag' => SomcpDownload::offer('language_flag', (int) $row['id_lang'], $idShop),
         ];
     }
 

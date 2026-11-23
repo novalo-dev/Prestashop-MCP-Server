@@ -2,6 +2,7 @@
   "calls": [
     {"why": "a language the shop does not have", "arguments": {"id_lang": 99999, "active": true}, "expect": "error", "contains": ["Nothing was changed.", "- id_lang: no language of this shop has the identifier 99999"]},
     {"why": "a language the shop does not have and an ISO code of three letters, at once", "arguments": {"id_lang": 99999, "iso_code": "fra"}, "expect": "error", "contains": ["Nothing was changed.", "- id_lang: no language of this shop has the identifier 99999", "- iso_code: 2 characters at most, 3 given"]},
+    {"why": "a language the shop does not have and a flag with neither address nor reference, at once", "arguments": {"id_lang": 99999, "flag": {}}, "expect": "error", "contains": ["Nothing was changed.", "- id_lang: no language of this shop has the identifier 99999", "- flag: the public https address of the flag (url), or the upload_ref of a file on the shop"]},
     {"why": "an identifier that is not one, an emptied name, a date format with a forbidden character, a non-boolean RTL and an unknown field, all at once", "arguments": {"id_lang": "x", "name": "", "date_format": "Y-m-d<", "is_rtl": "no", "flag2": 1}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- flag2: not a field of this tool", "- id_lang: a whole number above 0", "- name: required", "- date_format: a PHP date format", "- is_rtl: true or false"]}
   ]
 }

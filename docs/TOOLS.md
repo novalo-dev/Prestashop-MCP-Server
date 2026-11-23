@@ -3492,8 +3492,10 @@ holds a handful of languages, and their names are those of the `lang` table.
 code**), `locale` (**Locale**, read on both versions), `date_format` (**Date
 format**), `date_format_full` (**Date format (full)**), `active`
 (**Enabled**), `is_rtl`, `default` (`true` for the `PS_LANG_DEFAULT` of the
-shop of the token, the language a tool reads in when `language` is left out).
-Plus `count`. Only an enabled language is accepted by the `language` and
+shop of the token, the language a tool reads in when `language` is left out),
+`flag` (**Flag**: a `download_ref` through `SomcpDownload::offer('language_flag',
+...)` on `img/l/<id_lang>.jpg`, `null` without one, which `somcp_update_language`
+takes back as no change). Plus `count`. Only an enabled language is accepted by the `language` and
 `languages` of the other tools; a disabled one is listed so the assistant can
 tell the merchant why.
 
@@ -3517,11 +3519,11 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 **Does** - changes one language of **International > Localization >
 Languages**, as its **Edit** page and the **Enabled** switch of the list do:
 **Name**, **ISO code**, **Language code**, **Date format**, **Date format
-(full)**, **RTL language** and **Status**. Only the fields that differ are
-written; a row of `somcp_list_languages` given back whole writes nothing.
+(full)**, **RTL language**, **Status** and **Flag**. Only the fields that
+differ are written; a row of `somcp_list_languages` given back whole writes
+nothing.
 
-**Do not use for** - the **Flag** (part 3, #370) and the **"No-picture"
-image** (part 4, #376); deleting a language (→
+**Do not use for** - the **"No-picture" image** (part 4, #376); deleting a language (→
 `somcp_delete_language`); translating a text (→ the update tool of that
 object).
 
@@ -3537,6 +3539,7 @@ object).
 | `date_format_full` | **Date format (full)** | string | no | the same checks |
 | `is_rtl` | **RTL language** | boolean | no | |
 | `active` | **Status** | boolean | no | `false` for the default language refused: `active: <name> is the default language of the shop - it cannot be disabled` |
+| `flag` | **Flag** | object | no | a new picture, `{url}` or `{upload_ref}` through `SomcpUpload::schema()` and `argument()`, declared with `files: ['flag' => SomcpUpload::images()]`, the rules of the logo of `somcp_update_carrier`; the `download_ref` `somcp_list_languages` answers for this language (or `null` when it has none) is no change, recognised through `SomcpUpload::same($flag, 'language_flag', $id)` |
 
 `locale` and `default` are taken only when they equal the stored value,
 otherwise `<field>: worked out by the shop`, the rule of
@@ -3555,13 +3558,21 @@ only the fields that differ are set on `new Language($id)`; when `active` goes
 to `false`, the employees whose `id_lang` it is move to the default language
 first, the query of `EditLanguageHandler::updateEmployeeLanguage()`; then
 `validateFields(false)` and `update()`; nothing written when nothing differs.
+A flag is fetched with `SomcpUpload::fetchImage()` before anything is written,
+and stored after the row as `uploadFlagImageIfChanged()` does:
+`Language::deleteImage()`, then `ImageManager::resize()` into
+`img/l/<id_lang>.jpg`, forced to JPEG, and the cached
+`img/tmp/lang_mini_<id_lang>_<id_shop>.jpg` of every shop removed.
 Log lines `language_updated` and `language_update_failed`.
 
 **Returns** - the shape of every update tool (#356): `changed` (boolean),
-`id_lang`, `changes` (`field`, `old`, `new`), `reason` when nothing differs,
+`id_lang`, `changes` (`field`, `old`, `new`; for `flag`, `new` is
+`SomcpUpload::origin()`), `reason` when nothing differs, `flag` when one was
+given (`SomcpUpload::origin()` with `stored: true` or `refused: <reason>`),
 and `language`, the row read back as `somcp_list_languages` gives it.
 
 Warnings, beside the answer:
+- a flag the shop could not take while other fields were saved: `The other changes were saved, but the flag was not: <reason>.`; a flag refused with nothing else to change is an error;
 - `iso_code` changed: `The translation files and e-mail templates of <old> now sit under <new>; a module or theme that ships files for <old> only will not find them.`;
 - `active` set to `false` with employees moved: `<n> employees used <name> in the back office; they now use <default name>.`;
 - any field changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `A language is shared by every shop: this change reaches every shop of this installation (<n + 1>).`

@@ -1357,7 +1357,8 @@ if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault >
 // the CI shop is installed for, so it is read with somcp_list_languages.
 // Switching it off is refused; its full date format changes once, the same
 // call writes nothing, the row of the list given back whole writes nothing,
-// then its own format is put back.
+// its flag given back alone writes nothing (#370), a flag at an http address is
+// refused by the one path every image takes, then its own format is put back.
 $listLanguages = $registry->get('somcp_list_languages');
 $updateLanguage = $registry->get('somcp_update_language');
 if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall)) {
@@ -1384,6 +1385,8 @@ if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall))
             [$againResult, $again] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'date_format_full' => $format]);
             $whole = $answer['language'] ?? [];
             [$wholeResult, $wholeAnswer] = $currencyCall($updateLanguage, is_array($whole) ? $whole : []);
+            [$flagResult, $flagAnswer] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'flag' => $defaultRow['flag'] ?? null]);
+            [$httpResult] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'flag' => ['url' => 'http://example.com/flag.jpg']]);
             if (empty($offResult['isError']) || strpos(excerpt($offResult), 'it cannot be disabled') === false) {
                 $failures[] = 'somcp_update_language (switch off the default language): expected a refusal - ' . excerpt($offResult);
             } elseif (($answer['changed'] ?? null) !== true || ($answer['language']['date_format_full'] ?? null) !== $format) {
@@ -1392,6 +1395,10 @@ if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall))
                 $failures[] = 'somcp_update_language (the same call again): expected changed false - ' . excerpt($againResult);
             } elseif (($wholeAnswer['changed'] ?? null) !== false) {
                 $failures[] = 'somcp_update_language (the row of the list given back): expected changed false - ' . excerpt($wholeResult);
+            } elseif (!array_key_exists('flag', $defaultRow) || ($flagAnswer['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_language (the flag of the list given back): expected changed false - ' . excerpt($flagResult);
+            } elseif (empty($httpResult['isError']) || strpos(excerpt($httpResult), 'flag: only public https addresses are accepted') === false) {
+                $failures[] = 'somcp_update_language (a flag at an http address): expected a refusal - ' . excerpt($httpResult);
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_language (the default language)');
             }

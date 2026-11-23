@@ -20,13 +20,13 @@ declare(strict_types=1);
 /*
  * somcp_update_language - changes one language of International >
  * Localization > Languages, as its Edit page and the Enabled switch of the
- * list do: Name, ISO code, Language code, the two date formats, RTL language
- * and Status.
+ * list do: Name, ISO code, Language code, the two date formats, RTL language,
+ * Status and Flag.
  *
  * A shop that opens a second language had its dates printed in the format of
  * the first, and could not switch a language on or off without the back
- * office. The flag and the "No-picture" image write pictures of their own, and
- * are left to their own parts.
+ * office. The flag is taken as every image of the module is; the "No-picture"
+ * image, which writes many pictures of its own, is left to its own part.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -63,7 +63,7 @@ class SomcpToolUpdateLanguage
             'somcp_update_language',
             Somcp::t('Change a language'),
             'Changes one language of International > Localization > Languages, as its Edit page: Name, ISO code, '
-                . 'Language code, Date format, Date format (full), RTL language and Status. Take id_lang from '
+                . 'Language code, Date format, Date format (full), RTL language, Status and Flag. Take id_lang from '
                 . 'somcp_list_languages; a row of that list can be given back whole, only what differs is written. '
                 . 'The default language stays enabled. Not for the texts of a product or a page in that language: '
                 . 'the update tool of that object. To delete one, somcp_delete_language.',
@@ -103,6 +103,7 @@ class SomcpToolUpdateLanguage
                         'description' => 'Merchant. Status: false stops offering the language; the employees who use '
                             . 'it move to the default language. Left out, kept.',
                     ],
+                    'flag' => SomcpUpload::schema('Merchant. Flag: a new picture, which replaces the current one.', 'the flag'),
                     'iso_code' => [
                         'type' => 'string',
                         'description' => 'Merchant. ISO code: two letters, for example fr, stored lower case; the '
@@ -118,7 +119,8 @@ class SomcpToolUpdateLanguage
             [self::class, 'handle'],
             // Editing a language is what its Edit page and the Enabled switch
             // ask for in Team, Permissions; adding one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminLanguages')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminLanguages'),
+            files: ['flag' => SomcpUpload::images()]
         );
     }
 
@@ -135,7 +137,7 @@ class SomcpToolUpdateLanguage
 
         $errors = SomcpTool::unknownFields(
             $arguments,
-            array_merge(['id_lang', 'is_rtl', 'active'], array_keys(self::TEXTS), self::COMPUTED)
+            array_merge(['id_lang', 'is_rtl', 'active', 'flag'], array_keys(self::TEXTS), self::COMPUTED)
         );
         $stored = null;
         $idLang = SomcpTool::id($arguments, 'id_lang');
@@ -150,7 +152,7 @@ class SomcpToolUpdateLanguage
             }
         }
         $default = SomcpToolListLanguages::defaultLanguage($idShop);
-        $row = $stored !== null ? SomcpToolListLanguages::row($stored, $default) : null;
+        $row = $stored !== null ? SomcpToolListLanguages::row($stored, $default, $idShop) : null;
 
         $probe = new Language();
         $set = [];
@@ -205,6 +207,17 @@ class SomcpToolUpdateLanguage
             self::record($changes, $field, $row[$field], $arguments[$field]);
         }
 
+        // The flag the list answers for this language is no change: nothing
+        // is downloaded for it.
+        $flag = null;
+        if (array_key_exists('flag', $arguments)
+            && !SomcpUpload::same($arguments['flag'], 'language_flag', (string) $idLang)) {
+            $flag = SomcpUpload::argument($arguments, 'flag', $errors, 'flag');
+            if ($flag !== null && $row !== null) {
+                self::record($changes, 'flag', $row['flag'], SomcpUpload::origin($flag));
+            }
+        }
+
         // Taken only as the list answers them, so a row given back whole is
         // not refused; any other value would claim a change this tool does
         // not make.
@@ -226,8 +239,83 @@ class SomcpToolUpdateLanguage
                 'language' => $row,
             ]);
         }
-        $fields = array_column($changes, 'field');
 
+        return self::apply($idShop, $idLang, $idEmployee, $default, $row, $set, $changes, ['flag' => $flag]);
+    }
+
+    /**
+     * Fetches the pictures given, then writes.
+     *
+     * The pictures are fetched before anything is written: one the shop
+     * refuses must not leave the other fields half done.
+     *
+     * @param int $idShop
+     * @param int $idLang
+     * @param int $idEmployee
+     * @param int $default the identifier of the shop default language
+     * @param array<string, mixed> $row the language as the list answered it before
+     * @param array<string, mixed> $set the columns of Language to set
+     * @param array<int, array<string, mixed>> $changes
+     * @param array<string, array{url: string, upload_ref: string}|null> $sources the pictures given, by field
+     *
+     * @return array<string, mixed>
+     */
+    private static function apply(int $idShop, int $idLang, int $idEmployee, int $default, array $row, array $set, array $changes, array $sources): array
+    {
+        $sources = array_filter($sources, static function (?array $source): bool {
+            return $source !== null;
+        });
+        $files = [];
+        $answers = [];
+        try {
+            foreach ($sources as $field => $source) {
+                $file = '';
+                $refusal = self::fetch($source, $file);
+                if ($file !== '') {
+                    $files[$field] = $file;
+                }
+                if ($refusal !== '') {
+                    $answers[$field] = SomcpUpload::origin($source) + ['refused' => $refusal];
+                    unset($sources[$field]);
+                    $changes = self::without($changes, $field);
+                }
+            }
+            if ($changes === []) {
+                // Nothing else to write: the refusal is the answer.
+                $refusals = [];
+                foreach ($answers as $field => $answer) {
+                    $refusals[] = $field . ': ' . (string) $answer['refused'];
+                }
+
+                return SomcpTool::refused('changed', $refusals);
+            }
+
+            return self::write($idShop, $idLang, $idEmployee, $default, $row, $set, $changes, $sources, $files, $answers);
+        } finally {
+            foreach ($files as $file) {
+                @unlink($file);
+            }
+        }
+    }
+
+    /**
+     * Writes the fields that differ, then the pictures in hand, and answers.
+     *
+     * @param int $idShop
+     * @param int $idLang
+     * @param int $idEmployee
+     * @param int $default the identifier of the shop default language
+     * @param array<string, mixed> $row the language as the list answered it before
+     * @param array<string, mixed> $set the columns of Language to set
+     * @param array<int, array<string, mixed>> $changes
+     * @param array<string, array{url: string, upload_ref: string}> $sources the pictures in hand, by field
+     * @param array<string, string> $files the temporary file of each, from fetch()
+     * @param array<string, array<string, mixed>> $answers the answer of a picture already refused
+     *
+     * @return array<string, mixed>
+     */
+    private static function write(int $idShop, int $idLang, int $idEmployee, int $default, array $row, array $set, array $changes, array $sources, array $files, array $answers): array
+    {
         // Only the fields that differ are set: the shops the language is tied
         // to keep what the shop stored.
         $language = new Language($idLang);
@@ -257,13 +345,19 @@ class SomcpToolUpdateLanguage
                     Db::getInstance()->update('employee', ['id_lang' => (int) $default], '`id_lang` = ' . (int) $idLang);
                 }
             }
-            $check = $language->validateFields(false, true);
-            if ($check !== true) {
-                $done = false;
-                $failure = strip_tags(is_string($check) ? $check : 'a field PrestaShop refuses');
+            if ($set === []) {
+                // Only a picture to write: the row itself stays as it is.
+                $done = true;
+                $failure = '';
             } else {
-                $done = $language->update();
-                $failure = $done ? '' : 'PrestaShop refused to save it';
+                $check = $language->validateFields(false, true);
+                if ($check !== true) {
+                    $done = false;
+                    $failure = strip_tags(is_string($check) ? $check : 'a field PrestaShop refuses');
+                } else {
+                    $done = $language->update();
+                    $failure = $done ? '' : 'PrestaShop refused to save it';
+                }
             }
         } catch (Throwable $e) {
             $done = false;
@@ -289,13 +383,40 @@ class SomcpToolUpdateLanguage
                 true
             );
         }
+
+        // The pictures go after the row, as the Edit page writes them; one the
+        // shop cannot store is answered beside the fields that were saved.
+        foreach ($sources as $field => $source) {
+            $refusal = self::storeFlag($language, $idLang, $files[$field]);
+            $answers[$field] = SomcpUpload::origin($source)
+                + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
+            if ($refusal !== '') {
+                $changes = self::without($changes, $field);
+            }
+        }
+        if ($changes === []) {
+            // Nothing but pictures was asked, and none could be stored.
+            $refusals = [];
+            foreach ($answers as $field => $answer) {
+                $refusals[] = $field . ': ' . (string) ($answer['refused'] ?? 'not stored');
+            }
+
+            return SomcpTool::refused('changed', $refusals);
+        }
+
         SomcpLogger::log('language_updated', SomcpLogger::OUTCOME_SUCCESS, 'language ' . $idLang . ': '
-            . implode(', ', $fields), '', $idEmployee);
+            . implode(', ', array_column($changes, 'field')), '', $idEmployee);
         // The shape of every update tool: changed a boolean, changes what was
         // written with its old value.
         $result = ['changed' => true, 'id_lang' => $idLang, 'changes' => $changes];
 
         $warnings = [];
+        foreach ($answers as $field => $answer) {
+            $result[$field] = $answer;
+            if (isset($answer['refused'])) {
+                $warnings[] = 'The other changes were saved, but the ' . $field . ' was not: ' . $answer['refused'] . '.';
+            }
+        }
         if (isset($set['iso_code'])) {
             $warnings[] = 'The translation files and e-mail templates of ' . $oldIso . ' now sit under '
                 . $set['iso_code'] . '; a module or theme that ships files for ' . $oldIso . ' only will not find them.';
@@ -319,9 +440,70 @@ class SomcpToolUpdateLanguage
         // Read back rather than echoed from the arguments: what the assistant
         // shows the merchant is what the shop stored.
         $after = SomcpToolListLanguages::language($idShop, $idLang);
-        $result['language'] = $after !== null ? SomcpToolListLanguages::row($after, $default) : null;
+        $result['language'] = $after !== null ? SomcpToolListLanguages::row($after, $default, $idShop) : null;
 
         return SomcpTool::json($result);
+    }
+
+    /**
+     * Fetches a picture given into a temporary file of the shop, through the
+     * one path every image of the module takes.
+     *
+     * @param array{url: string, upload_ref: string} $source
+     * @param string $file set to the temporary file, '' without one
+     *
+     * @return string the reason it was refused, '' once in hand
+     */
+    private static function fetch(array $source, string &$file): string
+    {
+        $made = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
+        if ($made === false) {
+            return 'the shop has no room to receive it';
+        }
+        $file = $made;
+
+        try {
+            return SomcpUpload::fetchImage($source, $file);
+        } catch (Throwable $e) {
+            return 'the shop could not save it';
+        }
+    }
+
+    /**
+     * Writes a flag in hand where both versions of the core keep it, as
+     * EditLanguageHandler::uploadFlagImageIfChanged() does.
+     *
+     * One JPEG at img/l/<id_lang>.jpg, shared by every shop. Forced to JPEG
+     * as the carrier logo is: the file is named .jpg whatever the image
+     * quality setting would pick for a PNG sent in the chat.
+     *
+     * @param Language $language
+     * @param int $idLang
+     * @param string $file from fetch()
+     *
+     * @return string the reason it was refused, '' once stored
+     */
+    private static function storeFlag(Language $language, int $idLang, string $file): string
+    {
+        try {
+            $language->deleteImage();
+            if (!ImageManager::resize($file, _PS_LANG_IMG_DIR_ . $idLang . '.jpg', null, null, 'jpg', true)) {
+                return 'the shop could not read it as an image';
+            }
+            // The small copy the language lists draw is cached per shop; the
+            // core drops the one of its own shop only, and the flag is the
+            // same for every shop.
+            foreach (Shop::getShops(false, null, true) as $idShop) {
+                $cached = _PS_TMP_IMG_DIR_ . 'lang_mini_' . $idLang . '_' . (int) $idShop . '.jpg';
+                if (is_file($cached)) {
+                    @unlink($cached);
+                }
+            }
+
+            return '';
+        } catch (Throwable $e) {
+            return 'the shop could not save it';
+        }
     }
 
     /**
@@ -392,6 +574,21 @@ class SomcpToolUpdateLanguage
             default:
                 return 'a PHP date format, without < or >';
         }
+    }
+
+    /**
+     * The changes without the one of a field that was not written.
+     *
+     * @param array<int, array<string, mixed>> $changes
+     * @param string $field
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function without(array $changes, string $field): array
+    {
+        return array_values(array_filter($changes, static function (array $change) use ($field): bool {
+            return $change['field'] !== $field;
+        }));
     }
 
     /**

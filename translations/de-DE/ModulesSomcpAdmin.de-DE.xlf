@@ -1122,6 +1122,11 @@
       <source>List zones</source>
       <target>Zonen auflisten</target>
     </trans-unit>
+    <!-- Create a zone -->
+    <trans-unit id="93a133ab3a5610dcffe875227f5b165e" resname="Create a zone">
+      <source>Create a zone</source>
+      <target>Eine Zone anlegen</target>
+    </trans-unit>
     <!-- List countries -->
     <trans-unit id="597d4652b89187306aaad598ec4d29d9" resname="List countries">
       <source>List countries</source>

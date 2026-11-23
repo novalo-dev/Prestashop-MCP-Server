@@ -2347,7 +2347,8 @@ carrier take and that every country belongs to: no other tool gives one.
 Read only.
 
 **Do not use for** - the zones a carrier serves and its prices per zone
-(→ `somcp_get_carrier`); the countries themselves.
+(→ `somcp_get_carrier`); the countries themselves; creating a zone
+(→ `somcp_create_zone`).
 
 **Parameters**
 
@@ -2379,6 +2380,49 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`zone`, `zone_shop`).
+
+#### `somcp_create_zone`
+**State**: written · [issue #348](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/348)
+**Nature**: `acts(ADD, 'AdminZones')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one zone of **International > Locations > Zones**, as
+**Add new zone** then **Save** do: **Name** and **Active**. A zone groups the
+countries a carrier serves and its prices per zone (`somcp_update_carrier`,
+`zones` and `ranges`): without it, only the zones the install left can be used.
+
+**Do not use for** - the zones a carrier serves and its prices per zone
+(→ `somcp_update_carrier`); renaming or disabling a zone (→ `somcp_update_zone`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | trimmed; empty refused `name: required`; at most the size of `zone.name` (`SomcpTool::columnSize()`, 64 as fallback): `name: 64 characters at most, 70 given`; checked with `validateField('name', ...)` on a `new Zone()`: `name: a character PrestaShop refuses in a zone name (< > = { }) - ...` |
+| `active` | **Active** | boolean | no | left out, `true`, the default of the form; not a boolean: `active: true or false` |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `id_zone` and
+`countries` named as worked out by the shop, so a row of `somcp_list_zones`
+given back is told why.
+
+**Returns** - `created: true`, `id_zone`, `warning`, and `zone`, the row of
+`somcp_list_zones` for that zone (`id_zone`, `name`, `active`, `countries`,
+here 0), read back through `SomcpToolListZones::zones()`. The `warning` always
+says the zone has no country yet, and adds, when another zone of the shop has
+the same name (case-insensitive), `Zone <id> already has this name: the
+merchant sees two zones named <name> in the carrier form.` - the form takes it,
+so it is not refused.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once. A failed `add()` is reported with a hint to
+read `somcp_list_zones` before calling again.
+
+**Notes**
+- The zone is tied to the shop of the token only (`id_shop_list`, `zone_shop`), as the form does with **Shop association** on that shop.
+- Not replayable: the same call twice creates two zones, as the form does; the description says to read `somcp_list_zones` first.
+- **Active** left out is `true`, the form's default: a zone does nothing on its own until countries and carriers are given to it.
+- Logged as `zone_created`. The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the fields, the checks or the tables; only the card title (**Zones** / **Zone**) and the multistore label (**Shop association** / **Store association**).
 
 #### `somcp_list_countries`
 **State**: written · [issue #338](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/338)

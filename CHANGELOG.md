@@ -16,6 +16,15 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Create a delivery zone.** The new tool somcp_create_zone creates a zone of
+International > Locations > Zones, with its name and whether shipping to it is
+allowed, as Add new zone does. The assistant can now make the zone a merchant
+needs (neighbouring countries, the mainland apart from the islands) instead of
+only using the zones the install left. It is told the zone starts with no
+country, and when another zone already has the same name.
+
 ### Changed
 
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA

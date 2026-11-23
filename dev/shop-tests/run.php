@@ -981,6 +981,85 @@ if ($createTax !== null) {
     }
 }
 
+// A zone created (#348): the JSON scenario cannot hold the identifier of a
+// zone it created, and every demo zone holds countries, so none can be the one
+// made here. Two zones are created, the second under the first one's name in
+// other letters, then both are removed; whatever is left is cleaned up at the
+// end.
+$createZone = $registry->get('somcp_create_zone');
+if ($createZone !== null) {
+    $zoneCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $zoneText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $zoneMissing = static function (string $text, array $needles): array {
+        return array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        }));
+    };
+
+    $calls += 2;
+    $zoneIds = [];
+    try {
+        $result = $zoneCall($createZone, ['name' => 'somcp zone']);
+        $text = $zoneText($result);
+        $answer = json_decode(trim($text), true);
+        $idZone = is_array($answer) ? (int) ($answer['id_zone'] ?? 0) : 0;
+        if ($idZone > 0) {
+            $zoneIds[] = $idZone;
+        }
+        $missing = $zoneMissing($text, ['"created": true', '"active": true', '"countries": 0', 'The zone has no country yet']);
+        if (!empty($result['isError']) || $idZone === 0 || $missing !== []) {
+            $failures[] = 'somcp_create_zone (a new zone): expected it created, enabled, empty, with the warning - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_zone (a new zone)');
+        }
+
+        // The same name in other letters is taken, as the form takes it, and
+        // the answer names the zone that already has it.
+        $result = $zoneCall($createZone, ['name' => 'SOMCP ZONE']);
+        $text = $zoneText($result);
+        $answer = json_decode(trim($text), true);
+        $idTwin = is_array($answer) ? (int) ($answer['id_zone'] ?? 0) : 0;
+        if ($idTwin > 0) {
+            $zoneIds[] = $idTwin;
+        }
+        if (!empty($result['isError']) || $idTwin === 0
+            || strpos($text, 'Zone ' . $idZone . ' already has this name') === false) {
+            $failures[] = 'somcp_create_zone (a name another zone has): expected it created with the second warning - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_zone (a name another zone has, warned)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_zone (a new zone): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // No country, state or carrier uses them, so nothing else changes.
+        foreach ($zoneIds as $idZoneLeft) {
+            $zone = new Zone($idZoneLeft);
+            if (Validate::isLoadedObject($zone)) {
+                $zone->delete();
+            }
+        }
+    }
+}
+
 // A carrier read, given back, changed and put back (#320): the JSON scenario
 // cannot give a read back nor compare two reads. Demo carrier 3 is used by no
 // order, so it is changed in place and keeps its identifier; no call is made

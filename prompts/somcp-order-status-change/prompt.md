@@ -15,6 +15,7 @@ of it can be undone by calling again.
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_list_zones`
+- `somcp_create_zone`
 - `somcp_list_countries`
 - `somcp_list_states`
 - `somcp_update_carrier`
@@ -95,7 +96,8 @@ status change: it never moves the order to shipped, and
   which may be an older row of the carrier: match it on `id_reference`.
   `somcp_get_carrier` gives the zones and groups it serves, how it bills
   and the price of each range per zone.
-  `somcp_list_zones` lists the zones of the shop, with their `id_zone`.
+  `somcp_list_zones` lists the zones of the shop, with their `id_zone`;
+  `somcp_create_zone` creates one the merchant needs, with no country yet.
   `somcp_list_countries` lists the countries, with their ISO code and zone.
   `somcp_list_states` lists the states of a country, with their ISO code and
   zone.

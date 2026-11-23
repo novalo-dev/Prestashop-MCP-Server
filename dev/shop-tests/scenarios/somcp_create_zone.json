@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a forbidden character in the name, a non-boolean active and a field the shop works out, all at once", "arguments": {"name": "a={b}", "active": "yes", "id_zone": 3}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- name: a character PrestaShop refuses", "- active: true or false", "- id_zone: worked out by the shop"]},
+    {"why": "no name", "arguments": {"active": true}, "expect": "error", "contains": ["Nothing was created.", "- name: required"]},
+    {"why": "a name longer than the column", "arguments": {"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, "expect": "error", "contains": ["Nothing was created.", "- name: 64 characters at most, 65 given"]}
+  ]
+}

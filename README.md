@@ -333,6 +333,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
 | `somcp_delete_carrier` | ✎ Delete a carrier | Carriers › delete |
 | `somcp_list_zones` | ● List zones | Zones › view |
+| `somcp_create_zone` | ✎ Create a zone | Zones › add |
 | `somcp_list_countries` | ● List countries | Countries › view |
 | `somcp_list_states` | ● List states | States › view |
 | `somcp_set_order_status` | ✎ Change the status of an order | Orders › edit |

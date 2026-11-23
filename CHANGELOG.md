@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Change a language.** The new tool somcp_update_language changes a language of
+International > Localization > Languages, as its Edit page and the Enabled
+switch of the list do: its name, its language code, its two date formats,
+whether it is written right to left, and whether it is offered. A shop that
+opens a second language can now give it its own date format, or switch it on
+and off, without the back office. The default language cannot be switched off,
+and when a language is, the employees who used it move to the default language
+and the merchant is told how many.
+
 **Add a currency.** The new tool somcp_create_currency adds an official
 currency to International > Localization > Currencies, as Add new currency
 does: its ISO code, its exchange rate, and optionally its decimals, status,

@@ -3472,7 +3472,8 @@ Languages** with the columns of that list: **ID**, **Name**, **ISO code**,
 the key every translated field of the other tools takes. Read only.
 
 **Do not use for** - the translations of the shop (**International >
-Translations**); adding, changing or deleting a language (later tools).
+Translations**); changing a language (→ `somcp_update_language`); adding or
+deleting one (later tools).
 
 **Parameters**
 
@@ -3508,6 +3509,66 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the **Locale** column and its filter on 9.0.0 only (the answer gives `locale` on both, from the same column); otherwise the same list, filters, labels and tables (`lang`, `lang_shop`).
+
+#### `somcp_update_language`
+**State**: written · [issue #368](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/368)
+**Nature**: `acts(EDIT, 'AdminLanguages')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes one language of **International > Localization >
+Languages**, as its **Edit** page and the **Enabled** switch of the list do:
+**Name**, **Language code**, **Date format**, **Date format (full)**, **RTL
+language** and **Status**. Only the fields that differ are written; a row of
+`somcp_list_languages` given back whole writes nothing.
+
+**Do not use for** - the **ISO code** (part 2, #369), the **Flag** and the
+**"No-picture" image** (part 3, #370); deleting a language (a later
+tool); translating a text (→ the update tool of that
+object).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_lang` | **ID** | integer | yes | from `somcp_list_languages`; otherwise `SomcpTool::notFound()` with that tool |
+| `name` | **Name** | string | no | `Validate::isGenericName()`, at most 32 characters (`SomcpTool::columnSize()`) |
+| `language_code` | **Language code** | string | no | `Validate::isLanguageCode()`, at most 5 characters, stored in lower case as the help line asks |
+| `date_format` | **Date format** | string | no | `Validate::isPhpDateFormat()`, at most 32 characters; the key of `somcp_list_languages` (`date_format_lite` in the table) |
+| `date_format_full` | **Date format (full)** | string | no | the same checks |
+| `is_rtl` | **RTL language** | boolean | no | |
+| `active` | **Status** | boolean | no | `false` for the default language refused: `active: <name> is the default language of the shop - it cannot be disabled` |
+
+`iso_code`, `locale` and `default` are taken only when they equal the stored
+value, otherwise `<field>: worked out by the shop` (for `iso_code` until part
+2: `iso_code: changed by somcp_update_language part 2, not written yet`), the
+rule of `somcp_update_currency`. Unknown arguments through
+`SomcpTool::unknownFields()`. A text given empty is refused: every one of them
+is required by `Language::$definition` or the form.
+
+**Then** - the row is found through `SomcpToolListLanguages::language()`, the
+query of the list (`lang` joined to `lang_shop` on the shop of the token);
+only the fields that differ are set on `new Language($id)`; when `active` goes
+to `false`, the employees whose `id_lang` it is move to the default language
+first, the query of `EditLanguageHandler::updateEmployeeLanguage()`; then
+`validateFields(false)` and `update()`; nothing written when nothing differs.
+Log lines `language_updated` and `language_update_failed`.
+
+**Returns** - the shape of every update tool (#356): `changed` (boolean),
+`id_lang`, `changes` (`field`, `old`, `new`), `reason` when nothing differs,
+and `language`, the row read back as `somcp_list_languages` gives it.
+
+Warnings, beside the answer:
+- `active` set to `false` with employees moved: `<n> employees used <name> in the back office; they now use <default name>.`;
+- any field changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `A language is shared by every shop: this change reaches every shop of this installation (<n + 1>).`
+
+**Errors** - in the envelope of #169, every problem at once, under `Nothing was
+changed.`
+
+**Notes**
+- The texts of the shop in that language (products, categories, pages) are not touched: this is the language itself, not a translation.
+- **Locale** is not taken: PrestaShop derives it from the ISO code and 9.0.0 shows it read-only.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 shows **Locale** read-only and its list has a **Locale** column; the handler, the checks and the table are the same.
 
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)

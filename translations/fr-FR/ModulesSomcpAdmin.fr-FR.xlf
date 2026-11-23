@@ -1427,6 +1427,11 @@
       <source>Read a currency</source>
       <target>Lire une devise</target>
     </trans-unit>
+    <!-- Change a language -->
+    <trans-unit id="cbb66ee9de5a202f941c1f52cde89b45" resname="Change a language">
+      <source>Change a language</source>
+      <target>Modifier une langue</target>
+    </trans-unit>
     <!-- Change a currency -->
     <trans-unit id="a746a7434a12991b1ac216076ec56d95" resname="Change a currency">
       <source>Change a currency</source>

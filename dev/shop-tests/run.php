@@ -1353,6 +1353,58 @@ if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault >
     }
 }
 
+// The default language changed (#368): its identifier depends on the country
+// the CI shop is installed for, so it is read with somcp_list_languages.
+// Switching it off is refused; its full date format changes once, the same
+// call writes nothing, the row of the list given back whole writes nothing,
+// then its own format is put back.
+$listLanguages = $registry->get('somcp_list_languages');
+$updateLanguage = $registry->get('somcp_update_language');
+if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall)) {
+    ++$calls;
+    $restoreFormat = null;
+    $idDefaultLang = 0;
+    try {
+        $defaultRow = null;
+        foreach ($currencyCall($listLanguages, [])[1]['languages'] ?? [] as $row) {
+            if (is_array($row) && ($row['default'] ?? false) === true) {
+                $defaultRow = $row;
+                $idDefaultLang = (int) $row['id_lang'];
+            }
+        }
+        if ($defaultRow === null) {
+            $failures[] = 'somcp_update_language: somcp_list_languages gave no default language';
+        } else {
+            [$offResult] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'active' => false]);
+            $format = $defaultRow['date_format_full'] === 'Y-m-d H:i' ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+            [$result, $answer] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'date_format_full' => $format]);
+            if (($answer['changed'] ?? null) === true) {
+                $restoreFormat = (string) $defaultRow['date_format_full'];
+            }
+            [$againResult, $again] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'date_format_full' => $format]);
+            $whole = $answer['language'] ?? [];
+            [$wholeResult, $wholeAnswer] = $currencyCall($updateLanguage, is_array($whole) ? $whole : []);
+            if (empty($offResult['isError']) || strpos(excerpt($offResult), 'it cannot be disabled') === false) {
+                $failures[] = 'somcp_update_language (switch off the default language): expected a refusal - ' . excerpt($offResult);
+            } elseif (($answer['changed'] ?? null) !== true || ($answer['language']['date_format_full'] ?? null) !== $format) {
+                $failures[] = 'somcp_update_language (the full date format): expected changed true - ' . excerpt($result);
+            } elseif (($again['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_language (the same call again): expected changed false - ' . excerpt($againResult);
+            } elseif (($wholeAnswer['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_language (the row of the list given back): expected changed false - ' . excerpt($wholeResult);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_language (the default language)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_language: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($restoreFormat !== null && $restoreFormat !== '') {
+            Db::getInstance()->update('lang', ['date_format_full' => pSQL($restoreFormat)], 'id_lang = ' . (int) $idDefaultLang);
+        }
+    }
+}
+
 // The symbol of the default currency changed, then its default settings
 // restored (#365): the demo currencies keep the CLDR texts (modified 0), so
 // restoring them puts the shop back as it was installed. The symbol is given

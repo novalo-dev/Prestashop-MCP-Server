@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a state the shop does not have", "arguments": {"id_state": 99999}, "expect": "error", "contains": ["Nothing was changed.", "- id_state: no state of this shop has the identifier 99999"]},
+    {"why": "a state used by addresses moved to another country", "arguments": {"id_state": 35, "country": "IT"}, "expect": "error", "contains": ["Nothing was changed.", "- country: state 35 is used by 2 addresses"]},
+    {"why": "a forbidden character in the name, a malformed ISO code, an unknown zone, a non-boolean status and a field the shop works out, all at once", "arguments": {"id_state": 1, "name": "a={b}", "iso_code": "TOOLONGX", "id_zone": 99999, "active": "yes", "zone": "x"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- name: a character PrestaShop refuses in a state name", "- iso_code: 1 to 4 letters or digits", "- id_zone: no zone of this shop has the identifier 99999", "- active: true or false", "- zone: worked out by the shop"]}
+  ]
+}

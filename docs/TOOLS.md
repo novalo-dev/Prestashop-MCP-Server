@@ -2592,7 +2592,7 @@ and `states` of `somcp_add_country_rule` and `somcp_update_country_rule`, and
 **Do not use for** - the countries (→ `somcp_list_countries`); the zones (→
 `somcp_list_zones`); the tax rows of a state (→ `somcp_get_tax_rule`);
 creating a state (→ `somcp_create_state`); enabling a state or changing its
-zone (a later tool).
+zone (→ `somcp_update_state`).
 
 **Parameters**
 
@@ -2647,7 +2647,8 @@ states the install left can be used.
 
 **Do not use for** - the zone of a whole country (a later tool); the tax of a
 state (→ `somcp_add_country_rule`, which takes the state by its ISO code);
-changing, enabling or deleting a state (later tools).
+changing or enabling a state (→ `somcp_update_state`); deleting one (a later
+tool).
 
 **Parameters**
 
@@ -2691,6 +2692,63 @@ read `somcp_list_states` before calling again.
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), the help texts (9.0.0 only) and the ISO code test (one country on 8.0.1, every country on 9.0.0, see above); the fields, the class and the table (`state`) are the same.
+
+#### `somcp_update_state`
+**State**: written · [issue #357](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/357)
+**Nature**: `acts(EDIT, 'AdminStates')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes one state of **International > Locations > States**, as
+**Edit** then **Save** do, and as the list's **Enabled** switch and the 8.0.1
+bulk action **Assign to a new zone** do for one state: **Name**, **ISO code**,
+**Country**, **Zone** and **Status**. Only the fields given change.
+
+**Do not use for** - creating a state (→ `somcp_create_state`); deleting one
+(a later tool); the zone of a whole country (a later tool); the tax of a state
+(→ `somcp_update_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_state` | - | integer | yes | the state to change, from `somcp_list_states`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_state')`; unknown: `SomcpTool::notFound('id_state', 'state', $id, 'somcp_list_states')`, through `SomcpToolListStates::state()`, so only a state of a country of the shop is found |
+| `name` | **Name** | string | no | the check of `somcp_create_state`, `SomcpToolCreateState::name()` |
+| `iso_code` | **ISO code** | string | no | the check of `somcp_create_state`, `SomcpToolCreateState::isoCode()`, within the country the state ends up in, the state itself excepted: `iso_code: state <id> of <country> already has the ISO code <code>`; when only the country changes, the code kept is checked in the new country |
+| `country` | **Country** | string | no | the ISO code of the country, the check of `SomcpToolCreateState::country()`: a country of the shop that uses states; refused while the state is used: `country: state <id> is used by <n> addresses and <m> tax rule rows - a state of another country would no longer match them` |
+| `id_zone` | **Zone** | integer | no | the check of `somcp_create_state` (`SomcpToolListCountries::zoneOfShop()`) |
+| `active` | **Status** | boolean | no | not a boolean: `active: true or false` |
+
+A row of `somcp_list_states` can be given back whole: `id_country`,
+`country_name` and `zone` are taken only when they equal the stored values,
+otherwise `<field>: worked out by the shop - change country or id_zone`.
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+The **Country** of a state used by an address or a tax rule row is refused,
+while both back offices move it: the addresses keep their own `id_country`
+and the tax rule rows their own pair, so they would name a state of another
+country and match no row. The merchant moves them first, or creates a new
+state with `somcp_create_state`.
+
+**Returns** - the shape of every update tool: `changed: true`, `id_state`,
+`changes` (`field`, `old`, `new`, in the order of the form, the old value as
+`somcp_list_states` gives it), and `state`, the row of `somcp_list_states`
+read back with `SomcpToolListStates::state()`; or `changed: false`,
+`id_state`, `reason: The state already holds every value given. Nothing was
+written.` and `state`. When the installation has more than one shop,
+`also_in_other_shops` (`SomcpToolCreateTax::otherShops()`) and a `warning`: a
+state has no shop table. Also in `warning`: a **Zone** no carrier serves
+(`SomcpToolUpdateZone::carriers()` empty), and a **Status** set to `false`,
+with the number of addresses that keep the state (`State::countUsed()`).
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once. A failed `update()` is reported with a hint to
+read `somcp_list_states` before calling again.
+
+**Notes**
+- Replayable: a second identical call answers `changed: false`.
+- `tax_behavior` is not on the form and is never written.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), the help texts (9.0.0 only), **Assign to a new zone** (8.0.1 only, a bulk action) and the ISO code test (one country on 8.0.1, every country on 9.0.0, see `somcp_create_state`); the fields, the class and the table (`state`) are the same.
 
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)

@@ -112,9 +112,9 @@ class SomcpToolCreateState
             ['id_state', 'id_country', 'country_name', 'zone']
         );
 
-        $idCountry = self::country($arguments, $idShop, $errors);
-        $name = self::name($arguments, $errors);
-        $isoCode = self::isoCode($arguments, $idCountry, $errors);
+        $idCountry = self::country($arguments, $idShop, true, $errors);
+        $name = self::name($arguments, true, $errors);
+        $isoCode = self::isoCode($arguments, $idCountry, true, 0, $errors);
 
         $idZone = 0;
         if (!array_key_exists('id_zone', $arguments) || $arguments['id_zone'] === null) {
@@ -193,15 +193,26 @@ class SomcpToolCreateState
     /**
      * The country given, a country of the shop that uses states, or 0 with the reason.
      *
+     * Public so somcp_update_state checks a new country the same way.
+     *
      * @param array<string, mixed> $arguments
      * @param int $idShop
+     * @param bool $required false when left out means kept, as on an update
      * @param array<int, string> $errors
      *
      * @return int
      */
-    private static function country(array $arguments, int $idShop, array &$errors): int
+    public static function country(array $arguments, int $idShop, bool $required, array &$errors): int
     {
-        if (!array_key_exists('country', $arguments) || $arguments['country'] === null || $arguments['country'] === '') {
+        if (!array_key_exists('country', $arguments) || $arguments['country'] === null) {
+            if ($required) {
+                $errors[] = 'country: required';
+            }
+
+            return 0;
+        }
+        if ($arguments['country'] === '') {
+            // Required when given: a state always belongs to a country.
             $errors[] = 'country: required';
 
             return 0;
@@ -238,15 +249,20 @@ class SomcpToolCreateState
     /**
      * The name given, checked with the running version's rules, or null with the reason.
      *
+     * Public so somcp_update_state checks a new name the same way.
+     *
      * @param array<string, mixed> $arguments
+     * @param bool $required false when left out means kept, as on an update
      * @param array<int, string> $errors
      *
      * @return string|null
      */
-    private static function name(array $arguments, array &$errors): ?string
+    public static function name(array $arguments, bool $required, array &$errors): ?string
     {
         if (!array_key_exists('name', $arguments) || $arguments['name'] === null) {
-            $errors[] = 'name: required';
+            if ($required) {
+                $errors[] = 'name: required';
+            }
 
             return null;
         }
@@ -283,15 +299,27 @@ class SomcpToolCreateState
     /**
      * The ISO code given, upper case and free within its country, or null with the reason.
      *
+     * Public so somcp_update_state checks a new code the same way, the state
+     * being changed left out of the test.
+     *
      * @param array<string, mixed> $arguments
      * @param int $idCountry 0 when the country was refused, the code then checked for its form only
+     * @param bool $required false when left out means kept, as on an update
+     * @param int $exceptState the state being changed, which may keep its own code; 0 on a creation
      * @param array<int, string> $errors
      *
      * @return string|null
      */
-    private static function isoCode(array $arguments, int $idCountry, array &$errors): ?string
+    public static function isoCode(array $arguments, int $idCountry, bool $required, int $exceptState, array &$errors): ?string
     {
-        if (!array_key_exists('iso_code', $arguments) || $arguments['iso_code'] === null || $arguments['iso_code'] === '') {
+        if (!array_key_exists('iso_code', $arguments) || $arguments['iso_code'] === null) {
+            if ($required) {
+                $errors[] = 'iso_code: required';
+            }
+
+            return null;
+        }
+        if ($arguments['iso_code'] === '') {
             $errors[] = 'iso_code: required';
 
             return null;
@@ -313,7 +341,7 @@ class SomcpToolCreateState
             // different countries, which the 9.0.0 test of every country
             // would refuse.
             $other = (int) State::getIdByIso($code, $idCountry);
-            if ($other > 0) {
+            if ($other > 0 && $other !== $exceptState) {
                 $errors[] = 'iso_code: state ' . $other . ' of ' . Country::getIsoById($idCountry)
                     . ' already has the ISO code ' . $code;
 

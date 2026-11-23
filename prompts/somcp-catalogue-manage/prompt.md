@@ -52,6 +52,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_countries`
 - `somcp_list_states`
 - `somcp_create_state`
+- `somcp_update_state`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_product`
@@ -229,7 +230,9 @@ zone and whether they are enabled, come from `somcp_list_countries`. The
 states of a country, with the ISO code `state` and `states` take, come from
 `somcp_list_states`. A state the merchant needs and the shop lacks is created
 with `somcp_create_state`, in a country that uses states; ask for its zone,
-proposing the zone of its country.
+proposing the zone of its country. `somcp_update_state` renames a state,
+changes its ISO code or zone, or switches it off so the address form stops
+offering it; a state used by addresses or tax rule rows keeps its country.
 To rename a carrier, change its transit time, speed grade, logo, tracking URL,
 status, customer groups, zones, ranges and their prices per zone, place in the
 list, free shipping, handling costs, billing, tax, out-of-range behavior or size and weight limits, use

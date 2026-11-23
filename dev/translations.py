@@ -1114,6 +1114,10 @@ T = {
  "Créer un état",
  "Crear un estado",
  "Einen Staat anlegen"),
+"Change a state": (
+ "Modifier un état",
+ "Modificar un estado",
+ "Einen Staat ändern"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

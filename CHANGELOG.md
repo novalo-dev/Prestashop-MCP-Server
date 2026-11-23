@@ -90,6 +90,14 @@ the assistant can add a tax rule row or an address there. An ISO code another
 state of the same country already has is refused, so the same call twice
 creates nothing twice.
 
+**Change a state.** The new tool somcp_update_state changes the name, the ISO
+code, the country, the zone or the status of a state of International >
+Locations > States, as its edit form and the Enabled switch do. Until now the
+assistant could create a state but not correct its name, move it to another
+zone for the carrier prices, or switch it off so the address form stops
+offering it. A state that addresses or tax rule rows use keeps its country, so
+those addresses never end up with a state of another country.
+
 **List the countries.** The new tool somcp_list_countries lists the countries
 of International > Locations > Countries, with their ISO code, their zone,
 whether they are enabled, and what an address there must hold: a state, a

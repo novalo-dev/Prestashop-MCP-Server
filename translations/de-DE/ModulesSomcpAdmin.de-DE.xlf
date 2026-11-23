@@ -1402,6 +1402,11 @@
       <source>Create a state</source>
       <target>Einen Staat anlegen</target>
     </trans-unit>
+    <!-- Change a state -->
+    <trans-unit id="37a6c8bf0341c70131ce376fbaa9ea8a" resname="Change a state">
+      <source>Change a state</source>
+      <target>Einen Staat ändern</target>
+    </trans-unit>
     <!-- List currencies -->
     <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">
       <source>List currencies</source>

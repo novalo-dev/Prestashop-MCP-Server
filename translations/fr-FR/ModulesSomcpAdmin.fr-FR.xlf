@@ -1432,6 +1432,11 @@
       <source>Change a currency</source>
       <target>Modifier une devise</target>
     </trans-unit>
+    <!-- Add a currency -->
+    <trans-unit id="64c3155afa742d029eb8bcf37b522ec8" resname="Add a currency">
+      <source>Add a currency</source>
+      <target>Ajouter une devise</target>
+    </trans-unit>
     <!-- Delete a currency -->
     <trans-unit id="1209234e0a32d9bf3631d57ee92cb7fd" resname="Delete a currency">
       <source>Delete a currency</source>

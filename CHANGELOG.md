@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Add a currency.** The new tool somcp_create_currency adds an official
+currency to International > Localization > Currencies, as Add new currency
+does: its ISO code, its exchange rate, and optionally its decimals, status,
+names and symbols, which the shop otherwise fills in every language. A shop
+opening to a new market can now add its currency without the back office. A currency
+deleted before comes back as the same currency, and the merchant is told that
+payment modules still have to accept it in Payment > Preferences.
+
 **Create a delivery zone.** The new tool somcp_create_zone creates a zone of
 International > Locations > Zones, with its name and whether shipping to it is
 allowed, as Add new zone does. The assistant can now make the zone a merchant

@@ -1407,6 +1407,45 @@ if ($deleteCurrency !== null && isset($currencyCall, $idDefault) && $idDefault >
     }
 }
 
+// A currency added (#367): an official currency the CI shop does not have,
+// given in lower case, is created with the names and symbols CLDR gives;
+// the same call again is refused as a currency the shop already has. The
+// CI shop is installed for France and its currencies are not known in
+// advance, so the test is skipped when it already has CHF; the row is
+// removed from every table in finally.
+$createCurrency = $registry->get('somcp_create_currency');
+$createIso = 'CHF';
+if ($createCurrency !== null && isset($currencyCall) && (int) Db::getInstance()->getValue(
+    "SELECT COUNT(*) FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($createIso) . "'"
+) === 0) {
+    ++$calls;
+    try {
+        [$result, $answer] = $currencyCall($createCurrency, ['iso_code' => 'chf', 'conversion_rate' => 0.95]);
+        [$againResult] = $currencyCall($createCurrency, ['iso_code' => 'chf', 'conversion_rate' => 0.95]);
+        if (($answer['created'] ?? null) !== true || ($answer['currency']['iso_code'] ?? null) !== $createIso
+            || (string) ($answer['currency']['name'] ?? '') === '') {
+            $failures[] = 'somcp_create_currency (CHF): expected created true with a name from CLDR - ' . excerpt($result);
+        } elseif (empty($againResult['isError'])
+            || strpos(excerpt($againResult), 'is already currency ' . (int) $answer['id_currency'] . ' of this shop') === false) {
+            $failures[] = 'somcp_create_currency (the same call again): expected a refusal as already a currency of the shop - ' . excerpt($againResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_currency (CHF)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $testIso = $createIso;
+        $ids = array_map('intval', array_column(Db::getInstance()->executeS(
+            "SELECT `id_currency` FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($testIso) . "'"
+        ) ?: [], 'id_currency'));
+        if ($ids !== []) {
+            foreach (['currency', 'currency_lang', 'currency_shop', 'module_currency'] as $table) {
+                Db::getInstance()->delete($table, 'id_currency IN (' . implode(', ', $ids) . ')');
+            }
+        }
+    }
+}
+
 // The address format of a country changed, given back, then the same call
 // again (#361): the JSON scenario cannot hold the lines France stores, which
 // the localization pack of the CI shop decides. France is read first and its

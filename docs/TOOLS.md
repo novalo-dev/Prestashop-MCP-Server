@@ -3606,6 +3606,62 @@ every problem at once.
 
 **Differences between 8.0.1 and 9.0.0** - none in the page, the fields or the tables (page title **Currencies** on 8.0.1, **Editing currency <name>** on 9.0.0); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
 
+#### `somcp_create_currency`
+**State**: written · [issue #367](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/367)
+**Nature**: `acts(ADD, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds one currency to **International > Localization >
+Currencies**, as **Add new currency** does with **Select a currency**: one of
+the official currencies PrestaShop knows (CLDR), its names and symbols in
+every language filled by the shop when not given.
+
+**Do not use for** - a currency the shop already has (→
+`somcp_update_currency`); an alternative currency (**Create an alternative
+currency**, a later part).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `iso_code` | **Select a currency** | string | yes | trimmed, upper-cased, three letters; a currency of CLDR (`getCurrency()` of the CLDR locale of the shop default language not null); otherwise `iso_code: <code> is not an official currency PrestaShop knows (ISO 4217, for example USD or EUR)`; already a currency not deleted: `iso_code: <code> is already currency <id> of this shop - change it with somcp_update_currency` |
+| `conversion_rate` | **Exchange rate** | number | yes | above 0, 6 decimals kept; otherwise `conversion_rate: a number above 0, the value of 1 <default currency> in this currency` |
+| `precision` | **Decimals** | integer | no | 0 or more, otherwise `precision: a whole number of 0 or more`; the CLDR decimals of the currency when left out |
+| `active` | **Status** | boolean | no | `true` when left out, as the page; not a boolean: `active: true or false` |
+| `name`, `symbol` | **Currency name**, **Symbol** | string or object | no | keyed by ISO code with `languages`, by `SomcpToolCreateProduct::languages()` and `texts()` (#149); at most 255 characters, `Validate::isGenericName()`; empty or left out, the CLDR text |
+| `languages` | - | array | no | the languages `name` and `symbol` fill, every active language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the CLDR repository through `SomcpBackOffice::cldrLocaleRepository()`:
+the kernel container (the 9.0.0 identifier, then the 8.0.1 one), or the light
+container every front page builds (`ContainerBuilder::getContainer('front')`,
+as `FrontController::buildContainer()`); when none answers: `Nothing was
+created. The currencies PrestaShop knows cannot be read here - add it on the
+Add new currency page`. The deleted `Currency` of the same ISO code, or a new
+one, set as `AbstractCurrencyHandler::addEntity()` does: `iso_code`, `active`,
+`deleted = false`, `unofficial = false`, `conversion_rate`, `numeric_iso_code`
+and `precision` from CLDR, `id_shop_list` the shop of the token so
+`currency_shop` gets its row and its rate; `refreshLocalizedCurrencyData()`
+with every language, `validateFields()` and `validateFieldsLang()`, then
+`save(true, true)`.
+
+**Returns** - `created: true`, `id_currency`, `restored: true` when the
+deleted row of the same ISO code was reused (its orders stay tied to it), and
+`currency`, the answer of `somcp_get_currency` read back. A `warning` when:
+- a deleted row was reused: `<ISO code> was deleted before: the same currency is back, without the payment modules it had in Payment > Preferences.`;
+- no payment module accepts it (`module_currency`): `Payment > Preferences decides which payment modules accept <ISO code>; no module accepts it yet.`
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once; the shop refusing the save: `Nothing was
+created. The shop refused currency <ISO code>: <reason> - read
+somcp_list_currencies before calling again`.
+
+**Notes**
+- Logged as `currency_created`, `currency_create_failed` when the shop refuses.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the identifier of the CLDR service; the handler and the tables are the same.
+
 #### `somcp_update_currency`
 **State**: written · [issue #364](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/364)
 **Nature**: `acts(EDIT, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`

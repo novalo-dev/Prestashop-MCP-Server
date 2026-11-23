@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "a code CLDR does not know, a rate of 0, negative decimals and a field the tool does not take, at once", "arguments": {"iso_code": "QQQ", "conversion_rate": 0, "precision": -1, "rate": 1}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- iso_code: QQQ is not an official currency PrestaShop knows", "- conversion_rate: a number above 0, the value of 1 ", "- precision: a whole number of 0 or more", "- rate: not a field of this tool"]},
+    {"why": "a code that is not three letters and no rate", "arguments": {"iso_code": "C1"}, "expect": "error", "contains": ["Nothing was created.", "- iso_code: required, the three letters of an official currency", "- conversion_rate: a number above 0"]}
+  ]
+}

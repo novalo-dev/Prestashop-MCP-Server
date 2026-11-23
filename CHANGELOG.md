@@ -37,6 +37,51 @@ holds some is refused rather than deleted, because the back office would leave
 those countries in no zone, where no carrier reaches their addresses. The
 answer gives the name of the zone and the carriers that lost it.
 
+**Create a state.** The new tool somcp_create_state creates a state of
+International > Locations > States, with its name, its ISO code, its country,
+its zone and its status, as Add new state does. A merchant who sells to a
+region PrestaShop does not ship no longer has to open the back office before
+the assistant can add a tax rule row or an address there. An ISO code another
+state of the same country already has is refused, so the same call twice
+creates nothing twice.
+
+**Change a state.** The new tool somcp_update_state changes the name, the ISO
+code, the country, the zone or the status of a state of International >
+Locations > States, as its edit form and the Enabled switch do. Until now the
+assistant could create a state but not correct its name, move it to another
+zone for the carrier prices, or switch it off so the address form stops
+offering it. A state that addresses or tax rule rows use keeps its country, so
+those addresses never end up with a state of another country.
+
+**Delete a state.** The new tool somcp_delete_state deletes a state of
+International > Locations > States, as the Delete of its row does. A state
+created by mistake, or one the merchant never sells to, no longer has to be
+removed in the back office. A state an address or a tax rule row uses is
+kept, with the tax rules named, so no tax row is left pointing to a state
+that no longer exists.
+
+**Change a country.** The new tool somcp_update_country changes one country
+of International > Locations > Countries as its edit page does: its name in
+each language, ISO code, call prefix, default currency, zone, whether it is
+enabled, whether it has states, whether addresses need a zip code and the
+format that code must follow, the address format, whether addresses need a
+tax identification number and whether prices show the tax label. The address
+format is saved on PrestaShop 9 too, whose edit page shows it empty and does
+not save it, while its storefront and invoices still print with it. A country
+moved to another zone
+takes along its states that were in the old zone, on PrestaShop 9 as on
+PrestaShop 8, so its addresses are offered the carriers of the new zone.
+Enabling a country never adds payment modules for it; the answer warns when
+no payment module or no carrier is offered there yet.
+
+**Read a country.** The new tool somcp_get_country reads one country of
+International > Locations > Countries as its edit page shows it, with what
+the list of countries leaves out: its default currency, its address format
+and whether prices show the tax label. The address format is given both as
+stored and as the storefront applies it, so the merchant learns which lines
+an address of that country shows, even on PrestaShop 9 where the edit page
+displays the field empty.
+
 ### Changed
 
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
@@ -81,47 +126,6 @@ merchant why a language was refused.
 International > Locations > States, with their ISO code, their country and
 the zone each belongs to. Until now the assistant had to guess the code of a
 state when adding a tax rule row or the address of a supplier.
-
-**Create a state.** The new tool somcp_create_state creates a state of
-International > Locations > States, with its name, its ISO code, its country,
-its zone and its status, as Add new state does. A merchant who sells to a
-region PrestaShop does not ship no longer has to open the back office before
-the assistant can add a tax rule row or an address there. An ISO code another
-state of the same country already has is refused, so the same call twice
-creates nothing twice.
-
-**Change a state.** The new tool somcp_update_state changes the name, the ISO
-code, the country, the zone or the status of a state of International >
-Locations > States, as its edit form and the Enabled switch do. Until now the
-assistant could create a state but not correct its name, move it to another
-zone for the carrier prices, or switch it off so the address form stops
-offering it. A state that addresses or tax rule rows use keeps its country, so
-those addresses never end up with a state of another country.
-
-**Delete a state.** The new tool somcp_delete_state deletes a state of
-International > Locations > States, as the Delete of its row does. A state
-created by mistake, or one the merchant never sells to, no longer has to be
-removed in the back office. A state an address or a tax rule row uses is
-kept, with the tax rules named, so no tax row is left pointing to a state
-that no longer exists.
-
-**Change a country.** The new tool somcp_update_country changes one country
-of International > Locations > Countries as its edit page does: its name in
-each language, ISO code, call prefix, default currency, zone, whether it is
-enabled, whether it has states, whether addresses need a tax identification
-number and whether prices show the tax label. A country moved to another zone
-takes along its states that were in the old zone, on PrestaShop 9 as on
-PrestaShop 8, so its addresses are offered the carriers of the new zone.
-Enabling a country never adds payment modules for it; the answer warns when
-no payment module or no carrier is offered there yet.
-
-**Read a country.** The new tool somcp_get_country reads one country of
-International > Locations > Countries as its edit page shows it, with what
-the list of countries leaves out: its default currency, its address format
-and whether prices show the tax label. The address format is given both as
-stored and as the storefront applies it, so the merchant learns which lines
-an address of that country shows, even on PrestaShop 9 where the edit page
-displays the field empty.
 
 **List the countries.** The new tool somcp_list_countries lists the countries
 of International > Locations > Countries, with their ISO code, their zone,

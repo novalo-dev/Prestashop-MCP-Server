@@ -21,7 +21,8 @@ declare(strict_types=1);
  * somcp_update_country - one country of International > Locations >
  * Countries, as Edit then Save, or the Enabled switch and the 8.0.1 bulk
  * action Assign to a new zone for one country: Country, ISO code, Call
- * prefix, Default currency, Zone, Active, Contains states, Do you need a tax
+ * prefix, Default currency, Zone, Does it need Zip/Postal code?, Zip/Postal
+ * code format, Address format, Active, Contains states, Do you need a tax
  * identification number? and Display tax label.
  *
  * Two edges of the back office the tool settles the same way on both
@@ -32,6 +33,11 @@ declare(strict_types=1);
  * restriction, which the 8.0.1 switch adds for every module without asking:
  * that choice belongs to Payment > Preferences, and a warning says when no
  * module is offered to the country.
+ *
+ * The address format is written on both versions too, as the 8.0.1 form
+ * saves it: the 9.0.0 form shows the field empty and its handler never
+ * writes it, yet the storefront, the invoices and the address forms of
+ * 9.0.0 still print every address with the stored format.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -55,9 +61,6 @@ class SomcpToolUpdateCountry
     /** @var array<int, string> Fields of somcp_get_country this tool does not write: taken only as read. */
     private const COMPUTED = ['language', 'zone', 'currency', 'states', 'address_format_used'];
 
-    /** @var array<int, string> Fields of the form left to the third part of the edit of a country. */
-    private const LATER = ['need_zip_code', 'zip_code_format', 'address_format'];
-
     /**
      * @return SomcpTool
      */
@@ -73,11 +76,11 @@ class SomcpToolUpdateCountry
             'somcp_update_country',
             Somcp::t('Change a country'),
             'Changes one country of International > Locations > Countries, as Edit then Save or the Enabled '
-                . 'switch: name, ISO code, call prefix, default currency, zone, active, contains states, tax '
-                . 'identification number, tax label. Take id_country from somcp_list_countries; a row of '
-                . 'somcp_get_country can be given back whole, and only what differs is written. A new zone takes '
-                . 'along the states that were in the old one. For one state use somcp_update_state, for its tax '
-                . 'somcp_add_country_rule.',
+                . 'switch: name, ISO code, call prefix, default currency, zone, zip code rule and format, address '
+                . 'format, active, contains states, tax identification number, tax label. Take id_country from '
+                . 'somcp_list_countries; a row of somcp_get_country can be given back whole, and only what differs '
+                . 'is written. A new zone takes along the states that were in the old one. For one state use '
+                . 'somcp_update_state, for its tax somcp_add_country_rule.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -117,6 +120,22 @@ class SomcpToolUpdateCountry
                         'description' => 'Merchant. Zone, an id_zone from somcp_list_zones: the zone the carrier '
                             . 'prices read for the addresses of this country. Left out, kept.',
                     ],
+                    'need_zip_code' => $flag(
+                        'Does it need Zip/Postal code?',
+                        'whether a new address must give a zip code.'
+                    ),
+                    'zip_code_format' => [
+                        'type' => 'string',
+                        'description' => 'Merchant. Zip/Postal code format: L for a letter, N for a digit, C for the '
+                            . 'ISO code, digits, spaces, dashes, for example NNNNN; "" for no check. Left out, kept.',
+                    ],
+                    'address_format' => [
+                        'type' => ['array', 'null'],
+                        'items' => ['type' => 'string'],
+                        'description' => 'Merchant. Address format: the lines as somcp_get_country gives them, such '
+                            . 'as "firstname lastname", "postcode city" or "Country:name"; 255 characters in all. '
+                            . 'Left out, kept.',
+                    ],
                     'active' => $flag('Active', 'false stops offering the country to customers.'),
                     'contains_states' => $flag('Contains states', 'whether the address form asks for a state.'),
                     'need_identification_number' => $flag(
@@ -132,12 +151,6 @@ class SomcpToolUpdateCountry
                     'currency' => ['type' => ['string', 'null']] + $computed,
                     'states' => ['type' => 'integer'] + $computed,
                     'address_format_used' => ['type' => 'array', 'items' => ['type' => 'string']] + $computed,
-                    'need_zip_code' => ['type' => 'boolean', 'description' => 'Not changed by this tool: taken only '
-                        . 'as somcp_get_country gives it.'],
-                    'zip_code_format' => ['type' => 'string', 'description' => 'Not changed by this tool: taken only '
-                        . 'as somcp_get_country gives it.'],
-                    'address_format' => ['type' => ['array', 'null'], 'items' => ['type' => 'string'], 'description' => 'Not '
-                        . 'changed by this tool: taken only as somcp_get_country gives it.'],
                 ],
                 'required' => ['id_country'],
                 'additionalProperties' => false,
@@ -166,10 +179,10 @@ class SomcpToolUpdateCountry
 
         $errors = $answerLanguage === null ? [SomcpTool::languageProblem($idShop)] : [];
         array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(
-            ['id_country', 'languages', 'name', 'iso_code', 'call_prefix', 'id_currency', 'id_zone'],
+            ['id_country', 'languages', 'name', 'iso_code', 'call_prefix', 'id_currency', 'id_zone', 'need_zip_code',
+                'zip_code_format', 'address_format'],
             self::SWITCHES,
-            self::COMPUTED,
-            self::LATER
+            self::COMPUTED
         )));
         $stored = null;
         $country = null;
@@ -192,6 +205,7 @@ class SomcpToolUpdateCountry
         $changes = [];
         self::planName($arguments, $country, $idShop, $set, $changes, $errors);
         self::planFields($arguments, $country, $idShop, $idCountry, $set, $changes, $errors);
+        $format = self::planAddressFormat($arguments, $stored, $changes, $errors);
         self::givenBack($arguments, $stored, $idShop, $errors);
 
         if ($errors === [] && $country !== null && $set !== []) {
@@ -223,12 +237,18 @@ class SomcpToolUpdateCountry
         foreach ($set as $field => $value) {
             $country->{$field} = $value;
         }
-        try {
-            $done = $country->update();
-            $failure = $done ? '' : 'PrestaShop refused to save it';
-        } catch (Throwable $e) {
-            $done = false;
-            $failure = $e->getMessage();
+        // Only the address format may have changed: the country row is then
+        // left as it is.
+        $done = true;
+        $failure = '';
+        if ($set !== []) {
+            try {
+                $done = $country->update();
+                $failure = $done ? '' : 'PrestaShop refused to save it';
+            } catch (Throwable $e) {
+                $done = false;
+                $failure = $e->getMessage();
+            }
         }
         $fields = array_column($changes, 'field');
         if (!$done) {
@@ -242,6 +262,21 @@ class SomcpToolUpdateCountry
             );
         }
         $moved = isset($set['id_zone']) ? self::moveStates($idCountry, $oldZone, (int) $set['id_zone']) : null;
+        if ($format !== null) {
+            $failure = self::saveAddressFormat($idCountry, $format);
+            if ($failure !== '') {
+                $written = array_values(array_diff($fields, ['address_format']));
+                SomcpLogger::log('country_update_failed', SomcpLogger::OUTCOME_FAILURE, 'country ' . $idCountry
+                    . ': address_format: ' . Tools::substr($failure, 0, 500), '', $idEmployee);
+
+                return SomcpTool::text(
+                    'address_format: the address format could not be saved: ' . $failure . '. '
+                        . ($written !== [] ? 'The other fields were written: ' . implode(', ', $written) . '. ' : '')
+                        . 'Read the country with somcp_get_country before calling again.',
+                    true
+                );
+            }
+        }
         SomcpLogger::log('country_updated', SomcpLogger::OUTCOME_SUCCESS, 'country ' . $idCountry . ': '
             . implode(', ', $fields) . ($moved !== null ? ' (' . count($moved) . ' states moved)' : ''), '', $idEmployee);
 
@@ -257,7 +292,7 @@ class SomcpToolUpdateCountry
         $row = SomcpToolGetCountry::country($idShop, $answerLanguage, $idCountry);
         $name = $row !== null ? (string) $row['name'] : (string) $idCountry;
 
-        $warnings = self::warnings($set, $country, $idShop, $idCountry, $name, $row);
+        $warnings = self::warnings($set, $format, $country, $idShop, $idCountry, $name, $row);
         // A country row is shared by every shop: the change reaches them all,
         // said the way the tax and zone tools say it.
         $otherShops = SomcpToolCreateTax::otherShops();
@@ -432,8 +467,24 @@ class SomcpToolUpdateCountry
             }
         }
 
-        foreach (self::SWITCHES as $field) {
+        // In the order of the form: the zip code rule and its format come
+        // before the other switches.
+        foreach (array_merge(['need_zip_code', 'zip_code_format'], self::SWITCHES) as $field) {
             if (!$given($field)) {
+                continue;
+            }
+            if ($field === 'zip_code_format') {
+                $zipFormat = is_string($arguments[$field]) ? strtoupper(trim($arguments[$field])) : null;
+                $max = SomcpTool::columnSize(new Country(), 'zip_code_format', 12);
+                if ($zipFormat === null || !Validate::isZipCodeFormat($zipFormat)) {
+                    $errors[] = 'zip_code_format: L for a letter, N for a digit, C for the ISO code, digits, spaces '
+                        . 'and dashes, for example NNNNN or LNL NLN';
+                } elseif (Tools::strlen($zipFormat) > $max) {
+                    $errors[] = 'zip_code_format: ' . $max . ' characters at most, ' . Tools::strlen($zipFormat)
+                        . ' given';
+                } else {
+                    $keep($field, $country !== null ? (string) $country->zip_code_format : '', $zipFormat);
+                }
                 continue;
             }
             // A boolean only: "false" cast to bool is true, and would open a
@@ -444,6 +495,105 @@ class SomcpToolUpdateCountry
             }
             $keep($field, $country !== null ? (bool) $country->{$field} : false, $arguments[$field]);
         }
+    }
+
+    /**
+     * The address format to save, checked as the 8.0.1 form checks it, or null when it does not change.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed>|null $stored the country as somcp_get_country reads it
+     * @param array<int, array<string, mixed>> $changes
+     * @param array<int, string> $errors
+     *
+     * @return string|null the format, its lines joined as PrestaShop stores them
+     */
+    private static function planAddressFormat(array $arguments, ?array $stored, array &$changes, array &$errors): ?string
+    {
+        if (!array_key_exists('address_format', $arguments)) {
+            return null;
+        }
+        $old = $stored !== null ? $stored['address_format'] : null;
+        $given = $arguments['address_format'];
+        // A row of somcp_get_country given back whole writes nothing, the
+        // null of a country without a format of its own included.
+        if ($stored !== null && $given === $old) {
+            return null;
+        }
+        if (!is_array($given)) {
+            $errors[] = 'address_format: a list of lines, for example ["firstname lastname", "address1", '
+                . '"postcode city", "Country:name"]';
+
+            return null;
+        }
+        $lines = [];
+        foreach ($given as $line) {
+            if (!is_string($line)) {
+                $errors[] = 'address_format: every line is a text';
+
+                return null;
+            }
+            // Empty lines are dropped, as somcp_get_country drops them.
+            if (trim($line) !== '') {
+                $lines[] = trim($line);
+            }
+        }
+        if ($lines === []) {
+            $errors[] = 'address_format: at least one line - PrestaShop refuses an empty format';
+
+            return null;
+        }
+        if ($stored !== null && $lines === $old) {
+            return null;
+        }
+        $format = implode(AddressFormat::FORMAT_NEW_LINE, $lines);
+        $probe = new AddressFormat();
+        $max = SomcpTool::columnSize($probe, 'format', 255);
+        if (Tools::strlen($format) > $max) {
+            $errors[] = 'address_format: ' . $max . ' characters at most in all, ' . Tools::strlen($format) . ' given';
+
+            return null;
+        }
+        $probe->format = $format;
+        if (!$probe->checkFormatFields()) {
+            foreach ($probe->getErrorList() as $message) {
+                $errors[] = 'address_format: ' . html_entity_decode(strip_tags((string) $message), ENT_QUOTES, 'UTF-8');
+            }
+
+            return null;
+        }
+        $changes[] = ['field' => 'address_format', 'old' => $old, 'new' => $lines];
+
+        return $format;
+    }
+
+    /**
+     * Saves the address format of the country, as the 8.0.1 form does after the country.
+     *
+     * @param int $idCountry
+     * @param string $format
+     *
+     * @return string the failure, empty when saved
+     */
+    private static function saveAddressFormat(int $idCountry, string $format): string
+    {
+        try {
+            $addressFormat = new AddressFormat($idCountry);
+            $addressFormat->format = $format;
+            // A country without a format of its own has no row yet.
+            if (!Validate::isLoadedObject($addressFormat)) {
+                $addressFormat->id_country = $idCountry;
+            }
+            if (!$addressFormat->save()) {
+                return 'PrestaShop refused to save it';
+            }
+        } catch (Throwable $e) {
+            return $e->getMessage();
+        }
+        // The storefront format is cached for the request: dropped, so the
+        // country read back prints with the new one.
+        Cache::clean('AddressFormat::getFormatDB' . $idCountry);
+
+        return '';
     }
 
     /**
@@ -463,7 +613,7 @@ class SomcpToolUpdateCountry
             'zone' => 'id_zone',
             'currency' => 'id_currency',
             'states' => 'the states with somcp_create_state and somcp_delete_state',
-            'address_format_used' => 'the address format',
+            'address_format_used' => 'address_format',
         ];
         foreach (self::COMPUTED as $field) {
             if (!array_key_exists($field, $arguments)) {
@@ -476,11 +626,6 @@ class SomcpToolUpdateCountry
                 : $stored !== null && $arguments[$field] === $stored[$field];
             if (!$same) {
                 $errors[] = $field . ': worked out by the shop - change ' . $from[$field];
-            }
-        }
-        foreach (self::LATER as $field) {
-            if (array_key_exists($field, $arguments) && ($stored === null || $arguments[$field] !== $stored[$field])) {
-                $errors[] = $field . ': changed by somcp_update_country part 3 (#361), not written yet';
             }
         }
     }
@@ -537,6 +682,7 @@ class SomcpToolUpdateCountry
      * What the change leaves the merchant to do elsewhere.
      *
      * @param array<string, mixed> $set what was written
+     * @param string|null $format the address format saved, null when unchanged
      * @param Country $country as written
      * @param int $idShop
      * @param int $idCountry
@@ -545,7 +691,7 @@ class SomcpToolUpdateCountry
      *
      * @return array<int, string>
      */
-    private static function warnings(array $set, Country $country, int $idShop, int $idCountry, string $name, ?array $row): array
+    private static function warnings(array $set, ?string $format, Country $country, int $idShop, int $idCountry, string $name, ?array $row): array
     {
         $warnings = [];
         if (($set['active'] ?? null) === true) {
@@ -574,6 +720,16 @@ class SomcpToolUpdateCountry
         if (($set['need_identification_number'] ?? null) === true) {
             $warnings[] = 'New addresses in ' . $name . ' must now give an identification number; the existing '
                 . 'ones are not checked.';
+        }
+        if (isset($set['zip_code_format']) && $set['zip_code_format'] !== '') {
+            $warnings[] = 'New addresses in ' . $name . ' must now match ' . $set['zip_code_format'] . '; the '
+                . 'existing ones are not checked again.';
+        }
+        // AddressFormat::getFormat() adds the line itself when it prints.
+        if ($format !== null && $country->need_identification_number
+            && !preg_match('/(^|[^A-Za-z_:])dni([^A-Za-z_]|$)/', $format)) {
+            $warnings[] = 'PrestaShop adds the identification number (dni) line when it prints an address of '
+                . $name . '.';
         }
 
         return $warnings;

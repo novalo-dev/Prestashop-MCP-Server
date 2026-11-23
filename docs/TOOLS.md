@@ -2628,13 +2628,13 @@ every problem at once.
 as **Edit** then **Save** do, and as the **Enabled** switch and the bulk
 action **Assign to a new zone** do for one country: **Country** (per
 language), **ISO code**, **Call prefix**, **Default currency**, **Zone**,
-**Active**, **Contains states**, **Do you need a tax identification
-number?**, **Display tax label (e.g. "Tax incl.")**. Only the fields that
-differ are written.
+**Does it need Zip/Postal code?**, **Zip/Postal code format**, **Address
+format**, **Active**, **Contains states**, **Do you need a tax
+identification number?**, **Display tax label (e.g. "Tax incl.")**. Only the
+fields that differ are written.
 
-**Do not use for** - the zip code and the address format (a later part of
-this tool, #361); one state (→ `somcp_update_state`); the tax of a country (→
-`somcp_add_country_rule`).
+**Do not use for** - one state (→ `somcp_update_state`); the tax of a country
+(→ `somcp_add_country_rule`).
 
 **Parameters**
 
@@ -2646,6 +2646,9 @@ this tool, #361); one state (→ `somcp_update_state`); the tax of a country (�
 | `call_prefix` | **Call prefix** | integer | no | 0 or more: `call_prefix: a whole number, 0 for none (the list shows -)` |
 | `id_currency` | **Default currency** | integer | no | `0` for **Default store currency**, or a currency `currency_shop` ties to the shop, as `somcp_list_currencies` lists them; otherwise `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')` |
 | `id_zone` | **Zone** | integer | no | a zone of the shop (`SomcpToolListCountries::zoneOfShop()`), the message of `somcp_create_state` |
+| `need_zip_code` | **Does it need Zip/Postal code?** | boolean | no | `need_zip_code: true or false` |
+| `zip_code_format` | **Zip/Postal code format** | string | no | trimmed, upper-cased; `""` for no check; `Validate::isZipCodeFormat()`: `zip_code_format: L for a letter, N for a digit, C for the ISO code, digits, spaces and dashes, for example NNNNN or LNL NLN`; at most the size of the column (`SomcpTool::columnSize()`, 12 as fallback) |
+| `address_format` | **Address format** | array of strings | no | the lines as `somcp_get_country` gives them, empty lines dropped, joined with new lines, at most 255 characters; checked by `AddressFormat::checkFormatFields()` on a new `AddressFormat`, every message of `getErrorList()` given as `address_format: <message>`; an empty list: `address_format: at least one line - PrestaShop refuses an empty format` |
 | `active` | **Active** | boolean | no | `active: true or false` |
 | `contains_states` | **Contains states** | boolean | no | the same |
 | `need_identification_number` | **Do you need a tax identification number?** | boolean | no | the same |
@@ -2655,8 +2658,8 @@ A row of `somcp_get_country` can be given back whole: `language` (any
 language of the shop), `zone`, `currency`, `states` and `address_format_used`
 are taken only when they equal the stored values, otherwise `<field>: worked
 out by the shop - change <the field it comes from>`; `need_zip_code`,
-`zip_code_format` and `address_format` are taken when they equal the stored
-values and otherwise refused until the part that writes them (#361). Unknown
+`zip_code_format` and `address_format` equal to the stored values write
+nothing. Unknown
 arguments through `SomcpTool::unknownFields()`. Before the write, the whole
 object goes through `validateFields()` and `validateFieldsLang()`.
 
@@ -2664,7 +2667,11 @@ object goes through `validateFields()` and `validateFieldsLang()`.
 language, then `update()`. When the zone changed, the states of the country
 whose zone was the old one get the new one, each through `State::update()`,
 as 8.0.1 does on **Save**; a state the merchant put in another zone is not
-touched. Nothing differs: no write.
+touched. A new **Address format** is then saved through `AddressFormat`
+(`new AddressFormat($idCountry)`, `format`, `id_country` when the row is new,
+`save()`), as the 8.0.1 form does after the country; its failure is reported
+as a problem of `address_format`, naming the fields of the country already
+written. Nothing differs: no write.
 
 **Returns** - the shape of every update tool: `changed: true`, `id_country`,
 `changes` (`field`, `old`, `new`; a name as `name (<iso>)`), `states_moved`
@@ -2681,16 +2688,19 @@ Warnings, in `warning`:
 - **Active** set to `true` in a zone no carrier serves (`SomcpToolUpdateZone::carriers()`): `No carrier serves zone <id> (<name>): customers of <name> are offered no carrier until one serves it - see somcp_update_carrier.`
 - **Contains states** set to `false` while the country has states: `The <n> states of <name> are no longer offered in its address form; they are kept.`; set to `true` with none: `<name> has no state yet: add them with somcp_create_state.`
 - **Do you need a tax identification number?** set to `true`: `New addresses in <name> must now give an identification number; the existing ones are not checked.`
+- **Zip/Postal code format** changed to a format: `New addresses in <name> must now match <format>; the existing ones are not checked again.`
+- **Address format** without `dni` while the country needs an identification number: `PrestaShop adds the identification number (dni) line when it prints an address of <name>.`
 
 **Errors** - in the envelope `Nothing was changed. Correct these and call
 again:`, every problem at once (`SomcpTool::refused('changed', $problems)`).
 
 **Notes**
 - Replayable: a second identical call answers `changed: false`.
-- The payment restrictions (**Payment > Preferences**), the shop association and the address format are never written here: the 8.0.1 list switch adds every payment module to a country it enables, which the edit form of both versions does not.
+- The payment restrictions (**Payment > Preferences**) and the shop association are never written here: the 8.0.1 list switch adds every payment module to a country it enables, which the edit form of both versions does not.
+- The **Address format** is written on both versions, as 8.0.1 saves it: the 9.0.0 form shows the field empty and `EditCountryHandler` never writes it, yet the storefront, the invoices and the address forms of 9.0.0 still read the stored format.
 - The back-office address of the page is never part of the answer.
 
-**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels, the states moved with the zone (8.0.1 only in the back office, both here), the refusal of an ISO code another country has (8.0.1 only in the back office, both here), **Country options** (8.0.1 only, not part of this tool); the class and the tables are the same.
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels, the states moved with the zone (8.0.1 only in the back office, both here), the refusal of an ISO code another country has (8.0.1 only in the back office, both here), **Country options** (8.0.1 only, not part of this tool), the **Address format** (saved by the 8.0.1 form only, by this tool on both); the checks (`isZipCodeFormat`, `checkFormatFields`), the class and the tables are the same.
 
 #### `somcp_list_states`
 **State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)

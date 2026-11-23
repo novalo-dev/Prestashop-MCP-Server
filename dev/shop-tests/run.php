@@ -1269,6 +1269,72 @@ if ($updateState !== null) {
     }
 }
 
+// The address format of a country changed, given back, then the same call
+// again (#361): the JSON scenario cannot hold the lines France stores, which
+// the localization pack of the CI shop decides. France is read first and its
+// own lines are written back at the end, so the next tools find it as it was.
+$updateCountry = $registry->get('somcp_update_country');
+$getCountry = $registry->get('somcp_get_country');
+$idFrance = (int) Country::getByIso('FR');
+if ($updateCountry !== null && $getCountry !== null && $idFrance > 0) {
+    $calls += 4;
+    $countryContext = static function (SomcpTool $tool) use ($context, $employee): array {
+        return [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => [],
+        ];
+    };
+    $countryAnswer = static function (array $result): array {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $answer = json_decode(trim($text), true);
+
+        return is_array($answer) && empty($result['isError']) ? $answer : [];
+    };
+    $read = $countryAnswer($getCountry->call(['id_country' => $idFrance], $countryContext($getCountry)));
+    $lines = is_array($read['address_format'] ?? null) ? $read['address_format'] : [];
+    try {
+        if ($lines === []) {
+            $failures[] = 'somcp_get_country (France): expected the stored address format';
+        } else {
+            foreach ([
+                'the dni line added' => [array_merge($lines, ['dni']), true],
+                'the stored lines given back' => [$lines, true],
+                'the same call again' => [$lines, false],
+            ] as $label => [$format, $expected]) {
+                $result = $updateCountry->call(['id_country' => $idFrance, 'address_format' => $format], $countryContext($updateCountry));
+                $answer = $countryAnswer($result);
+                $stored = $answer['country']['address_format'] ?? null;
+                if (($answer['changed'] ?? null) !== $expected || $stored !== $format) {
+                    $failures[] = 'somcp_update_country (' . $label . '): expected changed ' . ($expected ? 'true' : 'false') . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country (' . $label . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_country (address format): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // France keeps its own lines whatever failed above.
+        if ($lines !== []) {
+            $addressFormat = new AddressFormat($idFrance);
+            if (Validate::isLoadedObject($addressFormat) && $addressFormat->format !== implode("\n", $lines)) {
+                $addressFormat->format = implode("\n", $lines);
+                $addressFormat->save();
+            }
+        }
+    }
+}
+
 // A state deleted, then deleted again (#358): the JSON scenario cannot create
 // the state it deletes, and every demo state is used by an address or a tax
 // rule row, or is one the next tools may read. Made as the check of

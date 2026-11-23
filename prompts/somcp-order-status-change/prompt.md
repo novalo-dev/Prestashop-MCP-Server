@@ -110,7 +110,8 @@ status change: it never moves the order to shipped, and
   `somcp_list_countries` lists the countries, with their ISO code and zone;
   `somcp_get_country` reads every field of one, its address format included;
   `somcp_update_country` enables one, moves it to another zone with its
-  states, or changes its name, codes, currency and tax label.
+  states, or changes its name, codes, currency, zip code rule, address format
+  and tax label.
   `somcp_list_states` lists the states of a country, with their ISO code and
   zone; `somcp_create_state` creates one the merchant needs, in the zone the
   merchant chooses; `somcp_update_state` renames one, changes its ISO code or

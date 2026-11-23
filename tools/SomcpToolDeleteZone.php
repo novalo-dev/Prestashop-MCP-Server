@@ -119,11 +119,10 @@ class SomcpToolDeleteZone
             return SomcpTool::refused('deleted', $errors);
         }
 
-        // Read before the deletion, which removes the carrier_zone rows.
-        $carriers = array_map('intval', array_column(Db::getInstance()->executeS(
-            'SELECT DISTINCT `id_carrier` FROM `' . _DB_PREFIX_ . 'carrier_zone` WHERE `id_zone` = ' . (int) $idZone
-            . ' ORDER BY `id_carrier` ASC'
-        ) ?: [], 'id_carrier'));
+        // Read before the deletion, which removes the carrier_zone rows. Only
+        // the carriers in use: the rows of an older version of a changed
+        // carrier go too, but that version is offered to nobody already.
+        $carriers = SomcpToolUpdateZone::carriers($idZone);
 
         $zone = new Zone($idZone);
         try {

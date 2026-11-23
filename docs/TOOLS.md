@@ -2498,9 +2498,11 @@ addresses and no tax rule by zone reaches them. The other shops: refused, as
 shared.
 
 **Returns** - `deleted: true`, `id_zone`, `name` (as it was), and
-`carriers_detached`, the `id_carrier` of the carriers that served the zone
-(`[]` when none), read before `Zone::delete()` removes their `carrier_zone` and
-`delivery` rows; when not empty, a `warning`: `The <n> carriers (<ids>) no
+`carriers_detached`, the `id_carrier` of the carriers in use (not an older
+version of a changed carrier) that served the zone (`[]` when none), read
+through `SomcpToolUpdateZone::carriers()`, the list `somcp_update_zone` warns
+of, before `Zone::delete()` removes their `carrier_zone` and `delivery` rows
+(those of older versions too); when not empty, a `warning`: `The <n> carriers (<ids>) no
 longer serve this zone, and their prices for it are deleted: check their zones
 with somcp_get_carrier.`
 

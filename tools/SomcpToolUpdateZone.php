@@ -178,11 +178,7 @@ class SomcpToolUpdateZone
         $warnings = [];
         if (in_array('active', $changed, true) && $active === false) {
             // The help of the field: Allow or disallow shipping to this zone.
-            $carriers = array_map('intval', array_column(Db::getInstance()->executeS(
-                'SELECT DISTINCT cz.`id_carrier` FROM `' . _DB_PREFIX_ . 'carrier_zone` cz'
-                . ' INNER JOIN `' . _DB_PREFIX_ . 'carrier` c ON c.`id_carrier` = cz.`id_carrier` AND c.`deleted` = 0'
-                . ' WHERE cz.`id_zone` = ' . (int) $idZone . ' ORDER BY cz.`id_carrier` ASC'
-            ) ?: [], 'id_carrier'));
+            $carriers = self::carriers($idZone);
             if ($carriers !== []) {
                 $warnings[] = 'Shipping is now disallowed to zone ' . $idZone . ': the ' . count($carriers)
                     . ' carriers that serve it (' . implode(', ', $carriers) . ') are no longer offered to '
@@ -229,5 +225,26 @@ class SomcpToolUpdateZone
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'zone_shop` WHERE `id_zone` = ' . (int) $idZone
             . ' AND `id_shop` <> ' . (int) $idShop
         );
+    }
+
+    /**
+     * The carriers in use that serve the zone, in identifier order.
+     *
+     * Public so the deletion names the same carriers: a carrier changed while
+     * orders use it keeps its old row, flagged deleted, with its carrier_zone
+     * rows, and that older version is no longer offered nor read by
+     * somcp_get_carrier.
+     *
+     * @param int $idZone
+     *
+     * @return array<int, int>
+     */
+    public static function carriers(int $idZone): array
+    {
+        return array_map('intval', array_column(Db::getInstance()->executeS(
+            'SELECT DISTINCT cz.`id_carrier` FROM `' . _DB_PREFIX_ . 'carrier_zone` cz'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'carrier` c ON c.`id_carrier` = cz.`id_carrier` AND c.`deleted` = 0'
+            . ' WHERE cz.`id_zone` = ' . (int) $idZone . ' ORDER BY cz.`id_carrier` ASC'
+        ) ?: [], 'id_carrier'));
     }
 }

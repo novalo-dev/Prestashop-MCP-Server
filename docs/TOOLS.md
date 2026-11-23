@@ -3519,11 +3519,11 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 **Does** - changes one language of **International > Localization >
 Languages**, as its **Edit** page and the **Enabled** switch of the list do:
 **Name**, **ISO code**, **Language code**, **Date format**, **Date format
-(full)**, **RTL language**, **Status** and **Flag**. Only the fields that
-differ are written; a row of `somcp_list_languages` given back whole writes
-nothing.
+(full)**, **RTL language**, **Status**, **Flag** and **"No-picture" image**.
+Only the fields that differ are written; a row of `somcp_list_languages` given
+back whole writes nothing.
 
-**Do not use for** - the **"No-picture" image** (part 4, #376); deleting a language (→
+**Do not use for** - deleting a language (→
 `somcp_delete_language`); translating a text (→ the update tool of that
 object).
 
@@ -3540,6 +3540,7 @@ object).
 | `is_rtl` | **RTL language** | boolean | no | |
 | `active` | **Status** | boolean | no | `false` for the default language refused: `active: <name> is the default language of the shop - it cannot be disabled` |
 | `flag` | **Flag** | object | no | a new picture, `{url}` or `{upload_ref}` through `SomcpUpload::schema()` and `argument()`, declared with `files: ['flag' => SomcpUpload::images()]`, the rules of the logo of `somcp_update_carrier`; the `download_ref` `somcp_list_languages` answers for this language (or `null` when it has none) is no change, recognised through `SomcpUpload::same($flag, 'language_flag', $id)` |
+| `no_picture` | **"No-picture" image** | object | no | the picture the storefront shows, in this language, for a product, a category or a brand without one; `{url}` or `{upload_ref}`, the same rules as `flag`; the page shows no preview of it and nothing reads it back, so no `SomcpDownload` kind: given, it is always written |
 
 `locale` and `default` are taken only when they equal the stored value,
 otherwise `<field>: worked out by the shop`, the rule of
@@ -3562,17 +3563,26 @@ A flag is fetched with `SomcpUpload::fetchImage()` before anything is written,
 and stored after the row as `uploadFlagImageIfChanged()` does:
 `Language::deleteImage()`, then `ImageManager::resize()` into
 `img/l/<id_lang>.jpg`, forced to JPEG, and the cached
-`img/tmp/lang_mini_<id_lang>_<id_shop>.jpg` of every shop removed.
+`img/tmp/lang_mini_<id_lang>_<id_shop>.jpg` of every shop removed. A
+"No-picture" image is fetched the same way and written after the row, with the
+ISO code the language holds then (it may change in the same call), as
+`AbstractLanguageHandler::copyNoPictureImage()` does: `<iso>.jpg` at its own
+size into `img/p/`, `img/c/` and `img/m/`, then `<iso>-default-<type>.jpg` in
+the same three folders at the size of every row of
+`ImageType::getImagesTypes('products')`, forced to JPEG; the first resize that
+fails stops the copy (`refused: the shop could not resize the image`).
 Log lines `language_updated` and `language_update_failed`.
 
 **Returns** - the shape of every update tool (#356): `changed` (boolean),
 `id_lang`, `changes` (`field`, `old`, `new`; for `flag`, `new` is
 `SomcpUpload::origin()`), `reason` when nothing differs, `flag` when one was
-given (`SomcpUpload::origin()` with `stored: true` or `refused: <reason>`),
+given and `no_picture` likewise (`SomcpUpload::origin()` with `stored: true`
+or `refused: <reason>`; in `changes`, its `old` is `null`, since it cannot be
+read),
 and `language`, the row read back as `somcp_list_languages` gives it.
 
 Warnings, beside the answer:
-- a flag the shop could not take while other fields were saved: `The other changes were saved, but the flag was not: <reason>.`; a flag refused with nothing else to change is an error;
+- a flag or a "No-picture" image the shop could not take while other fields were saved: `The other changes were saved, but the flag was not: <reason>.` (or `the "No-picture" image`); a picture refused with nothing else to change is an error;
 - `iso_code` changed: `The translation files and e-mail templates of <old> now sit under <new>; a module or theme that ships files for <old> only will not find them.`;
 - `active` set to `false` with employees moved: `<n> employees used <name> in the back office; they now use <default name>.`;
 - any field changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `A language is shared by every shop: this change reaches every shop of this installation (<n + 1>).`
@@ -3583,7 +3593,7 @@ changed.`
 **Notes**
 - The texts of the shop in that language (products, categories, pages) are not touched: this is the language itself, not a translation.
 - **Locale** is not taken: PrestaShop derives it from the ISO code and 9.0.0 shows it read-only.
-- The change of the ISO code itself is not run on the CI shop: it moves real folders; the refusal of a code another language holds is.
+- The change of the ISO code itself is not run on the CI shop: it moves real folders; the refusal of a code another language holds is. Nor is the "No-picture" image written there: it replaces the real pictures of the storefront.
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - 9.0.0 shows **Locale** read-only and its list has a **Locale** column; the handler, the checks and the table are the same.

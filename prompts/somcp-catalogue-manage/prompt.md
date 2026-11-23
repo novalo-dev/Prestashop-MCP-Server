@@ -351,8 +351,8 @@ language of the shop left out takes the default language's text. Lengths count
 the visible text, spaces included, HTML tags not counted. The ISO codes of the
 shop's languages, which one is the default and which are enabled, come from
 `somcp_list_languages`: only an enabled language is accepted. A language's
-name, ISO code, date formats, status and flag are changed with
-`somcp_update_language`; the default language stays enabled, switching one off
+name, ISO code, date formats, status, flag and "No-picture" image are changed
+with `somcp_update_language`; the default language stays enabled, switching one off
 moves the employees who use it to the default, and a new ISO code moves the
 translation files and e-mail templates of the old one: confirm with the
 merchant first. `somcp_delete_language` deletes a language with every

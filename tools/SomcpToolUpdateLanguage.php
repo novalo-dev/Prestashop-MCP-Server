@@ -21,12 +21,12 @@ declare(strict_types=1);
  * somcp_update_language - changes one language of International >
  * Localization > Languages, as its Edit page and the Enabled switch of the
  * list do: Name, ISO code, Language code, the two date formats, RTL language,
- * Status and Flag.
+ * Status, Flag and "No-picture" image.
  *
  * A shop that opens a second language had its dates printed in the format of
  * the first, and could not switch a language on or off without the back
- * office. The flag is taken as every image of the module is; the "No-picture"
- * image, which writes many pictures of its own, is left to its own part.
+ * office. The flag and the "No-picture" image are taken as every image of the
+ * module is.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -63,7 +63,7 @@ class SomcpToolUpdateLanguage
             'somcp_update_language',
             Somcp::t('Change a language'),
             'Changes one language of International > Localization > Languages, as its Edit page: Name, ISO code, '
-                . 'Language code, Date format, Date format (full), RTL language, Status and Flag. Take id_lang from '
+                . 'Language code, Date format, Date format (full), RTL language, Status, Flag and "No-picture" image. Take id_lang from '
                 . 'somcp_list_languages; a row of that list can be given back whole, only what differs is written. '
                 . 'The default language stays enabled. Not for the texts of a product or a page in that language: '
                 . 'the update tool of that object. To delete one, somcp_delete_language.',
@@ -104,6 +104,7 @@ class SomcpToolUpdateLanguage
                             . 'it move to the default language. Left out, kept.',
                     ],
                     'flag' => SomcpUpload::schema('Merchant. Flag: a new picture, which replaces the current one.', 'the flag'),
+                    'no_picture' => SomcpUpload::schema('Merchant. Shown in this language where a product has no picture.', 'the image'),
                     'iso_code' => [
                         'type' => 'string',
                         'description' => 'Merchant. ISO code: two letters, for example fr, stored lower case; the '
@@ -120,7 +121,7 @@ class SomcpToolUpdateLanguage
             // Editing a language is what its Edit page and the Enabled switch
             // ask for in Team, Permissions; adding one is a different right.
             SomcpTool::acts(SomcpPermission::EDIT, 'AdminLanguages'),
-            files: ['flag' => SomcpUpload::images()]
+            files: ['flag' => SomcpUpload::images(), 'no_picture' => SomcpUpload::images()]
         );
     }
 
@@ -137,7 +138,7 @@ class SomcpToolUpdateLanguage
 
         $errors = SomcpTool::unknownFields(
             $arguments,
-            array_merge(['id_lang', 'is_rtl', 'active', 'flag'], array_keys(self::TEXTS), self::COMPUTED)
+            array_merge(['id_lang', 'is_rtl', 'active', 'flag', 'no_picture'], array_keys(self::TEXTS), self::COMPUTED)
         );
         $stored = null;
         $idLang = SomcpTool::id($arguments, 'id_lang');
@@ -218,6 +219,16 @@ class SomcpToolUpdateLanguage
             }
         }
 
+        // Nothing reads the "No-picture" image back, so a value given is
+        // never the stored one: it is always written.
+        $noPicture = null;
+        if (array_key_exists('no_picture', $arguments) && $arguments['no_picture'] !== null) {
+            $noPicture = SomcpUpload::argument($arguments, 'no_picture', $errors, 'no-picture image');
+            if ($noPicture !== null && $row !== null) {
+                self::record($changes, 'no_picture', null, SomcpUpload::origin($noPicture));
+            }
+        }
+
         // Taken only as the list answers them, so a row given back whole is
         // not refused; any other value would claim a change this tool does
         // not make.
@@ -240,7 +251,7 @@ class SomcpToolUpdateLanguage
             ]);
         }
 
-        return self::apply($idShop, $idLang, $idEmployee, $default, $row, $set, $changes, ['flag' => $flag]);
+        return self::apply($idShop, $idLang, $idEmployee, $default, $row, $set, $changes, ['flag' => $flag, 'no_picture' => $noPicture]);
     }
 
     /**
@@ -387,7 +398,11 @@ class SomcpToolUpdateLanguage
         // The pictures go after the row, as the Edit page writes them; one the
         // shop cannot store is answered beside the fields that were saved.
         foreach ($sources as $field => $source) {
-            $refusal = self::storeFlag($language, $idLang, $files[$field]);
+            // After update(): the "No-picture" image is named after the ISO
+            // code, which the same call may have changed.
+            $refusal = $field === 'flag'
+                ? self::storeFlag($language, $idLang, $files[$field])
+                : self::storeNoPicture((string) $language->iso_code, $files[$field]);
             $answers[$field] = SomcpUpload::origin($source)
                 + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
             if ($refusal !== '') {
@@ -414,7 +429,8 @@ class SomcpToolUpdateLanguage
         foreach ($answers as $field => $answer) {
             $result[$field] = $answer;
             if (isset($answer['refused'])) {
-                $warnings[] = 'The other changes were saved, but the ' . $field . ' was not: ' . $answer['refused'] . '.';
+                $warnings[] = 'The other changes were saved, but the '
+                    . ($field === 'flag' ? 'flag' : '"No-picture" image') . ' was not: ' . $answer['refused'] . '.';
             }
         }
         if (isset($set['iso_code'])) {
@@ -503,6 +519,44 @@ class SomcpToolUpdateLanguage
             return '';
         } catch (Throwable $e) {
             return 'the shop could not save it';
+        }
+    }
+
+    /**
+     * Writes a "No-picture" image in hand as
+     * AbstractLanguageHandler::copyNoPictureImage() does on 8 and 9.
+     *
+     * <iso>.jpg at its own size, then <iso>-default-<type>.jpg at the size of
+     * every product image type, in the folders of the products, categories
+     * and brands. Forced to JPEG, as the flag: the storefront asks for .jpg.
+     * The first resize that fails stops the copy, as the core stops.
+     *
+     * @param string $iso the ISO code the language holds now
+     * @param string $file from fetch()
+     *
+     * @return string the reason it was refused, '' once stored
+     */
+    private static function storeNoPicture(string $iso, string $file): string
+    {
+        $folders = [_PS_IMG_DIR_ . 'p/', _PS_IMG_DIR_ . 'c/', _PS_IMG_DIR_ . 'm/'];
+        try {
+            foreach ($folders as $folder) {
+                if (!ImageManager::resize($file, $folder . $iso . '.jpg', null, null, 'jpg', true)) {
+                    return 'the shop could not resize the image';
+                }
+            }
+            foreach (ImageType::getImagesTypes('products') as $type) {
+                $name = $iso . '-default-' . stripslashes((string) $type['name']) . '.jpg';
+                foreach ($folders as $folder) {
+                    if (!ImageManager::resize($file, $folder . $name, (int) $type['width'], (int) $type['height'], 'jpg', true)) {
+                        return 'the shop could not resize the image';
+                    }
+                }
+            }
+
+            return '';
+        } catch (Throwable $e) {
+            return 'the shop could not resize the image';
         }
     }
 

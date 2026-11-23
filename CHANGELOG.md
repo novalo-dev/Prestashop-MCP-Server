@@ -27,8 +27,9 @@ switch it on and off, without the back office. The default language cannot be sw
 and when a language is, the employees who used it move to the default language
 and the merchant is told how many. A new ISO code takes the translation files
 and e-mail templates of the language with it, and is refused when another
-language already has it. Its flag is replaced from an address or a file sent in
-the chat.
+language already has it. Its flag, and the "No-picture" image the storefront
+shows in that language for a product, a category or a brand without a picture,
+are replaced from an address or a file sent in the chat.
 
 **Delete a language.** The new tool somcp_delete_language deletes a language of
 International > Localization > Languages, as the Delete of its row does. Every

@@ -1450,6 +1450,10 @@ if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall))
     }
 }
 
+// The "No-picture" image of a language (#376) is not written on the CI shop:
+// it replaces the real pictures the storefront shows for every product,
+// category and brand without one. Its refusals are in the scenario.
+
 // A language deleted (#371): the default language is refused; a language
 // added for the test, without any _lang row copied, is deleted with the tool
 // and gone after. The CI shop's own languages are never deleted; the test

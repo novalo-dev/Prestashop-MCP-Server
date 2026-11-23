@@ -1269,6 +1269,52 @@ if ($updateState !== null) {
     }
 }
 
+// The default currency read in full (#363): its identifier depends on the
+// country the CI shop is installed for, so it is taken from
+// somcp_list_currencies rather than written in the JSON scenario.
+$listCurrencies = $registry->get('somcp_list_currencies');
+$getCurrency = $registry->get('somcp_get_currency');
+if ($listCurrencies !== null && $getCurrency !== null) {
+    ++$calls;
+    $currencyCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $answer = json_decode(trim($text), true);
+
+        return [$result, is_array($answer) && empty($result['isError']) ? $answer : []];
+    };
+    try {
+        $idDefault = 0;
+        foreach ($currencyCall($listCurrencies, [])[1]['currencies'] ?? [] as $row) {
+            if (is_array($row) && ($row['default'] ?? false) === true) {
+                $idDefault = (int) $row['id_currency'];
+            }
+        }
+        [$result, $answer] = $currencyCall($getCurrency, ['id_currency' => $idDefault]);
+        if ($idDefault === 0 || ($answer['id_currency'] ?? null) !== $idDefault || ($answer['default'] ?? null) !== true
+            || !is_int($answer['precision'] ?? null) || ($answer['alternative'] ?? null) !== false) {
+            $failures[] = 'somcp_get_currency (the default currency): expected default true, a precision and alternative false - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_get_currency (the default currency)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_get_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // The address format of a country changed, given back, then the same call
 // again (#361): the JSON scenario cannot hold the lines France stores, which
 // the localization pack of the CI shop decides. France is read first and its

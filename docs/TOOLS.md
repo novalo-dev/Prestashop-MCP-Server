@@ -3520,9 +3520,10 @@ default. The `iso_code` is what the `currency` of the other tools takes
 (`somcp_create_order`, `somcp_set_order_currency`,
 `somcp_create_catalog_price_rule`). Read only.
 
-**Do not use for** - changing the currency of an order (→
-`somcp_set_order_currency`); adding, changing, enabling or deleting a
-currency, or updating the exchange rates (later tools).
+**Do not use for** - every field of one currency (→ `somcp_get_currency`);
+changing the currency of an order (→ `somcp_set_order_currency`); adding,
+changing, enabling or deleting a currency, or updating the exchange rates
+(later tools).
 
 **Parameters**
 
@@ -3556,11 +3557,54 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 `currencies: []`, `count: 0`.
 
 **Notes**
-- Read through a query on `currency` (`deleted = 0`) joined to `currency_shop` on the shop of the token and to `currency_lang` in the language asked, rather than `Currency::getCurrencies()`, which has no name or ISO code filter; the default read as `Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop)`.
+- Read through a query on `currency` (`deleted = 0`) joined to `currency_shop` on the shop of the token and to `currency_lang` in the language asked, rather than `Currency::getCurrencies()`, which has no name or ISO code filter; the default read as `Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop)`. The query and the building of a row are shared with `somcp_get_currency` (`SomcpToolListCurrencies::currency()` and `row()`).
 - The **Exchange rate** block below the list (**Live exchange rates**, **Update exchange rates**) holds actions, not part of this list.
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its bulk actions, its labels or the tables (`currency`, `currency_lang`, `currency_shop`); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
+
+#### `somcp_get_currency`
+**State**: written · [issue #363](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/363)
+**Nature**: `acts(VIEW, 'AdminCurrencies')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads one currency of **International > Localization >
+Currencies** as its **Edit** page shows it: the fields of
+`somcp_list_currencies`, plus **Decimals**, the numeric ISO code, whether it
+is an alternative currency, the format of the language (**Customize symbol
+and format**) and whether its names or symbols differ from the CLDR ones. It
+is the read before the write: `somcp_update_currency` takes back what this
+one gives. Read only.
+
+**Do not use for** - many currencies (→ `somcp_list_currencies`); the
+currency of a country (→ `somcp_get_country`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | - | integer | yes | the currency, from `somcp_list_currencies`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_currency')`; not a currency of the shop (`currency_shop`, `deleted = 0`, as `somcp_list_currencies` filters it): `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')` |
+| `language` | - | string | no | ISO code of one of the shop's active languages, for **Currency name**, **Symbol** and the format (`SomcpTool::readLanguage()`, refused with `SomcpTool::languageProblem()`); the shop default language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - `language`, then the keys of the row of `somcp_list_currencies`
+(`id_currency`, `name`, `symbol`, `iso_code`, `conversion_rate`, `active`,
+`default`), built by `SomcpToolListCurrencies::row()` and read through
+`SomcpToolListCurrencies::currency()`, the query of the list; then:
+- `precision` (**Decimals**): an integer;
+- `numeric_iso_code`: a string, or `null` when empty;
+- `alternative`: boolean, `currency.unofficial` (**Create an alternative currency**, the words of the add page);
+- `pattern`: the stored `currency_lang.pattern` of that language, or `null` when empty (PrestaShop then formats with the CLDR pattern of the language);
+- `modified`: boolean, `currency.modified` (the names or symbols differ from the CLDR ones, which **Restore default settings** brings back).
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once.
+
+**Notes**
+- The back-office address of the page is never part of the answer.
+- A read: no log line, nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the page, the fields or the tables (page title **Currencies** on 8.0.1, **Editing currency <name>** on 9.0.0); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
 
 #### `somcp_create_tax`
 **State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)

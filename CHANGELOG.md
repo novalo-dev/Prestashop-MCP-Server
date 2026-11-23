@@ -82,6 +82,13 @@ stored and as the storefront applies it, so the merchant learns which lines
 an address of that country shows, even on PrestaShop 9 where the edit page
 displays the field empty.
 
+**Read a currency.** The new tool somcp_get_currency reads one currency of
+International > Localization > Currencies as its edit page shows it, with what
+the list of currencies leaves out: its number of decimals, its numeric ISO
+code, whether it is an alternative currency, its price format in the language
+asked and whether its names or symbols were customized. The assistant can now
+tell the merchant how prices in that currency are shown before changing it.
+
 ### Changed
 
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA

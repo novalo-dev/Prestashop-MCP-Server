@@ -25,6 +25,12 @@ needs (neighbouring countries, the mainland apart from the islands) instead of
 only using the zones the install left. It is told the zone starts with no
 country, and when another zone already has the same name.
 
+**Rename or close a delivery zone.** The new tool somcp_update_zone changes the
+name of a zone, or allows or stops shipping to it, as its edit form and the
+Enabled switch of the list do. Only what differs is saved, so giving back a zone
+as it was read changes nothing. When a zone is closed, the assistant is told
+which carriers served it and how many countries no longer get them.
+
 ### Changed
 
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA

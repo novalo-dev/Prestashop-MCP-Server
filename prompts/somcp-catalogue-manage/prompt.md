@@ -47,6 +47,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_carrier`
 - `somcp_list_zones`
 - `somcp_create_zone`
+- `somcp_update_zone`
 - `somcp_list_countries`
 - `somcp_list_states`
 - `somcp_update_carrier`
@@ -217,7 +218,8 @@ serves before tying it, read it with `somcp_get_carrier`.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts
-with no country. The countries, with their ISO code, their
+with no country. `somcp_update_zone` renames a zone or allows or stops shipping
+to it; before stopping it, tell the merchant which carriers serve it. The countries, with their ISO code, their
 zone and whether they are enabled, come from `somcp_list_countries`. The
 states of a country, with the ISO code `state` and `states` take, come from
 `somcp_list_states`.

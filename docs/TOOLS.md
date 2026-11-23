@@ -2424,6 +2424,49 @@ read `somcp_list_zones` before calling again.
 
 **Differences between 8.0.1 and 9.0.0** - none in the fields, the checks or the tables; only the card title (**Zones** / **Zone**) and the multistore label (**Shop association** / **Store association**).
 
+#### `somcp_update_zone`
+**State**: written · [issue #349](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/349)
+**Nature**: `acts(EDIT, 'AdminZones')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes one zone of **International > Locations > Zones**, as its
+edit form then **Save** do (**Name**, **Active**), or as the **Enabled** switch
+of the list and the bulk actions **Enable selection** / **Disable selection**
+do for one zone.
+
+**Do not use for** - the zones a carrier serves (→ `somcp_update_carrier`,
+`zones`); the zone of a country (a later tool); creating a zone
+(→ `somcp_create_zone`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_zone` | **ID** | integer | yes | read with `SomcpTool::id()`; a zone the shop of the token does not have (`zone_shop`) refused with `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+| `name` | **Name** | string | no | the checks of `somcp_create_zone`, through `SomcpToolCreateZone::name()`: required when given, 64 characters at most, `validateField('name', ...)` |
+| `active` | **Active** (form), **Enabled** (list) | boolean | no | not a boolean: `active: true or false` |
+| `countries` | | integer | no | accepted only as `somcp_list_zones` gives it back, so a row of the list can be given back whole; another value refused: `countries: worked out by the shop - move countries with the countries tools` |
+
+At least one of `name` and `active`, otherwise `name or active: give at least
+one field to change`. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - `updated` and `changed` (the names of the fields written; `[]`
+and `updated: false` when nothing differed, then nothing is written), and
+`zone`, the row of `somcp_list_zones` read back (`SomcpToolListZones::zone()`).
+A `warning` when:
+- `active` set to `false` on a zone that carriers serve (`carrier_zone`): `Shipping is now disallowed to zone <id>: the <n> carriers that serve it (<ids>) are no longer offered to addresses in its <m> countries.`;
+- the new `name` is taken by another zone of the shop, the warning of `somcp_create_zone`;
+- the zone is also in another shop (`zone_shop`): `also_in_other_shops: <n>`, since a zone has one row in `zone` and the change reaches every shop of it (`SomcpToolUpdateZone::otherShops()`).
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once.
+
+**Notes**
+- Replayable: the same call twice writes once, the second answers `updated: false`.
+- Only the fields given and different from the stored zone are written (`Zone::update()`). Logged as `zone_updated` with the fields changed.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the fields, the checks or the tables; only the titles of the edit page (**Edit: Asia** / **Editing zone Asia**).
+
 #### `somcp_list_countries`
 **State**: written · [issue #338](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/338)
 **Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`

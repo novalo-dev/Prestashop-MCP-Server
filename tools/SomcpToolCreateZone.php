@@ -53,7 +53,8 @@ class SomcpToolCreateZone
             'Creates one zone of International > Locations > Zones, as Add new zone then Save: Name and Active. A '
                 . 'zone groups countries for the carriers and their prices per zone. Read somcp_list_zones first: '
                 . 'the same call twice creates two zones. The name is the merchant\'s - ask, never invent. A new '
-                . 'zone holds no country. To give zones to a carrier use somcp_update_carrier.',
+                . 'zone holds no country. To give zones to a carrier use somcp_update_carrier; to rename or '
+                . 'disable a zone, somcp_update_zone.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -154,7 +155,7 @@ class SomcpToolCreateZone
     /**
      * The name given in the call, checked with the running version's rules, or null with the reason.
      *
-     * Public so the tool that changes a zone takes a name the same way.
+     * Public so somcp_update_zone takes a name the same way.
      *
      * @param array<string, mixed> $arguments
      * @param bool $required

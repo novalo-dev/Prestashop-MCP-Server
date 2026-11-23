@@ -981,11 +981,11 @@ if ($createTax !== null) {
     }
 }
 
-// A zone created (#348): the JSON scenario cannot hold the identifier of a
-// zone it created, and every demo zone holds countries, so none can be the one
-// made here. Two zones are created, the second under the first one's name in
-// other letters, then both are removed; whatever is left is cleaned up at the
-// end.
+// A zone created and changed (#348, #349): the JSON scenario cannot hold the
+// identifier of a zone it created, and every demo zone holds countries, so none
+// can be the one made or changed here. Two zones are created, the second under
+// the first one's name in other letters, the first renamed and disabled, then
+// both are removed; whatever is left is cleaned up at the end.
 $createZone = $registry->get('somcp_create_zone');
 if ($createZone !== null) {
     $zoneCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
@@ -1046,6 +1046,49 @@ if ($createZone !== null) {
             $failures[] = 'somcp_create_zone (a name another zone has): expected it created with the second warning - ' . excerpt($result);
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_create_zone (a name another zone has, warned)');
+        }
+
+        // The zone changed in place (#349): renamed, disabled, then its row
+        // of somcp_list_zones given back whole, which changes nothing.
+        $updateZone = $registry->get('somcp_update_zone');
+        if ($updateZone !== null && $idZone > 0) {
+            $calls += 2;
+            $zoneUpdates = [
+                'renamed' => [['name' => 'somcp zone 2'], ['name']],
+                'disabled' => [['active' => false], ['active']],
+            ];
+            foreach ($zoneUpdates as $why => [$arguments, $fields]) {
+                $result = $zoneCall($updateZone, ['id_zone' => $idZone] + $arguments);
+                $text = $zoneText($result);
+                $answer = json_decode(trim($text), true);
+                // A zone that serves no carrier: disabling it warns of none.
+                if (!empty($result['isError']) || !is_array($answer) || ($answer['updated'] ?? null) !== true
+                    || ($answer['changed'] ?? null) !== $fields || strpos($text, 'Shipping is now disallowed') !== false) {
+                    $failures[] = 'somcp_update_zone (' . $why . '): expected changed ' . implode(', ', $fields) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_zone (' . $why . ')');
+                }
+            }
+
+            $listZones = $registry->get('somcp_list_zones');
+            if ($listZones !== null) {
+                $calls += 2;
+                $listed = json_decode(trim($zoneText($zoneCall($listZones, ['id_zone' => $idZone]))), true);
+                $row = is_array($listed) ? ($listed['zones'][0] ?? null) : null;
+                if (!is_array($row) || (int) ($row['id_zone'] ?? 0) !== $idZone || ($row['name'] ?? '') !== 'somcp zone 2'
+                    || ($row['active'] ?? null) !== false) {
+                    $failures[] = 'somcp_update_zone (the row of somcp_list_zones given back): the changed row could not be read';
+                } else {
+                    $result = $zoneCall($updateZone, $row);
+                    $answer = json_decode(trim($zoneText($result)), true);
+                    if (!empty($result['isError']) || !is_array($answer) || ($answer['updated'] ?? null) !== false
+                        || ($answer['changed'] ?? null) !== []) {
+                        $failures[] = 'somcp_update_zone (the row of somcp_list_zones given back): expected no change - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_zone (the row of somcp_list_zones given back, nothing written)');
+                    }
+                }
+            }
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_zone (a new zone): ' . get_class($e) . ' - ' . $e->getMessage();

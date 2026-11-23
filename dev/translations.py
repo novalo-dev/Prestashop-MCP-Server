@@ -894,6 +894,10 @@ T = {
  "Créer une zone",
  "Crear una zona",
  "Eine Zone anlegen"),
+"Change a zone": (
+ "Modifier une zone",
+ "Modificar una zona",
+ "Eine Zone ändern"),
 "List countries": (
  "Lister les pays",
  "Listar los países",

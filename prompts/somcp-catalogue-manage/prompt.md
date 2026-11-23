@@ -364,6 +364,8 @@ currency is an alternative one, from `somcp_get_currency`. An official
 currency the shop does not have yet is added with `somcp_create_currency`, its
 ISO code and the exchange rate the merchant gives; the shop fills its names and
 symbols, and payment modules accept it only once set in Payment > Preferences.
+A currency PrestaShop does not know (a local or loyalty currency) is added by
+the same tool with `alternative`, and the name and symbol the merchant gives.
 A currency's
 exchange rate, decimals, status, names, symbols and symbol position are changed
 with `somcp_update_currency`, which also restores the default settings: the

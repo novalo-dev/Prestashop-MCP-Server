@@ -55,9 +55,10 @@ class SomcpToolCreateCurrency
         return new SomcpTool(
             'somcp_create_currency',
             Somcp::t('Add a currency'),
-            'Adds one official currency to International > Localization > Currencies, as Add new currency with '
-                . 'Select a currency: ISO code, Exchange rate, Decimals, Status, and optionally the names and '
-                . 'symbols, which the shop otherwise fills from CLDR. Read somcp_list_currencies first. The rate is '
+            'Adds one currency to International > Localization > Currencies, as Add new currency: an official one '
+                . '(Select a currency) or, with alternative, one PrestaShop does not know (Create an alternative '
+                . 'currency). ISO code, Exchange rate, Decimals, Status, and optionally the names and symbols, '
+                . 'otherwise filled from CLDR. Read somcp_list_currencies first. The rate is '
                 . 'the merchant\'s - ask, never invent. For a currency the shop already has, '
                 . 'somcp_update_currency; payment modules accepting it are set in Payment > Preferences.',
             [
@@ -66,7 +67,13 @@ class SomcpToolCreateCurrency
                     'iso_code' => [
                         'type' => 'string',
                         'description' => 'Merchant. Required. Select a currency: the ISO 4217 code of an official '
-                            . 'currency (e.g. CHF, GBP).',
+                            . 'currency (e.g. CHF, GBP); with alternative, three letters no official currency has.',
+                    ],
+                    'alternative' => [
+                        'type' => 'boolean',
+                        'description' => 'Merchant. Create an alternative currency: true for a currency PrestaShop '
+                            . 'does not know (a local or loyalty currency), named by the merchant. Left out, an '
+                            . 'official one.',
                     ],
                     'conversion_rate' => [
                         'type' => 'number',
@@ -76,7 +83,7 @@ class SomcpToolCreateCurrency
                     'precision' => [
                         'type' => 'integer',
                         'description' => 'Merchant. Decimals: the number of decimals prices show, 0 or more. Left '
-                            . 'out, the decimals of the currency in CLDR.',
+                            . 'out, the decimals of the currency in CLDR, 2 for an alternative one.',
                     ],
                     'active' => [
                         'type' => 'boolean',
@@ -85,7 +92,8 @@ class SomcpToolCreateCurrency
                     'name' => [
                         'type' => ['string', 'object'],
                         'description' => 'Merchant. Currency name, an object keyed by ISO code of language (a text '
-                            . 'alone on a shop with one language). Left out or empty, the CLDR name.',
+                            . 'alone on a shop with one language). Left out or empty, the CLDR name (the ISO code '
+                            . 'for an alternative currency).',
                     ],
                     'symbol' => [
                         'type' => ['string', 'object'],
@@ -122,9 +130,19 @@ class SomcpToolCreateCurrency
 
         $errors = SomcpTool::unknownFields(
             $arguments,
-            ['iso_code', 'conversion_rate', 'precision', 'active', 'name', 'symbol', 'languages'],
+            ['iso_code', 'alternative', 'conversion_rate', 'precision', 'active', 'name', 'symbol', 'languages'],
             ['id_currency']
         );
+        $alternative = false;
+        if (array_key_exists('alternative', $arguments) && $arguments['alternative'] !== null) {
+            // A boolean only: "false" cast to bool is true, and would add a
+            // currency without the official names, symbol and decimals.
+            if (!is_bool($arguments['alternative'])) {
+                $errors[] = 'alternative: true or false';
+            } else {
+                $alternative = $arguments['alternative'];
+            }
+        }
         // Typed for the analysis only: the class exists on 8 and 9, and the
         // service is looked up by its identifiers, never by a constructor.
         /** @var PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository|null $repository */
@@ -138,13 +156,18 @@ class SomcpToolCreateCurrency
         $existing = null;
         if (!isset($arguments['iso_code']) || !is_string($arguments['iso_code'])
             || !preg_match('/^[A-Za-z]{3}$/', trim($arguments['iso_code']))) {
-            $errors[] = 'iso_code: required, the three letters of an official currency (ISO 4217, for example USD or '
-                . 'EUR)';
+            $errors[] = $alternative
+                ? 'iso_code: required, three letters no official currency has'
+                : 'iso_code: required, the three letters of an official currency (ISO 4217, for example USD or EUR)';
         } else {
             $iso = Tools::strtoupper(trim($arguments['iso_code']));
             if ($cldr !== null) {
                 $reference = $cldr->getCurrency($iso);
-                if ($reference === null) {
+                if ($alternative && $reference !== null) {
+                    // As the alternative add refuses it: an official code
+                    // takes the names, symbol and decimals CLDR gives it.
+                    $errors[] = 'iso_code: ' . $iso . ' is an official currency - leave alternative out to add it';
+                } elseif (!$alternative && $reference === null) {
                     $errors[] = 'iso_code: ' . $iso . ' is not an official currency PrestaShop knows (ISO 4217, for '
                         . 'example USD or EUR)';
                 }
@@ -195,7 +218,14 @@ class SomcpToolCreateCurrency
         if ($errors !== [] || $iso === null || $rate === null) {
             return SomcpTool::refused('created', $errors);
         }
-        if ($repository === null || $reference === null) {
+        if ($repository === null || $cldr === null) {
+            if ($alternative) {
+                // An alternative currency needs no CLDR data, but without it
+                // the code cannot be told apart from an official one.
+                return SomcpTool::refused('created', ['iso_code: the currencies PrestaShop knows cannot be read here, '
+                    . 'so ' . $iso . ' cannot be checked - add it on the Add new currency page']);
+            }
+
             // Without CLDR neither the official list, the numeric code nor
             // the names can be known: nothing half-filled is written.
             return SomcpTool::text('Nothing was created. The currencies PrestaShop knows cannot be read here - add it '
@@ -209,10 +239,17 @@ class SomcpToolCreateCurrency
         $currency->iso_code = $iso;
         $currency->active = $active;
         $currency->deleted = false;
-        $currency->unofficial = false;
+        $currency->unofficial = $alternative;
         $currency->conversion_rate = $rate;
-        $currency->numeric_iso_code = (string) $reference->getNumericIsoCode();
-        $currency->precision = $precision ?? (int) $reference->getDecimalDigits();
+        if ($reference !== null) {
+            $currency->numeric_iso_code = (string) $reference->getNumericIsoCode();
+            $currency->precision = $precision ?? (int) $reference->getDecimalDigits();
+        } else {
+            // No numeric code and the 2 decimals of the form: CLDR has neither
+            // for a currency it does not know.
+            $currency->numeric_iso_code = null;
+            $currency->precision = $precision ?? 2;
+        }
         // Tied to the shop of the token only, so currency_shop gets its row
         // and its rate, as the zone and state tools write their shop rows.
         $currency->id_shop_list = [$idShop];
@@ -260,6 +297,22 @@ class SomcpToolCreateCurrency
             . ($restored ? ' restored' : ''), '', $idEmployee);
 
         $warnings = [];
+        if ($alternative) {
+            // refreshLocalizedCurrencyData() puts the ISO code where a name or
+            // a symbol was left empty: said, so the merchant can name it.
+            foreach (['name' => $names, 'symbol' => $symbols] as $field => $texts) {
+                $empty = [];
+                foreach ($texts as $idLang => $text) {
+                    if ($text === '') {
+                        $empty[] = (string) Language::getIsoById((int) $idLang);
+                    }
+                }
+                if ($empty !== []) {
+                    $warnings[] = $field . ' left empty in ' . implode(', ', $empty) . ': the ISO code ' . $iso
+                        . ' is shown instead.';
+                }
+            }
+        }
         if ($restored) {
             $warnings[] = $iso . ' was deleted before: the same currency is back, without the payment modules it had '
                 . 'in Payment > Preferences.';

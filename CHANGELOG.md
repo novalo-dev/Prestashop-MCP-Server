@@ -33,7 +33,10 @@ does: its ISO code, its exchange rate, and optionally its decimals, status,
 names and symbols, which the shop otherwise fills in every language. A shop
 opening to a new market can now add its currency without the back office. A currency
 deleted before comes back as the same currency, and the merchant is told that
-payment modules still have to accept it in Payment > Preferences.
+payment modules still have to accept it in Payment > Preferences. An
+alternative currency can be added too, as Create an alternative currency does:
+a local or loyalty currency PrestaShop does not know, with the code, name and
+symbol the merchant gives and 2 decimals unless told otherwise.
 
 **Create a delivery zone.** The new tool somcp_create_zone creates a zone of
 International > Locations > Zones, with its name and whether shipping to it is

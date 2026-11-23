@@ -1536,6 +1536,56 @@ if ($createCurrency !== null && isset($currencyCall) && (int) Db::getInstance()-
     }
 }
 
+// An alternative currency added (#373): ZZP is no ISO 4217 code (ZZ codes
+// are not assigned), checked first against CLDR so a future CLDR that knows
+// it is said rather than failed on. It is created with the merchant's name
+// and symbol and the 2 decimals of the form, then deleted with
+// somcp_delete_currency; the row is removed from every table in finally.
+$alternativeIso = 'ZZP';
+if ($createCurrency !== null && isset($currencyCall) && (int) Db::getInstance()->getValue(
+    "SELECT COUNT(*) FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($alternativeIso) . "'"
+) === 0) {
+    ++$calls;
+    try {
+        $repository = SomcpBackOffice::cldrLocaleRepository();
+        $cldr = $repository !== null
+            ? SomcpToolCreateCurrency::cldrLocale($repository, (int) Configuration::get('PS_LANG_DEFAULT'))
+            : null;
+        if ($cldr === null) {
+            $failures[] = 'somcp_create_currency (alternative ZZP): CLDR could not be read on this shop';
+        } elseif ($cldr->getCurrency($alternativeIso) !== null) {
+            $failures[] = 'somcp_create_currency (alternative ZZP): CLDR now knows ZZP - pick another code for the test';
+        } else {
+            [$result, $answer] = $currencyCall($createCurrency, ['iso_code' => $alternativeIso, 'alternative' => true,
+                'conversion_rate' => 10, 'name' => 'Points', 'symbol' => 'P',
+                'languages' => [(string) Language::getIsoById((int) $context->language->id)]]);
+            $deleted = [];
+            if (($answer['created'] ?? null) === true && $deleteCurrency !== null) {
+                $deleted = $currencyCall($deleteCurrency, ['id_currency' => (int) $answer['id_currency']])[1];
+            }
+            if (($answer['created'] ?? null) !== true || ($answer['currency']['alternative'] ?? null) !== true
+                || ($answer['currency']['precision'] ?? null) !== 2 || ($answer['currency']['name'] ?? null) !== 'Points') {
+                $failures[] = 'somcp_create_currency (alternative ZZP): expected created true, alternative true and 2 decimals - ' . excerpt($result);
+            } elseif ($deleteCurrency !== null && ($deleted['deleted'] ?? null) !== true) {
+                $failures[] = 'somcp_create_currency (alternative ZZP): somcp_delete_currency did not delete it';
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_currency (alternative ZZP)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_currency (alternative ZZP): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $ids = array_map('intval', array_column(Db::getInstance()->executeS(
+            "SELECT `id_currency` FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($alternativeIso) . "'"
+        ) ?: [], 'id_currency'));
+        if ($ids !== []) {
+            foreach (['currency', 'currency_lang', 'currency_shop', 'module_currency'] as $table) {
+                Db::getInstance()->delete($table, 'id_currency IN (' . implode(', ', $ids) . ')');
+            }
+        }
+    }
+}
+
 // The address format of a country changed, given back, then the same call
 // again (#361): the JSON scenario cannot hold the lines France stores, which
 // the localization pack of the CI shop decides. France is read first and its

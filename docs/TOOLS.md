@@ -3672,26 +3672,37 @@ every problem at once.
 **Nature**: `acts(ADD, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
 
 **Does** - adds one currency to **International > Localization >
-Currencies**, as **Add new currency** does with **Select a currency**: one of
+Currencies**, as **Add new currency** does: with **Select a currency**, one of
 the official currencies PrestaShop knows (CLDR), its names and symbols in
-every language filled by the shop when not given.
+every language filled by the shop when not given; with **Create an alternative
+currency** (`alternative`, #373), a currency PrestaShop does not know (a local
+or loyalty currency), with the ISO code, names and symbols the merchant gives.
 
 **Do not use for** - a currency the shop already has (→
-`somcp_update_currency`); an alternative currency (**Create an alternative
-currency**, a later part).
+`somcp_update_currency`).
 
 **Parameters**
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
+| `alternative` | **Create an alternative currency** | boolean | no | `true`: the ISO code must be three letters CLDR does not know, otherwise `iso_code: <code> is an official currency - leave alternative out to add it`; `false` or left out: an official currency; not a boolean: `alternative: true or false` |
 | `iso_code` | **Select a currency** | string | yes | trimmed, upper-cased, three letters; a currency of CLDR (`getCurrency()` of the CLDR locale of the shop default language not null); otherwise `iso_code: <code> is not an official currency PrestaShop knows (ISO 4217, for example USD or EUR)`; already a currency not deleted: `iso_code: <code> is already currency <id> of this shop - change it with somcp_update_currency` |
 | `conversion_rate` | **Exchange rate** | number | yes | above 0, 6 decimals kept; otherwise `conversion_rate: a number above 0, the value of 1 <default currency> in this currency` |
-| `precision` | **Decimals** | integer | no | 0 or more, otherwise `precision: a whole number of 0 or more`; the CLDR decimals of the currency when left out |
+| `precision` | **Decimals** | integer | no | 0 or more, otherwise `precision: a whole number of 0 or more`; the CLDR decimals of the currency when left out, `2` (the value of the form) for an alternative one |
 | `active` | **Status** | boolean | no | `true` when left out, as the page; not a boolean: `active: true or false` |
 | `name`, `symbol` | **Currency name**, **Symbol** | string or object | no | keyed by ISO code with `languages`, by `SomcpToolCreateProduct::languages()` and `texts()` (#149); at most 255 characters, `Validate::isGenericName()`; empty or left out, the CLDR text |
 | `languages` | - | array | no | the languages `name` and `symbol` fill, every active language when left out |
 
 Unknown arguments through `SomcpTool::unknownFields()`.
+
+With `alternative: true`, as `AddUnofficialCurrencyHandler::handle()`: the
+ISO code checked against CLDR (`assertCurrencyIsNotInReference()`) and against
+the currencies not deleted, with the lines above; `unofficial = 1`,
+`numeric_iso_code` `null`; an empty name or symbol takes the ISO code, as
+`refreshLocalizedCurrencyData()` does, with a warning `<field> left empty in
+<languages>: the ISO code <code> is shown instead.`. When CLDR cannot be read:
+`iso_code: the currencies PrestaShop knows cannot be read here, so <code>
+cannot be checked - add it on the Add new currency page`.
 
 **Then** - the CLDR repository through `SomcpBackOffice::cldrLocaleRepository()`:
 the kernel container (the 9.0.0 identifier, then the 8.0.1 one), or the light
@@ -3700,15 +3711,17 @@ as `FrontController::buildContainer()`); when none answers: `Nothing was
 created. The currencies PrestaShop knows cannot be read here - add it on the
 Add new currency page`. The deleted `Currency` of the same ISO code, or a new
 one, set as `AbstractCurrencyHandler::addEntity()` does: `iso_code`, `active`,
-`deleted = false`, `unofficial = false`, `conversion_rate`, `numeric_iso_code`
-and `precision` from CLDR, `id_shop_list` the shop of the token so
+`deleted = false`, `unofficial` (`alternative`), `conversion_rate`,
+`numeric_iso_code` and `precision` from CLDR (none and `2` for an alternative
+currency), `id_shop_list` the shop of the token so
 `currency_shop` gets its row and its rate; `refreshLocalizedCurrencyData()`
 with every language, `validateFields()` and `validateFieldsLang()`, then
 `save(true, true)`.
 
 **Returns** - `created: true`, `id_currency`, `restored: true` when the
 deleted row of the same ISO code was reused (its orders stay tied to it), and
-`currency`, the answer of `somcp_get_currency` read back. A `warning` when:
+`currency`, the answer of `somcp_get_currency` read back (`alternative: true`
+for an alternative currency). A `warning` when:
 - a deleted row was reused: `<ISO code> was deleted before: the same currency is back, without the payment modules it had in Payment > Preferences.`;
 - no payment module accepts it (`module_currency`): `Payment > Preferences decides which payment modules accept <ISO code>; no module accepts it yet.`
 

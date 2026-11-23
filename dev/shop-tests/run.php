@@ -1338,7 +1338,10 @@ if ($updateCountry !== null && $getCountry !== null && $idFrance > 0) {
 // A state deleted, then deleted again (#358): the JSON scenario cannot create
 // the state it deletes, and every demo state is used by an address or a tax
 // rule row, or is one the next tools may read. Made as the check of
-// somcp_create_state makes it.
+// somcp_create_state makes it. Before that, one tax rule row is given to it
+// (#362), since the localization pack of the CI shop gives none to a state
+// of a country that has states: moving it to another country and deleting
+// it must both be refused while the row is there.
 $deleteState = $registry->get('somcp_delete_state');
 if ($deleteState !== null) {
     $calls += 2;
@@ -1360,7 +1363,54 @@ if ($deleteState !== null) {
         'capabilities' => [],
         'arguments' => [],
     ];
+    $idTaxGroup = (int) Db::getInstance()->getValue(
+        'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `deleted` = 0 ORDER BY `id_tax_rules_group` ASC'
+    );
     try {
+        // Inserted as AdminTaxRulesGroupController does, there being no
+        // object that writes one row alone without the checks under test.
+        $taxRow = $idState > 0 && $idTaxGroup > 0 && Db::getInstance()->insert('tax_rule', [
+            'id_tax_rules_group' => $idTaxGroup,
+            'id_country' => (int) $state->id_country,
+            'id_state' => $idState,
+            'zipcode_from' => '0',
+            'zipcode_to' => '0',
+            'id_tax' => 0,
+            'behavior' => 0,
+            'description' => '',
+        ]);
+        $usedChecks = [
+            'a state a tax rule row uses' => [$deleteState, ['id_state' => $idState], ['Nothing was deleted.',
+                'is used by 1 tax rule rows (tax rules ' . $idTaxGroup . ') - delete them first with somcp_delete_country_rule']],
+        ];
+        // To the United States rather than France: a country without states
+        // is refused before the rows are counted.
+        $updateUsedState = $registry->get('somcp_update_state');
+        if ($updateUsedState !== null) {
+            $usedChecks = [
+                'a state a tax rule row uses, moved to another country' => [$updateUsedState, ['id_state' => $idState, 'country' => 'US'],
+                    ['0 addresses and 1 tax rule rows - a state of another country would no longer match them']],
+            ] + $usedChecks;
+        }
+        $calls += count($usedChecks);
+        foreach ($usedChecks as $label => [$tool, $arguments, $needles]) {
+            $result = $tool->call($arguments, ['scopes' => implode(' ', $tool->getRequiredScopes())] + $stateContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            $name = $tool === $deleteState ? 'somcp_delete_state' : 'somcp_update_state';
+            if (!$taxRow || empty($result['isError']) || $missing !== []) {
+                $failures[] = $name . ' (' . $label . '): expected ' . implode(', ', $missing ?: [$taxRow ? 'an error' : 'a tax rule row to test with']) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', $name . ' (' . $label . ', refused)');
+            }
+        }
+        Db::getInstance()->delete('tax_rule', '`id_state` = ' . (int) $idState);
+
         foreach ([
             'a state no address uses' => [false, ['"deleted": true', '"iso_code": "ZZ"']],
             'the same state again' => [true, ['Nothing was deleted.', 'no state of this shop has the identifier']],
@@ -1383,6 +1433,7 @@ if ($deleteState !== null) {
         $failures[] = 'somcp_delete_state: ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
         if ($idState > 0) {
+            Db::getInstance()->delete('tax_rule', '`id_state` = ' . (int) $idState);
             $left = new State($idState);
             if (Validate::isLoadedObject($left)) {
                 $left->delete();

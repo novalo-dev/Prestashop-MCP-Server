@@ -1353,6 +1353,44 @@ if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault >
     }
 }
 
+// The symbol of the default currency changed, then its default settings
+// restored (#365): the demo currencies keep the CLDR texts (modified 0), so
+// restoring them puts the shop back as it was installed. The symbol is given
+// in one language, which a shop with several languages needs for a text.
+if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault > 0) {
+    ++$calls;
+    $restored = false;
+    try {
+        $before = $currencyCall($getCurrency, ['id_currency' => $idDefault])[1];
+        $symbolCall = ['id_currency' => $idDefault, 'symbol' => 'X$',
+            'languages' => [(string) Language::getIsoById((int) $context->language->id)]];
+        [$result, $answer] = $currencyCall($updateCurrency, $symbolCall);
+        [$againResult, $again] = $currencyCall($updateCurrency, $symbolCall);
+        [$restoreResult, $restore] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'restore_defaults' => true]);
+        $restored = ($restore['changed'] ?? null) === true;
+        if (($answer['changed'] ?? null) !== true || ($answer['currency']['modified'] ?? null) !== true) {
+            $failures[] = 'somcp_update_currency (a symbol): expected changed true and modified true - ' . excerpt($result);
+        } elseif (($again['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_currency (the same symbol again): expected changed false - ' . excerpt($againResult);
+        } elseif (!$restored || ($restore['currency']['symbol'] ?? null) !== ($before['symbol'] ?? false)
+            || ($restore['currency']['modified'] ?? null) !== false) {
+            $failures[] = 'somcp_update_currency (restore_defaults): expected changed true and the symbol of before - ' . excerpt($restoreResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_currency (a symbol, then the default settings)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_currency (texts): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if (!$restored) {
+            try {
+                $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'restore_defaults' => true]);
+            } catch (Throwable $e) {
+                // The failure is already recorded above.
+            }
+        }
+    }
+}
+
 // A currency deleted (#366): the default currency is refused, a currency
 // created for the test is deleted, then the same call is refused as
 // unknown. The CI shop's own currencies are never deleted; the test

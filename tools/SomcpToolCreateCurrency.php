@@ -129,7 +129,9 @@ class SomcpToolCreateCurrency
         // service is looked up by its identifiers, never by a constructor.
         /** @var PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository|null $repository */
         $repository = SomcpBackOffice::cldrLocaleRepository();
-        $cldr = $repository !== null ? self::cldrLocale($repository, $idShop) : null;
+        $cldr = $repository !== null
+            ? self::cldrLocale($repository, (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop))
+            : null;
 
         $iso = null;
         $reference = null;
@@ -283,19 +285,21 @@ class SomcpToolCreateCurrency
     }
 
     /**
-     * The CLDR locale of the shop's default language, or null when the repository cannot give it.
+     * The CLDR locale of a language, or English when it has none, or null when the repository cannot give it.
      *
      * Every CLDR locale holds the same currencies, as the core's handler
-     * says when it picks the first language: the default one is used here.
+     * says when it picks the first language: the add takes the default
+     * language. Public because somcp_update_currency builds the price format
+     * of each language from the pattern of its own locale.
      *
      * @param PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository $repository
-     * @param int $idShop
+     * @param int $idLang
      *
      * @return PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleInterface|null
      */
-    private static function cldrLocale($repository, int $idShop)
+    public static function cldrLocale($repository, int $idLang)
     {
-        $language = new Language((int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop));
+        $language = new Language($idLang);
         $code = Validate::isLoadedObject($language) ? (string) $language->locale : '';
         foreach (array_unique(array_filter([$code, 'en-US'])) as $locale) {
             try {
@@ -363,23 +367,49 @@ class SomcpToolCreateCurrency
             if ($texts === null) {
                 continue;
             }
-            $max = SomcpTool::columnSize($probe, $field, 255);
             foreach ($texts as $idLang => $text) {
-                $text = trim($text);
-                $where = $field . ' (' . $languages['filled'][$idLang] . ')';
-                if (Tools::strlen($text) > $max) {
-                    $errors[] = $where . ': ' . $max . ' characters at most, ' . Tools::strlen($text) . ' given';
-                    continue;
+                $text = self::checkedText($probe, $field, $text, (int) $idLang, $languages['filled'][$idLang], $errors);
+                if ($text !== null) {
+                    $out[$field][(int) $idLang] = $text;
                 }
-                if ($text !== '' && $probe->validateField($field, $text, $idLang) !== true) {
-                    $errors[] = $where . ': a character PrestaShop refuses in a currency ' . $field . ' (< > = { })';
-                    continue;
-                }
-                $out[$field][(int) $idLang] = $text;
             }
         }
 
         return [$out['name'], $out['symbol']];
+    }
+
+    /**
+     * A name or symbol of one language, trimmed, or null with its error when the shop would refuse it.
+     *
+     * Public so the add and the edit refuse a text with the same words; an
+     * empty text passes, as the shop fills it from CLDR.
+     *
+     * @param Currency $probe
+     * @param string $field name or symbol
+     * @param string $text
+     * @param int $idLang
+     * @param string $iso the ISO code of the language, for the message
+     * @param array<int, string> $errors
+     *
+     * @return string|null
+     */
+    public static function checkedText(Currency $probe, string $field, string $text, int $idLang, string $iso, array &$errors): ?string
+    {
+        $text = trim($text);
+        $where = $field . ' (' . $iso . ')';
+        $max = SomcpTool::columnSize($probe, $field, 255);
+        if (Tools::strlen($text) > $max) {
+            $errors[] = $where . ': ' . $max . ' characters at most, ' . Tools::strlen($text) . ' given';
+
+            return null;
+        }
+        if ($text !== '' && $probe->validateField($field, $text, $idLang) !== true) {
+            $errors[] = $where . ': a character PrestaShop refuses in a currency ' . $field . ' (< > = { })';
+
+            return null;
+        }
+
+        return $text;
     }
 
     /**

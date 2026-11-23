@@ -100,10 +100,13 @@ tell the merchant how prices in that currency are shown before changing it.
 **Change a currency.** The new tool somcp_update_currency changes the exchange
 rate, the number of decimals and the status of one currency of International >
 Localization > Currencies, as its edit page and the Enabled switch of the list
-do. The rate is the one of the shop the assistant is connected to; the default
-currency of a shop keeps a rate of 1 and cannot be switched off, as in the back
-office. A currency read with somcp_get_currency can be given back as it is, and
-only what differs is written.
+do. It also changes the currency name and the symbol in each language, the
+place of the symbol in prices (Customize symbol and format), and puts back the
+default names, symbols and format, as Restore default settings does. The rate
+is the one of the shop the assistant is connected to; the default currency of a
+shop keeps a rate of 1 and cannot be switched off, as in the back office. A
+currency read with somcp_get_currency can be given back as it is, and only what
+differs is written.
 
 **Delete a currency.** The new tool somcp_delete_currency deletes one currency
 of International > Localization > Currencies, as the Delete of its row does.

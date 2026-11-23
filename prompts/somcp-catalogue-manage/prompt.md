@@ -361,8 +361,9 @@ currency the shop does not have yet is added with `somcp_create_currency`, its
 ISO code and the exchange rate the merchant gives; the shop fills its names and
 symbols, and payment modules accept it only once set in Payment > Preferences.
 A currency's
-exchange rate, decimals and status are changed with `somcp_update_currency`:
-the default currency keeps a rate of 1 and cannot be switched off. A
+exchange rate, decimals, status, names, symbols and symbol position are changed
+with `somcp_update_currency`, which also restores the default settings: the
+default currency keeps a rate of 1 and cannot be switched off. A
 currency is deleted with `somcp_delete_currency`, never the default one nor one
 a country uses; orders placed in it keep it.
 

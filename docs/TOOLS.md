@@ -3667,12 +3667,13 @@ somcp_list_currencies before calling again`.
 **Nature**: `acts(EDIT, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one currency of **International > Localization >
-Currencies**, as its **Edit** page does for **Exchange rate**, **Decimals** and
-**Status**, or as the **Enabled** switch of the list does. Only the fields
-given and different from the stored currency are written.
+Currencies**, as its **Edit** page does for **Exchange rate**, **Decimals**,
+**Status**, **Currency name**, **Symbol**, **Customize symbol and format** and
+**Restore default settings** (#365), or as the **Enabled** switch of the list
+does. Only the fields given and different from the stored currency are
+written.
 
-**Do not use for** - the names, symbols and format (a later part, #365);
-deleting a currency (→ `somcp_delete_currency`); the currency of a country
+**Do not use for** - deleting a currency (→ `somcp_delete_currency`); the currency of a country
 (→ `somcp_update_country`).
 
 **Parameters**
@@ -3683,25 +3684,46 @@ deleting a currency (→ `somcp_delete_currency`); the currency of a country
 | `conversion_rate` | **Exchange rate** | number | no | above 0, 6 decimals kept (`currency_shop.conversion_rate`, decimal(13,6)); otherwise `conversion_rate: a number above 0, the value of 1 <default currency> in this currency`; a different rate for the default currency of the shop: `conversion_rate: <ISO code> is the default currency of this shop - every rate is relative to it, its rate stays 1` |
 | `precision` | **Decimals** | integer | no | 0 or more; otherwise `precision: a whole number of 0 or more` |
 | `active` | **Status** | boolean | no | not a boolean: `active: true or false`; `false` for the default currency of any shop (`PS_CURRENCY_DEFAULT` read per shop): `active: <name> is the default currency for shop <shop name>, and therefore cannot be disabled`, one line per shop |
+| `name` | **Currency name** | string or object | no | an object keyed by ISO code of language, or one text when one language is filled (`SomcpToolCreateProduct::languages()` and `texts()`, as `somcp_update_country` takes its name); a language left out keeps its name; `""` takes the CLDR name back; checked by `SomcpToolCreateCurrency::checkedText()`, as the add: `name (<iso>): <n> characters at most, <m> given`, `name (<iso>): a character PrestaShop refuses in a currency name (< > = { })` |
+| `symbol` | **Symbol** | string or object | no | the same shape and checks; `""` takes the CLDR symbol back |
+| `format` | **Customize symbol and format** | string or object | no | the position of the symbol, one of the four transformations of the core's `PatternTransformer` (`leftWithSpace`, `leftWithoutSpace`, `rightWithSpace`, `rightWithoutSpace`), or `default` for the CLDR format (an empty `pattern`); one word for every language filled, or an object keyed by ISO code; otherwise `format: leftWithSpace, leftWithoutSpace, rightWithSpace, rightWithoutSpace or default`. A raw pattern is never taken: the storefront prints it in every price |
+| `restore_defaults` | **Restore default settings** | boolean | no | `true`: every name, symbol and pattern emptied, then filled again from CLDR; beside `name`, `symbol` or `format`: `restore_defaults: alone, or the texts given beside it would be lost` |
+| `languages` | - | array of strings | no | the ISO codes of the languages `name`, `symbol` and `format` change; every active language when left out |
 
-A row of `somcp_get_currency` given back whole writes nothing: `language`,
-`name`, `symbol`, `iso_code`, `default`, `numeric_iso_code`, `alternative`,
-`pattern` and `modified` are taken only when they equal the stored value, read
-in the `language` given; otherwise `<field>: worked out by the shop`, or for
-`name`, `symbol` and `pattern` `<field>: changed by somcp_update_currency part
-3, not written yet`. At least one of `conversion_rate`, `precision` and
-`active`, otherwise `conversion_rate, precision or active: give at least one
-field to change`. Unknown arguments through `SomcpTool::unknownFields()`.
+The texts are set on the `Currency`, each pattern built as the core's
+`AbstractCurrencyHandler::applyPatternTransformations()` builds it (the
+currency pattern of the language's CLDR locale, `SomcpToolCreateCurrency::cldrLocale()`,
+moved by `PatternTransformer::transform()`), then
+`refreshLocalizedCurrencyData()` runs with every language, as the **Edit**
+page saves: an empty name or symbol takes the CLDR one again and `modified`
+is worked out. `validateFieldsLang()` is the last check. The CLDR repository
+comes from `SomcpBackOffice::cldrLocaleRepository()`; when it is null and a
+name, symbol, format or `restore_defaults` is given: `<field>: the formats of
+the shop cannot be read here - change it on the Edit page of the currency`.
+
+A row of `somcp_get_currency` given back whole writes nothing: its `name` and
+`symbol`, one text, are no change when they are the stored text of a language
+(`SomcpToolCreateProduct::givenBackAsRead()`); `language`, `iso_code`,
+`default`, `numeric_iso_code`, `alternative`, `pattern` and `modified` are
+taken only when they equal the stored value, read in the `language` given;
+otherwise `<field>: worked out by the shop`, or for `pattern` `pattern: worked
+out by the shop - change it with format`. At least one of `conversion_rate`,
+`precision`, `active`, `name`, `symbol`, `format` and `restore_defaults`,
+otherwise `conversion_rate, precision, active, name, symbol, format or
+restore_defaults: give at least one field to change`. Unknown arguments through `SomcpTool::unknownFields()`.
 
 **Returns** - the shape of every update tool (#356): `changed: true`,
-`id_currency` and `changes` (`field`, `old`, `new`); nothing differed,
+`id_currency` and `changes` (`field`, `old`, `new`; a name, symbol or pattern
+with its language, `name (fr)`, compared after the CLDR texts are filled
+again); nothing differed,
 `changed: false`, `id_currency` and `reason` (`The currency already holds
 every value given. Nothing was written.`). In both cases `currency`, the
 answer of `somcp_get_currency` read back. When something was written, a
 `warning` when:
 - `conversion_rate` changed: `Prices in <ISO code> are now converted at <rate>; orders already placed keep the rate they were placed at.`;
 - `active` set to `false` while payment modules accept the currency in the shop (`module_currency`): `<n> payment modules accept <ISO code> in Payment > Preferences; they keep that setting but the currency is no longer offered.`;
-- `precision` or `active` changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `Decimals and Status are shared by every shop: this change reaches every shop of this installation (<n + 1>).`; the exchange rate stays the one of this shop.
+- `precision` or `active` changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `Decimals and Status are shared by every shop: this change reaches every shop of this installation (<n + 1>).`; the exchange rate stays the one of this shop;
+- a name or symbol given empty for an alternative currency, which CLDR does not know: `<ISO code> is an alternative currency: an empty <field> takes its ISO code.`
 
 **Errors** - in the envelope `Nothing was changed. Correct these and call
 again:`, every problem at once.

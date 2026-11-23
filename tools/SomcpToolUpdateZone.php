@@ -136,47 +136,58 @@ class SomcpToolUpdateZone
             return SomcpTool::refused('changed', $errors);
         }
 
-        $changed = [];
+        // Compared with what the list reads, so a row of somcp_list_zones
+        // given back whole writes nothing.
+        $changes = [];
         if ($name !== null && $name !== $stored['name']) {
-            $changed[] = 'name';
+            self::record($changes, 'name', $stored['name'], $name);
         }
         if ($active !== null && $active !== $stored['active']) {
-            $changed[] = 'active';
+            self::record($changes, 'active', $stored['active'], $active);
         }
-
-        $result = ['updated' => false, 'changed' => $changed];
-        if ($changed !== []) {
-            $zone = new Zone($idZone);
-            if ($name !== null) {
-                $zone->name = $name;
-            }
-            if ($active !== null) {
-                $zone->active = $active;
-            }
-            try {
-                $done = $zone->update();
-                $failure = $done ? '' : 'PrestaShop refused to save it';
-            } catch (Throwable $e) {
-                $done = false;
-                $failure = $e->getMessage();
-            }
-            if (!$done) {
-                SomcpLogger::log('zone_update_failed', SomcpLogger::OUTCOME_FAILURE, 'zone ' . $idZone . ': '
-                    . Tools::substr($failure, 0, 500), '', $idEmployee);
-
-                return SomcpTool::text(
-                    'The zone could not be changed: ' . $failure . '. Read it with somcp_list_zones before calling '
-                        . 'again.',
-                    true
-                );
-            }
-            SomcpLogger::log('zone_updated', SomcpLogger::OUTCOME_SUCCESS, 'zone ' . $idZone . ': '
-                . implode(', ', $changed), '', $idEmployee);
-            $result['updated'] = true;
+        if ($changes === []) {
+            return SomcpTool::json([
+                'changed' => false,
+                'id_zone' => $idZone,
+                'reason' => 'The zone already holds every value given. Nothing was written.',
+                'zone' => $stored,
+            ]);
         }
+        $fields = array_column($changes, 'field');
+
+        $zone = new Zone($idZone);
+        if ($name !== null) {
+            $zone->name = $name;
+        }
+        if ($active !== null) {
+            $zone->active = $active;
+        }
+        try {
+            $done = $zone->update();
+            $failure = $done ? '' : 'PrestaShop refused to save it';
+        } catch (Throwable $e) {
+            $done = false;
+            $failure = $e->getMessage();
+        }
+        if (!$done) {
+            SomcpLogger::log('zone_update_failed', SomcpLogger::OUTCOME_FAILURE, 'zone ' . $idZone . ': '
+                . Tools::substr($failure, 0, 500), '', $idEmployee);
+
+            return SomcpTool::text(
+                'The zone could not be changed: ' . $failure . '. Read it with somcp_list_zones before calling '
+                    . 'again.',
+                true
+            );
+        }
+        SomcpLogger::log('zone_updated', SomcpLogger::OUTCOME_SUCCESS, 'zone ' . $idZone . ': '
+            . implode(', ', $fields), '', $idEmployee);
+        // The shape of every update tool: changed a boolean, changes what was
+        // written with its old value, so an assistant chaining this with the
+        // carrier or tax tools reads them all the same way.
+        $result = ['changed' => true, 'id_zone' => $idZone, 'changes' => $changes];
 
         $warnings = [];
-        if (in_array('active', $changed, true) && $active === false) {
+        if (in_array('active', $fields, true) && $active === false) {
             // The help of the field: Allow or disallow shipping to this zone.
             $carriers = self::carriers($idZone);
             if ($carriers !== []) {
@@ -185,7 +196,7 @@ class SomcpToolUpdateZone
                     . 'addresses in its ' . (int) $stored['countries'] . ' countries.';
             }
         }
-        if (in_array('name', $changed, true) && $name !== null) {
+        if (in_array('name', $fields, true) && $name !== null) {
             $same = SomcpToolCreateZone::sameName($idShop, $name, $idZone);
             if ($same !== null) {
                 $warnings[] = $same;
@@ -246,5 +257,20 @@ class SomcpToolUpdateZone
             . ' INNER JOIN `' . _DB_PREFIX_ . 'carrier` c ON c.`id_carrier` = cz.`id_carrier` AND c.`deleted` = 0'
             . ' WHERE cz.`id_zone` = ' . (int) $idZone . ' ORDER BY cz.`id_carrier` ASC'
         ) ?: [], 'id_carrier'));
+    }
+
+    /**
+     * One entry of changes, as the other update tools record it.
+     *
+     * @param array<int, array<string, mixed>> $changes
+     * @param string $field
+     * @param mixed $old
+     * @param mixed $new
+     *
+     * @return void
+     */
+    private static function record(array &$changes, string $field, $old, $new): void
+    {
+        $changes[] = ['field' => $field, 'old' => $old, 'new' => $new];
     }
 }

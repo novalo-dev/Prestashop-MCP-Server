@@ -2449,10 +2449,13 @@ do for one zone.
 At least one of `name` and `active`, otherwise `name or active: give at least
 one field to change`. Unknown arguments through `SomcpTool::unknownFields()`.
 
-**Returns** - `updated` and `changed` (the names of the fields written; `[]`
-and `updated: false` when nothing differed, then nothing is written), and
-`zone`, the row of `somcp_list_zones` read back (`SomcpToolListZones::zone()`).
-A `warning` when:
+**Returns** - the shape of every update tool (#210): something written,
+`changed: true`, `id_zone` and `changes`, one entry per field written, each
+`field`, `old` and `new`; nothing differed, `changed: false`, `id_zone` and
+`reason` (`The zone already holds every value given. Nothing was written.`),
+and nothing is written. In both cases `zone`, the row of `somcp_list_zones`
+read back (`SomcpToolListZones::zone()`). When something was written, a
+`warning` when:
 - `active` set to `false` on a zone that carriers serve (`carrier_zone`): `Shipping is now disallowed to zone <id>: the <n> carriers that serve it (<ids>) are no longer offered to addresses in its <m> countries.`;
 - the new `name` is taken by another zone of the shop, the warning of `somcp_create_zone`;
 - the zone is also in another shop (`zone_shop`): `also_in_other_shops: <n>`, since a zone has one row in `zone` and the change reaches every shop of it (`SomcpToolUpdateZone::otherShops()`).
@@ -2461,7 +2464,7 @@ A `warning` when:
 again:`, every problem at once.
 
 **Notes**
-- Replayable: the same call twice writes once, the second answers `updated: false`.
+- Replayable: the same call twice writes once, the second answers `changed: false`.
 - Only the fields given and different from the stored zone are written (`Zone::update()`). Logged as `zone_updated` with the fields changed.
 - The back-office address of the page is never part of the answer.
 

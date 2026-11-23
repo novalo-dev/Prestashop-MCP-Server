@@ -1055,17 +1055,19 @@ if ($createZone !== null) {
         if ($updateZone !== null && $idZone > 0) {
             $calls += 2;
             $zoneUpdates = [
-                'renamed' => [['name' => 'somcp zone 2'], ['name']],
-                'disabled' => [['active' => false], ['active']],
+                'renamed' => [['name' => 'somcp zone 2'], [['field' => 'name', 'old' => 'somcp zone', 'new' => 'somcp zone 2']]],
+                'disabled' => [['active' => false], [['field' => 'active', 'old' => true, 'new' => false]]],
             ];
-            foreach ($zoneUpdates as $why => [$arguments, $fields]) {
+            foreach ($zoneUpdates as $why => [$arguments, $changes]) {
                 $result = $zoneCall($updateZone, ['id_zone' => $idZone] + $arguments);
                 $text = $zoneText($result);
                 $answer = json_decode(trim($text), true);
                 // A zone that serves no carrier: disabling it warns of none.
-                if (!empty($result['isError']) || !is_array($answer) || ($answer['updated'] ?? null) !== true
-                    || ($answer['changed'] ?? null) !== $fields || strpos($text, 'Shipping is now disallowed') !== false) {
-                    $failures[] = 'somcp_update_zone (' . $why . '): expected changed ' . implode(', ', $fields) . ' - ' . excerpt($result);
+                // The shape of every update tool (#356): changed a boolean,
+                // changes with the value before.
+                if (!empty($result['isError']) || !is_array($answer) || ($answer['changed'] ?? null) !== true
+                    || ($answer['changes'] ?? null) !== $changes || strpos($text, 'Shipping is now disallowed') !== false) {
+                    $failures[] = 'somcp_update_zone (' . $why . '): expected changes ' . implode(', ', array_column($changes, 'field')) . ' - ' . excerpt($result);
                 } else {
                     printf("  %-6s %s\n", 'ok', 'somcp_update_zone (' . $why . ')');
                 }
@@ -1082,8 +1084,9 @@ if ($createZone !== null) {
                 } else {
                     $result = $zoneCall($updateZone, $row);
                     $answer = json_decode(trim($zoneText($result)), true);
-                    if (!empty($result['isError']) || !is_array($answer) || ($answer['updated'] ?? null) !== false
-                        || ($answer['changed'] ?? null) !== []) {
+                    if (!empty($result['isError']) || !is_array($answer) || ($answer['changed'] ?? null) !== false
+                        || ($answer['reason'] ?? null) !== 'The zone already holds every value given. Nothing was written.'
+                        || array_key_exists('changes', $answer)) {
                         $failures[] = 'somcp_update_zone (the row of somcp_list_zones given back): expected no change - ' . excerpt($result);
                     } else {
                         printf("  %-6s %s\n", 'ok', 'somcp_update_zone (the row of somcp_list_zones given back, nothing written)');

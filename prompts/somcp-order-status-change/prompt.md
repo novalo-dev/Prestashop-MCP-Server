@@ -21,6 +21,7 @@ of it can be undone by calling again.
 - `somcp_list_countries`
 - `somcp_get_country`
 - `somcp_update_country`
+- `somcp_get_country_options`
 - `somcp_list_states`
 - `somcp_create_state`
 - `somcp_update_state`
@@ -112,6 +113,8 @@ status change: it never moves the order to shipped, and
   `somcp_update_country` enables one, moves it to another zone with its
   states, or changes its name, codes, currency, zip code rule, address format
   and tax label.
+  `somcp_get_country_options` tells whether customers may only pick a country
+  an active carrier delivers.
   `somcp_list_states` lists the states of a country, with their ISO code and
   zone; `somcp_create_state` creates one the merchant needs, in the zone the
   merchant chooses; `somcp_update_state` renames one, changes its ISO code or

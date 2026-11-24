@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "reads the country options of a fresh shop, where nothing restricts the countries offered", "arguments": {}, "expect": "ok", "contains": ["\"restrict_to_carriers\": false"]},
+    {"why": "a field the tool does not take is refused", "arguments": {"restrict": true}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- restrict: not a field of this tool"]}
+  ]
+}

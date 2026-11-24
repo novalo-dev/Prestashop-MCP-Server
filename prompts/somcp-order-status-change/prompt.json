@@ -21,6 +21,7 @@
     "somcp_list_countries",
     "somcp_get_country",
     "somcp_update_country",
+    "somcp_get_country_options",
     "somcp_list_states",
     "somcp_create_state",
     "somcp_update_state",

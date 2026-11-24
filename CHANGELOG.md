@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Read the country options.** The new tool somcp_get_country_options reads the
+Country options of International > Locations > Countries: whether customers
+may only pick, in an address, a country an active carrier delivers. Before
+enabling a country, the assistant can now tell whether customers will see it.
+On PrestaShop 9, which no longer shows the option, the merchant is told the
+storefront still applies it.
+
 **Add a language.** The new tool somcp_create_language adds a language to
 International > Localization > Languages, as Add new language does: its name,
 its ISO code, its language code, its two date formats, its flag and its

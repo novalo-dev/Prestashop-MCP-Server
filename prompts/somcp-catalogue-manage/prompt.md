@@ -59,6 +59,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_countries`
 - `somcp_get_country`
 - `somcp_update_country`
+- `somcp_get_country_options`
 - `somcp_list_states`
 - `somcp_create_state`
 - `somcp_update_state`
@@ -239,7 +240,9 @@ that served it lose it and their prices for it, so read them with
 zone and whether they are enabled, come from `somcp_list_countries`; every
 field of one country, its default currency, address format and tax label
 included, from `somcp_get_country`; `somcp_update_country` changes them,
-and a new zone takes along the states that were in the old one. The
+and a new zone takes along the states that were in the old one.
+`somcp_get_country_options` tells whether customers may only pick a country
+an active carrier delivers: read it before enabling a country. The
 states of a country, with the ISO code `state` and `states` take, come from
 `somcp_list_states`. A state the merchant needs and the shop lacks is created
 with `somcp_create_state`, in a country that uses states; ask for its zone,

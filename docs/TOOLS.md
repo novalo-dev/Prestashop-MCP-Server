@@ -2702,6 +2702,42 @@ again:`, every problem at once (`SomcpTool::refused('changed', $problems)`).
 
 **Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels, the states moved with the zone (8.0.1 only in the back office, both here), the refusal of an ISO code another country has (8.0.1 only in the back office, both here), **Country options** (8.0.1 only, not part of this tool), the **Address format** (saved by the 8.0.1 form only, by this tool on both); the checks (`isZipCodeFormat`, `checkFormatFields`), the class and the tables are the same.
 
+#### `somcp_get_country_options`
+**State**: written · [issue #374](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/374)
+**Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`
+
+**Does** - reads **Country options** of **International > Locations >
+Countries**: **Restrict country selections in front office to those covered by
+active carriers**. When it is on, the storefront offers in an address only the
+countries an active carrier delivers (`Carrier::getDeliveredCountries()` in
+`FrontController::makeAddressForm()`), every active country otherwise. Read
+only; the read before the update of these options (a later tool), which will
+take back what this one gives.
+
+**Do not use for** - the countries themselves (→ `somcp_list_countries`,
+`somcp_get_country`); the zones a carrier delivers (→ `somcp_get_carrier`).
+
+**Parameters** - none. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns**
+
+| Key | On screen | Type |
+|---|---|---|
+| `restrict_to_carriers` | **Restrict country selections in front office to those covered by active carriers** | boolean, `Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES', null, $idShopGroup, $idShop)` for the shop of the token, as `somcp_get_tax_options` reads its keys |
+
+Built in the public `SomcpToolGetCountryOptions::read()`, which the update
+calls. On 9.0.0, beside the answer: `note`: `PrestaShop 9 no longer shows this
+option, but the storefront still applies it.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call
+again:`, an unknown argument.
+
+**Notes**
+- A key the shop never stored (a fresh installation) is read as `false`, what the storefront applies.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the switch is on the 8.0.1 page only (legacy `AdminCountries`, panel **Country options**, button **Save**); the key and the storefront rule are the same.
+
 #### `somcp_list_states`
 **State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)
 **Nature**: `acts(VIEW, 'AdminStates')` · **Scope**: `mcp.orders.read`

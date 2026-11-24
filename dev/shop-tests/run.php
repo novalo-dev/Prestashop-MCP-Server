@@ -1501,6 +1501,63 @@ if ($deleteLanguage !== null && isset($currencyCall, $idDefaultLang) && $idDefau
     }
 }
 
+// A language added (#372): the flag and the "No-picture" image deposited as
+// the order status icon is, one upload_ref each since a reference is used
+// once; the language comes back created with the ISO code given, then is
+// deleted with somcp_delete_language (#371). The CI shop's own languages are
+// never touched; the test language is removed in finally if a tool failed.
+$createLanguage = $registry->get('somcp_create_language');
+if ($createLanguage !== null && $deleteLanguage !== null && isset($currencyCall)) {
+    $calls += 2;
+    $testLangIso = 'zz';
+    try {
+        // The smallest valid GIF: one transparent pixel.
+        $gif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        $references = [];
+        $entered = '';
+        foreach (['flag', 'no_picture'] as $field) {
+            $reference = SomcpUpload::inviteFor((int) $employee->id, $createLanguage, $field);
+            $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+            $entered .= $invitation === null ? 'no deposit could be opened' : SomcpUpload::enter($invitation, 'data', $gif, $field . '.gif');
+            $references[$field] = $reference;
+        }
+        if ($entered !== '') {
+            $failures[] = 'somcp_create_language (a test language): the images were not deposited - ' . $entered;
+        } else {
+            [$result, $answer] = $currencyCall($createLanguage, [
+                'name' => 'Somcp test language',
+                'iso_code' => $testLangIso,
+                'language_code' => 'zz-zz',
+                'flag' => ['upload_ref' => $references['flag']],
+                'no_picture' => ['upload_ref' => $references['no_picture']],
+            ]);
+            $idTestLang = (int) ($answer['id_lang'] ?? 0);
+            if (($answer['created'] ?? null) !== true || ($answer['language']['iso_code'] ?? null) !== $testLangIso
+                || empty($answer['flag']['stored']) || empty($answer['no_picture']['stored'])) {
+                $failures[] = 'somcp_create_language (a test language): expected created true with both images stored - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_language (a test language)');
+                [$deleteResult, $deleted] = $currencyCall($deleteLanguage, ['id_lang' => $idTestLang]);
+                if (($deleted['deleted'] ?? null) !== true) {
+                    $failures[] = 'somcp_delete_language (the language somcp_create_language added): expected deleted true - ' . excerpt($deleteResult);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_delete_language (the language somcp_create_language added)');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_language: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = (int) Language::getIdByIso($testLangIso, true);
+        if ($left > 0) {
+            $previousContext = Shop::getContext();
+            Shop::setContext(Shop::CONTEXT_ALL);
+            (new Language($left))->delete();
+            Shop::setContext($previousContext, $previousContext === Shop::CONTEXT_ALL ? null : (int) $context->shop->id);
+        }
+    }
+}
+
 // The symbol of the default currency changed, then its default settings
 // restored (#365): the demo currencies keep the CLDR texts (modified 0), so
 // restoring them puts the shop back as it was installed. The symbol is given

@@ -27,6 +27,10 @@ declare(strict_types=1);
  * the first, and could not switch a language on or off without the back
  * office. The flag and the "No-picture" image are taken as every image of the
  * module is.
+ *
+ * The checks of the text fields and the image writes are public:
+ * somcp_create_language calls them, so a language added and a language
+ * changed are held to the same rules.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -470,7 +474,7 @@ class SomcpToolUpdateLanguage
      *
      * @return string the reason it was refused, '' once in hand
      */
-    private static function fetch(array $source, string &$file): string
+    public static function fetch(array $source, string &$file): string
     {
         $made = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($made === false) {
@@ -499,7 +503,7 @@ class SomcpToolUpdateLanguage
      *
      * @return string the reason it was refused, '' once stored
      */
-    private static function storeFlag(Language $language, int $idLang, string $file): string
+    public static function storeFlag(Language $language, int $idLang, string $file): string
     {
         try {
             $language->deleteImage();
@@ -536,7 +540,7 @@ class SomcpToolUpdateLanguage
      *
      * @return string the reason it was refused, '' once stored
      */
-    private static function storeNoPicture(string $iso, string $file): string
+    public static function storeNoPicture(string $iso, string $file): string
     {
         $folders = [_PS_IMG_DIR_ . 'p/', _PS_IMG_DIR_ . 'c/', _PS_IMG_DIR_ . 'm/'];
         try {
@@ -571,7 +575,7 @@ class SomcpToolUpdateLanguage
      *
      * @return string|null
      */
-    private static function text(array $arguments, string $field, string $column, Language $probe, array &$errors): ?string
+    public static function text(array $arguments, string $field, string $column, Language $probe, array &$errors): ?string
     {
         if (!array_key_exists($field, $arguments) || $arguments[$field] === null) {
             return null;
@@ -616,7 +620,7 @@ class SomcpToolUpdateLanguage
      *
      * @return string
      */
-    private static function expected(string $field): string
+    public static function expected(string $field): string
     {
         switch ($field) {
             case 'name':

@@ -30,6 +30,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_tax_rule`
 - `somcp_list_taxes`
 - `somcp_list_languages`
+- `somcp_create_language`
 - `somcp_update_language`
 - `somcp_delete_language`
 - `somcp_list_currencies`
@@ -350,7 +351,10 @@ Texts are objects keyed by ISO code, given for every language in `languages`; a
 language of the shop left out takes the default language's text. Lengths count
 the visible text, spaces included, HTML tags not counted. The ISO codes of the
 shop's languages, which one is the default and which are enabled, come from
-`somcp_list_languages`: only an enabled language is accepted. A language's
+`somcp_list_languages`: only an enabled language is accepted. A language is
+added with `somcp_create_language`, its flag and "No-picture" image given, and
+every text of the shop is copied into it from the default language: tell the
+merchant they are to translate. A language's
 name, ISO code, date formats, status, flag and "No-picture" image are changed
 with `somcp_update_language`; the default language stays enabled, switching one off
 moves the employees who use it to the default, and a new ISO code moves the

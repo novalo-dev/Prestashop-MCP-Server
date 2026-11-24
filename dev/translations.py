@@ -1142,6 +1142,10 @@ T = {
  "Supprimer une langue",
  "Eliminar un idioma",
  "Eine Sprache löschen"),
+"Add a language": (
+ "Ajouter une langue",
+ "Añadir un idioma",
+ "Eine Sprache hinzufügen"),
 "Change a currency": (
  "Modifier une devise",
  "Modificar una moneda",

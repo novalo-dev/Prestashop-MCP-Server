@@ -3473,7 +3473,7 @@ the key every translated field of the other tools takes. Read only.
 
 **Do not use for** - the translations of the shop (**International >
 Translations**); changing a language (→ `somcp_update_language`); deleting
-one (→ `somcp_delete_language`); adding one (a later tool).
+one (→ `somcp_delete_language`); adding one (→ `somcp_create_language`).
 
 **Parameters**
 
@@ -3511,6 +3511,66 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the **Locale** column and its filter on 9.0.0 only (the answer gives `locale` on both, from the same column); otherwise the same list, filters, labels and tables (`lang`, `lang_shop`).
+
+#### `somcp_create_language`
+**State**: written · [issue #372](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/372)
+**Nature**: `acts(ADD, 'AdminLanguages')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds one language to **International > Localization > Languages**,
+as **Add new language** does. A shop that opens to a new market needs the
+language before any product, page or e-mail can be written in it.
+
+**Do not use for** - changing a language (→ `somcp_update_language`);
+installing the translations of PrestaShop for a language (not a tool yet).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | the checks of `somcp_update_language` (`SomcpToolUpdateLanguage::text()`) |
+| `iso_code` | **ISO code** | string | yes | the same checks; a code already used (`Language::getIdByIso()`): `iso_code: <code> is already the code of <name> (<id_lang>)` |
+| `language_code` | **Language code** | string | yes | the same checks |
+| `date_format` | **Date format** | string | no | the same checks; left out, `Y-m-d` |
+| `date_format_full` | **Date format (full)** | string | no | the same checks; left out, `Y-m-d H:i:s` |
+| `flag` | **Flag** | object | yes | `{url}` or `{upload_ref}` through `SomcpUpload::schema()` and `argument()`, declared with `files: ['flag' => SomcpUpload::images()]`; left out, the line of an empty one |
+| `no_picture` | **"No-picture" image** | object | yes | the same |
+| `is_rtl` | **RTL language** | boolean | no | left out, `false` |
+| `active` | **Status** | boolean | no | left out, `true`, as the switch of the form |
+
+**Locale** (9.0.0 only on screen) is never asked: it is taken from
+`Language::getLangDetails(<iso>)` when the shop knows the code, as the core
+handler does. Both images are required, as the form requires them: without the
+"No-picture" image, a product without a photo would show a broken picture in
+that language. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - both images fetched (`SomcpToolUpdateLanguage::fetch()`, through
+`SomcpUpload::fetchImage()`) before anything is written; `new Language()`, the
+fields, `locale`, `validateFields(false)`, `add()` with `id_shop_list` the shop
+of the token (not `$only_add`, as `AddLanguageHandler` calls it: every `_lang`
+table gets a copy of the default language's rows); the flag written by
+`SomcpToolUpdateLanguage::storeFlag()` with the new `id_lang`, the "No-picture"
+image by `storeNoPicture()` with the ISO code; the temporary files removed in
+`finally`; `Tools::generateRobotsFile()`. An image the shop cannot store after
+`add()` deletes the language again, on every shop, so a half-made language
+never stays. Log lines `language_created` and `language_create_failed`.
+
+**Returns** - `created: true`, `id_lang`, `flag` and `no_picture` (`{url}` or
+`{upload_ref}` with `stored: true`), `language`, the row read back through
+`SomcpToolListLanguages::row()`, and a `warning`:
+- always: `Every text of the shop was copied from <default name> into <name>: translate them, or install the translation pack of <iso> in International > Translations.`;
+- on an installation of several shops: `<name> was added to this shop only; the others do not list it.`
+
+**Errors** - in the envelope of #169, every problem at once, under `Nothing was
+created.`; an image refused when fetched: `Nothing was created. Correct these
+and call again:` with `flag: <reason>`; the shop refusing: `Nothing was created.
+The shop refused language <iso>: <reason> - read somcp_list_languages before
+calling again`.
+
+**Notes**
+- An address that is not https is refused when the image is fetched, after the arguments are checked, as in `somcp_update_language`.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 shows **Locale**; the handler and the tables are the same.
 
 #### `somcp_update_language`
 **State**: written · [issue #368](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/368)

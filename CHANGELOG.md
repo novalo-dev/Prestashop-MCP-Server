@@ -18,6 +18,16 @@ are:
 
 ### Added
 
+**Add a language.** The new tool somcp_create_language adds a language to
+International > Localization > Languages, as Add new language does: its name,
+its ISO code, its language code, its two date formats, its flag and its
+"No-picture" image, whether it is written right to left, and whether it is
+offered. A shop that opens to a new market can now add the language without the
+back office. Every text of the shop is copied into it from the default
+language, and the merchant is told to translate them; a code another language
+already has is refused, and when an image cannot be stored nothing is left
+half made.
+
 **Change a language.** The new tool somcp_update_language changes a language of
 International > Localization > Languages, as its Edit page and the Enabled
 switch of the list do: its name, its ISO code, its language code, its two

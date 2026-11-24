@@ -16,6 +16,8 @@ are:
 
 ## Unreleased
 
+## 2.0.5 - 2026-11-25
+
 ### Added
 
 **Read the general settings.** The new tool somcp_get_general_settings reads

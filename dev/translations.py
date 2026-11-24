@@ -1134,6 +1134,10 @@ T = {
  "Modifier les paramètres de localisation",
  "Modificar los parámetros de localización",
  "Die Lokalisierungseinstellungen ändern"),
+"Read the general settings": (
+ "Lire les paramètres généraux",
+ "Leer los parámetros generales",
+ "Die allgemeinen Einstellungen lesen"),
 "Read the country options": (
  "Lire les options des pays",
  "Leer las opciones de los países",

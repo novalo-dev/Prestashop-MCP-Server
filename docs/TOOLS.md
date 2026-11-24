@@ -3966,6 +3966,54 @@ controller. The **Time zone** list has 560 names on 8.0.1, 559 on 9.0.0
 (`US/Pacific-New` on 8.0.1 only): read from the table, never from a list in
 the code.
 
+#### `somcp_get_general_settings`
+**State**: written · [issue #385](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/385)
+**Nature**: `acts(VIEW, 'AdminPreferences')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the price rounding and the three storefront pages of
+**Shop Parameters > General**, tab **General**: **Round mode**, **Round
+type**, **Display suppliers**, **Display brands**, **Display best sellers**.
+The rounding decides every price the shop shows and every total it invoices.
+Read only.
+
+**Do not use for** - the price of one product (→ `somcp_get_product`); the tax options (→
+`somcp_get_tax_options`); the language, country, currency and units (→
+`somcp_get_localization_settings`). The other fields of the tab (**Enable
+SSL**, **Increase front office security**, **Allow iframes on HTML fields**,
+**Use HTMLPurifier Library**, **Enable Multistore**, and **Main Shop
+Activity** on 8.0.1) are neither read nor written.
+
+**Parameters** - none. Unknown arguments through `SomcpTool::unknownFields()`,
+in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetGeneralSettings::settings()`, which the update reads too, under
+the names the update takes back. Each key read with `Configuration::get(<key>,
+null, $idShopGroup, $idShop)` for the shop of the token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `round_mode` | **Round mode** | `PS_PRICE_ROUND_MODE` | `half_up` (2), `half_down` (3), `half_even` (4), `half_odd` (5), `up` (0), `down` (1): `ROUND_MODES` |
+| `round_mode_label` | - | - | the words of the screen for that choice, for example **Round up away from zero, when it is half way there (recommended)** (computed) |
+| `round_type` | **Round type** | `PS_ROUND_TYPE` | `item` (1), `line` (2), `total` (3): `ROUND_TYPES` |
+| `round_type_label` | - | - | **Round on each item**, **Round on each line** or **Round on the total** (computed) |
+| `display_suppliers` | **Display suppliers** | `PS_DISPLAY_SUPPLIERS` | boolean |
+| `display_brands` | **Display brands** | `PS_DISPLAY_MANUFACTURERS` | boolean |
+| `display_best_sellers` | **Display best sellers** | `PS_DISPLAY_BEST_SELLERS` | boolean |
+
+A stored number outside the lists (an old shop): the code and the label are
+`null`, and a `warning` names the stored value and says to choose one in
+**Shop Parameters > General**.
+
+**Notes**
+- The keys are those `src/Adapter/Preferences/PreferencesConfiguration.php` reads and writes, the same on both versions.
+- The demo shops differ on **Round type** (`item` on 8.0.1, `line` on 9.0.0): the scenario only expects the keys.
+
+**Differences between 8.0.1 and 9.0.0** - none for these five fields: the
+same keys, the same choices, the same help. The tab differs elsewhere (8.0.1
+has **Enable SSL on all pages** and **Main Shop Activity**), and those fields
+are not read.
+
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)
 **Nature**: `acts(VIEW, 'AdminCurrencies')` · **Scope**: `mcp.catalog.read`

@@ -18,6 +18,12 @@ are:
 
 ### Added
 
+**Read the general settings.** The new tool somcp_get_general_settings reads
+the price rounding and the storefront pages of Shop Parameters > General:
+Round mode, Round type, and whether the suppliers, brands and best sellers
+pages are shown. The assistant can now tell how the shop rounds every price
+and total before it explains one.
+
 **Read the localization settings.** The new tool
 somcp_get_localization_settings reads International > Localization >
 Localization: the default language, country and currency, browser detection,

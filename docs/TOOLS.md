@@ -3855,7 +3855,8 @@ product weight and carrier range is read in. Read only.
 **Do not use for** - the list of languages, countries or currencies (→
 `somcp_list_languages`, `somcp_list_countries`, `somcp_list_currencies`); the
 units of one carrier's ranges (→ `somcp_get_carrier`, which already gives
-`weight_unit` and `dimension_unit`). The **Import a localization pack** card
+`weight_unit` and `dimension_unit`); changing the settings (→
+`somcp_update_localization_settings`). The **Import a localization pack** card
 holds an action, not a setting: not part of this tool.
 
 **Parameters**
@@ -3895,6 +3896,65 @@ $idShopGroup, $idShop)` for the shop of the token and its group:
 On screen: **Default country** has an empty `--` choice first on 9.0.0 only;
 **Default currency** carries no required mark on 9.0.0; the **Time zone** list
 comes from the `timezone` table, 560 rows on 8.0.1 and 559 on 9.0.0.
+
+#### `somcp_update_localization_settings`
+**State**: written · [issue #383](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/383)
+**Nature**: `acts(EDIT, 'AdminLocalization')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes the settings of **International > Localization >
+Localization**, as the **Save** buttons of its **Configuration**, **Local
+units** and **Advanced** cards do: the default language and country, browser
+detection, the time zone, the four units and the two server identifiers. The
+default currency, which resets every exchange rate when it changes, is a
+second part (#384): until then only the value read passes.
+
+**Do not use for** - enabling a language or a country (→
+`somcp_update_language`, `somcp_update_country`); the units of one carrier
+(they are the shop's); importing a localization pack (no tool yet).
+
+**Parameters** - all optional; a key left out keeps its value. The read of
+`somcp_get_localization_settings` given back whole writes nothing:
+`default_language`, `default_country`, `default_currency` and `language` are
+computed keys, ignored when given back as read and refused otherwise, as
+`somcp_update_tax_options` does.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `default_id_lang` | **Default language** | integer | `SomcpTool::id()`; a language of the shop (`Language::getLanguages(false, $idShop)`), otherwise `SomcpTool::notFound('default_id_lang', 'language', <id>, 'somcp_list_languages')`; a disabled one: `default_id_lang: the language <id> is disabled - the form offers enabled languages only; enable it with somcp_update_language first` |
+| `detect_language_from_browser` | **Set language from browser** | boolean | `true or false` |
+| `default_id_country` | **Default country** | integer | `SomcpTool::id()`; an existing country, otherwise `notFound(..., 'country', ..., 'somcp_list_countries')`; a disabled country is accepted, as the form offers it, with the warning below |
+| `detect_country_from_browser` | **Set default country from browser language** | boolean | `true or false` |
+| `default_id_currency` | **Default currency** | integer | until #384, the value read is no change, any other `default_id_currency: changing the default currency is not available yet` |
+| `timezone` | **Time zone** | string | a `name` of the `timezone` table, compared exactly (`Europe/Paris`); otherwise `timezone: a time zone name of the list, for example Europe/Paris` |
+| `weight_unit`, `distance_unit`, `volume_unit`, `dimension_unit` | **Weight unit**, **Distance unit**, **Volume unit**, **Dimension unit** | string | trimmed, not empty (`<name>: required, never empty`), `Validate::isGenericName()` (`<name>: no <>={} in a unit`), 10 characters at most (`<name>: 10 characters at most, a unit such as kg or cm`) |
+| `language_identifier` | **Language identifier** | string | two letters, stored lowercase: otherwise `language_identifier: two letters, ISO 639-1, for example en` |
+| `country_identifier` | **Country identifier** | string | two letters, stored lowercase: otherwise `country_identifier: two letters, ISO 3166-1 alpha-2 in lowercase, for example us` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is written.
+
+**Then**
+- `$before = SomcpToolGetLocalizationSettings::settings($idShop, $idLang)`;
+- the keys whose value differs, each saved with `Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for the shop of the token, in the order of the cards; a failed save stops the call and names what was saved before it;
+- nothing differs: `changed: false`, `reason` `The localization settings already hold every value given. Nothing was written.`, `localization` as read;
+- logged as `localization_settings_updated` with the fields saved, `localization_settings_update_failed` with the failure.
+
+**Returns** - `changed: true`, `changes` (per field its `field`, `old`,
+`new`, under the names of the parameters), and `localization` read back
+through `settings()`. Warnings, in `warning`:
+- `default_id_country` set to a disabled country: `<name> is the default country but is not enabled: customers cannot pick it in an address; enable it with somcp_update_country.`;
+- a unit changed: `The <field> changed from <old> to <new>: weights, sizes and carrier ranges already typed are not converted, only their label changes.`;
+- on an installation of several shops: `The settings changed for this shop only, as the back office saves them in a shop context.`
+
+**Notes**
+- The core's Save of the Configuration card also calls `LanguageActivator::enable()` on the language chosen; only enabled languages are accepted, so it has nothing to do.
+- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), sets the time zone and puts it back.
+
+**Differences between 8.0.1 and 9.0.0** - none in the adapters or the
+controller. The **Time zone** list has 560 names on 8.0.1, 559 on 9.0.0
+(`US/Pacific-New` on 8.0.1 only): read from the table, never from a list in
+the code.
 
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)

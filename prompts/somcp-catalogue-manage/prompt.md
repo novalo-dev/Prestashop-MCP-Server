@@ -35,6 +35,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_delete_language`
 - `somcp_install_language_pack`
 - `somcp_get_localization_settings`
+- `somcp_update_localization_settings`
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_create_currency`
@@ -378,7 +379,10 @@ page titles) in that language: confirm with the merchant first.
 `somcp_get_localization_settings` says which language, country and currency
 the shop starts from, its time zone, and the weight, distance, volume and
 dimension units every product weight and carrier range is read in: read it
-before typing a weight or a size.
+before typing a weight or a size. `somcp_update_localization_settings`
+changes them; a unit is only a label, so values already typed are not
+converted: confirm with the merchant before changing a unit of a shop that
+already has products or carrier ranges.
 
 ## Prices
 

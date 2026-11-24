@@ -26,6 +26,14 @@ server's language and country identifiers. The assistant can now tell which
 language and currency a shop starts from, and in which units its product
 weights and carrier ranges are read, before typing any of them.
 
+**Change the localization settings.** The new tool
+somcp_update_localization_settings does what the Save buttons of
+International > Localization > Localization do: the default language and country, browser
+detection, the time zone, the units and the server's identifiers, so a new
+shop can be set to the language, country and units it sells in. A unit is only
+a label: the answer says that weights and sizes already typed are not
+converted. The default currency cannot be changed by the tool yet.
+
 **Add or update a language from PrestaShop.** The new tool
 somcp_install_language_pack does what the card Add / Update a language of
 International > Translations does: a language is added with PrestaShop's

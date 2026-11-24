@@ -2471,6 +2471,70 @@ if ($updateCountryOptions !== null) {
     }
 }
 
+// The localization settings (#383): the read given back whole writes
+// nothing, then the time zone is changed and put back. A JSON scenario cannot
+// give back what the read answered, nor put the time zone back whatever
+// happens, and the tools after this one date things in it.
+$getLocalization = $registry->get('somcp_get_localization_settings');
+$updateLocalization = $registry->get('somcp_update_localization_settings');
+if ($getLocalization !== null && $updateLocalization !== null) {
+    $idShopLocal = (int) $context->shop->id;
+    $idGroupLocal = (int) Shop::getGroupFromShop($idShopLocal);
+    $timezoneWas = Configuration::get('PS_TIMEZONE', null, $idGroupLocal, $idShopLocal);
+    $localContext = static function (SomcpTool $tool, array $arguments) use ($idShopLocal, $employee, $context): array {
+        return [
+            'id_shop' => $idShopLocal,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getLocalization->call([], $localContext($getLocalization, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !isset($decoded['localization']) || !is_array($decoded['localization'])) {
+            $failures[] = 'somcp_update_localization_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $whole = $decoded['localization'] + ['language' => $decoded['language'] ?? ''];
+            $timezone = $decoded['localization']['timezone'] === 'Europe/Paris' ? 'Europe/Berlin' : 'Europe/Paris';
+            $steps = [
+                ['the read given back whole, nothing written', $whole, ['"changed": false', 'Nothing was written.']],
+                ['the time zone changed', ['timezone' => $timezone], ['"changed": true', '"field": "timezone"', '"new": "' . $timezone . '"']],
+                ['the time zone put back', ['timezone' => $decoded['localization']['timezone']], ['"changed": true', '"field": "timezone"']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateLocalization->call($arguments, $localContext($updateLocalization, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_localization_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_localization_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_localization_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the time zone of a
+        // fresh shop; a key it never had stays unwritten.
+        if ($timezoneWas !== false) {
+            Configuration::updateValue('PS_TIMEZONE', $timezoneWas, false, $idGroupLocal, $idShopLocal);
+        }
+    }
+}
+
 // A supplier description too long for its column (#333): a JSON scenario
 // cannot hold a 65 KB string in a readable way. On PrestaShop 8 the class
 // declares no size and the text column would cut the description without a

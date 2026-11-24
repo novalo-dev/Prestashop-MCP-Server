@@ -71,7 +71,8 @@ class SomcpToolGetLocalizationSettings
                 . '(their ID with ISO code and name), browser detection, the time zone, the weight, distance, '
                 . 'volume and dimension units every product and carrier range is read in, and the server '
                 . 'language and country identifiers. For the lists of languages, countries or currencies use '
-                . 'somcp_list_languages, somcp_list_countries, somcp_list_currencies.',
+                . 'somcp_list_languages, somcp_list_countries, somcp_list_currencies. To change them, '
+                . 'somcp_update_localization_settings.',
             [
                 'type' => 'object',
                 'properties' => [

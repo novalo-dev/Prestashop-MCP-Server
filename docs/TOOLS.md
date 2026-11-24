@@ -3857,7 +3857,7 @@ product weight and carrier range is read in. Read only.
 units of one carrier's ranges (→ `somcp_get_carrier`, which already gives
 `weight_unit` and `dimension_unit`); changing the settings (→
 `somcp_update_localization_settings`). The **Import a localization pack** card
-holds an action, not a setting: not part of this tool.
+holds an action, not a setting: `somcp_import_localization_pack`.
 
 **Parameters**
 
@@ -3911,7 +3911,8 @@ fetched before anything is written.
 
 **Do not use for** - enabling a language or a country (→
 `somcp_update_language`, `somcp_update_country`); the units of one carrier
-(they are the shop's); importing a localization pack (no tool yet).
+(they are the shop's); importing a localization pack (→
+`somcp_import_localization_pack`).
 
 **Parameters** - all optional; a key left out keeps its value. The read of
 `somcp_get_localization_settings` given back whole writes nothing:
@@ -3965,6 +3966,68 @@ rate 1). Warnings, in `warning`:
 controller. The **Time zone** list has 560 names on 8.0.1, 559 on 9.0.0
 (`US/Pacific-New` on 8.0.1 only): read from the table, never from a list in
 the code.
+
+#### `somcp_import_localization_pack`
+**State**: written · [issue #389](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/389)
+**Nature**: `acts(EDIT, 'AdminLocalization')` · **Scope**: `mcp.catalog.write`
+
+**Does** - imports a country's localization pack, as the **Import** button of
+the **Import a localization pack** card of **International > Localization >
+Localization**: the **States**, the **Taxes** and tax rules, the **Units**,
+and **Change the behavior of the price display for groups**, in one call. The
+pack is always the shop's own file (`localization/<iso>.xml`): **Download
+pack data** is always **No**. **Currencies** and **Languages** reach
+PrestaShop's servers and are part 2 (#390): refused until then.
+
+**Do not use for** - one state, tax or tax rule (→ `somcp_create_state`,
+`somcp_create_tax`, `somcp_create_tax_rule`); the default language, country
+and currency (→ `somcp_update_localization_settings`); the currencies and
+languages of a pack (part 2, #390).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Rule |
+|---|---|---|---|---|
+| `country` | **Localization pack you want to import** | string | yes | two letters, lowercase or uppercase, stored lowercase, checked (`/^[a-z]{2}$/` and `Validate::isLanguageIsoCode()`) before any path is built; a file `_PS_ROOT_DIR_ . '/localization/<iso>.xml'` of the shop, so `default` is refused; otherwise `country: no localization pack for <value> in this shop - the packs are named by the ISO code of their country, for example fr`. The country must exist (`Country::getByIso()`), otherwise `SomcpTool::notFound('country', 'country', <iso>, 'somcp_list_countries', 'ISO code')` |
+| `content` | **Content to import** | array | yes | one or more of `states`, `taxes`, `units`, `groups`, taken once each in the order of the card; empty: `content: at least one of states, taxes, units, groups`; `currencies` or `languages`: `content: currencies and languages are not available yet`; anything else: `content: <value> is not one of states, taxes, units, groups` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is imported. An empty selection never reaches the core, which
+would import everything and change the default language.
+
+**Then**
+- the file loaded; one that does not load: `Cannot load the localization pack of <iso>. Nothing was changed.`;
+- read before, in the shop of the token (`Somcp::actAsShop()`): the identifiers of `state`, `zone`, `tax` and `tax_rules_group`, the five unit keys, `PRICE_DISPLAY_METHOD`, the **Price display method** of the groups of `PS_CUSTOMER_GROUP`, `PS_GUEST_GROUP` and `PS_UNIDENTIFIED_GROUP`, the `active` and `contains_states` of the country;
+- the core's importer, `SomcpBackOffice::coreService('prestashop.core.localization.pack.import.importer')`, with `new LocalizationPackImportConfig($iso, $content, false)`; where no kernel container runs (the MCP endpoint is a front controller), the same steps that importer takes with **Download pack data** off: a new `LocalizationPack` and `loadLocalisationPack($xml, $content, false, $iso)` on the local file. The core's code, never a copy of it;
+- read after, the same, and the difference is the answer;
+- errors returned by the core: the call answers them as a failure, with what had been created or changed before them, and asks to read the states and taxes before calling again;
+- logged as `localization_pack_imported` with the ISO code, the contents and the counts, `localization_pack_import_failed` otherwise.
+
+The import is not undone by a second call, which creates nothing new and
+answers `changed: false`, `reason` `The shop already holds everything this
+pack brings for <contents>. Nothing was created.`
+
+**Returns**
+- `changed`;
+- `country`: `id_country`, `iso_code`, `name`, and `enabled` / `contains_states` (`true`) when the import turned them on;
+- `created`: `states` (the shape of `SomcpToolListStates::state()`), `zones` (`id_zone`, `name`), `taxes` (`id_tax`, `name`, `rate`), `tax_rules` (`id_tax_rules_group`, `name`), each only when not empty;
+- `changes`: per field its `field`, `old`, `new`: `weight_unit`, `volume_unit`, `dimension_unit`, `distance_unit` (the names of `somcp_get_localization_settings`), `base_distance_unit` (`PS_BASE_DISTANCE_UNIT`), and `price_display_method` (`tax_included` / `tax_excluded`), for the setting and, with `id_group`, for each of the three groups;
+- `kept`: how many states, taxes and tax rules of the pack already existed and were not touched.
+
+Warnings, in `warning`:
+- taxes or tax rules kept: `Taxes and tax rules that already had their name were kept as they are, even when the pack has another rate: check them with somcp_list_taxes.`;
+- the country enabled by the import: `<name> was not enabled: the import enabled it, as the back office does.`;
+- a unit changed: `The <field> changed from <old> to <new>: weights, sizes and carrier ranges already typed are not converted, only their label changes.`;
+- on an installation of several shops: `The pack was imported for the whole installation: states, taxes and units are shared by every shop.`
+
+**Notes**
+- `_installStates()` creates each missing state, with a zone created when none has its name, and turns **Contains states** on; `_installTaxes()` creates each tax and tax rule whose name is missing and never changes one that has it; `_installUnits()` overwrites the units; `_installGroups()` sets the price display. The country of the pack is enabled when it is not.
+- The scenario only tests refusals: an import changes the shop for good. `dev/shop-tests/run.php` imports the `units` of the pack of the default country and puts the units read before back in `finally`.
+
+**Differences between 8.0.1 and 9.0.0** - none in `LocalizationPackImporter`,
+`LocalizationPack` or the 96 local files. The service is a class on 8.0.1 and
+an alias on 9.0.0: the same id on both.
 
 #### `somcp_get_general_settings`
 **State**: written · [issue #385](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/385)

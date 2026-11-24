@@ -1442,6 +1442,11 @@
       <source>Read the maintenance settings</source>
       <target>Lire les paramètres de maintenance</target>
     </trans-unit>
+    <!-- Import a localization pack -->
+    <trans-unit id="1240d2eed41a0fd4e898e6aab64c6732" resname="Import a localization pack">
+      <source>Import a localization pack</source>
+      <target>Importer un pack de localisation</target>
+    </trans-unit>
     <!-- Change the maintenance settings -->
     <trans-unit id="77fe780e8a117b42809870b42c1cc6c7" resname="Change the maintenance settings">
       <source>Change the maintenance settings</source>

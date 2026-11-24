@@ -2535,6 +2535,54 @@ if ($getLocalization !== null && $updateLocalization !== null) {
     }
 }
 
+// The localization pack (#389): the units of the pack of the default country
+// are imported, then the units read before are put back. A JSON scenario
+// cannot put them back whatever happens, and an import of states or taxes
+// would change the shop for good, so only the units are imported.
+$importPack = $registry->get('somcp_import_localization_pack');
+if ($importPack !== null) {
+    $idShopPack = (int) $context->shop->id;
+    $unitKeys = ['PS_WEIGHT_UNIT', 'PS_VOLUME_UNIT', 'PS_DIMENSION_UNIT', 'PS_BASE_DISTANCE_UNIT', 'PS_DISTANCE_UNIT'];
+    // Read as the core writes them: _installUnits() saves every key for the
+    // whole installation.
+    $unitsWere = [];
+    foreach ($unitKeys as $key) {
+        $unitsWere[$key] = Configuration::get($key, null, 0, 0);
+    }
+    $packIso = Tools::strtolower((string) Country::getIsoById((int) Configuration::get('PS_COUNTRY_DEFAULT')));
+    $arguments = ['country' => $packIso, 'content' => ['units']];
+    ++$calls;
+    try {
+        $result = $importPack->call($arguments, [
+            'id_shop' => $idShopPack,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $importPack->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = (string) ($result['content'][0]['text'] ?? '');
+        if (!empty($result['isError']) || strpos($text, '"changed":') === false || strpos($text, '"kept":') === false) {
+            $failures[] = 'somcp_import_localization_pack (the units of ' . $packIso . '): expected ok - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_import_localization_pack (the units of ' . $packIso . ')');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_import_localization_pack: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the units of a
+        // fresh shop; a key it never had stays unwritten.
+        foreach ($unitsWere as $key => $value) {
+            if ($value !== false) {
+                Configuration::updateValue($key, $value);
+            }
+        }
+    }
+}
+
 // The general settings (#386): the read given back whole writes nothing,
 // then Display suppliers is turned over and put back. A JSON scenario cannot
 // give back what the read answered, nor put the switch back whatever

@@ -36,6 +36,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_install_language_pack`
 - `somcp_get_localization_settings`
 - `somcp_update_localization_settings`
+- `somcp_import_localization_pack`
 - `somcp_get_general_settings`
 - `somcp_update_general_settings`
 - `somcp_get_maintenance_settings`
@@ -389,6 +390,11 @@ converted: confirm with the merchant before changing a unit of a shop that
 already has products or carrier ranges. A new default currency resets every
 exchange rate and converts no price, each keeps its figure in the new
 currency: confirm with the merchant, who may want maintenance mode on first.
+`somcp_import_localization_pack` brings a country's states, taxes and tax
+rules, units and price display in one call, from the shop's own pack: use it
+when a shop is set up for a country, rather than creating each state and tax
+by hand. It creates and is not undone, and it overwrites the units: confirm
+with the merchant first.
 `somcp_get_general_settings` gives the price rounding (Round mode and Round
 type, which decide every price shown and every total invoiced) and whether
 the storefront shows a suppliers, a brands and a best sellers page.

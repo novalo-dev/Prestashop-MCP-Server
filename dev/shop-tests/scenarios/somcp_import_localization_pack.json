@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "a country with no pack and no content, refused together", "arguments": {"country": "zz", "content": []}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- country: no localization pack for zz in this shop", "- content: at least one of states, taxes, units, groups"]},
+    {"why": "languages, which wait for part 2", "arguments": {"country": "fr", "content": ["languages"]}, "expect": "error", "contains": ["- content: currencies and languages are not available yet"]},
+    {"why": "a name that is not two letters, refused before any path is built", "arguments": {"country": "../fr", "content": ["units"]}, "expect": "error", "contains": ["- country: no localization pack for ../fr in this shop"]},
+    {"why": "Download pack data, never offered", "arguments": {"country": "fr", "content": ["states"], "download": true}, "expect": "error", "contains": ["- download: not a field of this tool"]},
+    {"why": "a content the card does not have", "arguments": {"country": "fr", "content": ["modules"]}, "expect": "error", "contains": ["- content: modules is not one of states, taxes, units, groups"]}
+  ]
+}

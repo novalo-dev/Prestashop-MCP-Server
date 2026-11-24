@@ -465,6 +465,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_install_language_pack` | ✎ Add or update a language from PrestaShop | Translations › add / update a language |
 | `somcp_get_localization_settings` | ● Read the localization settings | Localization › view |
 | `somcp_update_localization_settings` | ✎ Change the localization settings | Localization › edit |
+| `somcp_import_localization_pack` | ✎ Import a localization pack | Localization › edit |
 | `somcp_get_general_settings` | ● Read the general settings | General › view |
 | `somcp_update_general_settings` | ✎ Change the general settings | General › edit |
 | `somcp_get_maintenance_settings` | ● Read the maintenance settings | Maintenance › view |

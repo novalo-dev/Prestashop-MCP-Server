@@ -467,6 +467,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_currency` | ✎ Add a currency | Currencies › add |
 | `somcp_update_currency` | ✎ Change a currency | Currencies › edit |
 | `somcp_delete_currency` | ✎ Delete a currency | Currencies › delete |
+| `somcp_update_exchange_rates` | ✎ Update the exchange rates | Currencies › update exchange rates |
 | `somcp_create_tax` | ✎ Create a tax | Taxes › add |
 | `somcp_update_tax` | ✎ Change a tax | Taxes › edit |
 | `somcp_delete_tax` | ✎ Delete a tax | Taxes › delete |

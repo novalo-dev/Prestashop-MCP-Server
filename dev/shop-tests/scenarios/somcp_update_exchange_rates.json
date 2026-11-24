@@ -1,0 +1,5 @@
+{
+  "calls": [
+    {"why": "the tool takes no argument: one given is refused before PrestaShop's server is reached", "arguments": {"rate": 1}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- rate: not a field of this tool"]}
+  ]
+}

@@ -1166,6 +1166,10 @@ T = {
  "Supprimer une devise",
  "Eliminar una moneda",
  "Eine Währung löschen"),
+"Update the exchange rates": (
+ "Mettre à jour les taux de change",
+ "Actualizar los tipos de cambio",
+ "Die Wechselkurse aktualisieren"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

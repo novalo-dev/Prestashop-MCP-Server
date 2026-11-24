@@ -3841,7 +3841,7 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 
 **Notes**
 - Read through a query on `currency` (`deleted = 0`) joined to `currency_shop` on the shop of the token and to `currency_lang` in the language asked, rather than `Currency::getCurrencies()`, which has no name or ISO code filter; the default read as `Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop)`. The query and the building of a row are shared with `somcp_get_currency` (`SomcpToolListCurrencies::currency()` and `row()`).
-- The **Exchange rate** block below the list (**Live exchange rates**, **Update exchange rates**) holds actions, not part of this list.
+- The **Exchange rate** block below the list (**Live exchange rates**, **Update exchange rates**) holds actions, not part of this list: **Update exchange rates** is `somcp_update_exchange_rates`.
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its bulk actions, its labels or the tables (`currency`, `currency_lang`, `currency_shop`); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
@@ -4073,6 +4073,52 @@ with somcp_list_currencies`.
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - none in the handler, `Currency::delete()` or the tables.
+
+#### `somcp_update_exchange_rates`
+**State**: written · [issue #378](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/378)
+**Nature**: `acts(EDIT, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - updates the exchange rates of every currency of the shop from
+PrestaShop's exchange rate server, as the **Update** button of **Update
+exchange rates**, in the **Exchange rate** block of **International >
+Localization > Currencies**. It waits up to 20 seconds for that server.
+
+**Do not use for** - setting one rate by hand (→ `somcp_update_currency`);
+reading the rates (→ `somcp_list_currencies`).
+
+**Parameters** - none. `{}`; any argument refused through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was changed. Correct
+these and call again:`.
+
+**Then**
+- the currencies of the shop read before, through `SomcpToolListCurrencies::query()`, `row()` and `defaultCurrency()`;
+- no currency other than the default one: `changed: false`, `reason` `<ISO code> is the only currency of this shop: its rate is always 1. Nothing was written.`, without calling the server;
+- otherwise `@set_time_limit(40)` when `max_execution_time` is above 0 and below 40, the feed `_PS_CURRENCY_FEED_URL_` fetched with `Tools::file_get_contents(..., 20)` (constant `TIMEOUT`), parsed, stored in the cache `Tools::simplexml_load_file()` reads, then `Currency::refreshCurrencies()` in the shop of the token (`Somcp::actAsShop()`): it finds the feed in the cache and sends no second request;
+- the currencies read again and compared row by row.
+
+**Returns** - the shape of every update tool:
+- `changed` (boolean);
+- `changes`, when a rate moved: one item per currency, `id_currency`, `iso_code`, `field` `conversion_rate`, `old`, `new`;
+- `reason` when nothing moved: `The exchange rates of PrestaShop give the rates the shop already holds. Nothing was written.`;
+- `not_in_feed`: the ISO codes of the non-default currencies the feed does not list, with the warning `PrestaShop's exchange rates do not include <ISO codes>: their rate was left unchanged; set it with somcp_update_currency.`;
+- `currencies`: the rows of `somcp_list_currencies` read back, the default one included.
+
+Warnings, when a rate moved: `Prices shown in these currencies change now;
+orders already placed keep their rate.`, and on an installation of several
+shops (`SomcpToolCreateTax::otherShops()` above 0) `The exchange rates changed
+for this shop only; the other shops keep theirs.`
+
+**Errors** - `SomcpTool::text(..., true)`:
+- feed empty or not XML: `PrestaShop's exchange rate server did not answer within 20 seconds, or sent something unreadable. Nothing was changed. Try again later, or set a rate with somcp_update_currency.`;
+- `Currency::refreshCurrencies()` returns an error: `The exchange rates could not be updated: <its message>. Nothing was changed.`
+
+**Notes**
+- The only outgoing request is the one PrestaShop's own button sends, to its own server; the core's 5-second wait is replaced by 20 seconds.
+- A currency absent from the feed keeps its rate: the core skips it without a word, so the tool names it.
+- Logged as `exchange_rates_updated` with the count of rates changed, `exchange_rates_update_failed` with the reason.
+- The rates of the feed change every day: the scenario only checks the refusal of an argument, and the CI never reaches PrestaShop's server.
+
+**Differences between 8.0.1 and 9.0.0** - none in the page, `Currency::refreshCurrencies()` or `Tools::file_get_contents()`; the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0, where the tool answers `changed: false` without calling the server).
 
 #### `somcp_create_tax`
 **State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)

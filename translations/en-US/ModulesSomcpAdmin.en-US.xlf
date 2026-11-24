@@ -1467,6 +1467,11 @@
       <source>Delete a currency</source>
       <target>Delete a currency</target>
     </trans-unit>
+    <!-- Update the exchange rates -->
+    <trans-unit id="e50d51a385d5f3673a0da44b1b43e76a" resname="Update the exchange rates">
+      <source>Update the exchange rates</source>
+      <target>Update the exchange rates</target>
+    </trans-unit>
     <!-- List currencies -->
     <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">
       <source>List currencies</source>

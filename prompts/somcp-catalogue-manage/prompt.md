@@ -38,6 +38,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_currency`
 - `somcp_update_currency`
 - `somcp_delete_currency`
+- `somcp_update_exchange_rates`
 - `somcp_create_tax`
 - `somcp_update_tax`
 - `somcp_delete_tax`
@@ -383,7 +384,10 @@ the same tool with `alternative`, and the name and symbol the merchant gives.
 A currency's
 exchange rate, decimals, status, names, symbols and symbol position are changed
 with `somcp_update_currency`, which also restores the default settings: the
-default currency keeps a rate of 1 and cannot be switched off. A
+default currency keeps a rate of 1 and cannot be switched off. Every rate is
+updated at once from PrestaShop's exchange rates with
+`somcp_update_exchange_rates`, which names the currencies those rates leave
+out. A
 currency is deleted with `somcp_delete_currency`, never the default one nor one
 a country uses; orders placed in it keep it.
 

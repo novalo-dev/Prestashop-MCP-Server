@@ -219,14 +219,15 @@ class SomcpToolListCurrencies
      *
      * A query rather than Currency::getCurrencies(), which has no name or ISO
      * code filter. The list of a shop shows the currencies currency_shop ties
-     * to it, with the rate that shop converts at.
+     * to it, with the rate that shop converts at. Public so
+     * somcp_update_exchange_rates compares the rates of the same rows.
      *
      * @param int $idShop
      * @param int $idLang
      *
      * @return DbQuery
      */
-    private static function query(int $idShop, int $idLang): DbQuery
+    public static function query(int $idShop, int $idLang): DbQuery
     {
         $query = new DbQuery();
         $query->select('c.`id_currency`, cl.`name`, cl.`symbol`, c.`iso_code`, cs.`conversion_rate`, c.`active`');

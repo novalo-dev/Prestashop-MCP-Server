@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Update the exchange rates.** The new tool somcp_update_exchange_rates does
+what the Update button of Update exchange rates does in International >
+Localization > Currencies: every currency of the shop takes the rate of
+PrestaShop's exchange rate server. The merchant sees which rates moved, from
+what to what, and which currencies that server does not list, whose rate
+stays as it was. It waits up to 20 seconds for the server, and says so when it
+does not answer.
+
 **Change the country options.** The new tool somcp_update_country_options
 switches on or off, in International > Locations > Countries, the option that
 lets customers pick in their address only a country an active carrier

@@ -3507,7 +3507,7 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 
 **Notes**
 - Read through a query on `lang` joined to `lang_shop` on the shop of the token, rather than `Language::getLanguages()`, so every filter stays one `WHERE`; the default read as `somcp_ping` reads it.
-- No flag image: the flag is a file the assistant has no use for.
+- The flag is given as every file of the module is, a `download_ref` for `somcp_download_file`, never an address.
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the **Locale** column and its filter on 9.0.0 only (the answer gives `locale` on both, from the same column); otherwise the same list, filters, labels and tables (`lang`, `lang_shop`).

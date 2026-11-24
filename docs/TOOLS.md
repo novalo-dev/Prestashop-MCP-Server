@@ -4069,6 +4069,56 @@ back through `settings()`. Warnings, in `warning`:
 
 **Differences between 8.0.1 and 9.0.0** - none for these five fields.
 
+#### `somcp_get_maintenance_settings`
+**State**: written · [issue #387](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/387)
+**Nature**: `acts(VIEW, 'AdminMaintenance')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the tab **Maintenance** of **Shop Parameters > General**:
+**Enable store**, **Enable store for logged-in employees** (9.0.0 only) and
+**Custom maintenance text**. Whether the storefront is open to visitors.
+Read only.
+
+**Do not use for** - whether the shop answers at all (→ `somcp_ping`); the
+rounding and storefront pages (→ `somcp_get_general_settings`).
+**Maintenance IP** is neither read nor written.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | - | array | no | the languages of **Custom maintenance text** to give, ISO codes among the shop's active languages, every one by default: the rule of #149 (`SomcpToolCreateProduct::languages()`), an unknown one refused |
+
+Unknown arguments through `SomcpTool::unknownFields()`, in the envelope
+`Nothing was read. Correct these and call again:`, with an unknown language
+in the same answer.
+
+**Returns** - one object, built in the public
+`SomcpToolGetMaintenanceSettings::settings($idShop, $idLangs)`, which the
+update reads too, under the names the update takes back. Each key read with
+`Configuration::get(<key>, ..., $idShopGroup, $idShop)` for the shop of the
+token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `store_enabled` | **Enable store** | `PS_SHOP_ENABLE` | boolean |
+| `open_for_logged_in_employees` | **Enable store for logged-in employees** | `PS_MAINTENANCE_ALLOW_ADMINS` | boolean on 9.0.0; `null` on 8.0.1, where the field does not exist (`hasEmployeeSwitch()`) |
+| `maintenance_text` | **Custom maintenance text** | `PS_MAINTENANCE_TEXT` | object keyed by ISO code, each language read with its `id_lang`, the HTML as stored |
+| `languages` | - | - | the ISO codes given in `maintenance_text` |
+
+When `store_enabled` is false, a `warning`: `The storefront is closed:
+visitors see the maintenance text, and only the addresses of Maintenance IP
+in the back office<, and the employees logged in to the back office> see the
+shop.` (the part in angle brackets on 9.0.0 when
+`open_for_logged_in_employees` is true).
+
+**Notes**
+- The keys are those `src/Adapter/Shop/MaintenanceConfiguration.php` reads and writes (`CONFIGURATION_FIELDS`), each a multistore field.
+- The scenario checks the shape, never a text.
+
+**Differences between 8.0.1 and 9.0.0** - **Enable store for logged-in
+employees** exists on 9.0.0 only (`PS_MAINTENANCE_ALLOW_ADMINS`, no row on
+8.0.1); the two other fields are the same.
+
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)
 **Nature**: `acts(VIEW, 'AdminCurrencies')` · **Scope**: `mcp.catalog.read`

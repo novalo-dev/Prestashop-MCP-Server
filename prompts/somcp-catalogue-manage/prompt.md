@@ -38,6 +38,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_localization_settings`
 - `somcp_get_general_settings`
 - `somcp_update_general_settings`
+- `somcp_get_maintenance_settings`
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_create_currency`
@@ -392,7 +393,9 @@ type, which decide every price shown and every total invoiced) and whether
 the storefront shows a suppliers, a brands and a best sellers page.
 `somcp_update_general_settings` changes them: a new rounding applies to new
 carts and orders only, those already made keep their totals; confirm with the
-merchant before changing it.
+merchant before changing it. `somcp_get_maintenance_settings` says whether
+the storefront is open to visitors or shows the maintenance text: read it
+before telling the merchant the shop is live.
 
 ## Prices
 

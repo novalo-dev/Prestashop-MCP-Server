@@ -1437,6 +1437,11 @@
       <source>Change the general settings</source>
       <target>Change the general settings</target>
     </trans-unit>
+    <!-- Read the maintenance settings -->
+    <trans-unit id="245260641c96cc624fce84fd42130807" resname="Read the maintenance settings">
+      <source>Read the maintenance settings</source>
+      <target>Read the maintenance settings</target>
+    </trans-unit>
     <!-- Read the country options -->
     <trans-unit id="4832df5ad50f78b3359bade7095832f9" resname="Read the country options">
       <source>Read the country options</source>

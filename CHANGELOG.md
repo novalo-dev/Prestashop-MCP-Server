@@ -31,6 +31,13 @@ those: the other settings of the tab are never touched. The answer says that
 orders and invoices already made keep their totals, and that only new carts
 and orders use a new rounding.
 
+**Read the maintenance settings.** The new tool
+somcp_get_maintenance_settings reads the Maintenance tab of Shop Parameters >
+General: whether the store is enabled, whether employees logged in to the
+back office still see it (PrestaShop 9), and the maintenance text in each
+language. The assistant can now tell whether the storefront is open to
+visitors before saying the shop is live.
+
 **Read the localization settings.** The new tool
 somcp_get_localization_settings reads International > Localization >
 Localization: the default language, country and currency, browser detection,

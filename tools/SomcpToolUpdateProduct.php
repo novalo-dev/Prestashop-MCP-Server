@@ -486,7 +486,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         // The creation's own readings, for the groups whose fields are single
         // values: they only fill what is given, and the comparison below keeps
         // what differs.
-        self::basics($groups['basics'], $languages, $probe, $plan, $errors, false);
+        self::basics($groups['basics'], $languages, $probe, $idShop, $plan, $errors, false);
         self::brand($groups['brand'], $plan, $errors);
         self::references($groups['references'], $probe, $plan, $errors);
         self::condition($groups['condition'], $probe, $plan, $errors);
@@ -2584,6 +2584,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         foreach (['meta_title', 'meta_description', 'link_rewrite'] as $field) {
             $texts[$field] = is_array($product->{$field}) ? $product->{$field} : [];
         }
+        // The summary advice only for the languages whose summary this call
+        // gave, so a change of price says nothing about an older summary.
+        $summaries = is_array($product->description_short) ? $product->description_short : [];
+        $texts['description_short'] = array_intersect_key($summaries, $plan['texts']['description_short'] ?? []);
         $warnings = self::seoWarnings($product, ['languages' => ['filled' => $touched], 'texts' => $texts], $idShop);
 
         if ($product->active) {

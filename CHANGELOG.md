@@ -187,6 +187,13 @@ the answer says which payment modules stopped accepting it.
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
 3.7.0. Nothing changes on the page.
 
+**Product summaries as long as the back office allows.** somcp_create_product
+and somcp_update_product refused a summary outside 100 to 200 characters, so a
+one-character fix of an existing longer summary was refused too and had to be
+made by hand. A summary is now refused only past the shop's own Max size of
+short description (Shop Parameters > Product Settings), as on the product page,
+and a summary outside 100 to 200 characters only gives an SEO advice.
+
 ### Fixed
 
 **A country given the wrong way when listing states.** When the assistant gave

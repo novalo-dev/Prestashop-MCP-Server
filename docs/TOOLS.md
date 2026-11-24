@@ -4744,7 +4744,7 @@ The products and the categories they are sorted into: texts, prices, combination
 |---|---|---|---|
 | `basics` | `product_type` | merchant | a value of PrestaShop's `ProductType`: `standard`, `combinations`, `pack`, `virtual` |
 | | `name` | merchant | required; 128 characters at most per language (`ProductSettings::MAX_NAME_LENGTH`) |
-| | `description_short` (summary) | assistant | 100 to 200 characters per language, refused outside; HTML cleaned, 65 535 bytes at most on PrestaShop 8 |
+| | `description_short` (summary) | assistant | at most the shop's **Max size of short description** (Shop Parameters > Product Settings, `PS_PRODUCT_SHORT_DESC_LIMIT`, 800 when empty), counted on the visible text and refused past it; 100 to 200 characters reads best, outside that `seo_warnings` says so without blocking; HTML cleaned, 65 535 bytes at most on PrestaShop 8 |
 | | `description` | assistant | HTML cleaned; 65 535 bytes at most on PrestaShop 8 |
 | `categories` | `categories` | merchant, from the shop | ids from `somcp_list_categories` |
 | | `id_category_default` | merchant, from the shop | one of `categories`, added to them if missing; Home when none |
@@ -4819,7 +4819,7 @@ The products and the categories they are sorted into: texts, prices, combination
 
 **Do not use for** - creating a product (→ `somcp_create_product`), switching one on or off alone (→ `somcp_set_product_active`), or deleting one (→ `somcp_delete_product`).
 
-**Parameters** - `id_product` (required), `languages`, then the groups and fields of `somcp_create_product`, all optional. Every rule of that entry applies unchanged: who fills each field (merchant, merchant from the shop, assistant, both), the lengths (name 128, summary 100 to 200, reference 50, SEO title 55, meta description 512, counted on the visible text with spaces), the identifiers taken from the `somcp_list_*` tools, the SEO section and the image download guards. The tool extends `SomcpToolCreateProduct` and calls its checks, so the two cannot drift apart.
+**Parameters** - `id_product` (required), `languages`, then the groups and fields of `somcp_create_product`, all optional. Every rule of that entry applies unchanged: who fills each field (merchant, merchant from the shop, assistant, both), the lengths (name 128, summary at most the shop's Max size of short description with 100 to 200 as advice, reference 50, SEO title 55, meta description 512, counted on the visible text with spaces), the identifiers taken from the `somcp_list_*` tools, the SEO section and the image download guards. The tool extends `SomcpToolCreateProduct` and calls its checks, so the two cannot drift apart.
 
 **What "only what is given" means**
 

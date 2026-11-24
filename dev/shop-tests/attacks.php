@@ -888,8 +888,11 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
         return $response;
     };
     // However the sign-ins arrive, no more passwords are compared than the
-    // limit allows: each one waits on its own solved check, and the right
-    // password sent last is not let in.
+    // limit allows, each one with its own solved check, and the right
+    // password sent once they are in is refused. It is not sent among them:
+    // requests sent at once arrive in any order, and a right password that
+    // arrives within the limit is rightly let in, which signs the session in
+    // and leaves every guess below on another page.
     $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
     $logStart = (int) $db->getValue('SELECT MAX(`id_log`) FROM `' . _DB_PREFIX_ . 'somcp_log`');
     $wave = [];
@@ -900,7 +903,7 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
             'somcp_step' => 'signin',
             'somcp_csrf' => $guessCsrf,
             'somcp_email' => (string) $signinEmployee->email,
-            'somcp_password' => $i === $waveSize ? $signinPassword : 'wave-' . $i,
+            'somcp_password' => 'wave-' . $i,
             'somcp_altcha' => $solve($page),
         ])];
     }
@@ -908,15 +911,14 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     $compared = (int) $db->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'somcp_log`'
         . ' WHERE `id_log` > ' . $logStart . " AND `event` IN ('signin_refused', 'signin_succeeded')"
         . " AND (`event` = 'signin_succeeded' OR `message` LIKE 'wrong email%')");
-    $letIn = (int) $db->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'somcp_log`'
-        . ' WHERE `id_log` > ' . $logStart . " AND `event` = 'signin_succeeded'");
     ++$checks;
-    if ($compared > SomcpGuard::SIGNIN_ATTEMPTS || $letIn > 0) {
-        $failures[] = sprintf('%d sign-ins at once: %d passwords compared (limit %d), %d let in', $waveSize, $compared, SomcpGuard::SIGNIN_ATTEMPTS, $letIn);
+    if ($compared > SomcpGuard::SIGNIN_ATTEMPTS) {
+        $failures[] = sprintf('%d sign-ins at once: %d passwords compared (limit %d)', $waveSize, $compared, SomcpGuard::SIGNIN_ATTEMPTS);
         echo "  FAIL  sign-ins at once stay within the limit\n";
     } else {
         printf("  ok    sign-ins at once stay within the limit (%d compared)\n", $compared);
     }
+    $expect('right password after sign-ins sent at once', $guess($signinPassword), 429);
     // One solved check is good for one sign-in, however often it is posted.
     $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
     $logStart = (int) $db->getValue('SELECT MAX(`id_log`) FROM `' . _DB_PREFIX_ . 'somcp_log`');

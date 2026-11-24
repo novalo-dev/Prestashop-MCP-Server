@@ -1417,6 +1417,11 @@
       <source>Read a country</source>
       <target>Ein Land lesen</target>
     </trans-unit>
+    <!-- Read the localization settings -->
+    <trans-unit id="1dde4722155f5b1554359ff857a7e7bd" resname="Read the localization settings">
+      <source>Read the localization settings</source>
+      <target>Die Lokalisierungseinstellungen lesen</target>
+    </trans-unit>
     <!-- Read the country options -->
     <trans-unit id="4832df5ad50f78b3359bade7095832f9" resname="Read the country options">
       <source>Read the country options</source>

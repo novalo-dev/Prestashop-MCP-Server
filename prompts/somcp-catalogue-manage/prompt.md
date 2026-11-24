@@ -34,6 +34,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_language`
 - `somcp_delete_language`
 - `somcp_install_language_pack`
+- `somcp_get_localization_settings`
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_create_currency`
@@ -374,6 +375,10 @@ or those translations of an installed one replaced, with
 `somcp_install_language_pack`: it reaches PrestaShop's server and can take two
 minutes, and an update replaces the texts PrestaShop ships (order statuses,
 page titles) in that language: confirm with the merchant first.
+`somcp_get_localization_settings` says which language, country and currency
+the shop starts from, its time zone, and the weight, distance, volume and
+dimension units every product weight and carrier range is read in: read it
+before typing a weight or a size.
 
 ## Prices
 

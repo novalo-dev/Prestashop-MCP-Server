@@ -1126,6 +1126,10 @@ T = {
  "Lire un pays",
  "Leer un país",
  "Ein Land lesen"),
+"Read the localization settings": (
+ "Lire les paramètres de localisation",
+ "Leer los parámetros de localización",
+ "Die Lokalisierungseinstellungen lesen"),
 "Read the country options": (
  "Lire les options des pays",
  "Leer las opciones de los países",

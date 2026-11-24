@@ -35,6 +35,7 @@
     "somcp_update_language",
     "somcp_delete_language",
     "somcp_install_language_pack",
+    "somcp_get_localization_settings",
     "somcp_list_currencies",
     "somcp_get_currency",
     "somcp_create_currency",

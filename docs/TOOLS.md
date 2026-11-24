@@ -3842,6 +3842,60 @@ The folder of the shop is taken out of the core's messages.
 
 **Differences between 8.0.1 and 9.0.0** - none in the card, the controller, `LanguagePackImporter` or `LanguagePackInstaller`; 9.0.0 tries the download three times before giving up, 8.0.1 once, each attempt waiting 20 seconds.
 
+#### `somcp_get_localization_settings`
+**State**: written · [issue #382](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/382)
+**Nature**: `acts(VIEW, 'AdminLocalization')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the settings of **International > Localization >
+Localization**: the **Configuration** card (default language, country and
+currency, browser detection, time zone), **Local units** and **Advanced**.
+The language, country and currency a shop starts from, and the units every
+product weight and carrier range is read in. Read only.
+
+**Do not use for** - the list of languages, countries or currencies (→
+`somcp_list_languages`, `somcp_list_countries`, `somcp_list_currencies`); the
+units of one carrier's ranges (→ `somcp_get_carrier`, which already gives
+`weight_unit` and `dimension_unit`). The **Import a localization pack** card
+holds an action, not a setting: not part of this tool.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | - | string | no | ISO code of one of the shop's active languages, for the names of the default country and currency, through `SomcpTool::readLanguage()`; a code the shop does not have is refused with `SomcpTool::languageProblem()`. The shop default language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`, in the envelope
+`Nothing was read. Correct these and call again:`.
+
+**Returns** - `language` (the ISO code the names are in) and `localization`,
+built in the public `SomcpToolGetLocalizationSettings::settings()`, which the
+update reads too. Each key read with `Configuration::get(<key>, null,
+$idShopGroup, $idShop)` for the shop of the token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `default_id_lang` | **Default language** | `PS_LANG_DEFAULT` | integer, the `id_lang` of `somcp_list_languages` |
+| `default_language` | - | - | `{iso_code, name}` of that language, from `Language` (computed); `null` when the setting names no language |
+| `detect_language_from_browser` | **Set language from browser** | `PS_DETECT_LANG` | boolean |
+| `default_id_country` | **Default country** | `PS_COUNTRY_DEFAULT` | integer, the `id_country` of `somcp_list_countries` |
+| `default_country` | - | - | `{iso_code, name}`, the name in `language` (`Country::getNameById()`) (computed) |
+| `detect_country_from_browser` | **Set default country from browser language** | `PS_DETECT_COUNTRY` | boolean |
+| `default_id_currency` | **Default currency** | `PS_CURRENCY_DEFAULT` | integer, the `id_currency` of `somcp_list_currencies` |
+| `default_currency` | - | - | `{iso_code, name}`, the name in `language` (computed) |
+| `timezone` | **Time zone** | `PS_TIMEZONE` | string, for example `Europe/Paris` |
+| `weight_unit`, `distance_unit`, `volume_unit`, `dimension_unit` | **Weight unit**, **Distance unit**, **Volume unit**, **Dimension unit** | `PS_WEIGHT_UNIT`, `PS_DISTANCE_UNIT`, `PS_VOLUME_UNIT`, `PS_DIMENSION_UNIT` | string, as stored |
+| `language_identifier` | **Language identifier** | `PS_LOCALE_LANGUAGE` | string |
+| `country_identifier` | **Country identifier** | `PS_LOCALE_COUNTRY` | string |
+
+**Notes**
+- The keys are those `LocalizationConfiguration`, `LocalUnitsConfiguration` and `AdvancedConfiguration` of `src/Adapter/Localization/` read and write, the same on both versions.
+- The demo shops differ (default country, volume unit): the scenario only expects the keys.
+
+**Differences between 8.0.1 and 9.0.0** - none in the keys or the adapters.
+On screen: **Default country** has an empty `--` choice first on 9.0.0 only;
+**Default currency** carries no required mark on 9.0.0; the **Time zone** list
+comes from the `timezone` table, 560 rows on 8.0.1 and 559 on 9.0.0.
+
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)
 **Nature**: `acts(VIEW, 'AdminCurrencies')` · **Scope**: `mcp.catalog.read`

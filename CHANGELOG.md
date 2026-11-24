@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Read the localization settings.** The new tool
+somcp_get_localization_settings reads International > Localization >
+Localization: the default language, country and currency, browser detection,
+the time zone, the weight, distance, volume and dimension units, and the
+server's language and country identifiers. The assistant can now tell which
+language and currency a shop starts from, and in which units its product
+weights and carrier ranges are read, before typing any of them.
+
 **Add or update a language from PrestaShop.** The new tool
 somcp_install_language_pack does what the card Add / Update a language of
 International > Translations does: a language is added with PrestaShop's

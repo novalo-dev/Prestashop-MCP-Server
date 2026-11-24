@@ -2423,6 +2423,54 @@ if ($getTaxOptions !== null && $updateTaxOptions !== null) {
     }
 }
 
+// The country options (#375) switched on, the same call again, then put
+// back: a JSON scenario cannot put the option back whatever happens, and the
+// scenarios after it read the option of a fresh shop.
+$updateCountryOptions = $registry->get('somcp_update_country_options');
+if ($updateCountryOptions !== null) {
+    $idShopCountry = (int) $context->shop->id;
+    $idGroupCountry = (int) Shop::getGroupFromShop($idShopCountry);
+    $restrictWas = Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES', null, $idGroupCountry, $idShopCountry);
+    $calls += 2;
+    try {
+        $steps = [
+            'the restriction switched on' => ['"changed": true', '"field": "restrict_to_carriers"', '"new": true'],
+            'the same call again, nothing written' => ['"changed": false', 'Nothing was written.'],
+        ];
+        foreach ($steps as $why => $needles) {
+            $result = $updateCountryOptions->call(['restrict_to_carriers' => true], [
+                'id_shop' => $idShopCountry,
+                'id_employee' => (int) $employee->id,
+                'id_lang' => (int) $context->language->id,
+                'id_client' => 0,
+                'scopes' => implode(' ', $updateCountryOptions->getRequiredScopes()),
+                'responses' => [],
+                'resumed' => [],
+                'capabilities' => [],
+                'arguments' => ['restrict_to_carriers' => true],
+            ]);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            });
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_update_country_options (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_country_options (' . $why . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_country_options: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the option of a
+        // fresh shop, false when it was never stored.
+        Configuration::updateValue('PS_RESTRICT_DELIVERED_COUNTRIES', (int) $restrictWas, false, $idGroupCountry, $idShopCountry);
+    }
+}
+
 // A supplier description too long for its column (#333): a JSON scenario
 // cannot hold a 65 KB string in a readable way. On PrestaShop 8 the class
 // declares no size and the text column would cut the description without a

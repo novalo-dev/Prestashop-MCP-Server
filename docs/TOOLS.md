@@ -2711,11 +2711,12 @@ Countries**: **Restrict country selections in front office to those covered by
 active carriers**. When it is on, the storefront offers in an address only the
 countries an active carrier delivers (`Carrier::getDeliveredCountries()` in
 `FrontController::makeAddressForm()`), every active country otherwise. Read
-only; the read before the update of these options (a later tool), which will
-take back what this one gives.
+only; the read before somcp_update_country_options, which takes back what
+this one gives.
 
 **Do not use for** - the countries themselves (→ `somcp_list_countries`,
-`somcp_get_country`); the zones a carrier delivers (→ `somcp_get_carrier`).
+`somcp_get_country`); the zones a carrier delivers (→ `somcp_get_carrier`);
+changing the option (→ `somcp_update_country_options`).
 
 **Parameters** - none. Unknown arguments through `SomcpTool::unknownFields()`.
 
@@ -2737,6 +2738,52 @@ again:`, an unknown argument.
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the switch is on the 8.0.1 page only (legacy `AdminCountries`, panel **Country options**, button **Save**); the key and the storefront rule are the same.
+
+#### `somcp_update_country_options`
+**State**: written · [issue #375](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/375)
+**Nature**: `acts(EDIT, 'AdminCountries')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes **Country options** of **International > Locations >
+Countries**, as its **Save** (`submitOptionscountry`): **Restrict country
+selections in front office to those covered by active carriers**. A shop
+that ships to a few countries otherwise lets customers pick any active
+country in their address, then finds no carrier at checkout.
+
+**Do not use for** - switching a country on or off (→ `somcp_update_country`);
+the zones a carrier serves (→ `somcp_update_carrier`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `restrict_to_carriers` | **Restrict country selections in front office to those covered by active carriers** | boolean | no | `true` or `false`, otherwise `restrict_to_carriers: true or false` |
+
+The answer of `somcp_get_country_options` given back whole writes nothing: a
+value equal to the stored one is no change, and `note` is ignored when it is
+the line the read gives. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - when it differs:
+`Configuration::updateValue('PS_RESTRICT_DELIVERED_COUNTRIES', (int) $value, false, $idShopGroup, $idShop)`
+for the shop of the token, as `somcp_update_tax_options` saves its keys. Log
+lines `country_options_updated` and `country_options_update_failed`.
+
+**Returns** - the shape of every update tool (#356): `changed` (boolean),
+`changes` (`field`, `old`, `new`), `reason` when nothing differs, and
+`options` read back through `SomcpToolGetCountryOptions::read()`.
+
+Warnings, in `warning` beside the answer:
+- set to `true` with no active carrier serving an active country (`Carrier::getDeliveredCountries(<default language>, true, true)` empty): `No active carrier delivers to an active country: customers can no longer choose any country in their address.`;
+- on 9.0.0: `PrestaShop 9 no longer shows this option, but the storefront still applies it.`;
+- on an installation of several shops: `The option changed for this shop only, as the back office saves it in a shop context.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once (`SomcpTool::refused('changed', $problems)`).
+
+**Notes**
+- Replayable: a second identical call answers `changed: false`.
+- Written on 9.0.0 too, as `somcp_update_country` writes **Address format** there: the storefront applies the key, so this is the only way left to change it.
+
+**Differences between 8.0.1 and 9.0.0** - the switch is on the 8.0.1 page only; the key and the storefront rule are the same.
 
 #### `somcp_list_states`
 **State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)

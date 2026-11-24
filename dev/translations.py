@@ -1130,6 +1130,10 @@ T = {
  "Lire les options des pays",
  "Leer las opciones de los países",
  "Die Länderoptionen lesen"),
+"Change the country options": (
+ "Modifier les options des pays",
+ "Modificar las opciones de los países",
+ "Länderoptionen ändern"),
 "Change a country": (
  "Modifier un pays",
  "Modificar un país",

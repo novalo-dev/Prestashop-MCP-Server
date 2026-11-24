@@ -340,6 +340,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_country` | ● Read a country | Countries › view |
 | `somcp_update_country` | ✎ Change a country | Countries › edit |
 | `somcp_get_country_options` | ● Read the country options | Countries › options |
+| `somcp_update_country_options` | ✎ Change the country options | Countries › options |
 | `somcp_list_states` | ● List states | States › view |
 | `somcp_create_state` | ✎ Create a state | States › add |
 | `somcp_update_state` | ✎ Change a state | States › edit |

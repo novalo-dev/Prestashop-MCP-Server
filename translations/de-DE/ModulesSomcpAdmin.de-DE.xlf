@@ -1422,6 +1422,11 @@
       <source>Read the country options</source>
       <target>Die Länderoptionen lesen</target>
     </trans-unit>
+    <!-- Change the country options -->
+    <trans-unit id="68a35758a2f83baec42383bf21679e41" resname="Change the country options">
+      <source>Change the country options</source>
+      <target>Länderoptionen ändern</target>
+    </trans-unit>
     <!-- Change a country -->
     <trans-unit id="aeb962537896ceb3ac61f18ee5897a0b" resname="Change a country">
       <source>Change a country</source>

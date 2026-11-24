@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Change the country options.** The new tool somcp_update_country_options
+switches on or off, in International > Locations > Countries, the option that
+lets customers pick in their address only a country an active carrier
+delivers. A shop that ships to a few countries can now stop customers from
+choosing a country it cannot deliver. The merchant is warned when no active
+carrier delivers to an active country, and on PrestaShop 9, which no longer
+shows the option, that the storefront still applies it.
+
 **Read the country options.** The new tool somcp_get_country_options reads the
 Country options of International > Locations > Countries: whether customers
 may only pick, in an address, a country an active carrier delivers. Before

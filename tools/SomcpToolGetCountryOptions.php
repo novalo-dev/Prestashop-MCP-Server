@@ -39,6 +39,12 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolGetCountryOptions
 {
     /**
+     * Said beside the answer on PrestaShop 9, by this read and by the update,
+     * which also recognises it given back as no change.
+     */
+    public const NOTE_PS9 = 'PrestaShop 9 no longer shows this option, but the storefront still applies it.';
+
+    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -49,7 +55,7 @@ class SomcpToolGetCountryOptions
             'Reads the Country options of International > Locations > Countries: Restrict country selections in '
                 . 'front office to those covered by active carriers (restrict_to_carriers). When it is true, a '
                 . 'customer can only pick a country an active carrier delivers. Read it before enabling a country. '
-                . 'For the countries themselves, somcp_list_countries.',
+                . 'For the countries themselves, somcp_list_countries. To change it, somcp_update_country_options.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),
@@ -79,7 +85,7 @@ class SomcpToolGetCountryOptions
         $result = self::read(Somcp::currentShopId());
         if (version_compare(_PS_VERSION_, '9.0.0', '>=')) {
             // Told, so the merchant does not look for a switch that is gone.
-            $result['note'] = 'PrestaShop 9 no longer shows this option, but the storefront still applies it.';
+            $result['note'] = self::NOTE_PS9;
         }
 
         return SomcpTool::json($result);

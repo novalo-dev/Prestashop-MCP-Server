@@ -37,6 +37,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_localization_settings`
 - `somcp_update_localization_settings`
 - `somcp_get_general_settings`
+- `somcp_update_general_settings`
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_create_currency`
@@ -389,6 +390,9 @@ currency: confirm with the merchant, who may want maintenance mode on first.
 `somcp_get_general_settings` gives the price rounding (Round mode and Round
 type, which decide every price shown and every total invoiced) and whether
 the storefront shows a suppliers, a brands and a best sellers page.
+`somcp_update_general_settings` changes them: a new rounding applies to new
+carts and orders only, those already made keep their totals; confirm with the
+merchant before changing it.
 
 ## Prices
 

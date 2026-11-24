@@ -91,8 +91,8 @@ class SomcpToolGetGeneralSettings
             Somcp::t('Read the general settings'),
             'Reads the price rounding and storefront pages of Shop Parameters > General: Round mode '
                 . '(half_up, half_down, half_even, half_odd, up, down), Round type (item, line, total), and '
-                . 'whether the suppliers, brands and best sellers pages are shown. For the tax options use '
-                . 'somcp_get_tax_options, for the '
+                . 'whether the suppliers, brands and best sellers pages are shown. Change them with '
+                . 'somcp_update_general_settings. For the tax options use somcp_get_tax_options, for the '
                 . 'default language, country, currency and units somcp_get_localization_settings, for one '
                 . 'product\'s price somcp_get_product.',
             [
@@ -129,7 +129,7 @@ class SomcpToolGetGeneralSettings
             if ($result[$field] === null) {
                 $warnings[] = ($field === 'round_mode' ? 'Round mode' : 'Round type') . ' holds "'
                     . self::stored($key, $idShop) . '" (' . $key . '), none of the choices of the screen: '
-                    . 'choose one in Shop Parameters > General.';
+                    . 'choose one with somcp_update_general_settings.';
             }
         }
         if ($warnings !== []) {

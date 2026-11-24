@@ -2535,6 +2535,69 @@ if ($getLocalization !== null && $updateLocalization !== null) {
     }
 }
 
+// The general settings (#386): the read given back whole writes nothing,
+// then Display suppliers is turned over and put back. A JSON scenario cannot
+// give back what the read answered, nor put the switch back whatever
+// happens, and the storefront tests after this one read that page.
+$getGeneral = $registry->get('somcp_get_general_settings');
+$updateGeneral = $registry->get('somcp_update_general_settings');
+if ($getGeneral !== null && $updateGeneral !== null) {
+    $idShopGeneral = (int) $context->shop->id;
+    $idGroupGeneral = (int) Shop::getGroupFromShop($idShopGeneral);
+    $suppliersWas = Configuration::get('PS_DISPLAY_SUPPLIERS', null, $idGroupGeneral, $idShopGeneral);
+    $generalContext = static function (SomcpTool $tool, array $arguments) use ($idShopGeneral, $employee, $context): array {
+        return [
+            'id_shop' => $idShopGeneral,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getGeneral->call([], $generalContext($getGeneral, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !array_key_exists('display_suppliers', $decoded)) {
+            $failures[] = 'somcp_update_general_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $suppliers = (bool) $decoded['display_suppliers'];
+            $steps = [
+                ['the read given back whole, nothing written', $decoded, ['"changed": false', 'Nothing was written.']],
+                ['Display suppliers turned over', ['display_suppliers' => !$suppliers], ['"changed": true', '"field": "display_suppliers"', '"new": ' . ($suppliers ? 'false' : 'true')]],
+                ['Display suppliers put back', ['display_suppliers' => $suppliers], ['"changed": true', '"field": "display_suppliers"', '"new": ' . ($suppliers ? 'true' : 'false')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateGeneral->call($arguments, $generalContext($updateGeneral, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_general_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_general_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_general_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the switch of a
+        // fresh shop; a key it never had stays unwritten.
+        if ($suppliersWas !== false) {
+            Configuration::updateValue('PS_DISPLAY_SUPPLIERS', $suppliersWas, false, $idGroupGeneral, $idShopGeneral);
+        }
+    }
+}
+
 // A supplier description too long for its column (#333): a JSON scenario
 // cannot hold a 65 KB string in a readable way. On PrestaShop 8 the class
 // declares no size and the text column would cut the description without a

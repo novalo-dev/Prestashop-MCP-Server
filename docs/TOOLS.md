@@ -3976,7 +3976,8 @@ type**, **Display suppliers**, **Display brands**, **Display best sellers**.
 The rounding decides every price the shop shows and every total it invoices.
 Read only.
 
-**Do not use for** - the price of one product (→ `somcp_get_product`); the tax options (→
+**Do not use for** - changing them (→ `somcp_update_general_settings`); the
+price of one product (→ `somcp_get_product`); the tax options (→
 `somcp_get_tax_options`); the language, country, currency and units (→
 `somcp_get_localization_settings`). The other fields of the tab (**Enable
 SSL**, **Increase front office security**, **Allow iframes on HTML fields**,
@@ -4002,8 +4003,8 @@ null, $idShopGroup, $idShop)` for the shop of the token and its group:
 | `display_best_sellers` | **Display best sellers** | `PS_DISPLAY_BEST_SELLERS` | boolean |
 
 A stored number outside the lists (an old shop): the code and the label are
-`null`, and a `warning` names the stored value and says to choose one in
-**Shop Parameters > General**.
+`null`, and a `warning` names the stored value and says to choose one with
+`somcp_update_general_settings`.
 
 **Notes**
 - The keys are those `src/Adapter/Preferences/PreferencesConfiguration.php` reads and writes, the same on both versions.
@@ -4013,6 +4014,60 @@ A stored number outside the lists (an old shop): the code and the label are
 same keys, the same choices, the same help. The tab differs elsewhere (8.0.1
 has **Enable SSL on all pages** and **Main Shop Activity**), and those fields
 are not read.
+
+#### `somcp_update_general_settings`
+**State**: written · [issue #386](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/386)
+**Nature**: `acts(EDIT, 'AdminPreferences')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes the price rounding and the three storefront pages of
+**Shop Parameters > General**, tab **General**, as its **Save** button does
+for those fields: **Round mode**, **Round type**, **Display suppliers**,
+**Display brands**, **Display best sellers**.
+
+**Do not use for** - the tax options (→ `somcp_update_tax_options`); the
+language, country, currency and units (→
+`somcp_update_localization_settings`); enabling the suppliers or brands
+themselves (→ `somcp_set_supplier_active`, `somcp_set_manufacturer_active`).
+The other fields of the tab are never written, and are refused as unknown
+fields.
+
+**Parameters** - all optional; a key left out, or `null`, keeps its value.
+The read of `somcp_get_general_settings` given back whole writes nothing:
+`round_mode_label` and `round_type_label` are computed keys, ignored when
+given back as read and refused otherwise (`- round_mode_label: worked out by
+the shop, so it is not written here`), as `somcp_update_localization_settings`
+does; the read's `warning` is ignored.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `round_mode` | **Round mode** | string | a code of `SomcpToolGetGeneralSettings::ROUND_MODES`, otherwise `round_mode: one of half_up, half_down, half_even, half_odd, up, down` |
+| `round_type` | **Round type** | string | a code of `SomcpToolGetGeneralSettings::ROUND_TYPES`, otherwise `round_type: one of item, line, total` |
+| `display_suppliers` | **Display suppliers** | boolean | `true or false` |
+| `display_brands` | **Display brands** | boolean | `true or false` |
+| `display_best_sellers` | **Display best sellers** | boolean | `true or false` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is written.
+
+**Then**
+- `$before = SomcpToolGetGeneralSettings::settings($idShop)`;
+- the keys whose value differs, in the order of the screen, each saved with `Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for the shop of the token: the stored number for a code, `1` or `0` for a switch, as `PreferencesConfiguration::updateConfiguration()` saves them; a failed save stops the call and names what was saved before it;
+- nothing differs: `changed: false`, `reason` `The general settings already hold every value given. Nothing was written.`, `settings` as read;
+- logged as `general_settings_updated` with the fields saved, `general_settings_update_failed` with the failure.
+
+**Returns** - `changed: true`, `changes` (per field its `field`, `old`,
+`new`, under the names and codes of the parameters), and `settings` read
+back through `settings()`. Warnings, in `warning`:
+- `round_mode` or `round_type` changed: `Prices are now rounded with <new label>: orders and invoices already made keep their totals, new carts and orders use the new rounding.` (the core reads the keys at each computation, `Tools::ps_round()` and `Cart::getOrderTotal()`);
+- a display switch turned on: `The <suppliers, brands or best sellers> page is now shown on the storefront, even when its module is disabled.`;
+- on an installation of several shops: `The settings changed for this shop only, as the back office saves them in a shop context.`
+
+**Notes**
+- The back office saves the whole tab at once; this tool saves only the keys whose value differs, so the fields it leaves out are never touched.
+- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), turns **Display suppliers** over and puts it back.
+
+**Differences between 8.0.1 and 9.0.0** - none for these five fields.
 
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)

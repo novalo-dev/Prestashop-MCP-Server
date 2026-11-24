@@ -1138,6 +1138,10 @@ T = {
  "Lire les paramètres généraux",
  "Leer los parámetros generales",
  "Die allgemeinen Einstellungen lesen"),
+"Change the general settings": (
+ "Modifier les paramètres généraux",
+ "Modificar los parámetros generales",
+ "Die allgemeinen Einstellungen ändern"),
 "Read the country options": (
  "Lire les options des pays",
  "Leer las opciones de los países",

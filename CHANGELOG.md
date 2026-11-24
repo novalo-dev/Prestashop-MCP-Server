@@ -24,6 +24,13 @@ Round mode, Round type, and whether the suppliers, brands and best sellers
 pages are shown. The assistant can now tell how the shop rounds every price
 and total before it explains one.
 
+**Change the general settings.** The new tool somcp_update_general_settings
+does what the Save button of Shop Parameters > General does for the price
+rounding and the suppliers, brands and best sellers pages, and only for
+those: the other settings of the tab are never touched. The answer says that
+orders and invoices already made keep their totals, and that only new carts
+and orders use a new rounding.
+
 **Read the localization settings.** The new tool
 somcp_get_localization_settings reads International > Localization >
 Localization: the default language, country and currency, browser detection,

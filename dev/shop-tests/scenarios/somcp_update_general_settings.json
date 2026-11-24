@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a code of neither list and a switch that is not a boolean, refused together", "arguments": {"round_mode": "nearest", "round_type": "invoice", "display_brands": "yes"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- round_mode: one of half_up, half_down, half_even, half_odd, up, down", "- round_type: one of item, line, total", "- display_brands: true or false"]},
+    {"why": "another field of the tab, never written by this tool", "arguments": {"enable_ssl": true}, "expect": "error", "contains": ["- enable_ssl: not a field of this tool"]},
+    {"why": "a label the shop works out, given otherwise than as read", "arguments": {"round_mode_label": "Rounded"}, "expect": "error", "contains": ["- round_mode_label: worked out by the shop, so it is not written here"]},
+    {"why": "nothing given, nothing written", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written."]}
+  ]
+}

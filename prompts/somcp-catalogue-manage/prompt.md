@@ -395,7 +395,9 @@ already has products or carrier ranges. A new default currency resets every
 exchange rate and converts no price, each keeps its figure in the new
 currency: confirm with the merchant, who may want maintenance mode on first.
 `somcp_import_localization_pack` brings a country's states, taxes and tax
-rules, units and price display in one call, from the shop's own pack: use it
+rules, currencies, languages, units and price display in one call, from the
+shop's own pack (currencies and languages are fetched from PrestaShop's
+servers, and are created enabled): use it
 when a shop is set up for a country, rather than creating each state and tax
 by hand. It creates and is not undone, and it overwrites the units: confirm
 with the merchant first.

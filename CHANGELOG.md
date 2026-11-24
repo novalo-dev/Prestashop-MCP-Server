@@ -77,8 +77,12 @@ does what the card Import a localization pack of International > Localization
 > Localization does, from the shop's own pack: a country's states, taxes and
 tax rules, units and the price display of the default customer groups, in one
 call, so a shop is set up for its country without creating each state and tax
-by hand. Taxes and tax rules that already exist are never changed, and the
-answer lists what was created. Currencies and languages of a pack come later.
+by hand. Its currencies and languages come too, as the back office brings
+them: the exchange rates and each new language are fetched from PrestaShop's
+servers, and the answer says when one did not arrive. Taxes and tax rules that
+already exist are never changed, and the answer lists what was created.
+Currencies are imported from the built-in chat; a connected assistant adds
+them one by one.
 
 **Add or update a language from PrestaShop.** The new tool
 somcp_install_language_pack does what the card Add / Update a language of

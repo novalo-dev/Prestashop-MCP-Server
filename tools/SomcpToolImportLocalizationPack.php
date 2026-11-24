@@ -23,7 +23,8 @@ declare(strict_types=1);
  * A shop built from A to Z gets the states, taxes, tax rules, units and price
  * display of its country in one call, by the core's own importer reading the
  * shop's own file (Download pack data off), rather than state by state and
- * tax by tax. Currencies and languages need PrestaShop's servers: part 2.
+ * tax by tax. Currencies and languages bring the two downloads the core makes
+ * for them: the exchange rates and each new language's pack.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -36,14 +37,22 @@ if (!defined('_PS_VERSION_')) {
 require_once __DIR__ . '/SomcpToolListStates.php';
 require_once __DIR__ . '/SomcpToolGetLocalizationSettings.php';
 require_once __DIR__ . '/SomcpToolCreateTax.php';
+require_once __DIR__ . '/SomcpToolUpdateExchangeRates.php';
+require_once __DIR__ . '/SomcpToolInstallLanguagePack.php';
 
 class SomcpToolImportLocalizationPack
 {
-    /** @var array<int, string> The contents of the card this tool imports, in the order of the card. */
-    public const CONTENTS = ['states', 'taxes', 'units', 'groups'];
+    /** @var array<int, string> The contents of the card, in the order of the card. */
+    public const CONTENTS = ['states', 'taxes', 'currencies', 'languages', 'units', 'groups'];
 
-    /** @var array<int, string> The contents of the card that wait for part 2: they call PrestaShop's servers. */
-    private const LATER = ['currencies', 'languages'];
+    /** @var array<int, string> The contents for which the core reaches PrestaShop's servers. */
+    private const DOWNLOADS = ['currencies', 'languages'];
+
+    /**
+     * Seconds of PHP the call asks for when it downloads, as
+     * somcp_install_language_pack asks: a language pack and the rates.
+     */
+    private const REQUEST_SECONDS = 120;
 
     /**
      * The unit keys _installUnits() overwrites, under the names
@@ -72,10 +81,11 @@ class SomcpToolImportLocalizationPack
             'somcp_import_localization_pack',
             Somcp::t('Import a localization pack'),
             'Imports a country\'s localization pack from the shop\'s own file, as Import a localization pack in '
-                . 'International > Localization > Localization: states, taxes and tax rules, units, and the price '
-                . 'display of the default groups. Creates what is missing and never changes an existing state, tax '
-                . 'or tax rule; units are overwritten. Not undone by a second call, which creates nothing. For one '
-                . 'state or tax, somcp_create_state or somcp_create_tax.',
+                . 'International > Localization > Localization: states, taxes and tax rules, currencies and '
+                . 'languages (fetched from PrestaShop\'s servers, up to two minutes), units, and the price display of '
+                . 'the default groups. Creates what is missing, never changes what exists; units are overwritten. '
+                . 'Not undone by a second call, which creates nothing. For one state or tax, somcp_create_state or '
+                . 'somcp_create_tax.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -86,7 +96,8 @@ class SomcpToolImportLocalizationPack
                     'content' => [
                         'type' => 'array',
                         'items' => ['type' => 'string', 'enum' => self::CONTENTS],
-                        'description' => 'What to import: states, taxes, units, groups (price display of the default groups).',
+                        'description' => 'What to import: states, taxes, currencies, languages, units, groups (price '
+                            . 'display of the default groups).',
                     ],
                 ],
                 'required' => ['country', 'content'],
@@ -120,23 +131,52 @@ class SomcpToolImportLocalizationPack
                 $problems[] = SomcpTool::notFound('country', 'country', $iso, 'somcp_list_countries', 'ISO code');
             }
         }
+        // The core creates a currency through the back office's command bus,
+        // which only runs where the kernel container does: refused before
+        // anything else is imported, rather than stopping half way.
+        if (in_array('currencies', $content, true)
+            && SomcpBackOffice::coreService('prestashop.core.command_bus') === null) {
+            $problems[] = 'content: currencies are created by the back office, which this connection does not run - '
+                . 'add each currency with somcp_create_currency, then somcp_update_exchange_rates';
+        }
         if ($problems !== [] || $iso === null || $content === []) {
             return SomcpTool::refused('changed', $problems);
         }
         $file = self::packFile($iso);
-        $xml = @simplexml_load_file($file);
+        $xml = $file !== null ? @simplexml_load_file($file) : false;
         if (!$xml instanceof SimpleXMLElement) {
             return SomcpTool::text('Cannot load the localization pack of ' . $iso . '. Nothing was changed.', true);
+        }
+
+        if (array_intersect($content, self::DOWNLOADS) !== []) {
+            // PHP may stop the request between a download and the last table.
+            $limit = (int) ini_get('max_execution_time');
+            if ($limit > 0 && $limit < self::REQUEST_SECONDS && function_exists('set_time_limit')) {
+                @set_time_limit(self::REQUEST_SECONDS);
+            }
         }
 
         // The core imports in the shop of the context.
         Somcp::actAsShop($idShop);
         $before = self::snapshot($idShop, $idCountry);
-        $errors = self::import($iso, $content, $xml);
+        // One content at a time: the core stops at the first content that
+        // reports an error, and a download that fails must not leave the
+        // units or the groups after it silently out.
+        $errors = [];
+        foreach ($content as $item) {
+            $found = self::import($iso, [$item], $xml);
+            $errors = array_merge($errors, $found);
+            if (self::softErrors($found, [$item])[0] !== []) {
+                break;
+            }
+        }
         $after = self::snapshot($idShop, $idCountry);
 
         $result = self::difference($before, $after, $idShop);
         $kept = self::kept($xml, $content, $result['created']);
+        // The two downloads failing are what the back office reports too, but
+        // leave everything else imported: named as warnings, not a failure.
+        [$errors, $feedFailed, $packsFailed] = self::softErrors($errors, $content);
 
         if ($errors !== []) {
             SomcpLogger::log('localization_pack_import_failed', SomcpLogger::OUTCOME_FAILURE, $iso . ' ' . implode(',', $content), '', $idEmployee);
@@ -150,7 +190,8 @@ class SomcpToolImportLocalizationPack
             );
         }
 
-        $changed = $result['created'] !== [] || $result['changes'] !== [] || $result['country_turned_on'] !== [];
+        $changed = $result['created'] !== [] || $result['changes'] !== [] || $result['rates'] !== []
+            || $result['country_turned_on'] !== [];
         SomcpLogger::log(
             'localization_pack_imported',
             SomcpLogger::OUTCOME_SUCCESS,
@@ -169,9 +210,35 @@ class SomcpToolImportLocalizationPack
         }
         $answer['created'] = (object) $result['created'];
         $answer['changes'] = $result['changes'];
+        if (in_array('currencies', $content, true) || $result['rates'] !== []) {
+            $answer['rates'] = $result['rates'];
+        }
         $answer['kept'] = (object) $kept;
 
         $warnings = [];
+        if ($feedFailed) {
+            $warnings[] = 'PrestaShop\'s exchange rate server did not answer: the new currencies are at rate 1; refresh '
+                . 'them with somcp_update_exchange_rates.';
+        }
+        if ($packsFailed) {
+            $missing = self::missingLanguages($xml);
+            $wait = defined('Language::PACK_DOWNLOAD_TIMEOUT') ? (int) constant('Language::PACK_DOWNLOAD_TIMEOUT') : SomcpToolInstallLanguagePack::TIMEOUT;
+            $warnings[] = 'PrestaShop\'s translation server did not send the '
+                . ($missing !== [] ? implode(', ', $missing) : 'language') . ' pack within ' . $wait
+                . ' seconds: ' . ($missing !== [] ? implode(', ', $missing) : 'it') . ' was not added. Try again later '
+                . 'with somcp_install_language_pack.';
+        }
+        $offered = [];
+        foreach (['languages', 'currencies'] as $kind) {
+            foreach ($result['created'][$kind] ?? [] as $row) {
+                $offered[] = (string) $row['name'];
+            }
+        }
+        if ($offered !== []) {
+            // The core creates them enabled, as the back office import does.
+            $warnings[] = implode(', ', $offered) . ' are now offered on the storefront; disable them with '
+                . 'somcp_update_language or somcp_update_currency if the shop does not sell in them yet.';
+        }
         if (($kept['taxes'] ?? 0) > 0 || ($kept['tax_rules'] ?? 0) > 0) {
             $warnings[] = 'Taxes and tax rules that already had their name were kept as they are, even when the pack '
                 . 'has another rate: check them with somcp_list_taxes.';
@@ -199,8 +266,8 @@ class SomcpToolImportLocalizationPack
     /**
      * The country of the pack, lowercase, or null with its problem.
      *
-     * The name is checked before any path is built from it, so only a file
-     * named by two letters of the localization folder can ever be read.
+     * Only a pack the localization folder lists is accepted, so nothing the
+     * call sends ever becomes a path.
      *
      * @param array<string, mixed> $arguments
      * @param array<int, string> $problems
@@ -212,7 +279,7 @@ class SomcpToolImportLocalizationPack
         $value = $arguments['country'] ?? null;
         $iso = is_string($value) ? Tools::strtolower(trim($value)) : '';
         if ($iso !== '' && preg_match('/^[a-z]{2}$/', $iso) === 1 && Validate::isLanguageIsoCode($iso)
-            && is_file(self::packFile($iso))) {
+            && self::packFile($iso) !== null) {
             return $iso;
         }
         $problems[] = 'country: no localization pack for ' . (is_scalar($value) ? (string) $value : 'this value')
@@ -247,10 +314,7 @@ class SomcpToolImportLocalizationPack
         $wrong = false;
         foreach ($value as $item) {
             $item = is_string($item) ? Tools::strtolower(trim($item)) : $item;
-            if (in_array($item, self::LATER, true)) {
-                $problems[] = 'content: currencies and languages are not available yet';
-                $wrong = true;
-            } elseif (!is_string($item) || !in_array($item, self::CONTENTS, true)) {
+            if (!is_string($item) || !in_array($item, self::CONTENTS, true)) {
                 $problems[] = 'content: ' . (is_scalar($item) ? (string) $item : json_encode($item)) . ' is not one of '
                     . implode(', ', self::CONTENTS);
                 $wrong = true;
@@ -268,13 +332,24 @@ class SomcpToolImportLocalizationPack
     }
 
     /**
+     * The pack of a country, from the files the localization folder holds, or null.
+     *
+     * The path is the one the folder lists, never one built from the name
+     * given: the name only picks among the files that are there.
+     *
      * @param string $iso two lowercase letters, already checked
      *
-     * @return string
+     * @return string|null
      */
-    private static function packFile(string $iso): string
+    private static function packFile(string $iso): ?string
     {
-        return _PS_ROOT_DIR_ . '/localization/' . $iso . '.xml';
+        foreach (glob(_PS_ROOT_DIR_ . '/localization/*.xml') ?: [] as $path) {
+            if (basename($path, '.xml') === $iso) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -306,7 +381,10 @@ class SomcpToolImportLocalizationPack
             $errors = [$e->getMessage()];
         }
 
-        return array_values(array_map('strval', is_array($errors) ? $errors : []));
+        // A currency the core's command refuses leaves a null among its errors.
+        return array_values(array_map(static function ($error): string {
+            return $error === null || $error === '' ? 'a currency of the pack could not be created' : (string) $error;
+        }, is_array($errors) ? $errors : []));
     }
 
     /**
@@ -344,6 +422,9 @@ class SomcpToolImportLocalizationPack
             'zones' => $ids('zone', 'id_zone'),
             'taxes' => $ids('tax', 'id_tax'),
             'tax_rules' => $ids('tax_rules_group', 'id_tax_rules_group'),
+            'languages' => $ids('lang', 'id_lang'),
+            // The rates as somcp_list_currencies answers them, keyed by identifier.
+            'currencies' => SomcpToolUpdateExchangeRates::currencies($idShop),
             'units' => $units,
             'price_display_method' => (int) Configuration::get('PRICE_DISPLAY_METHOD', null, $idShopGroup, $idShop),
             'groups' => $groups,
@@ -364,7 +445,7 @@ class SomcpToolImportLocalizationPack
      * @param array<string, mixed> $after
      * @param int $idShop
      *
-     * @return array{created: array<string, array<int, array<string, mixed>>>, changes: array<int, array<string, mixed>>, country_turned_on: array<int, string>}
+     * @return array{created: array<string, array<int, array<string, mixed>>>, changes: array<int, array<string, mixed>>, rates: array<int, array<string, mixed>>, country_turned_on: array<int, string>}
      */
     private static function difference(array $before, array $after, int $idShop): array
     {
@@ -404,6 +485,26 @@ class SomcpToolImportLocalizationPack
         if ($rules !== []) {
             $created['tax_rules'] = $rules;
         }
+        $currencies = [];
+        foreach (array_diff_key($after['currencies'], $before['currencies']) as $currency) {
+            $currencies[] = [
+                'id_currency' => (int) $currency['id_currency'],
+                'iso_code' => (string) $currency['iso_code'],
+                'name' => (string) $currency['name'],
+                'conversion_rate' => (float) $currency['conversion_rate'],
+            ];
+        }
+        if ($currencies !== []) {
+            $created['currencies'] = $currencies;
+        }
+        $languages = [];
+        foreach (array_diff($after['languages'], $before['languages']) as $idNew) {
+            $language = new Language((int) $idNew);
+            $languages[] = ['id_lang' => (int) $idNew, 'iso_code' => (string) $language->iso_code, 'name' => (string) $language->name];
+        }
+        if ($languages !== []) {
+            $created['languages'] = $languages;
+        }
 
         $changes = [];
         foreach ($after['units'] as $field => $value) {
@@ -431,7 +532,79 @@ class SomcpToolImportLocalizationPack
             }
         }
 
-        return ['created' => $created, 'changes' => $changes, 'country_turned_on' => $turned];
+        // Only the currencies that existed before: a new one has no old rate.
+        $rates = SomcpToolUpdateExchangeRates::rateChanges($before['currencies'], $after['currencies']);
+
+        return ['created' => $created, 'changes' => $changes, 'rates' => $rates, 'country_turned_on' => $turned];
+    }
+
+    /**
+     * The core's errors without those of its two downloads, and whether each failed.
+     *
+     * @param array<int, string> $errors
+     * @param array<int, string> $content
+     *
+     * @return array{0: array<int, string>, 1: bool, 2: bool}
+     */
+    private static function softErrors(array $errors, array $content): array
+    {
+        $translator = Somcp::legacyContext()->getTranslator();
+        $feed = ['Cannot parse feed.', $translator->trans('Cannot parse feed.', [], 'Admin.Notifications.Error')];
+        $unavailable = ['Language pack unavailable.', $translator->trans('Language pack unavailable.', [], 'Admin.International.Notification')];
+        $kept = [];
+        $feedFailed = false;
+        $packsFailed = false;
+        foreach ($errors as $error) {
+            if (in_array('currencies', $content, true) && in_array($error, $feed, true)) {
+                $feedFailed = true;
+            } elseif (in_array('languages', $content, true) && self::startsWithAny($error, $unavailable)) {
+                // The address of the pack the core appends is left out.
+                $packsFailed = true;
+            } else {
+                $kept[] = $error;
+            }
+        }
+
+        return [$kept, $feedFailed, $packsFailed];
+    }
+
+    /**
+     * @param string $text
+     * @param array<int, string> $prefixes
+     *
+     * @return bool
+     */
+    private static function startsWithAny(string $text, array $prefixes): bool
+    {
+        foreach ($prefixes as $prefix) {
+            if ($prefix !== '' && strpos($text, $prefix) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The ISO codes of the pack's languages the shop still does not have.
+     *
+     * @param SimpleXMLElement $xml
+     *
+     * @return array<int, string>
+     */
+    private static function missingLanguages(SimpleXMLElement $xml): array
+    {
+        $missing = [];
+        if (isset($xml->languages->language)) {
+            foreach ($xml->languages->language as $language) {
+                $iso = (string) $language['iso_code'];
+                if ($iso !== '' && !Language::getIdByIso($iso)) {
+                    $missing[] = $iso;
+                }
+            }
+        }
+
+        return $missing;
     }
 
     /**
@@ -475,7 +648,7 @@ class SomcpToolImportLocalizationPack
     /**
      * What a failed import still did, for the error.
      *
-     * @param array{created: array<string, array<int, array<string, mixed>>>, changes: array<int, array<string, mixed>>, country_turned_on: array<int, string>} $result
+     * @param array{created: array<string, array<int, array<string, mixed>>>, changes: array<int, array<string, mixed>>, rates: array<int, array<string, mixed>>, country_turned_on: array<int, string>} $result
      *
      * @return string
      */

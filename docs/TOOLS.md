@@ -4022,27 +4022,28 @@ the code.
 
 #### `somcp_import_localization_pack`
 **State**: written · [issue #389](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/389)
-**Nature**: `acts(EDIT, 'AdminLocalization')` · **Scope**: `mcp.catalog.write`
+**Nature**: `acts(EDIT, 'AdminLocalization')` · **Scope**: `mcp.catalog.write` · currencies and languages: [issue #390](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/390)
 
 **Does** - imports a country's localization pack, as the **Import** button of
 the **Import a localization pack** card of **International > Localization >
-Localization**: the **States**, the **Taxes** and tax rules, the **Units**,
-and **Change the behavior of the price display for groups**, in one call. The
-pack is always the shop's own file (`localization/<iso>.xml`): **Download
-pack data** is always **No**. **Currencies** and **Languages** reach
-PrestaShop's servers and are part 2 (#390): refused until then.
+Localization**: the **States**, the **Taxes** and tax rules, the
+**Currencies**, the **Languages**, the **Units**, and **Change the behavior of
+the price display for groups**, in one call. The pack is always the shop's own
+file (`localization/<iso>.xml`): **Download pack data** is always **No**. For
+currencies and languages the core makes its own two downloads: the exchange
+rates of the new currencies, and the pack of each new language.
 
 **Do not use for** - one state, tax or tax rule (→ `somcp_create_state`,
 `somcp_create_tax`, `somcp_create_tax_rule`); the default language, country
-and currency (→ `somcp_update_localization_settings`); the currencies and
-languages of a pack (part 2, #390).
+and currency (→ `somcp_update_localization_settings`); one currency or one
+language (→ `somcp_create_currency`, `somcp_install_language_pack`).
 
 **Parameters**
 
 | Name | On screen | Type | Required | Rule |
 |---|---|---|---|---|
 | `country` | **Localization pack you want to import** | string | yes | two letters, lowercase or uppercase, stored lowercase, checked (`/^[a-z]{2}$/` and `Validate::isLanguageIsoCode()`) before any path is built; a file `_PS_ROOT_DIR_ . '/localization/<iso>.xml'` of the shop, so `default` is refused; otherwise `country: no localization pack for <value> in this shop - the packs are named by the ISO code of their country, for example fr`. The country must exist (`Country::getByIso()`), otherwise `SomcpTool::notFound('country', 'country', <iso>, 'somcp_list_countries', 'ISO code')` |
-| `content` | **Content to import** | array | yes | one or more of `states`, `taxes`, `units`, `groups`, taken once each in the order of the card; empty: `content: at least one of states, taxes, units, groups`; `currencies` or `languages`: `content: currencies and languages are not available yet`; anything else: `content: <value> is not one of states, taxes, units, groups` |
+| `content` | **Content to import** | array | yes | one or more of `states`, `taxes`, `currencies`, `languages`, `units`, `groups`, taken once each in the order of the card; empty: `content: at least one of states, taxes, currencies, languages, units, groups`; anything else: `content: <value> is not one of states, taxes, currencies, languages, units, groups`. `currencies` where no kernel container runs (the MCP endpoint; the built-in chat has one): the core creates a currency through the back office's command bus (`prestashop.core.command_bus`), so `content: currencies are created by the back office, which this connection does not run - add each currency with somcp_create_currency, then somcp_update_exchange_rates` |
 
 Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
 answer, in the envelope `Nothing was changed. Correct these and call again:`,
@@ -4051,10 +4052,12 @@ would import everything and change the default language.
 
 **Then**
 - the file loaded; one that does not load: `Cannot load the localization pack of <iso>. Nothing was changed.`;
-- read before, in the shop of the token (`Somcp::actAsShop()`): the identifiers of `state`, `zone`, `tax` and `tax_rules_group`, the five unit keys, `PRICE_DISPLAY_METHOD`, the **Price display method** of the groups of `PS_CUSTOMER_GROUP`, `PS_GUEST_GROUP` and `PS_UNIDENTIFIED_GROUP`, the `active` and `contains_states` of the country;
-- the core's importer, `SomcpBackOffice::coreService('prestashop.core.localization.pack.import.importer')`, with `new LocalizationPackImportConfig($iso, $content, false)`; where no kernel container runs (the MCP endpoint is a front controller), the same steps that importer takes with **Download pack data** off: a new `LocalizationPack` and `loadLocalisationPack($xml, $content, false, $iso)` on the local file. The core's code, never a copy of it;
+- with `currencies` or `languages`: `@set_time_limit(120)` when `max_execution_time` is above 0 and below 120, as `somcp_install_language_pack` does;
+- read before, in the shop of the token (`Somcp::actAsShop()`): the identifiers of `state`, `zone`, `tax` and `tax_rules_group`, the five unit keys, `PRICE_DISPLAY_METHOD`, the **Price display method** of the groups of `PS_CUSTOMER_GROUP`, `PS_GUEST_GROUP` and `PS_UNIDENTIFIED_GROUP`, the `active` and `contains_states` of the country, the identifiers of `lang`, and the currencies through `SomcpToolUpdateExchangeRates::currencies()` (the rows of `somcp_list_currencies`);
+- one content at a time, in the order of the card, since the core skips every content after one that reports an error; a hard error stops the call. The core's importer, `SomcpBackOffice::coreService('prestashop.core.localization.pack.import.importer')`, with `new LocalizationPackImportConfig($iso, $content, false)`; where no kernel container runs (the MCP endpoint is a front controller), the same steps that importer takes with **Download pack data** off: a new `LocalizationPack` and `loadLocalisationPack($xml, $content, false, $iso)` on the local file. The core's code, never a copy of it;
 - read after, the same, and the difference is the answer;
-- errors returned by the core: the call answers them as a failure, with what had been created or changed before them, and asks to read the states and taxes before calling again;
+- `_installCurrencies()` creates each missing currency at rate 1, enabled, allowed for every payment module, then `Currency::refreshCurrencies()` asks for every rate (5 seconds); `_installLanguages()` downloads and installs each missing language with `Language::downloadAndInstallLanguagePack()`, the code of `somcp_install_language_pack`, then refreshes the names and symbols of every currency. The feed not answering (`Cannot parse feed.`) and a language pack not sent (`Language pack unavailable.`) are warnings: the rest stays imported; a currency the core's command refuses leaves a `null` in its errors, answered as `a currency of the pack could not be created`;
+- other errors returned by the core: the call answers them as a failure, with what had been created or changed before them, and asks to read the states and taxes before calling again;
 - logged as `localization_pack_imported` with the ISO code, the contents and the counts, `localization_pack_import_failed` otherwise.
 
 The import is not undone by a second call, which creates nothing new and
@@ -4064,11 +4067,15 @@ pack brings for <contents>. Nothing was created.`
 **Returns**
 - `changed`;
 - `country`: `id_country`, `iso_code`, `name`, and `enabled` / `contains_states` (`true`) when the import turned them on;
-- `created`: `states` (the shape of `SomcpToolListStates::state()`), `zones` (`id_zone`, `name`), `taxes` (`id_tax`, `name`, `rate`), `tax_rules` (`id_tax_rules_group`, `name`), each only when not empty;
+- `created`: `states` (the shape of `SomcpToolListStates::state()`), `zones` (`id_zone`, `name`), `taxes` (`id_tax`, `name`, `rate`), `tax_rules` (`id_tax_rules_group`, `name`), `currencies` (`id_currency`, `iso_code`, `name`, `conversion_rate`), `languages` (`id_lang`, `iso_code`, `name`), each only when not empty;
 - `changes`: per field its `field`, `old`, `new`: `weight_unit`, `volume_unit`, `dimension_unit`, `distance_unit` (the names of `somcp_get_localization_settings`), `base_distance_unit` (`PS_BASE_DISTANCE_UNIT`), and `price_display_method` (`tax_included` / `tax_excluded`), for the setting and, with `id_group`, for each of the three groups;
+- `rates`, with `currencies`: the currencies that existed and whose rate moved, the shape of `changes` of `somcp_update_exchange_rates` (`SomcpToolUpdateExchangeRates::rateChanges()`);
 - `kept`: how many states, taxes and tax rules of the pack already existed and were not touched.
 
 Warnings, in `warning`:
+- the feed did not answer: `PrestaShop's exchange rate server did not answer: the new currencies are at rate 1; refresh them with somcp_update_exchange_rates.`;
+- a language pack not sent: `PrestaShop's translation server did not send the <ISO codes> pack within <seconds> seconds: <ISO codes> was not added. Try again later with somcp_install_language_pack.`, the language left out of `created.languages`;
+- languages or currencies created: `<names> are now offered on the storefront; disable them with somcp_update_language or somcp_update_currency if the shop does not sell in them yet.`;
 - taxes or tax rules kept: `Taxes and tax rules that already had their name were kept as they are, even when the pack has another rate: check them with somcp_list_taxes.`;
 - the country enabled by the import: `<name> was not enabled: the import enabled it, as the back office does.`;
 - a unit changed: `The <field> changed from <old> to <new>: weights, sizes and carrier ranges already typed are not converted, only their label changes.`;
@@ -4076,11 +4083,13 @@ Warnings, in `warning`:
 
 **Notes**
 - `_installStates()` creates each missing state, with a zone created when none has its name, and turns **Contains states** on; `_installTaxes()` creates each tax and tax rule whose name is missing and never changes one that has it; `_installUnits()` overwrites the units; `_installGroups()` sets the price display. The country of the pack is enabled when it is not.
-- The scenario only tests refusals: an import changes the shop for good. `dev/shop-tests/run.php` imports the `units` of the pack of the default country and puts the units read before back in `finally`.
+- The scenario only tests refusals: an import changes the shop for good. `dev/shop-tests/run.php` imports the `units` of the pack of the default country and puts the units read before back in `finally`. The CI never reaches PrestaShop's servers: no real import of currencies or languages is tested.
 
 **Differences between 8.0.1 and 9.0.0** - none in `LocalizationPackImporter`,
 `LocalizationPack` or the 96 local files. The service is a class on 8.0.1 and
-an alias on 9.0.0: the same id on both.
+an alias on 9.0.0: the same id on both. The language download differs as
+`somcp_install_language_pack` says (20 seconds on 8.0.1, up to three tries on
+9.0.0).
 
 #### `somcp_get_general_settings`
 **State**: written · [issue #385](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/385)

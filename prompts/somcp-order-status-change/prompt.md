@@ -15,8 +15,18 @@ of it can be undone by calling again.
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_list_zones`
+- `somcp_create_zone`
+- `somcp_update_zone`
+- `somcp_delete_zone`
 - `somcp_list_countries`
+- `somcp_get_country`
+- `somcp_update_country`
+- `somcp_get_country_options`
+- `somcp_update_country_options`
 - `somcp_list_states`
+- `somcp_create_state`
+- `somcp_update_state`
+- `somcp_delete_state`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_return_status`
@@ -95,10 +105,23 @@ status change: it never moves the order to shipped, and
   which may be an older row of the carrier: match it on `id_reference`.
   `somcp_get_carrier` gives the zones and groups it serves, how it bills
   and the price of each range per zone.
-  `somcp_list_zones` lists the zones of the shop, with their `id_zone`.
-  `somcp_list_countries` lists the countries, with their ISO code and zone.
+  `somcp_list_zones` lists the zones of the shop, with their `id_zone`;
+  `somcp_create_zone` creates one the merchant needs, with no country yet;
+  `somcp_update_zone` renames one, or allows or stops shipping to it;
+  `somcp_delete_zone` deletes one that holds no country and no state.
+  `somcp_list_countries` lists the countries, with their ISO code and zone;
+  `somcp_get_country` reads every field of one, its address format included;
+  `somcp_update_country` enables one, moves it to another zone with its
+  states, or changes its name, codes, currency, zip code rule, address format
+  and tax label.
+  `somcp_get_country_options` tells whether customers may only pick a country
+  an active carrier delivers; `somcp_update_country_options` switches that
+  restriction on or off.
   `somcp_list_states` lists the states of a country, with their ISO code and
-  zone.
+  zone; `somcp_create_state` creates one the merchant needs, in the zone the
+  merchant chooses; `somcp_update_state` renames one, changes its ISO code or
+  zone, or switches it off; `somcp_delete_state` deletes one no address and
+  no tax rule row uses.
   `somcp_update_carrier` changes its name, transit time, speed grade,
   logo, tracking URL, status, groups, zones, ranges and their prices per zone,
   place in the list, free shipping,

@@ -106,8 +106,11 @@ class SomcpToolClearCache
 
     /**
      * Runs the button's chain when a container offers it, its steps otherwise.
+     *
+     * Public so somcp_install_language_pack clears what the back office
+     * clears after a language pack, through the same steps.
      */
-    private static function clear(): void
+    public static function clear(): void
     {
         $chain = SomcpBackOffice::coreService(self::CHAIN);
         if ($chain !== null && method_exists($chain, 'clear')) {

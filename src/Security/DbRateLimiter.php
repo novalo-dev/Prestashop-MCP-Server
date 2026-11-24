@@ -120,6 +120,19 @@ final class DbRateLimiter extends ConfigurableRateLimiter implements RateLimiter
     }
 
     /**
+     * Takes back one hit counted by limitSilently(), when what it reserved
+     * turned out not to be what the limit is about (a sign-in that
+     * succeeded, for a limit on failed ones).
+     *
+     * @param string $identifier
+     */
+    public function release(string $identifier): void
+    {
+        \Db::getInstance()->execute('UPDATE `' . bqSQL($this->table) . '` SET `hits` = `hits` - 1'
+            . " WHERE `bucket` = '" . pSQL($this->bucket($identifier)) . "' AND `hits` > 0");
+    }
+
+    /**
      * Forgets an identifier.
      *
      * @param string $identifier

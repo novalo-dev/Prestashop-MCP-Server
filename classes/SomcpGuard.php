@@ -130,16 +130,48 @@ class SomcpGuard
     }
 
     /**
-     * Counts a failed sign-in, against the address and, when one was typed,
-     * against the account.
+     * Counts a sign-in attempt from this address before its password or its
+     * code is compared.
+     *
+     * Counted first and read in the same call, so attempts posted at the
+     * same time cannot all read the counter before any of them writes it:
+     * each wave of guesses gets the limit, not the number of requests sent.
+     * An attempt that succeeds is given back by releaseSignin().
+     *
+     * @return bool false when the attempt goes over the limit
+     */
+    public static function reserveSignin(): bool
+    {
+        return !self::limiter('signin', self::SIGNIN_ATTEMPTS, self::SIGNIN_BLOCK)->limitSilently(self::address())->limitExceeded();
+    }
+
+    /**
+     * The same, against the account typed, from any address.
+     *
+     * Only once the anti-robot check passed: anyone who knows an employee's
+     * e-mail could otherwise block it without solving a single check.
      *
      * @param string $email
+     *
+     * @return bool false when the attempt goes over the limit
      */
-    public static function signinFailed(string $email = ''): void
+    public static function reserveAccount(string $email): bool
     {
-        self::limiter('signin', self::SIGNIN_ATTEMPTS, self::SIGNIN_BLOCK)->limitSilently(self::address());
+        return !self::limiter('signin_account', self::ACCOUNT_ATTEMPTS, self::SIGNIN_BLOCK)->limitSilently(self::accountKey($email))->limitExceeded();
+    }
+
+    /**
+     * Gives back the attempts a successful sign-in or code reserved: the
+     * limits are on failures, and a merchant who connects several assistants
+     * in a row must not lock themselves out.
+     *
+     * @param string $email the account, when its attempt was reserved
+     */
+    public static function releaseSignin(string $email = ''): void
+    {
+        self::limiter('signin', self::SIGNIN_ATTEMPTS, self::SIGNIN_BLOCK)->release(self::address());
         if ($email !== '') {
-            self::limiter('signin_account', self::ACCOUNT_ATTEMPTS, self::SIGNIN_BLOCK)->limitSilently(self::accountKey($email));
+            self::limiter('signin_account', self::ACCOUNT_ATTEMPTS, self::SIGNIN_BLOCK)->release(self::accountKey($email));
         }
     }
 
@@ -250,14 +282,12 @@ class SomcpGuard
             return false;
         }
 
-        $used = self::limiter('captcha', 1, SomcpConfig::REQUEST_TTL);
+        // Claimed in the call that reads it: one solution posted several times
+        // at once is accepted at most once, never by each request that read
+        // it unused.
         $signature = (string) $parsed->challenge->signature;
-        if ($used->status($signature)->getRemainingAttempts() <= 0) {
-            return false;
-        }
-        $used->limitSilently($signature);
 
-        return true;
+        return !self::limiter('captcha', 1, SomcpConfig::REQUEST_TTL)->limitSilently($signature)->limitExceeded();
     }
 
     /**

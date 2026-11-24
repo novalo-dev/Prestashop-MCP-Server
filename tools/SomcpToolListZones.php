@@ -105,6 +105,35 @@ class SomcpToolListZones
             return SomcpTool::refused('read', $errors);
         }
 
+        $filters = ['id_zone' => $idZone];
+        if (isset($arguments['active'])) {
+            $filters['active'] = (bool) $arguments['active'];
+        }
+        $name = isset($arguments['name']) && is_scalar($arguments['name']) ? trim((string) $arguments['name']) : '';
+        if ($name !== '') {
+            $filters['name'] = $name;
+        }
+        $zones = self::zones($idShop, $filters);
+
+        return SomcpTool::json([
+            'zones' => $zones,
+            'count' => count($zones),
+        ]);
+    }
+
+    /**
+     * The zones of a shop, each as one row of this list.
+     *
+     * Public so the zone writes answer with the zone read back under the same
+     * keys as this list: a row read here can be given back to them whole.
+     *
+     * @param int $idShop
+     * @param array{id_zone?: int, name?: string, active?: bool} $filters
+     *
+     * @return array<int, array{id_zone: int, name: string, active: bool, countries: int}>
+     */
+    public static function zones(int $idShop, array $filters): array
+    {
         // A query rather than Zone::getZones(), which reads every zone of the
         // installation without the shop and has no name filter: the list of a
         // shop shows the zones zone_shop ties to it.
@@ -116,15 +145,14 @@ class SomcpToolListZones
         $query->from('zone', 'z');
         $query->innerJoin('zone_shop', 'zs', 'zs.`id_zone` = z.`id_zone` AND zs.`id_shop` = ' . (int) $idShop);
         // The ID, Zone and Enabled (All / Yes / No) filters of the list.
-        if ($idZone > 0) {
-            $query->where('z.`id_zone` = ' . (int) $idZone);
+        if ((int) ($filters['id_zone'] ?? 0) > 0) {
+            $query->where('z.`id_zone` = ' . (int) $filters['id_zone']);
         }
-        if (isset($arguments['active'])) {
-            $query->where('z.`active` = ' . (int) $arguments['active']);
+        if (isset($filters['active'])) {
+            $query->where('z.`active` = ' . (int) $filters['active']);
         }
-        $name = isset($arguments['name']) && is_scalar($arguments['name']) ? trim((string) $arguments['name']) : '';
-        if ($name !== '') {
-            $query->where("z.`name` LIKE '%" . pSQL($name) . "%'");
+        if (isset($filters['name']) && $filters['name'] !== '') {
+            $query->where("z.`name` LIKE '%" . pSQL($filters['name']) . "%'");
         }
         // Identifier order, as the back office list, so a zone sits where the
         // merchant sees it.
@@ -142,9 +170,26 @@ class SomcpToolListZones
             ];
         }
 
-        return SomcpTool::json([
-            'zones' => $zones,
-            'count' => count($zones),
-        ]);
+        return $zones;
+    }
+
+    /**
+     * One zone of a shop as a row of this list, or null when the shop does not have it.
+     *
+     * Public so the zone writes find the zone they act on, and answer with it,
+     * through the same query as the list.
+     *
+     * @param int $idShop
+     * @param int $idZone
+     *
+     * @return array{id_zone: int, name: string, active: bool, countries: int}|null
+     */
+    public static function zone(int $idShop, int $idZone): ?array
+    {
+        foreach (self::zones($idShop, ['id_zone' => $idZone]) as $zone) {
+            return $zone;
+        }
+
+        return null;
     }
 }

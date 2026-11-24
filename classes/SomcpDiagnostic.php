@@ -570,7 +570,7 @@ class SomcpDiagnostic
         $host = Tools::strtolower((string) parse_url(SomcpConfig::shopBaseUrl($shop), PHP_URL_HOST));
         $host = trim($host, '[]');
         if (filter_var($host, FILTER_VALIDATE_IP)) {
-            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+            return !SomcpHttp::isPublicAddress($host);
         }
 
         return $host === 'localhost' || (bool) preg_match('/\.(localhost|local|test)$/', $host);

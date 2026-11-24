@@ -16,6 +16,278 @@ are:
 
 ## Unreleased
 
+## 2.0.5 - 2026-11-25
+
+### Added
+
+**Read the general settings.** The new tool somcp_get_general_settings reads
+the price rounding and the storefront pages of Shop Parameters > General:
+Round mode, Round type, and whether the suppliers, brands and best sellers
+pages are shown. The assistant can now tell how the shop rounds every price
+and total before it explains one.
+
+**Change the general settings.** The new tool somcp_update_general_settings
+does what the Save button of Shop Parameters > General does for the price
+rounding and the suppliers, brands and best sellers pages, and only for
+those: the other settings of the tab are never touched. The answer says that
+orders and invoices already made keep their totals, and that only new carts
+and orders use a new rounding.
+
+**Read the maintenance settings.** The new tool
+somcp_get_maintenance_settings reads the Maintenance tab of Shop Parameters >
+General: whether the store is enabled, whether employees logged in to the
+back office still see it (PrestaShop 9), and the maintenance text in each
+language. The assistant can now tell whether the storefront is open to
+visitors before saying the shop is live.
+
+**Change the maintenance settings.** The new tool
+somcp_update_maintenance_settings does what the Save button of the
+Maintenance tab of Shop Parameters > General does: it opens or closes the
+storefront, lets employees logged in to the back office see a closed shop
+(PrestaShop 9), and changes the maintenance text in each language, cleaned as
+the back office cleans it. The addresses of Maintenance IP are never touched.
+The assistant closes or opens the shop only when the merchant asks.
+
+**Read the localization settings.** The new tool
+somcp_get_localization_settings reads International > Localization >
+Localization: the default language, country and currency, browser detection,
+the time zone, the weight, distance, volume and dimension units, and the
+server's language and country identifiers. The assistant can now tell which
+language and currency a shop starts from, and in which units its product
+weights and carrier ranges are read, before typing any of them.
+
+**Change the localization settings.** The new tool
+somcp_update_localization_settings does what the Save buttons of
+International > Localization > Localization do: the default language and country, browser
+detection, the time zone, the units and the server's identifiers, so a new
+shop can be set to the language, country and units it sells in. A unit is only
+a label: the answer says that weights and sizes already typed are not
+converted. The default currency can be changed too, as the back office does
+it: every exchange rate is reset and read again from PrestaShop's exchange
+rate server, which is asked first, so nothing changes when it does not
+answer. Product prices are not converted, and the answer says so.
+
+**Read the shipping preferences.** The new tool
+somcp_get_shipping_preferences reads Shipping > Preferences: the handling
+charges, the price and the weight from which shipping is free, the default
+carrier, and how carriers are sorted on the storefront. The assistant can now
+tell what every order pays for shipping on top of the carriers' prices, and
+which carrier a customer finds selected.
+
+**Import a localization pack.** The new tool somcp_import_localization_pack
+does what the card Import a localization pack of International > Localization
+> Localization does, from the shop's own pack: a country's states, taxes and
+tax rules, units and the price display of the default customer groups, in one
+call, so a shop is set up for its country without creating each state and tax
+by hand. Its currencies and languages come too, as the back office brings
+them: the exchange rates and each new language are fetched from PrestaShop's
+servers, and the answer says when one did not arrive. Taxes and tax rules that
+already exist are never changed, and the answer lists what was created.
+Currencies are imported from the built-in chat; a connected assistant adds
+them one by one.
+
+**Add or update a language from PrestaShop.** The new tool
+somcp_install_language_pack does what the card Add / Update a language of
+International > Translations does: a language is added with PrestaShop's
+translations of the storefront, the e-mails and the back office, or the
+translations of an installed language are brought up to date. A language
+created by hand stayed untranslated; it can now be installed in one step. The
+call can take up to two minutes, and says so when PrestaShop's server does not
+answer.
+
+**Update the exchange rates.** The new tool somcp_update_exchange_rates does
+what the Update button of Update exchange rates does in International >
+Localization > Currencies: every currency of the shop takes the rate of
+PrestaShop's exchange rate server. The merchant sees which rates moved, from
+what to what, and which currencies that server does not list, whose rate
+stays as it was. It waits up to 20 seconds for the server, and says so when it
+does not answer.
+
+**Change the country options.** The new tool somcp_update_country_options
+switches on or off, in International > Locations > Countries, the option that
+lets customers pick in their address only a country an active carrier
+delivers. A shop that ships to a few countries can now stop customers from
+choosing a country it cannot deliver. The merchant is warned when no active
+carrier delivers to an active country, and on PrestaShop 9, which no longer
+shows the option, that the storefront still applies it.
+
+**Read the country options.** The new tool somcp_get_country_options reads the
+Country options of International > Locations > Countries: whether customers
+may only pick, in an address, a country an active carrier delivers. Before
+enabling a country, the assistant can now tell whether customers will see it.
+On PrestaShop 9, which no longer shows the option, the merchant is told the
+storefront still applies it.
+
+**Add a language.** The new tool somcp_create_language adds a language to
+International > Localization > Languages, as Add new language does: its name,
+its ISO code, its language code, its two date formats, its flag and its
+"No-picture" image, whether it is written right to left, and whether it is
+offered. A shop that opens to a new market can now add the language without the
+back office. Every text of the shop is copied into it from the default
+language, and the merchant is told to translate them; a code another language
+already has is refused, and when an image cannot be stored nothing is left
+half made.
+
+**Change a language.** The new tool somcp_update_language changes a language of
+International > Localization > Languages, as its Edit page and the Enabled
+switch of the list do: its name, its ISO code, its language code, its two
+date formats, whether it is written right to left, and whether it is offered.
+A shop that opens a second language can now give it its own date format, or
+switch it on and off, without the back office. The default language cannot be switched off,
+and when a language is, the employees who used it move to the default language
+and the merchant is told how many. A new ISO code takes the translation files
+and e-mail templates of the language with it, and is refused when another
+language already has it. Its flag, and the "No-picture" image the storefront
+shows in that language for a product, a category or a brand without a picture,
+are replaced from an address or a file sent in the chat.
+
+**Delete a language.** The new tool somcp_delete_language deletes a language of
+International > Localization > Languages, as the Delete of its row does. Every
+text of the shop in that language goes with it, so the assistant offers to
+switch the language off instead, and the default language and the one the
+employee uses in the back office are refused. The employees who used it move
+to the default language, and the merchant is told how many customers had
+chosen it.
+
+**Add a currency.** The new tool somcp_create_currency adds an official
+currency to International > Localization > Currencies, as Add new currency
+does: its ISO code, its exchange rate, and optionally its decimals, status,
+names and symbols, which the shop otherwise fills in every language. A shop
+opening to a new market can now add its currency without the back office. A currency
+deleted before comes back as the same currency, and the merchant is told that
+payment modules still have to accept it in Payment > Preferences. An
+alternative currency can be added too, as Create an alternative currency does:
+a local or loyalty currency PrestaShop does not know, with the code, name and
+symbol the merchant gives and 2 decimals unless told otherwise.
+
+**Create a delivery zone.** The new tool somcp_create_zone creates a zone of
+International > Locations > Zones, with its name and whether shipping to it is
+allowed, as Add new zone does. The assistant can now make the zone a merchant
+needs (neighbouring countries, the mainland apart from the islands) instead of
+only using the zones the install left. It is told the zone starts with no
+country, and when another zone already has the same name.
+
+**Rename or close a delivery zone.** The new tool somcp_update_zone changes the
+name of a zone, or allows or stops shipping to it, as its edit form and the
+Enabled switch of the list do. Only what differs is saved, so giving back a zone
+as it was read changes nothing. When a zone is closed, the assistant is told
+which carriers served it and how many countries no longer get them.
+
+**Delete a delivery zone.** The new tool somcp_delete_zone deletes a zone that
+holds no country and no state, as the Delete of its row does. A zone that still
+holds some is refused rather than deleted, because the back office would leave
+those countries in no zone, where no carrier reaches their addresses. The
+answer gives the name of the zone and the carriers that lost it.
+
+**Create a state.** The new tool somcp_create_state creates a state of
+International > Locations > States, with its name, its ISO code, its country,
+its zone and its status, as Add new state does. A merchant who sells to a
+region PrestaShop does not ship no longer has to open the back office before
+the assistant can add a tax rule row or an address there. An ISO code another
+state of the same country already has is refused, so the same call twice
+creates nothing twice.
+
+**Change a state.** The new tool somcp_update_state changes the name, the ISO
+code, the country, the zone or the status of a state of International >
+Locations > States, as its edit form and the Enabled switch do. Until now the
+assistant could create a state but not correct its name, move it to another
+zone for the carrier prices, or switch it off so the address form stops
+offering it. A state that addresses or tax rule rows use keeps its country, so
+those addresses never end up with a state of another country.
+
+**Delete a state.** The new tool somcp_delete_state deletes a state of
+International > Locations > States, as the Delete of its row does. A state
+created by mistake, or one the merchant never sells to, no longer has to be
+removed in the back office. A state an address or a tax rule row uses is
+kept, with the tax rules named, so no tax row is left pointing to a state
+that no longer exists.
+
+**Change a country.** The new tool somcp_update_country changes one country
+of International > Locations > Countries as its edit page does: its name in
+each language, ISO code, call prefix, default currency, zone, whether it is
+enabled, whether it has states, whether addresses need a zip code and the
+format that code must follow, the address format, whether addresses need a
+tax identification number and whether prices show the tax label. The address
+format is saved on PrestaShop 9 too, whose edit page shows it empty and does
+not save it, while its storefront and invoices still print with it. A country
+moved to another zone
+takes along its states that were in the old zone, on PrestaShop 9 as on
+PrestaShop 8, so its addresses are offered the carriers of the new zone.
+Enabling a country never adds payment modules for it; the answer warns when
+no payment module or no carrier is offered there yet.
+
+**Read a country.** The new tool somcp_get_country reads one country of
+International > Locations > Countries as its edit page shows it, with what
+the list of countries leaves out: its default currency, its address format
+and whether prices show the tax label. The address format is given both as
+stored and as the storefront applies it, so the merchant learns which lines
+an address of that country shows, even on PrestaShop 9 where the edit page
+displays the field empty.
+
+**Read a currency.** The new tool somcp_get_currency reads one currency of
+International > Localization > Currencies as its edit page shows it, with what
+the list of currencies leaves out: its number of decimals, its numeric ISO
+code, whether it is an alternative currency, its price format in the language
+asked and whether its names or symbols were customized. The assistant can now
+tell the merchant how prices in that currency are shown before changing it.
+
+**Change a currency.** The new tool somcp_update_currency changes the exchange
+rate, the number of decimals and the status of one currency of International >
+Localization > Currencies, as its edit page and the Enabled switch of the list
+do. It also changes the currency name and the symbol in each language, the
+place of the symbol in prices (Customize symbol and format), and puts back the
+default names, symbols and format, as Restore default settings does. The rate
+is the one of the shop the assistant is connected to; the default currency of a
+shop keeps a rate of 1 and cannot be switched off, as in the back office. A
+currency read with somcp_get_currency can be given back as it is, and only what
+differs is written.
+
+**Delete a currency.** The new tool somcp_delete_currency deletes one currency
+of International > Localization > Currencies, as the Delete of its row does.
+The default currency of a shop is refused, as in the back office, and so is a
+currency a country still uses as its default currency: the merchant sets the
+country back to the default store currency first, so no country is left with a
+currency the shop no longer lists. Orders placed in the currency keep it, and
+the answer says which payment modules stopped accepting it.
+
+### Changed
+
+**Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
+3.7.0. Nothing changes on the page.
+
+**Product summaries as long as the back office allows.** somcp_create_product
+and somcp_update_product refused a summary outside 100 to 200 characters, so a
+one-character fix of an existing longer summary was refused too and had to be
+made by hand. A summary is now refused only past the shop's own Max size of
+short description (Shop Parameters > Product Settings), as on the product page,
+and a summary outside 100 to 200 characters only gives an SEO advice.
+
+### Fixed
+
+**A country given the wrong way when listing states.** When the assistant gave
+the country of somcp_list_states as a list instead of a code, it was told the
+shop had no country with an empty code, as if a country were missing. It is now
+told to give an ISO code of 2 letters, and a state code given the wrong way is
+refused the same way instead of being ignored, which listed every state.
+
+
+### Security
+
+**Stricter handling of authorization codes and refresh tokens.** A code and
+a rotated refresh token are now marked used in the same step that checks
+them, and signing out with a refresh token now also ends the access token
+issued with it.
+
+**One check of a public address for every request the shop sends.** The
+addresses a fetch made by the module may reach, and the checks of whether
+the shop itself is reachable, now all use the same, stricter definition of
+a public address.
+
+**Sign-in attempts on the authorization page are counted before they are
+checked.** The limits on sign-ins and on e-mailed codes per address and per
+account, and the single use of an anti-robot check, now hold however the
+attempts arrive. A successful sign-in still does not count against them.
+
 ## 2.0.4 - 2026-11-22
 
 ### Added
@@ -38,8 +310,8 @@ currencies.
 
 **List the languages.** The new tool somcp_list_languages lists the languages
 of International > Localization > Languages, with their ISO code, language
-code, locale and date formats, whether they are enabled, and which one is the
-shop default. Until now the assistant only read the codes in one line of the
+code, locale and date formats, whether they are enabled, which one is the
+shop default, and the flag of each, which the assistant can show. Until now the assistant only read the codes in one line of the
 connection check, without the disabled languages, so it could not tell the
 merchant why a language was refused.
 

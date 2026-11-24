@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "an emptied name, a code the shop already has, a language code that is not one and both images left out, at once", "arguments": {"name": "", "iso_code": "en", "language_code": "x"}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- name: required - it cannot be emptied", "- iso_code: en is already the code of ", "- language_code: an IETF language tag", "- flag: the public https address of the flag (url), or the upload_ref of a file on the shop", "- no_picture: the public https address of the no-picture image (url), or the upload_ref of a file on the shop"]},
+    {"why": "a flag with an address and a reference together, and an empty no-picture image, at once", "arguments": {"name": "Test", "iso_code": "zz", "language_code": "zz-zz", "flag": {"url": "https://example.com/flag.jpg", "upload_ref": "x"}, "no_picture": {}}, "expect": "error", "contains": ["Nothing was created.", "- flag: url or upload_ref, not both", "- no_picture: the public https address of the no-picture image (url)"]},
+    {"why": "the required texts left out, an ISO code of three letters, a non-boolean RTL and a field the tool does not take, at once", "arguments": {"iso_code": "zzz", "is_rtl": "no", "colour": 1}, "expect": "error", "contains": ["Nothing was created.", "- colour: not a field of this tool", "- name: required", "- language_code: required", "- iso_code: 2 characters at most, 3 given", "- is_rtl: true or false"]}
+  ]
+}

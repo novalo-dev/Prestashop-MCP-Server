@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a zone the shop does not have", "arguments": {"id_zone": 99999}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_zone: no zone of this shop has the identifier 99999"]},
+    {"why": "a zone that still holds countries", "arguments": {"id_zone": 4}, "expect": "error", "contains": ["Nothing was deleted.", "- id_zone: zone 4 holds ", " countries - move them to another zone first"]},
+    {"why": "a zone with countries and states, and a field the tool does not take, all at once", "arguments": {"id_zone": 3, "x": 1}, "expect": "error", "contains": ["Nothing was deleted.", " countries - move them to another zone first", " states - move them to another zone first", "- x: not a field of this tool"]}
+  ]
+}

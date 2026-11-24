@@ -890,6 +890,18 @@ T = {
  "Lister les zones",
  "Listar las zonas",
  "Zonen auflisten"),
+"Create a zone": (
+ "Créer une zone",
+ "Crear una zona",
+ "Eine Zone anlegen"),
+"Change a zone": (
+ "Modifier une zone",
+ "Modificar una zona",
+ "Eine Zone ändern"),
+"Delete a zone": (
+ "Supprimer une zone",
+ "Eliminar una zona",
+ "Eine Zone löschen"),
 "List countries": (
  "Lister les pays",
  "Listar los países",
@@ -1098,6 +1110,102 @@ T = {
  "Lister les états",
  "Listar los estados",
  "Staaten auflisten"),
+"Create a state": (
+ "Créer un état",
+ "Crear un estado",
+ "Einen Staat anlegen"),
+"Change a state": (
+ "Modifier un état",
+ "Modificar un estado",
+ "Einen Staat ändern"),
+"Delete a state": (
+ "Supprimer un état",
+ "Eliminar un estado",
+ "Einen Staat löschen"),
+"Read a country": (
+ "Lire un pays",
+ "Leer un país",
+ "Ein Land lesen"),
+"Read the localization settings": (
+ "Lire les paramètres de localisation",
+ "Leer los parámetros de localización",
+ "Die Lokalisierungseinstellungen lesen"),
+"Change the localization settings": (
+ "Modifier les paramètres de localisation",
+ "Modificar los parámetros de localización",
+ "Die Lokalisierungseinstellungen ändern"),
+"Read the general settings": (
+ "Lire les paramètres généraux",
+ "Leer los parámetros generales",
+ "Die allgemeinen Einstellungen lesen"),
+"Change the general settings": (
+ "Modifier les paramètres généraux",
+ "Modificar los parámetros generales",
+ "Die allgemeinen Einstellungen ändern"),
+"Read the maintenance settings": (
+ "Lire les paramètres de maintenance",
+ "Leer los parámetros de mantenimiento",
+ "Die Wartungseinstellungen lesen"),
+"Read the shipping preferences": (
+ "Lire les préférences de livraison",
+ "Leer las preferencias de envío",
+ "Die Versandeinstellungen lesen"),
+"Import a localization pack": (
+ "Importer un pack de localisation",
+ "Importar un paquete de localización",
+ "Ein Lokalisierungspaket importieren"),
+"Change the maintenance settings": (
+ "Modifier les paramètres de maintenance",
+ "Modificar los parámetros de mantenimiento",
+ "Die Wartungseinstellungen ändern"),
+"Read the country options": (
+ "Lire les options des pays",
+ "Leer las opciones de los países",
+ "Die Länderoptionen lesen"),
+"Change the country options": (
+ "Modifier les options des pays",
+ "Modificar las opciones de los países",
+ "Länderoptionen ändern"),
+"Change a country": (
+ "Modifier un pays",
+ "Modificar un país",
+ "Ein Land ändern"),
+"Read a currency": (
+ "Lire une devise",
+ "Leer una moneda",
+ "Eine Währung lesen"),
+"Change a language": (
+ "Modifier une langue",
+ "Modificar un idioma",
+ "Eine Sprache ändern"),
+"Delete a language": (
+ "Supprimer une langue",
+ "Eliminar un idioma",
+ "Eine Sprache löschen"),
+"Add or update a language from PrestaShop": (
+ "Ajouter ou mettre à jour une langue depuis PrestaShop",
+ "Añadir o actualizar un idioma desde PrestaShop",
+ "Eine Sprache von PrestaShop hinzufügen oder aktualisieren"),
+"Add a language": (
+ "Ajouter une langue",
+ "Añadir un idioma",
+ "Eine Sprache hinzufügen"),
+"Change a currency": (
+ "Modifier une devise",
+ "Modificar una moneda",
+ "Eine Währung ändern"),
+"Add a currency": (
+ "Ajouter une devise",
+ "Añadir una moneda",
+ "Eine Währung hinzufügen"),
+"Delete a currency": (
+ "Supprimer une devise",
+ "Eliminar una moneda",
+ "Eine Währung löschen"),
+"Update the exchange rates": (
+ "Mettre à jour les taux de change",
+ "Actualizar los tipos de cambio",
+ "Die Wechselkurse aktualisieren"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

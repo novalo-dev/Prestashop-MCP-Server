@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "a switch that is not a boolean and a text in a language the shop does not have, refused together", "arguments": {"store_enabled": "no", "maintenance_text": {"zz": "Back soon"}}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- store_enabled: true or false", "- maintenance_text: \"zz\" is not among the languages being filled"]},
+    {"why": "Maintenance IP, never written by this tool", "arguments": {"maintenance_ip": "127.0.0.1"}, "expect": "error", "contains": ["- maintenance_ip: not a field of this tool"]},
+    {"why": "an empty maintenance text, which the form requires", "arguments": {"languages": ["en"], "maintenance_text": "  "}, "expect": "error", "contains": ["- maintenance_text (en): required, never empty"]},
+    {"why": "the switch for logged-in employees given something else than a boolean: refused on PrestaShop 8, where it does not exist, and on 9", "arguments": {"open_for_logged_in_employees": "yes"}, "expect": "error", "contains": ["- open_for_logged_in_employees: "]},
+    {"why": "a language the shop does not have", "arguments": {"languages": ["zz"], "maintenance_text": "Back soon"}, "expect": "error", "contains": ["- languages: \"zz\" is not an active language of this shop"]},
+    {"why": "nothing given, nothing written", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written."]}
+  ]
+}

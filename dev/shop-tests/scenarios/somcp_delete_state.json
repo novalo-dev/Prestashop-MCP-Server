@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a state the shop does not have", "arguments": {"id_state": 99999}, "expect": "error", "contains": ["Nothing was deleted.", "- id_state: no state of this shop has the identifier 99999"]},
+    {"why": "a state the demo addresses use; whether a tax rule row uses it depends on the localization pack, so it is not checked", "arguments": {"id_state": 35}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_state: state 35 is used by 2 addresses - PrestaShop keeps a state an address uses"]},
+    {"why": "an identifier that is not one and a field the tool does not take", "arguments": {"id_state": "x", "name": "x"}, "expect": "error", "contains": ["Nothing was deleted.", "- id_state: a whole number above 0", "- name: not a field of this tool"]}
+  ]
+}

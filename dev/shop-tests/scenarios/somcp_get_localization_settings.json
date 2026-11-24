@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "the settings of the shop, in its default language", "arguments": {}, "expect": "ok", "contains": ["\"localization\"", "\"default_id_lang\"", "\"default_language\"", "\"default_country\"", "\"default_currency\"", "\"timezone\"", "\"weight_unit\"", "\"dimension_unit\"", "\"country_identifier\""]},
+    {"why": "the names in a language given by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"detect_language_from_browser\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read.", "- language: not one of the shop's languages"]},
+    {"why": "a field the tool does not take", "arguments": {"shop": 1}, "expect": "error", "contains": ["- shop: not a field of this tool"]}
+  ]
+}

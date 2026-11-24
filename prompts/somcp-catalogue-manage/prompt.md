@@ -30,7 +30,23 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_tax_rule`
 - `somcp_list_taxes`
 - `somcp_list_languages`
+- `somcp_create_language`
+- `somcp_update_language`
+- `somcp_delete_language`
+- `somcp_install_language_pack`
+- `somcp_get_localization_settings`
+- `somcp_update_localization_settings`
+- `somcp_import_localization_pack`
+- `somcp_get_general_settings`
+- `somcp_update_general_settings`
+- `somcp_get_maintenance_settings`
+- `somcp_update_maintenance_settings`
 - `somcp_list_currencies`
+- `somcp_get_currency`
+- `somcp_create_currency`
+- `somcp_update_currency`
+- `somcp_delete_currency`
+- `somcp_update_exchange_rates`
 - `somcp_create_tax`
 - `somcp_update_tax`
 - `somcp_delete_tax`
@@ -45,9 +61,20 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
+- `somcp_get_shipping_preferences`
 - `somcp_list_zones`
+- `somcp_create_zone`
+- `somcp_update_zone`
+- `somcp_delete_zone`
 - `somcp_list_countries`
+- `somcp_get_country`
+- `somcp_update_country`
+- `somcp_get_country_options`
+- `somcp_update_country_options`
 - `somcp_list_states`
+- `somcp_create_state`
+- `somcp_update_state`
+- `somcp_delete_state`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_product`
@@ -213,11 +240,32 @@ Carriers come from `somcp_list_carriers`: give its `id_carrier` in
 say so before tying a product to it. No carrier given means every carrier
 may deliver the product. To tell which zones and customer groups a carrier
 serves before tying it, read it with `somcp_get_carrier`.
+`somcp_get_shipping_preferences` gives the handling charges, the price and
+weight from which shipping is free and the default carrier: read it before
+telling a customer what an order pays for shipping.
 The zones of the shop, with their `id_zone` and the number of countries in
-each, come from `somcp_list_zones`. The countries, with their ISO code, their
-zone and whether they are enabled, come from `somcp_list_countries`. The
+each, come from `somcp_list_zones`. A zone the merchant needs and the shop
+lacks is created with `somcp_create_zone`, after checking the list: it starts
+with no country. `somcp_update_zone` renames a zone or allows or stops shipping
+to it; before stopping it, tell the merchant which carriers serve it.
+`somcp_delete_zone` deletes a zone with no country and no state; the carriers
+that served it lose it and their prices for it, so read them with
+`somcp_get_carrier` and tell the merchant first. The countries, with their ISO code, their
+zone and whether they are enabled, come from `somcp_list_countries`; every
+field of one country, its default currency, address format and tax label
+included, from `somcp_get_country`; `somcp_update_country` changes them,
+and a new zone takes along the states that were in the old one.
+`somcp_get_country_options` tells whether customers may only pick a country
+an active carrier delivers: read it before enabling a country;
+`somcp_update_country_options` switches that restriction on or off. The
 states of a country, with the ISO code `state` and `states` take, come from
-`somcp_list_states`.
+`somcp_list_states`. A state the merchant needs and the shop lacks is created
+with `somcp_create_state`, in a country that uses states; ask for its zone,
+proposing the zone of its country. `somcp_update_state` renames a state,
+changes its ISO code or zone, or switches it off so the address form stops
+offering it; a state used by addresses or tax rule rows keeps its country.
+`somcp_delete_state` deletes a state no address and no tax rule row uses;
+give its rows to `somcp_delete_country_rule` first, and tell the merchant.
 To rename a carrier, change its transit time, speed grade, logo, tracking URL,
 status, customer groups, zones, ranges and their prices per zone, place in the
 list, free shipping, handling costs, billing, tax, out-of-range behavior or size and weight limits, use
@@ -321,14 +369,71 @@ Texts are objects keyed by ISO code, given for every language in `languages`; a
 language of the shop left out takes the default language's text. Lengths count
 the visible text, spaces included, HTML tags not counted. The ISO codes of the
 shop's languages, which one is the default and which are enabled, come from
-`somcp_list_languages`: only an enabled language is accepted.
+`somcp_list_languages`: only an enabled language is accepted. A language is
+added with `somcp_create_language`, its flag and "No-picture" image given, and
+every text of the shop is copied into it from the default language: tell the
+merchant they are to translate. A language's
+name, ISO code, date formats, status, flag and "No-picture" image are changed
+with `somcp_update_language`; the default language stays enabled, switching one off
+moves the employees who use it to the default, and a new ISO code moves the
+translation files and e-mail templates of the old one: confirm with the
+merchant first. `somcp_delete_language` deletes a language with every
+text of the shop in it, which cannot be undone: offer to switch it off first,
+and confirm with the merchant before deleting. A language with PrestaShop's
+own translations of the storefront, the e-mails and the back office is added,
+or those translations of an installed one replaced, with
+`somcp_install_language_pack`: it reaches PrestaShop's server and can take two
+minutes, and an update replaces the texts PrestaShop ships (order statuses,
+page titles) in that language: confirm with the merchant first.
+`somcp_get_localization_settings` says which language, country and currency
+the shop starts from, its time zone, and the weight, distance, volume and
+dimension units every product weight and carrier range is read in: read it
+before typing a weight or a size. `somcp_update_localization_settings`
+changes them; a unit is only a label, so values already typed are not
+converted: confirm with the merchant before changing a unit of a shop that
+already has products or carrier ranges. A new default currency resets every
+exchange rate and converts no price, each keeps its figure in the new
+currency: confirm with the merchant, who may want maintenance mode on first.
+`somcp_import_localization_pack` brings a country's states, taxes and tax
+rules, currencies, languages, units and price display in one call, from the
+shop's own pack (currencies and languages are fetched from PrestaShop's
+servers, and are created enabled): use it
+when a shop is set up for a country, rather than creating each state and tax
+by hand. It creates and is not undone, and it overwrites the units: confirm
+with the merchant first.
+`somcp_get_general_settings` gives the price rounding (Round mode and Round
+type, which decide every price shown and every total invoiced) and whether
+the storefront shows a suppliers, a brands and a best sellers page.
+`somcp_update_general_settings` changes them: a new rounding applies to new
+carts and orders only, those already made keep their totals; confirm with the
+merchant before changing it. `somcp_get_maintenance_settings` says whether
+the storefront is open to visitors or shows the maintenance text: read it
+before telling the merchant the shop is live.
+`somcp_update_maintenance_settings` opens or closes the storefront and changes
+its maintenance text: close or open the shop only when the merchant asks, and
+reopen it when the set-up they asked for is done.
 
 ## Prices
 
 Every price is either **tax included** or **tax excluded**: the field name says
 which, and so must you. Always give the currency with an amount. The ISO codes
 of the shop's currencies, the default and the enabled ones come from
-`somcp_list_currencies`.
+`somcp_list_currencies`; the decimals, the price format and whether a
+currency is an alternative one, from `somcp_get_currency`. An official
+currency the shop does not have yet is added with `somcp_create_currency`, its
+ISO code and the exchange rate the merchant gives; the shop fills its names and
+symbols, and payment modules accept it only once set in Payment > Preferences.
+A currency PrestaShop does not know (a local or loyalty currency) is added by
+the same tool with `alternative`, and the name and symbol the merchant gives.
+A currency's
+exchange rate, decimals, status, names, symbols and symbol position are changed
+with `somcp_update_currency`, which also restores the default settings: the
+default currency keeps a rate of 1 and cannot be switched off. Every rate is
+updated at once from PrestaShop's exchange rates with
+`somcp_update_exchange_rates`, which names the currencies those rates leave
+out. A
+currency is deleted with `somcp_delete_currency`, never the default one nor one
+a country uses; orders placed in it keep it.
 
 The prices returned are the base price of the product, before specific prices,
 discounts and combination impacts. A customer may pay something else: say so

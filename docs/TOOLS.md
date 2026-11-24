@@ -2322,7 +2322,7 @@ Unknown arguments through `SomcpTool::unknownFields()`.
 - `group_access`: `[{id_group, name}]` from `carrier_group`, among the groups of the shop, `name` in `language`, the `id_group` of `somcp_list_customer_groups`;
 - `zones`: `[{id_zone, name}]` from `carrier_zone`, sorted by name as the screen sorts them;
 - `id_tax_rules_group`: **Tax**, from `carrier_tax_rules_group_shop` for the shop of the token, `0` for **No tax**; `tax_rule`: its name through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or a rule deleted since (then a `warning`);
-- `handling_costs` (**Add handling costs** on 8.0.1, **Handling costs** on 9.0.0); when true, `handling_cost_tax_excl`: `PS_SHIPPING_HANDLING` for the shop and group of the token, set on **Shipping > Preferences**;
+- `handling_costs` (**Add handling costs** on 8.0.1, **Handling costs** on 9.0.0); when true, `handling_cost_tax_excl`: `PS_SHIPPING_HANDLING` for the shop and group of the token, set on **Shipping > Preferences** and read with the other preferences by `somcp_get_shipping_preferences`;
 - `billing`: `"price"` or `"weight"`, as `Carrier::getShippingMethod()` decides (a carrier stored with `shipping_method` 0 follows `PS_SHIPPING_METHOD`), `null` for a free carrier;
 - `out_of_range`: `"highest_range"` (**Apply the cost of the highest defined range**) or `"disable_carrier"` (**Disable carrier**);
 - `ranges`: the ranges of the kind `billing` names (`range_price` for `"price"`, `range_weight` for `"weight"`), sorted by `from`, each `{from, to, prices}`, `from` included and `to` excluded as the 8.0.1 header says (**>=**, **<**); `prices` is `[{id_zone, zone, price_tax_excl}]`, one per zone of `zones`, from `delivery`, the row of the shop of the token, else of its group, else the global one, as `Carrier::sqlDeliveryRangeShop()` picks it; a zone with no row has `price_tax_excl: null` and a `warning`, since the shop does not offer the carrier there. The rows of the other kind (a carrier stored with both, like demo carrier 2) are left out: the form does not show them and the core does not charge them. `[]` for a free carrier, whose form shows no ranges;
@@ -2347,7 +2347,8 @@ carrier take and that every country belongs to: no other tool gives one.
 Read only.
 
 **Do not use for** - the zones a carrier serves and its prices per zone
-(→ `somcp_get_carrier`); the countries themselves.
+(→ `somcp_get_carrier`); the countries themselves; creating a zone
+(→ `somcp_create_zone`).
 
 **Parameters**
 
@@ -2380,6 +2381,144 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`zone`, `zone_shop`).
 
+#### `somcp_create_zone`
+**State**: written · [issue #348](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/348)
+**Nature**: `acts(ADD, 'AdminZones')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one zone of **International > Locations > Zones**, as
+**Add new zone** then **Save** do: **Name** and **Active**. A zone groups the
+countries a carrier serves and its prices per zone (`somcp_update_carrier`,
+`zones` and `ranges`): without it, only the zones the install left can be used.
+
+**Do not use for** - the zones a carrier serves and its prices per zone
+(→ `somcp_update_carrier`); renaming or disabling a zone (→ `somcp_update_zone`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | trimmed; empty refused `name: required`; at most the size of `zone.name` (`SomcpTool::columnSize()`, 64 as fallback): `name: 64 characters at most, 70 given`; checked with `validateField('name', ...)` on a `new Zone()`: `name: a character PrestaShop refuses in a zone name (< > = { }) - ...` |
+| `active` | **Active** | boolean | no | left out, `true`, the default of the form; not a boolean: `active: true or false` |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `id_zone` and
+`countries` named as worked out by the shop, so a row of `somcp_list_zones`
+given back is told why.
+
+**Returns** - `created: true`, `id_zone`, `warning`, and `zone`, the row of
+`somcp_list_zones` for that zone (`id_zone`, `name`, `active`, `countries`,
+here 0), read back through `SomcpToolListZones::zones()`. The `warning` always
+says the zone has no country yet, and adds, when another zone of the shop has
+the same name (case-insensitive), `Zone <id> already has this name: the
+merchant sees two zones named <name> in the carrier form.` - the form takes it,
+so it is not refused.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once. A failed `add()` is reported with a hint to
+read `somcp_list_zones` before calling again.
+
+**Notes**
+- The zone is tied to the shop of the token only (`id_shop_list`, `zone_shop`), as the form does with **Shop association** on that shop.
+- Not replayable: the same call twice creates two zones, as the form does; the description says to read `somcp_list_zones` first.
+- **Active** left out is `true`, the form's default: a zone does nothing on its own until countries and carriers are given to it.
+- Logged as `zone_created`. The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the fields, the checks or the tables; only the card title (**Zones** / **Zone**) and the multistore label (**Shop association** / **Store association**).
+
+#### `somcp_update_zone`
+**State**: written · [issue #349](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/349)
+**Nature**: `acts(EDIT, 'AdminZones')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes one zone of **International > Locations > Zones**, as its
+edit form then **Save** do (**Name**, **Active**), or as the **Enabled** switch
+of the list and the bulk actions **Enable selection** / **Disable selection**
+do for one zone.
+
+**Do not use for** - the zones a carrier serves (→ `somcp_update_carrier`,
+`zones`); the zone of a country (a later tool); creating a zone
+(→ `somcp_create_zone`); deleting one (→ `somcp_delete_zone`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_zone` | **ID** | integer | yes | read with `SomcpTool::id()`; a zone the shop of the token does not have (`zone_shop`) refused with `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+| `name` | **Name** | string | no | the checks of `somcp_create_zone`, through `SomcpToolCreateZone::name()`: required when given, 64 characters at most, `validateField('name', ...)` |
+| `active` | **Active** (form), **Enabled** (list) | boolean | no | not a boolean: `active: true or false` |
+| `countries` | | integer | no | accepted only as `somcp_list_zones` gives it back, so a row of the list can be given back whole; another value refused: `countries: worked out by the shop - move countries with the countries tools` |
+
+At least one of `name` and `active`, otherwise `name or active: give at least
+one field to change`. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - the shape of every update tool (#210): something written,
+`changed: true`, `id_zone` and `changes`, one entry per field written, each
+`field`, `old` and `new`; nothing differed, `changed: false`, `id_zone` and
+`reason` (`The zone already holds every value given. Nothing was written.`),
+and nothing is written. In both cases `zone`, the row of `somcp_list_zones`
+read back (`SomcpToolListZones::zone()`). When something was written, a
+`warning` when:
+- `active` set to `false` on a zone that carriers serve (`carrier_zone`): `Shipping is now disallowed to zone <id>: the <n> carriers that serve it (<ids>) are no longer offered to addresses in its <m> countries.`;
+- the new `name` is taken by another zone of the shop, the warning of `somcp_create_zone`;
+- the zone is also in another shop (`zone_shop`): `also_in_other_shops: <n>`, since a zone has one row in `zone` and the change reaches every shop of it (`SomcpToolUpdateZone::otherShops()`).
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once.
+
+**Notes**
+- Replayable: the same call twice writes once, the second answers `changed: false`.
+- Only the fields given and different from the stored zone are written (`Zone::update()`). Logged as `zone_updated` with the fields changed.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the fields, the checks or the tables; only the titles of the edit page (**Edit: Asia** / **Editing zone Asia**).
+
+#### `somcp_delete_zone`
+**State**: written · [issue #350](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/350)
+**Nature**: `acts(DELETE, 'AdminZones')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one zone of **International > Locations > Zones**, as the
+**Delete** of its row does, once it holds no country and no state.
+
+**Do not use for** - removing a zone from one carrier (→ `somcp_update_carrier`,
+`zones`); disabling a zone for a while (→ `somcp_update_zone`, `active`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_zone` | **ID** | integer | yes | read with `SomcpTool::id()`; a zone the shop of the token does not have refused with `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Refused**, every reason at once, under `Nothing was deleted.`:
+- the zone still holds countries (`country.id_zone`): `id_zone: zone <id> holds <n> countries - move them to another zone first`;
+- the zone still holds states (`state.id_zone`): `id_zone: zone <id> holds <n> states - move them to another zone first`;
+- the zone is also in another shop (`zone_shop`, `SomcpToolUpdateZone::otherShops()`): `id_zone: zone <id> is also used by <n> other shops - deleting it would remove it there too`.
+
+Decision (countries and states): refused, where the back office deletes.
+`Zone::delete()` sets `id_zone = 0` on every country and state of the zone:
+those countries then belong to no zone, no carrier is offered to their
+addresses and no tax rule by zone reaches them. The other shops: refused, as
+`somcp_delete_feature` refuses a shared feature, since the row of `zone` is
+shared.
+
+**Returns** - `deleted: true`, `id_zone`, `name` (as it was), and
+`carriers_detached`, the `id_carrier` of the carriers in use (not an older
+version of a changed carrier) that served the zone (`[]` when none), read
+through `SomcpToolUpdateZone::carriers()`, the list `somcp_update_zone` warns
+of, before `Zone::delete()` removes their `carrier_zone` and `delivery` rows
+(those of older versions too); when not empty, a `warning`: `The <n> carriers (<ids>) no
+longer serve this zone, and their prices for it are deleted: check their zones
+with somcp_get_carrier.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, every problem at once.
+
+**Notes**
+- Not undoable: the answer gives the name so the assistant can recreate the zone with `somcp_create_zone`, not its carrier prices. The description says to read `somcp_list_zones` (its `countries`) and `somcp_get_carrier` first.
+- A second call on the same identifier is refused as an unknown zone.
+- Logged as `zone_deleted` with the zone name and the carriers detached. The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none: `Zone::delete()` and `DeleteZoneHandler` are the same on both.
+
 #### `somcp_list_countries`
 **State**: written · [issue #338](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/338)
 **Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`
@@ -2392,8 +2531,8 @@ as `country` or `delivery_country`, and it shows which countries the shop
 sells to. Read only.
 
 **Do not use for** - the zones (→ `somcp_list_zones`); the tax rows of a
-country (→ `somcp_get_tax_rule`); enabling or changing a country (a later
-tool).
+country (→ `somcp_get_tax_rule`); every field of one country (→
+`somcp_get_country`); enabling or changing a country (→ `somcp_update_country`).
 
 **Parameters**
 
@@ -2420,8 +2559,8 @@ for example `NNNNN`, `""` when none), `need_identification_number` (**Do you
 need a tax identification number?**, the **DNI** an address there must give).
 Then `returned`, `total_count` (the matches before `limit`), `offset` and
 `language`, the paging keys of `somcp_search_customers`. **Default currency**,
-**Address format** and **Display tax label** are settings of the country, left
-for the tool that edits one.
+**Address format** and **Display tax label** are settings of the country, read
+with `somcp_get_country`.
 
 **Errors** - in the envelope `Nothing was read. Correct these and call again:`,
 every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
@@ -2439,6 +2578,213 @@ that is not a boolean (`active: true or false`, the line of
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`country`, `country_lang`, `country_shop`); the edit form is legacy on 8.0.1 and Symfony on 9.0.0, with **Zip/Postal** written **ZIP/Postal**.
 
+#### `somcp_get_country`
+**State**: written · [issue #359](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/359)
+**Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`
+
+**Does** - reads one country of **International > Locations > Countries** as
+its **Edit** page shows it: every field of the form, the three that
+`somcp_list_countries` leaves out included (**Default currency**, **Address
+format**, **Display tax label**). It is the read before the change of a
+country. Read only.
+
+**Do not use for** - many countries (→ `somcp_list_countries`); the states of
+a country (→ `somcp_list_states`); changing a country (→ `somcp_update_country`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_country` | - | integer | yes | the country, from `somcp_list_countries`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_country')`; not a country of the shop (`country_shop`, as the list filters it): `SomcpTool::notFound('id_country', 'country', $id, 'somcp_list_countries')` |
+| `language` | - | string | no | the ISO code of the language of **Country**, through `SomcpTool::readLanguage()`; refused with `SomcpTool::languageProblem()`; the shop default language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - `language`, then the keys of the row of `somcp_list_countries`
+(`id_country`, `name`, `iso_code`, `call_prefix`, `id_zone`, `zone`,
+`active`, `contains_states`, `need_zip_code`, `zip_code_format`,
+`need_identification_number`), built by `SomcpToolListCountries::row()` and
+read through `SomcpToolListCountries::country()`, the query of the list; then:
+- `id_currency` (**Default currency**): `0` for **Default store currency**, as stored; `currency`: the ISO code of that currency (`Currency::getIsoCodeById()`), or `null` for the default;
+- `address_format` (**Address format**): the stored format as a list of lines (the `format` column of `address_format` split on new lines, empty lines dropped), or `null` when the country has no row; `address_format_used`: the lines PrestaShop applies (`AddressFormat::getAddressCountryFormat()`, the format of the shop's default country when the country has none, and the `dni` line when it needs one);
+- `display_tax_label` (**Display tax label (e.g. "Tax incl.")**): boolean;
+- `states`: the number of states of the country, so the assistant knows whether `somcp_list_states` has something to show.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once.
+
+**Notes**
+- The **Address format** is read from the table on both versions: the 9.0.0 form shows the field empty, `GetCountryForEditingHandler` leaving the reading of the format commented out.
+- The back-office address of the page is never part of the answer.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels (**Does it need Zip/Postal code?** on 8.0.1, **Does it need a ZIP/Postal code?** on 9.0.0), the empty **Address format** of the 9.0.0 form; the class, the tables and the stored values are the same.
+
+#### `somcp_update_country`
+**State**: written · [issue #360](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/360)
+**Nature**: `acts(EDIT, 'AdminCountries')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes one country of **International > Locations > Countries**,
+as **Edit** then **Save** do, and as the **Enabled** switch and the bulk
+action **Assign to a new zone** do for one country: **Country** (per
+language), **ISO code**, **Call prefix**, **Default currency**, **Zone**,
+**Does it need Zip/Postal code?**, **Zip/Postal code format**, **Address
+format**, **Active**, **Contains states**, **Do you need a tax
+identification number?**, **Display tax label (e.g. "Tax incl.")**. Only the
+fields that differ are written.
+
+**Do not use for** - one state (→ `somcp_update_state`); the tax of a country
+(→ `somcp_add_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_country` | - | integer | yes | the country, from `somcp_list_countries`; a country of the shop (`country_shop`), found as `somcp_get_country` finds it |
+| `languages`, `name` | **Country** | object | no | one text per language keyed by ISO code, the rule of #149 (`SomcpToolCreateProduct::languages()` and `texts()`); a plain text equal to a stored name is no change (`givenBackAsRead()`); at most the size of `name` in `Country::$definition` (64), `isGenericName` |
+| `iso_code` | **ISO code** | string | no | trimmed, upper-cased, `Validate::isLanguageIsoCode()`: `iso_code: 2 or 3 letters, for example FR`; another country has it (`Country::getByIso()`): `iso_code: country <id> (<name>) already has the ISO code <code>` |
+| `call_prefix` | **Call prefix** | integer | no | 0 or more: `call_prefix: a whole number, 0 for none (the list shows -)` |
+| `id_currency` | **Default currency** | integer | no | `0` for **Default store currency**, or a currency `currency_shop` ties to the shop, as `somcp_list_currencies` lists them; otherwise `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')` |
+| `id_zone` | **Zone** | integer | no | a zone of the shop (`SomcpToolListCountries::zoneOfShop()`), the message of `somcp_create_state` |
+| `need_zip_code` | **Does it need Zip/Postal code?** | boolean | no | `need_zip_code: true or false` |
+| `zip_code_format` | **Zip/Postal code format** | string | no | trimmed, upper-cased; `""` for no check; `Validate::isZipCodeFormat()`: `zip_code_format: L for a letter, N for a digit, C for the ISO code, digits, spaces and dashes, for example NNNNN or LNL NLN`; at most the size of the column (`SomcpTool::columnSize()`, 12 as fallback) |
+| `address_format` | **Address format** | array of strings | no | the lines as `somcp_get_country` gives them, empty lines dropped, joined with new lines, at most 255 characters; checked by `AddressFormat::checkFormatFields()` on a new `AddressFormat`, every message of `getErrorList()` given as `address_format: <message>`; an empty list: `address_format: at least one line - PrestaShop refuses an empty format` |
+| `active` | **Active** | boolean | no | `active: true or false` |
+| `contains_states` | **Contains states** | boolean | no | the same |
+| `need_identification_number` | **Do you need a tax identification number?** | boolean | no | the same |
+| `display_tax_label` | **Display tax label (e.g. "Tax incl.")** | boolean | no | the same |
+
+A row of `somcp_get_country` can be given back whole: `language` (any
+language of the shop), `zone`, `currency`, `states` and `address_format_used`
+are taken only when they equal the stored values, otherwise `<field>: worked
+out by the shop - change <the field it comes from>`; `need_zip_code`,
+`zip_code_format` and `address_format` equal to the stored values write
+nothing. Unknown
+arguments through `SomcpTool::unknownFields()`. Before the write, the whole
+object goes through `validateFields()` and `validateFieldsLang()`.
+
+**Then** - the fields that differ are set on the `Country` loaded in every
+language, then `update()`. When the zone changed, the states of the country
+whose zone was the old one get the new one, each through `State::update()`,
+as 8.0.1 does on **Save**; a state the merchant put in another zone is not
+touched. A new **Address format** is then saved through `AddressFormat`
+(`new AddressFormat($idCountry)`, `format`, `id_country` when the row is new,
+`save()`), as the 8.0.1 form does after the country; its failure is reported
+as a problem of `address_format`, naming the fields of the country already
+written. Nothing differs: no write.
+
+**Returns** - the shape of every update tool: `changed: true`, `id_country`,
+`changes` (`field`, `old`, `new`; a name as `name (<iso>)`), `states_moved`
+(the `id_state` list, only when the zone changed), and `country`, the answer
+of `somcp_get_country` read back in the shop default language; or `changed:
+false`, `id_country`, `reason: The country already holds every value given.
+Nothing was written.` and `country`. When the installation has more than one
+shop, `also_in_other_shops` and a warning: the `country` row is shared by
+every shop. Logged as `country_updated` with the field names, or
+`country_update_failed`.
+
+Warnings, in `warning`:
+- **Active** set to `true` with no `module_country` row for the country and the shop: `No payment module is offered to <name> in this shop: its customers cannot pay until one is allowed for it in Payment > Preferences.`
+- **Active** set to `true` in a zone no carrier serves (`SomcpToolUpdateZone::carriers()`): `No carrier serves zone <id> (<name>): customers of <name> are offered no carrier until one serves it - see somcp_update_carrier.`
+- **Contains states** set to `false` while the country has states: `The <n> states of <name> are no longer offered in its address form; they are kept.`; set to `true` with none: `<name> has no state yet: add them with somcp_create_state.`
+- **Do you need a tax identification number?** set to `true`: `New addresses in <name> must now give an identification number; the existing ones are not checked.`
+- **Zip/Postal code format** changed to a format: `New addresses in <name> must now match <format>; the existing ones are not checked again.`
+- **Address format** without `dni` while the country needs an identification number: `PrestaShop adds the identification number (dni) line when it prints an address of <name>.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once (`SomcpTool::refused('changed', $problems)`).
+
+**Notes**
+- Replayable: a second identical call answers `changed: false`.
+- The payment restrictions (**Payment > Preferences**) and the shop association are never written here: the 8.0.1 list switch adds every payment module to a country it enables, which the edit form of both versions does not.
+- The **Address format** is written on both versions, as 8.0.1 saves it: the 9.0.0 form shows the field empty and `EditCountryHandler` never writes it, yet the storefront, the invoices and the address forms of 9.0.0 still read the stored format.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels, the states moved with the zone (8.0.1 only in the back office, both here), the refusal of an ISO code another country has (8.0.1 only in the back office, both here), **Country options** (8.0.1 only, not part of this tool), the **Address format** (saved by the 8.0.1 form only, by this tool on both); the checks (`isZipCodeFormat`, `checkFormatFields`), the class and the tables are the same.
+
+#### `somcp_get_country_options`
+**State**: written · [issue #374](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/374)
+**Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`
+
+**Does** - reads **Country options** of **International > Locations >
+Countries**: **Restrict country selections in front office to those covered by
+active carriers**. When it is on, the storefront offers in an address only the
+countries an active carrier delivers (`Carrier::getDeliveredCountries()` in
+`FrontController::makeAddressForm()`), every active country otherwise. Read
+only; the read before somcp_update_country_options, which takes back what
+this one gives.
+
+**Do not use for** - the countries themselves (→ `somcp_list_countries`,
+`somcp_get_country`); the zones a carrier delivers (→ `somcp_get_carrier`);
+changing the option (→ `somcp_update_country_options`).
+
+**Parameters** - none. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns**
+
+| Key | On screen | Type |
+|---|---|---|
+| `restrict_to_carriers` | **Restrict country selections in front office to those covered by active carriers** | boolean, `Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES', null, $idShopGroup, $idShop)` for the shop of the token, as `somcp_get_tax_options` reads its keys |
+
+Built in the public `SomcpToolGetCountryOptions::read()`, which the update
+calls. On 9.0.0, beside the answer: `note`: `PrestaShop 9 no longer shows this
+option, but the storefront still applies it.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call
+again:`, an unknown argument.
+
+**Notes**
+- A key the shop never stored (a fresh installation) is read as `false`, what the storefront applies.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the switch is on the 8.0.1 page only (legacy `AdminCountries`, panel **Country options**, button **Save**); the key and the storefront rule are the same.
+
+#### `somcp_update_country_options`
+**State**: written · [issue #375](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/375)
+**Nature**: `acts(EDIT, 'AdminCountries')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes **Country options** of **International > Locations >
+Countries**, as its **Save** (`submitOptionscountry`): **Restrict country
+selections in front office to those covered by active carriers**. A shop
+that ships to a few countries otherwise lets customers pick any active
+country in their address, then finds no carrier at checkout.
+
+**Do not use for** - switching a country on or off (→ `somcp_update_country`);
+the zones a carrier serves (→ `somcp_update_carrier`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `restrict_to_carriers` | **Restrict country selections in front office to those covered by active carriers** | boolean | no | `true` or `false`, otherwise `restrict_to_carriers: true or false` |
+
+The answer of `somcp_get_country_options` given back whole writes nothing: a
+value equal to the stored one is no change, and `note` is ignored when it is
+the line the read gives. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - when it differs:
+`Configuration::updateValue('PS_RESTRICT_DELIVERED_COUNTRIES', (int) $value, false, $idShopGroup, $idShop)`
+for the shop of the token, as `somcp_update_tax_options` saves its keys. Log
+lines `country_options_updated` and `country_options_update_failed`.
+
+**Returns** - the shape of every update tool (#356): `changed` (boolean),
+`changes` (`field`, `old`, `new`), `reason` when nothing differs, and
+`options` read back through `SomcpToolGetCountryOptions::read()`.
+
+Warnings, in `warning` beside the answer:
+- set to `true` with no active carrier serving an active country (`Carrier::getDeliveredCountries(<default language>, true, true)` empty): `No active carrier delivers to an active country: customers can no longer choose any country in their address.`;
+- on 9.0.0: `PrestaShop 9 no longer shows this option, but the storefront still applies it.`;
+- on an installation of several shops: `The option changed for this shop only, as the back office saves it in a shop context.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once (`SomcpTool::refused('changed', $problems)`).
+
+**Notes**
+- Replayable: a second identical call answers `changed: false`.
+- Written on 9.0.0 too, as `somcp_update_country` writes **Address format** there: the storefront applies the key, so this is the only way left to change it.
+
+**Differences between 8.0.1 and 9.0.0** - the switch is on the 8.0.1 page only; the key and the storefront rule are the same.
+
 #### `somcp_list_states`
 **State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)
 **Nature**: `acts(VIEW, 'AdminStates')` · **Scope**: `mcp.orders.read`
@@ -2452,7 +2798,8 @@ and `states` of `somcp_add_country_rule` and `somcp_update_country_rule`, and
 
 **Do not use for** - the countries (→ `somcp_list_countries`); the zones (→
 `somcp_list_zones`); the tax rows of a state (→ `somcp_get_tax_rule`);
-enabling a state or changing its zone (a later tool).
+creating a state (→ `somcp_create_state`); enabling a state or changing its
+zone (→ `somcp_update_state`).
 
 **Parameters**
 
@@ -2460,8 +2807,8 @@ enabling a state or changing its zone (a later tool).
 |---|---|---|---|---|
 | `id_state` | **ID** filter | integer | no | one state, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_zones` do |
 | `name` | **Name** filter | string | no | part of the name, case-insensitive |
-| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`ca` finds **California**, and the states of other countries with the same code) |
-| `country` | **Country** filter | string | no | the ISO code of the country, as `country` of the country rule and supplier tools and `iso_code` of `somcp_list_countries` give it, for example `US`, read through `SomcpToolCreateSupplier::shopCountries()`; a code the shop does not have: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')` |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`ca` finds **California**, and the states of other countries with the same code); a value that is not a text is refused with `iso_code: the ISO code of a state, for example CA` |
+| `country` | **Country** filter | string | no | the ISO code of the country, as `country` of the country rule and supplier tools and `iso_code` of `somcp_list_countries` give it, for example `US`, read through `SomcpToolCreateSupplier::shopCountries()`; a code the shop does not have: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')`; a list or an object is a mistake in the call, refused with `country: an ISO code of 2 letters, for example US` |
 | `id_zone` | **Zone** filter | integer | no | the states of one zone, from `somcp_list_zones`; a zone the shop does not have: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')`, checked by `SomcpToolListCountries::zoneOfShop()` |
 | `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both |
 | `limit` | **Display** / **Items per page** | integer | no | how many states to return, 50 by default (the default of both screens) and 300 at most |
@@ -2494,6 +2841,165 @@ an `active` that is not a boolean (`active: true or false`, the line of
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the list itself (a legacy list on 8.0.1, a Symfony grid on 9.0.0, the **Enabled** icon against a switch, the paging choices, **Assign to a new zone** on 8.0.1 only); the columns, the filters, their labels and the table (`state`) are the same.
+
+#### `somcp_create_state`
+**State**: written · [issue #353](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/353)
+**Nature**: `acts(ADD, 'AdminStates')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one state of **International > Locations > States**, as
+**Add new state** then **Save** do: **Name**, **ISO code**, **Country**,
+**Zone** and **Status**. The tax rule rows and the addresses take a state by
+its ISO code within its country (`somcp_list_states`): without it, only the
+states the install left can be used.
+
+**Do not use for** - the zone of a whole country (a later tool); the tax of a
+state (→ `somcp_add_country_rule`, which takes the state by its ISO code);
+changing or enabling a state (→ `somcp_update_state`); deleting one (→
+`somcp_delete_state`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `country` | **Country** | string | yes | the ISO code of the country, as `somcp_list_states` takes it, through `SomcpToolCreateSupplier::shopCountries()`; not a string: `country: an ISO code of 2 letters, for example US`; not a country of the shop: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')`; a country without `contains_states`: `country: <name> does not use states - only the countries with "contains states" take one` |
+| `name` | **Name** | string | yes | trimmed, at most the size of `state.name` (`SomcpTool::columnSize()`, 80 as fallback), checked with `validateField('name', ...)` on a `new State()`: `name: a character PrestaShop refuses in a state name (< > = { }) - ...` |
+| `iso_code` | **ISO code** | string | yes | not a text: `iso_code: the ISO code of a state, for example CA`; trimmed and upper-cased, checked with `Validate::isStateIsoCode()`: `iso_code: 1 to 4 letters or digits, optionally a dash and 1 to 4 more, for example CA or US-CA`; taken by a state of the same country (`State::getIdByIso($code, $idCountry)`): `iso_code: state <id> of <country> already has the ISO code <code>` |
+| `id_zone` | **Zone** | integer | yes | read with `SomcpTool::id()`; a zone of the shop through `SomcpToolListCountries::zoneOfShop()`: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+| `active` | **Status** | boolean | no | left out, `true`, the default of both forms; not a boolean: `active: true or false` |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `id_state`,
+`id_country`, `country_name` and `zone` named as worked out by the shop, so a
+row of `somcp_list_states` given back is told why.
+
+The **Zone** has no default from the zone of the country, as the form has
+none: the state's own zone is what the carrier prices read for its addresses.
+The description says to read the zone of the country with
+`somcp_list_countries` and propose it.
+
+The **ISO code** is refused when a state of the same country has it, on both
+versions: 9.0.0 checks it against every state of the installation, but the
+demo data itself gives the same code to states of several countries (`AL` in
+Italy and the United States), and every tool takes a state within its country.
+
+**Returns** - `created: true`, `id_state`, and `state`, the row of
+`somcp_list_states` for that state (`id_state`, `name`, `iso_code`,
+`id_country`, `country`, `country_name`, `id_zone`, `zone`, `active`), read back
+through `SomcpToolListStates::state()` and `row()`, the functions the list
+uses. When the installation has more than one shop, `also_in_other_shops` (as
+the tax tools count it, `SomcpToolCreateTax::otherShops()`) and a `warning`: a
+state has no shop table.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once. A failed `add()` is reported with a hint to
+read `somcp_list_states` before calling again.
+
+**Notes**
+- Not replayable, but a second identical call is refused by the ISO code test, so it creates nothing twice.
+- `tax_behavior` is not on the form and is left at its default.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), the help texts (9.0.0 only) and the ISO code test (one country on 8.0.1, every country on 9.0.0, see above); the fields, the class and the table (`state`) are the same.
+
+#### `somcp_update_state`
+**State**: written · [issue #357](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/357)
+**Nature**: `acts(EDIT, 'AdminStates')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes one state of **International > Locations > States**, as
+**Edit** then **Save** do, and as the list's **Enabled** switch and the 8.0.1
+bulk action **Assign to a new zone** do for one state: **Name**, **ISO code**,
+**Country**, **Zone** and **Status**. Only the fields given change.
+
+**Do not use for** - creating a state (→ `somcp_create_state`); deleting one
+(→ `somcp_delete_state`); the zone of a whole country (a later tool); the tax of a state
+(→ `somcp_update_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_state` | - | integer | yes | the state to change, from `somcp_list_states`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_state')`; unknown: `SomcpTool::notFound('id_state', 'state', $id, 'somcp_list_states')`, through `SomcpToolListStates::state()`, so only a state of a country of the shop is found |
+| `name` | **Name** | string | no | the check of `somcp_create_state`, `SomcpToolCreateState::name()` |
+| `iso_code` | **ISO code** | string | no | the check of `somcp_create_state`, `SomcpToolCreateState::isoCode()`, within the country the state ends up in, the state itself excepted: `iso_code: state <id> of <country> already has the ISO code <code>`; when only the country changes, the code kept is checked in the new country |
+| `country` | **Country** | string | no | the ISO code of the country, the check of `SomcpToolCreateState::country()`: a country of the shop that uses states; refused while the state is used: `country: state <id> is used by <n> addresses and <m> tax rule rows - a state of another country would no longer match them` |
+| `id_zone` | **Zone** | integer | no | the check of `somcp_create_state` (`SomcpToolListCountries::zoneOfShop()`) |
+| `active` | **Status** | boolean | no | not a boolean: `active: true or false` |
+
+A row of `somcp_list_states` can be given back whole: `id_country`,
+`country_name` and `zone` are taken only when they equal the stored values,
+otherwise `<field>: worked out by the shop - change country or id_zone`.
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+The **Country** of a state used by an address or a tax rule row is refused,
+while both back offices move it: the addresses keep their own `id_country`
+and the tax rule rows their own pair, so they would name a state of another
+country and match no row. The merchant moves them first, or creates a new
+state with `somcp_create_state`.
+
+**Returns** - the shape of every update tool: `changed: true`, `id_state`,
+`changes` (`field`, `old`, `new`, in the order of the form, the old value as
+`somcp_list_states` gives it), and `state`, the row of `somcp_list_states`
+read back with `SomcpToolListStates::state()`; or `changed: false`,
+`id_state`, `reason: The state already holds every value given. Nothing was
+written.` and `state`. When the installation has more than one shop,
+`also_in_other_shops` (`SomcpToolCreateTax::otherShops()`) and a `warning`: a
+state has no shop table. Also in `warning`: a **Zone** no carrier serves
+(`SomcpToolUpdateZone::carriers()` empty), and a **Status** set to `false`,
+with the number of addresses that keep the state (`State::countUsed()`).
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once. A failed `update()` is reported with a hint to
+read `somcp_list_states` before calling again.
+
+**Notes**
+- Replayable: a second identical call answers `changed: false`.
+- `tax_behavior` is not on the form and is never written.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), the help texts (9.0.0 only), **Assign to a new zone** (8.0.1 only, a bulk action) and the ISO code test (one country on 8.0.1, every country on 9.0.0, see `somcp_create_state`); the fields, the class and the table (`state`) are the same.
+
+#### `somcp_delete_state`
+**State**: written · [issue #358](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/358)
+**Nature**: `acts(DELETE, 'AdminStates')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one state of **International > Locations > States**, as
+the **Delete** of its row does (and **Delete selected** for one state). A
+state created by mistake with `somcp_create_state`, or one the merchant never
+sells to, no longer has to be removed in the back office.
+
+**Do not use for** - switching a state off for a while (→
+`somcp_update_state`, `active: false`); a tax rule row (→
+`somcp_delete_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_state` | - | integer | yes | the state to delete, from `somcp_list_states`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_state')`; unknown: `SomcpTool::notFound('id_state', 'state', $id, 'somcp_list_states')`, through `SomcpToolListStates::state()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Refused, every
+problem at once:
+- used by addresses (`State::countUsed()`, every `address` row, deleted ones and those of suppliers, brands and warehouses included): `id_state: state <id> is used by <n> addresses - PrestaShop keeps a state an address uses`, the words of the 8.0.1 message;
+- used by tax rule rows: `id_state: state <id> is used by <n> tax rule rows (tax rules <id_tax_rules_group>, ...) - delete them first with somcp_delete_country_rule`;
+- when the installation has more than one shop (`SomcpToolCreateTax::otherShops()`): `id_state: a state is not tied to a shop - deleting it here would remove it from the <n> other shops of this installation too`, the rule of `somcp_delete_zone`.
+
+The **tax rule rows** are refused while both back offices delete the state
+and leave them behind: such a row applies to no address and
+`somcp_get_tax_rule` could only list it with an empty `state`.
+
+**Returns** - `deleted: true`, `id_state`, and `state`, the row of
+`somcp_list_states` read before the deletion, so the assistant can recreate
+it with `somcp_create_state`.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`. A `State::delete()` that answers `false` (an address added between
+the check and the call) is reported with a hint to read `somcp_list_states`
+before calling again.
+
+**Notes**
+- Not replayable: a second call answers that the state is unknown.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0) and the message of a used state (a sentence on 8.0.1, the generic error of `DeleteStateException` on 9.0.0); the class, the test of the addresses and the table (`state`) are the same.
 
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)
@@ -2571,6 +3077,59 @@ A delete that fails is checked on the table and answered `The carrier could not 
 **Notes** - not replayable: a second call finds no carrier. The demo carriers: 1 is the default and is refused, 2 is used by orders and is kept hidden, 3 and 4 are removed.
 
 **Differences between 8.0.1 and 9.0.0** - the core: the 8.0.1 list only flags every carrier `deleted`, used or not, and removes its logo; 9.0.0 removes a carrier no order uses and flags the others. The tool behaves the same on both, as 9.0.0 does, so `Carrier::delete()` is only called on a carrier no order uses, where it gives the same result on both.
+
+#### `somcp_get_shipping_preferences`
+**State**: written · [issue #391](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/391)
+**Nature**: `acts(VIEW, 'AdminShipping')` · **Scope**: `mcp.orders.read`, as `somcp_get_carrier`
+
+**Does** - reads **Shipping > Preferences**: the card **Handling**
+(**Handling charges**, **Free shipping starts at** a price and a weight) and
+the card **Carrier options** (**Default carrier**, **Sort by**, **Order
+by**). These settings decide what every order pays for shipping on top of the
+carriers' ranges, and which carrier a customer finds selected. Read only,
+replayable.
+
+**Do not use for** - the price ranges and costs of one carrier (→
+`somcp_get_carrier`); the free shipping of a cart rule (→
+`somcp_get_cart_rule`); changing them (no tool yet, #392).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code for the transit time of the default carrier, through `SomcpTool::readLanguage()` (#149); a code the shop does not have is refused with `SomcpTool::languageProblem()`. The shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`, in the envelope
+`Nothing was read. Correct these and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetShippingPreferences::preferences($idShop, $idLang)`, for the
+update to answer with, each key read with `Configuration::get(<key>, null,
+$idShopGroup, $idShop)` for the shop of the token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `handling_cost_tax_excl` | **Handling charges** | `PS_SHIPPING_HANDLING` | float, tax excluded, the name `somcp_get_carrier` gives it |
+| `free_shipping_from_price` | **Free shipping starts at** (price) | `PS_SHIPPING_FREE_PRICE` | float, `0` when off |
+| `free_shipping_from_weight` | **Free shipping starts at** (weight) | `PS_SHIPPING_FREE_WEIGHT` | float, `0` when off |
+| `currency` | - | `PS_CURRENCY_DEFAULT` | ISO code of the default currency the two amounts are in |
+| `weight_unit` | - | `PS_WEIGHT_UNIT` | the unit of the weight, as `somcp_get_localization_settings` names it |
+| `default_carrier` | **Default carrier** | `PS_CARRIER_DEFAULT` | `best_price` (-1), `best_grade` (-2) or `carrier` |
+| `default_id_carrier`, `default_carrier_name`, `default_carrier_delay` | - | - | with `carrier`, the current version of the carrier of the stored **reference** (the value of the list is an `id_reference`), found through `SomcpToolListCarriers::query()` for the shop of the token: its `id_carrier` (the identifier `somcp_list_carriers` gives), name and transit time in `language`; `null` otherwise |
+| `carrier_sort` | **Sort by** | `PS_CARRIER_DEFAULT_SORT` | `price` (0) or `position` (1) |
+| `carrier_order` | **Order by** | `PS_CARRIER_DEFAULT_ORDER` | `ascending` (0) or `descending` (1) |
+| `language` | - | - | the ISO code of the transit time |
+
+A reference whose carrier is deleted or not in the shop: `default_id_carrier`
+`null` and `warning` `The default carrier no longer exists: customers get the
+first carrier available; choose another in Shipping > Preferences.`
+
+**Notes**
+- The core compares **Free shipping starts at** (price) with the products and discounts of the cart, tax included, and the weight with `Cart::getTotalWeight()`; each applies only above 0. Coupons are not taken into account.
+- The demo shops hold the same values: handling 2, both thresholds 0, default carrier reference 1, sorted by price, ascending.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same forms, keys and
+adapters (`HandlingConfiguration`, `CarrierOptionsConfiguration`).
 
 #### `somcp_list_tax_rules`
 **State**: written
@@ -3049,7 +3608,8 @@ Languages** with the columns of that list: **ID**, **Name**, **ISO code**,
 the key every translated field of the other tools takes. Read only.
 
 **Do not use for** - the translations of the shop (**International >
-Translations**); adding, changing or deleting a language (later tools).
+Translations**); changing a language (→ `somcp_update_language`); deleting
+one (→ `somcp_delete_language`); adding one (→ `somcp_create_language`).
 
 **Parameters**
 
@@ -3068,8 +3628,10 @@ holds a handful of languages, and their names are those of the `lang` table.
 code**), `locale` (**Locale**, read on both versions), `date_format` (**Date
 format**), `date_format_full` (**Date format (full)**), `active`
 (**Enabled**), `is_rtl`, `default` (`true` for the `PS_LANG_DEFAULT` of the
-shop of the token, the language a tool reads in when `language` is left out).
-Plus `count`. Only an enabled language is accepted by the `language` and
+shop of the token, the language a tool reads in when `language` is left out),
+`flag` (**Flag**: a `download_ref` through `SomcpDownload::offer('language_flag',
+...)` on `img/l/<id_lang>.jpg`, `null` without one, which `somcp_update_language`
+takes back as no change). Plus `count`. Only an enabled language is accepted by the `language` and
 `languages` of the other tools; a disabled one is listed so the assistant can
 tell the merchant why.
 
@@ -3081,10 +3643,658 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 
 **Notes**
 - Read through a query on `lang` joined to `lang_shop` on the shop of the token, rather than `Language::getLanguages()`, so every filter stays one `WHERE`; the default read as `somcp_ping` reads it.
-- No flag image: the flag is a file the assistant has no use for.
+- The flag is given as every file of the module is, a `download_ref` for `somcp_download_file`, never an address.
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the **Locale** column and its filter on 9.0.0 only (the answer gives `locale` on both, from the same column); otherwise the same list, filters, labels and tables (`lang`, `lang_shop`).
+
+#### `somcp_create_language`
+**State**: written · [issue #372](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/372)
+**Nature**: `acts(ADD, 'AdminLanguages')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds one language to **International > Localization > Languages**,
+as **Add new language** does. A shop that opens to a new market needs the
+language before any product, page or e-mail can be written in it.
+
+**Do not use for** - changing a language (→ `somcp_update_language`);
+installing a language with its translations (→ `somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | the checks of `somcp_update_language` (`SomcpToolUpdateLanguage::text()`) |
+| `iso_code` | **ISO code** | string | yes | the same checks; a code already used (`Language::getIdByIso()`): `iso_code: <code> is already the code of <name> (<id_lang>)` |
+| `language_code` | **Language code** | string | yes | the same checks |
+| `date_format` | **Date format** | string | no | the same checks; left out, `Y-m-d` |
+| `date_format_full` | **Date format (full)** | string | no | the same checks; left out, `Y-m-d H:i:s` |
+| `flag` | **Flag** | object | yes | `{url}` or `{upload_ref}` through `SomcpUpload::schema()` and `argument()`, declared with `files: ['flag' => SomcpUpload::images()]`; left out, the line of an empty one |
+| `no_picture` | **"No-picture" image** | object | yes | the same |
+| `is_rtl` | **RTL language** | boolean | no | left out, `false` |
+| `active` | **Status** | boolean | no | left out, `true`, as the switch of the form |
+
+**Locale** (9.0.0 only on screen) is never asked: it is taken from
+`Language::getLangDetails(<iso>)` when the shop knows the code, as the core
+handler does. Both images are required, as the form requires them: without the
+"No-picture" image, a product without a photo would show a broken picture in
+that language. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - both images fetched (`SomcpToolUpdateLanguage::fetch()`, through
+`SomcpUpload::fetchImage()`) before anything is written; `new Language()`, the
+fields, `locale`, `validateFields(false)`, `add()` with `id_shop_list` the shop
+of the token (not `$only_add`, as `AddLanguageHandler` calls it: every `_lang`
+table gets a copy of the default language's rows); the flag written by
+`SomcpToolUpdateLanguage::storeFlag()` with the new `id_lang`, the "No-picture"
+image by `storeNoPicture()` with the ISO code; the temporary files removed in
+`finally`; `Tools::generateRobotsFile()`. An image the shop cannot store after
+`add()` deletes the language again, on every shop, so a half-made language
+never stays. Log lines `language_created` and `language_create_failed`.
+
+**Returns** - `created: true`, `id_lang`, `flag` and `no_picture` (`{url}` or
+`{upload_ref}` with `stored: true`), `language`, the row read back through
+`SomcpToolListLanguages::row()`, and a `warning`:
+- always: `Every text of the shop was copied from <default name> into <name>: translate them, or install the translation pack of <iso> in International > Translations.`;
+- on an installation of several shops: `<name> was added to this shop only; the others do not list it.`
+
+**Errors** - in the envelope of #169, every problem at once, under `Nothing was
+created.`; an image refused when fetched: `Nothing was created. Correct these
+and call again:` with `flag: <reason>`; the shop refusing: `Nothing was created.
+The shop refused language <iso>: <reason> - read somcp_list_languages before
+calling again`.
+
+**Notes**
+- An address that is not https is refused when the image is fetched, after the arguments are checked, as in `somcp_update_language`.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 shows **Locale**; the handler and the tables are the same.
+
+#### `somcp_update_language`
+**State**: written · [issue #368](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/368)
+**Nature**: `acts(EDIT, 'AdminLanguages')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes one language of **International > Localization >
+Languages**, as its **Edit** page and the **Enabled** switch of the list do:
+**Name**, **ISO code**, **Language code**, **Date format**, **Date format
+(full)**, **RTL language**, **Status**, **Flag** and **"No-picture" image**.
+Only the fields that differ are written; a row of `somcp_list_languages` given
+back whole writes nothing.
+
+**Do not use for** - deleting a language (→
+`somcp_delete_language`); translating a text (→ the update tool of that
+object).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_lang` | **ID** | integer | yes | from `somcp_list_languages`; otherwise `SomcpTool::notFound()` with that tool |
+| `name` | **Name** | string | no | `Validate::isGenericName()`, at most 32 characters (`SomcpTool::columnSize()`) |
+| `iso_code` | **ISO code** | string | no | two letters, `Validate::isLanguageIsoCode()` and the size of `Language::$definition`, stored in lower case; another language with that code: `iso_code: <code> is already the code of <name> (<id_lang>)` (`Language::getIdByIso()`) |
+| `language_code` | **Language code** | string | no | `Validate::isLanguageCode()`, at most 5 characters, stored in lower case as the help line asks |
+| `date_format` | **Date format** | string | no | `Validate::isPhpDateFormat()`, at most 32 characters; the key of `somcp_list_languages` (`date_format_lite` in the table) |
+| `date_format_full` | **Date format (full)** | string | no | the same checks |
+| `is_rtl` | **RTL language** | boolean | no | |
+| `active` | **Status** | boolean | no | `false` for the default language refused: `active: <name> is the default language of the shop - it cannot be disabled` |
+| `flag` | **Flag** | object | no | a new picture, `{url}` or `{upload_ref}` through `SomcpUpload::schema()` and `argument()`, declared with `files: ['flag' => SomcpUpload::images()]`, the rules of the logo of `somcp_update_carrier`; the `download_ref` `somcp_list_languages` answers for this language (or `null` when it has none) is no change, recognised through `SomcpUpload::same($flag, 'language_flag', $id)` |
+| `no_picture` | **"No-picture" image** | object | no | the picture the storefront shows, in this language, for a product, a category or a brand without one; `{url}` or `{upload_ref}`, the same rules as `flag`; the page shows no preview of it and nothing reads it back, so no `SomcpDownload` kind: given, it is always written |
+
+`locale` and `default` are taken only when they equal the stored value,
+otherwise `<field>: worked out by the shop`, the rule of
+`somcp_update_currency`. Unknown arguments through
+`SomcpTool::unknownFields()`. A text given empty is refused: every one of them
+is required by `Language::$definition` or the form.
+
+**Then** - the row is found through `SomcpToolListLanguages::language()`, the
+query of the list (`lang` joined to `lang_shop` on the shop of the token);
+when `iso_code` changes, `Language::moveToIso(<new code>)` moves the
+translation, e-mail and module folders of the old code first (the core handler
+passes it the language identifier instead, which leaves them under a folder
+named after a number), and `locale` follows from `Language::getLangDetails()`
+when the shop knows the code; a write that then fails moves the folders back;
+only the fields that differ are set on `new Language($id)`; when `active` goes
+to `false`, the employees whose `id_lang` it is move to the default language
+first, the query of `EditLanguageHandler::updateEmployeeLanguage()`; then
+`validateFields(false)` and `update()`; nothing written when nothing differs.
+A flag is fetched with `SomcpUpload::fetchImage()` before anything is written,
+and stored after the row as `uploadFlagImageIfChanged()` does:
+`Language::deleteImage()`, then `ImageManager::resize()` into
+`img/l/<id_lang>.jpg`, forced to JPEG, and the cached
+`img/tmp/lang_mini_<id_lang>_<id_shop>.jpg` of every shop removed. A
+"No-picture" image is fetched the same way and written after the row, with the
+ISO code the language holds then (it may change in the same call), as
+`AbstractLanguageHandler::copyNoPictureImage()` does: `<iso>.jpg` at its own
+size into `img/p/`, `img/c/` and `img/m/`, then `<iso>-default-<type>.jpg` in
+the same three folders at the size of every row of
+`ImageType::getImagesTypes('products')`, forced to JPEG; the first resize that
+fails stops the copy (`refused: the shop could not resize the image`).
+Log lines `language_updated` and `language_update_failed`.
+
+**Returns** - the shape of every update tool (#356): `changed` (boolean),
+`id_lang`, `changes` (`field`, `old`, `new`; for `flag`, `new` is
+`SomcpUpload::origin()`), `reason` when nothing differs, `flag` when one was
+given and `no_picture` likewise (`SomcpUpload::origin()` with `stored: true`
+or `refused: <reason>`; in `changes`, its `old` is `null`, since it cannot be
+read),
+and `language`, the row read back as `somcp_list_languages` gives it.
+
+Warnings, beside the answer:
+- a flag or a "No-picture" image the shop could not take while other fields were saved: `The other changes were saved, but the flag was not: <reason>.` (or `the "No-picture" image`); a picture refused with nothing else to change is an error;
+- `iso_code` changed: `The translation files and e-mail templates of <old> now sit under <new>; a module or theme that ships files for <old> only will not find them.`;
+- `active` set to `false` with employees moved: `<n> employees used <name> in the back office; they now use <default name>.`;
+- any field changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `A language is shared by every shop: this change reaches every shop of this installation (<n + 1>).`
+
+**Errors** - in the envelope of #169, every problem at once, under `Nothing was
+changed.`
+
+**Notes**
+- The texts of the shop in that language (products, categories, pages) are not touched: this is the language itself, not a translation.
+- **Locale** is not taken: PrestaShop derives it from the ISO code and 9.0.0 shows it read-only.
+- The change of the ISO code itself is not run on the CI shop: it moves real folders; the refusal of a code another language holds is. Nor is the "No-picture" image written there: it replaces the real pictures of the storefront.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 shows **Locale** read-only and its list has a **Locale** column; the handler, the checks and the table are the same.
+
+#### `somcp_delete_language`
+**State**: written · [issue #371](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/371)
+**Nature**: `acts(DELETE, 'AdminLanguages')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one language of **International > Localization >
+Languages**, as the **Delete** of its row does (and **Delete selected** for
+one language). The page warns: "When you delete a language, all related
+translations in the database will be deleted."
+
+**Do not use for** - switching a language off, which keeps its texts (→
+`somcp_update_language` with `active: false`); deleting a translation of one
+object (→ the update tool of that object).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_lang` | **ID** | integer | yes | from `somcp_list_languages`, found through `SomcpToolListLanguages::language()`; otherwise `SomcpTool::notFound()` with that tool |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Refused**, every problem at once, before anything is deleted:
+- the default language of any shop (`PS_LANG_DEFAULT` read per shop): `id_lang: <name> is the default language of this shop - PrestaShop never deletes it`, or `... of shop <shop name>`;
+- the language of the employee of the token, the "Used language" check of the back office: `id_lang: <name> is the language you use in the back office - change it in your profile first`;
+- an installation of several shops (`SomcpToolCreateTax::otherShops()`): `id_lang: a language is shared by every shop - deleting it here would remove it from the <n> other shops of this installation too`.
+
+**Then** - `Shop::setContext(Shop::CONTEXT_ALL)`, as `DeleteLanguageHandler`
+does; every employee whose `id_lang` it is moved to the default language, the
+query of `EditLanguageHandler::updateEmployeeLanguage()` (the back office
+leaves them on a language that no longer exists); `Language::delete()`, which
+removes the rows of every `_lang` table, the translation and e-mail files and
+the language images; `Tools::generateRobotsFile()`, as the handler writes
+robots.txt again; the context put back in `finally`. Customers keep their
+`id_lang`: the storefront falls back on the default language for them. Log
+lines `language_deleted` and `language_delete_failed`.
+
+**Returns** - `deleted: true`, `id_lang`, `name`, `iso_code`, and a `warning`:
+- always: `Every text of the shop in <name> was deleted with it (products, categories, pages, e-mails); adding the language again starts from the texts of the default language.`;
+- employees moved: `<n> employees used <name> in the back office; they now use <default name>.`;
+- customers: `<n> customers had chosen <name>; they now see the shop in <default name>.`
+
+**Errors** - in the envelope of #169, under `Nothing was deleted.`; the shop
+refusing: `Nothing was deleted. The shop refused to delete language <id>:
+<reason> - read it again with somcp_list_languages`.
+
+**Notes**
+- A deletion cannot be undone: the description offers `somcp_update_language` with `active: false` instead.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler, `Language::delete()` or the tables.
+
+#### `somcp_install_language_pack`
+**State**: written · [issue #380](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/380)
+**Nature**: `acts(ADD, 'AdminTranslations')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds a language with its translations, or updates the translations
+of an installed one, from PrestaShop's translation server, as the card **Add /
+Update a language** of **International > Translations** does (button **Add or
+update a language**). The call can take up to two minutes.
+
+**Do not use for** - creating a language by hand, without translations (→
+`somcp_create_language`); changing its name, status, formats or flag (→
+`somcp_update_language`); deleting it (→ `somcp_delete_language`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `iso_code` | **Please select the language you want to add or update** | string | yes | two letters, `Validate::isLanguageIsoCode()`, offered by `Language::getLangDetails()`; otherwise `iso_code: a language code PrestaShop offers, for example fr or de - the list of Add / Update a language`; missing: `iso_code: required` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before any download.
+
+**Then**
+- `@set_time_limit(120)` when `max_execution_time` is above 0 and below 120: the extraction, the translation of every `*_lang` table and the e-mails come after the download;
+- `$before = (int) Language::getIdByIso($iso, true)`, then `Language::downloadAndInstallLanguagePack($iso, _PS_VERSION_, null, $before === 0)`, as `LanguagePackInstaller` calls it: a fresh install for a new language, an update of the translations otherwise;
+- on success, the caches cleared through `SomcpToolClearCache::clear()`, as `LanguagePackImporter` clears them;
+- the language read back through `SomcpToolListLanguages::language()` and `row()`.
+
+**Returns** - `changed: true`, `added` (`true` when the language did not
+exist, `false` for an update), `id_lang`, `language` (the row of
+`somcp_list_languages`). Warnings, beside the answer:
+- on an update: `The translations of <name> were replaced by PrestaShop's, and the texts PrestaShop ships in the database (order statuses, page titles, contacts...) were translated again in this language, as the back office does.`;
+- on an installation of several shops (`SomcpToolCreateTax::otherShops()` above 0): `Languages are shared by every shop: this reaches every shop of this installation (<n + 1>).`;
+- on an add, when `language.active` is true: `The language is installed: check its Status with somcp_update_language before customers see it.`
+
+**Errors** - `SomcpTool::text(..., true)`:
+- the download failed (no language created, an error starting with the core's `Language pack unavailable.`): `PrestaShop's translation server did not send the <iso_code> pack within 20 seconds. Nothing was changed. Try again later.`; the address of the pack is not repeated;
+- an error after the language was created: `The language <iso_code> was created (id_lang <id>), but its translations could not all be installed: <messages>. Call again to finish, or delete it with somcp_delete_language.`;
+- any other error: `The language pack could not be installed: <the core's messages, joined>. Nothing was changed.`
+
+The folder of the shop is taken out of the core's messages.
+
+**Notes**
+- The only outgoing request is the one PrestaShop's own card sends, to its own translation server, with the core's wait (`Language::PACK_DOWNLOAD_TIMEOUT`, 20 seconds).
+- Logged as `language_pack_installed` with the ISO code and `added` or `updated`, `language_pack_install_failed` with the ISO code.
+- A real install reaches PrestaShop's server and rewrites translation files: the scenario only checks the refusals, made before any download.
+
+**Differences between 8.0.1 and 9.0.0** - none in the card, the controller, `LanguagePackImporter` or `LanguagePackInstaller`; 9.0.0 tries the download three times before giving up, 8.0.1 once, each attempt waiting 20 seconds.
+
+#### `somcp_get_localization_settings`
+**State**: written · [issue #382](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/382)
+**Nature**: `acts(VIEW, 'AdminLocalization')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the settings of **International > Localization >
+Localization**: the **Configuration** card (default language, country and
+currency, browser detection, time zone), **Local units** and **Advanced**.
+The language, country and currency a shop starts from, and the units every
+product weight and carrier range is read in. Read only.
+
+**Do not use for** - the list of languages, countries or currencies (→
+`somcp_list_languages`, `somcp_list_countries`, `somcp_list_currencies`); the
+units of one carrier's ranges (→ `somcp_get_carrier`, which already gives
+`weight_unit` and `dimension_unit`); changing the settings (→
+`somcp_update_localization_settings`). The **Import a localization pack** card
+holds an action, not a setting: `somcp_import_localization_pack`.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | - | string | no | ISO code of one of the shop's active languages, for the names of the default country and currency, through `SomcpTool::readLanguage()`; a code the shop does not have is refused with `SomcpTool::languageProblem()`. The shop default language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`, in the envelope
+`Nothing was read. Correct these and call again:`.
+
+**Returns** - `language` (the ISO code the names are in) and `localization`,
+built in the public `SomcpToolGetLocalizationSettings::settings()`, which the
+update reads too. Each key read with `Configuration::get(<key>, null,
+$idShopGroup, $idShop)` for the shop of the token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `default_id_lang` | **Default language** | `PS_LANG_DEFAULT` | integer, the `id_lang` of `somcp_list_languages` |
+| `default_language` | - | - | `{iso_code, name}` of that language, from `Language` (computed); `null` when the setting names no language |
+| `detect_language_from_browser` | **Set language from browser** | `PS_DETECT_LANG` | boolean |
+| `default_id_country` | **Default country** | `PS_COUNTRY_DEFAULT` | integer, the `id_country` of `somcp_list_countries` |
+| `default_country` | - | - | `{iso_code, name}`, the name in `language` (`Country::getNameById()`) (computed) |
+| `detect_country_from_browser` | **Set default country from browser language** | `PS_DETECT_COUNTRY` | boolean |
+| `default_id_currency` | **Default currency** | `PS_CURRENCY_DEFAULT` | integer, the `id_currency` of `somcp_list_currencies` |
+| `default_currency` | - | - | `{iso_code, name}`, the name in `language` (computed) |
+| `timezone` | **Time zone** | `PS_TIMEZONE` | string, for example `Europe/Paris` |
+| `weight_unit`, `distance_unit`, `volume_unit`, `dimension_unit` | **Weight unit**, **Distance unit**, **Volume unit**, **Dimension unit** | `PS_WEIGHT_UNIT`, `PS_DISTANCE_UNIT`, `PS_VOLUME_UNIT`, `PS_DIMENSION_UNIT` | string, as stored |
+| `language_identifier` | **Language identifier** | `PS_LOCALE_LANGUAGE` | string |
+| `country_identifier` | **Country identifier** | `PS_LOCALE_COUNTRY` | string |
+
+**Notes**
+- The keys are those `LocalizationConfiguration`, `LocalUnitsConfiguration` and `AdvancedConfiguration` of `src/Adapter/Localization/` read and write, the same on both versions.
+- The demo shops differ (default country, volume unit): the scenario only expects the keys.
+
+**Differences between 8.0.1 and 9.0.0** - none in the keys or the adapters.
+On screen: **Default country** has an empty `--` choice first on 9.0.0 only;
+**Default currency** carries no required mark on 9.0.0; the **Time zone** list
+comes from the `timezone` table, 560 rows on 8.0.1 and 559 on 9.0.0.
+
+#### `somcp_update_localization_settings`
+**State**: written · [issue #383](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/383)
+**Nature**: `acts(EDIT, 'AdminLocalization')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes the settings of **International > Localization >
+Localization**, as the **Save** buttons of its **Configuration**, **Local
+units** and **Advanced** cards do: the default language and country, browser
+detection, the default currency, the time zone, the four units and the two
+server identifiers. A new default currency is set as the core sets it
+(#384): every exchange rate reset and read again from PrestaShop's feed,
+fetched before anything is written.
+
+**Do not use for** - enabling a language or a country (→
+`somcp_update_language`, `somcp_update_country`); the units of one carrier
+(they are the shop's); importing a localization pack (→
+`somcp_import_localization_pack`).
+
+**Parameters** - all optional; a key left out keeps its value. The read of
+`somcp_get_localization_settings` given back whole writes nothing:
+`default_language`, `default_country`, `default_currency` and `language` are
+computed keys, ignored when given back as read and refused otherwise, as
+`somcp_update_tax_options` does.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `default_id_lang` | **Default language** | integer | `SomcpTool::id()`; a language of the shop (`Language::getLanguages(false, $idShop)`), otherwise `SomcpTool::notFound('default_id_lang', 'language', <id>, 'somcp_list_languages')`; a disabled one: `default_id_lang: the language <id> is disabled - the form offers enabled languages only; enable it with somcp_update_language first` |
+| `detect_language_from_browser` | **Set language from browser** | boolean | `true or false` |
+| `default_id_country` | **Default country** | integer | `SomcpTool::id()`; an existing country, otherwise `notFound(..., 'country', ..., 'somcp_list_countries')`; a disabled country is accepted, as the form offers it, with the warning below |
+| `detect_country_from_browser` | **Set default country from browser language** | boolean | `true or false` |
+| `default_id_currency` | **Default currency** | integer | `SomcpTool::id()`; the value read is no change; otherwise a currency of the shop (`SomcpToolListCurrencies::query()`), otherwise `SomcpTool::notFound('default_id_currency', 'currency', <id>, 'somcp_list_currencies')`; a disabled one: `default_id_currency: the currency <id> is disabled - the form offers enabled currencies only; enable it with somcp_update_currency first` (the form offers the enabled currencies, `CurrencyByIdChoiceProvider`) |
+| `timezone` | **Time zone** | string | a `name` of the `timezone` table, compared exactly (`Europe/Paris`); otherwise `timezone: a time zone name of the list, for example Europe/Paris` |
+| `weight_unit`, `distance_unit`, `volume_unit`, `dimension_unit` | **Weight unit**, **Distance unit**, **Volume unit**, **Dimension unit** | string | trimmed, not empty (`<name>: required, never empty`), `Validate::isGenericName()` (`<name>: no <>={} in a unit`), 10 characters at most (`<name>: 10 characters at most, a unit such as kg or cm`) |
+| `language_identifier` | **Language identifier** | string | two letters, stored lowercase: otherwise `language_identifier: two letters, ISO 639-1, for example en` |
+| `country_identifier` | **Country identifier** | string | two letters, stored lowercase: otherwise `country_identifier: two letters, ISO 3166-1 alpha-2 in lowercase, for example us` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is written.
+
+**Then**
+- `$before = SomcpToolGetLocalizationSettings::settings($idShop, $idLang)`;
+- a new `default_id_currency`, before anything is written: the currencies read through `SomcpToolUpdateExchangeRates::currencies()`, then the feed fetched by `SomcpToolUpdateExchangeRates::feed()`, shared with that tool (20 seconds). `null`: `PrestaShop's exchange rate server did not answer within 20 seconds, or sent something unreadable. Nothing was changed: the default currency stays <ISO>, since changing it needs new exchange rates. Try again later.`; the new currency absent from the feed (`SomcpToolUpdateExchangeRates::listed()`, its source included): `PrestaShop's exchange rates do not include <ISO>: the rates of the other currencies cannot be worked out from it. Nothing was changed.`;
+- the keys whose value differs, each saved with `Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for the shop of the token, in the order of the cards; a failed save stops the call and names what was saved before it;
+- right after `PS_CURRENCY_DEFAULT`, in the shop of the token (`Somcp::actAsShop()`): the feed stored in the cache `Tools::simplexml_load_file()` reads, then the core's own `CurrencyManager::updateDefaultCurrency()` (service `prestashop.adapter.manager.currency`, or `new CurrencyManager()` where no container runs), which sets every rate to 1 and calls `Currency::refreshCurrencies()`; it finds the feed in the cache and sends no second request;
+- nothing differs: `changed: false`, `reason` `The localization settings already hold every value given. Nothing was written.`, `localization` as read;
+- logged as `localization_settings_updated` with the fields saved, `localization_settings_update_failed` with the failure.
+
+**Returns** - `changed: true`, `changes` (per field its `field`, `old`,
+`new`, under the names of the parameters), and `localization` read back
+through `settings()`. When the default currency changed, also `rates` (one
+item per currency whose rate moved, the shape of `changes` of
+`somcp_update_exchange_rates`, `SomcpToolUpdateExchangeRates::rateChanges()`)
+and, when not empty, `not_in_feed` (the ISO codes the feed leaves out, now at
+rate 1). Warnings, in `warning`:
+- the default currency changed: `The default currency is now <ISO>. Product prices were not converted: each keeps its figure, now read in <ISO>, as the back office warns. Check them with somcp_get_product.`;
+- `not_in_feed` not empty: `PrestaShop's exchange rates do not include <ISO codes>: their rate is now 1; set it with somcp_update_currency.`;
+- `default_id_country` set to a disabled country: `<name> is the default country but is not enabled: customers cannot pick it in an address; enable it with somcp_update_country.`;
+- a unit changed: `The <field> changed from <old> to <new>: weights, sizes and carrier ranges already typed are not converted, only their label changes.`;
+- on an installation of several shops: `The settings changed for this shop only, as the back office saves them in a shop context.`
+
+**Notes**
+- The core's Save of the Configuration card also calls `LanguageActivator::enable()` on the language chosen; only enabled languages are accepted, so it has nothing to do.
+- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), sets the time zone and puts it back. The CI never reaches PrestaShop's server: no real change of the default currency is tested.
+- Product prices are never converted by the core: they keep their figures, read in the new currency, which is what the warning of the field on screen says.
+
+**Differences between 8.0.1 and 9.0.0** - none in the adapters or the
+controller. The **Time zone** list has 560 names on 8.0.1, 559 on 9.0.0
+(`US/Pacific-New` on 8.0.1 only): read from the table, never from a list in
+the code.
+
+#### `somcp_import_localization_pack`
+**State**: written · [issue #389](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/389)
+**Nature**: `acts(EDIT, 'AdminLocalization')` · **Scope**: `mcp.catalog.write` · currencies and languages: [issue #390](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/390)
+
+**Does** - imports a country's localization pack, as the **Import** button of
+the **Import a localization pack** card of **International > Localization >
+Localization**: the **States**, the **Taxes** and tax rules, the
+**Currencies**, the **Languages**, the **Units**, and **Change the behavior of
+the price display for groups**, in one call. The pack is always the shop's own
+file (`localization/<iso>.xml`): **Download pack data** is always **No**. For
+currencies and languages the core makes its own two downloads: the exchange
+rates of the new currencies, and the pack of each new language.
+
+**Do not use for** - one state, tax or tax rule (→ `somcp_create_state`,
+`somcp_create_tax`, `somcp_create_tax_rule`); the default language, country
+and currency (→ `somcp_update_localization_settings`); one currency or one
+language (→ `somcp_create_currency`, `somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Rule |
+|---|---|---|---|---|
+| `country` | **Localization pack you want to import** | string | yes | two letters, lowercase or uppercase, stored lowercase, checked (`/^[a-z]{2}$/` and `Validate::isLanguageIsoCode()`) before any path is built; a file `_PS_ROOT_DIR_ . '/localization/<iso>.xml'` of the shop, so `default` is refused; otherwise `country: no localization pack for <value> in this shop - the packs are named by the ISO code of their country, for example fr`. The country must exist (`Country::getByIso()`), otherwise `SomcpTool::notFound('country', 'country', <iso>, 'somcp_list_countries', 'ISO code')` |
+| `content` | **Content to import** | array | yes | one or more of `states`, `taxes`, `currencies`, `languages`, `units`, `groups`, taken once each in the order of the card; empty: `content: at least one of states, taxes, currencies, languages, units, groups`; anything else: `content: <value> is not one of states, taxes, currencies, languages, units, groups`. `currencies` where no kernel container runs (the MCP endpoint; the built-in chat has one): the core creates a currency through the back office's command bus (`prestashop.core.command_bus`), so `content: currencies are created by the back office, which this connection does not run - add each currency with somcp_create_currency, then somcp_update_exchange_rates` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is imported. An empty selection never reaches the core, which
+would import everything and change the default language.
+
+**Then**
+- the file loaded; one that does not load: `Cannot load the localization pack of <iso>. Nothing was changed.`;
+- with `currencies` or `languages`: `@set_time_limit(120)` when `max_execution_time` is above 0 and below 120, as `somcp_install_language_pack` does;
+- read before, in the shop of the token (`Somcp::actAsShop()`): the identifiers of `state`, `zone`, `tax` and `tax_rules_group`, the five unit keys, `PRICE_DISPLAY_METHOD`, the **Price display method** of the groups of `PS_CUSTOMER_GROUP`, `PS_GUEST_GROUP` and `PS_UNIDENTIFIED_GROUP`, the `active` and `contains_states` of the country, the identifiers of `lang`, and the currencies through `SomcpToolUpdateExchangeRates::currencies()` (the rows of `somcp_list_currencies`);
+- one content at a time, in the order of the card, since the core skips every content after one that reports an error; a hard error stops the call. The core's importer, `SomcpBackOffice::coreService('prestashop.core.localization.pack.import.importer')`, with `new LocalizationPackImportConfig($iso, $content, false)`; where no kernel container runs (the MCP endpoint is a front controller), the same steps that importer takes with **Download pack data** off: a new `LocalizationPack` and `loadLocalisationPack($xml, $content, false, $iso)` on the local file. The core's code, never a copy of it;
+- read after, the same, and the difference is the answer;
+- `_installCurrencies()` creates each missing currency at rate 1, enabled, allowed for every payment module, then `Currency::refreshCurrencies()` asks for every rate (5 seconds); `_installLanguages()` downloads and installs each missing language with `Language::downloadAndInstallLanguagePack()`, the code of `somcp_install_language_pack`, then refreshes the names and symbols of every currency. The feed not answering (`Cannot parse feed.`) and a language pack not sent (`Language pack unavailable.`) are warnings: the rest stays imported; a currency the core's command refuses leaves a `null` in its errors, answered as `a currency of the pack could not be created`;
+- other errors returned by the core: the call answers them as a failure, with what had been created or changed before them, and asks to read the states and taxes before calling again;
+- logged as `localization_pack_imported` with the ISO code, the contents and the counts, `localization_pack_import_failed` otherwise.
+
+The import is not undone by a second call, which creates nothing new and
+answers `changed: false`, `reason` `The shop already holds everything this
+pack brings for <contents>. Nothing was created.`
+
+**Returns**
+- `changed`;
+- `country`: `id_country`, `iso_code`, `name`, and `enabled` / `contains_states` (`true`) when the import turned them on;
+- `created`: `states` (the shape of `SomcpToolListStates::state()`), `zones` (`id_zone`, `name`), `taxes` (`id_tax`, `name`, `rate`), `tax_rules` (`id_tax_rules_group`, `name`), `currencies` (`id_currency`, `iso_code`, `name`, `conversion_rate`), `languages` (`id_lang`, `iso_code`, `name`), each only when not empty;
+- `changes`: per field its `field`, `old`, `new`: `weight_unit`, `volume_unit`, `dimension_unit`, `distance_unit` (the names of `somcp_get_localization_settings`), `base_distance_unit` (`PS_BASE_DISTANCE_UNIT`), and `price_display_method` (`tax_included` / `tax_excluded`), for the setting and, with `id_group`, for each of the three groups;
+- `rates`, with `currencies`: the currencies that existed and whose rate moved, the shape of `changes` of `somcp_update_exchange_rates` (`SomcpToolUpdateExchangeRates::rateChanges()`);
+- `kept`: how many states, taxes and tax rules of the pack already existed and were not touched.
+
+Warnings, in `warning`:
+- the feed did not answer: `PrestaShop's exchange rate server did not answer: the new currencies are at rate 1; refresh them with somcp_update_exchange_rates.`;
+- a language pack not sent: `PrestaShop's translation server did not send the <ISO codes> pack within <seconds> seconds: <ISO codes> was not added. Try again later with somcp_install_language_pack.`, the language left out of `created.languages`;
+- languages or currencies created: `<names> are now offered on the storefront; disable them with somcp_update_language or somcp_update_currency if the shop does not sell in them yet.`;
+- taxes or tax rules kept: `Taxes and tax rules that already had their name were kept as they are, even when the pack has another rate: check them with somcp_list_taxes.`;
+- the country enabled by the import: `<name> was not enabled: the import enabled it, as the back office does.`;
+- a unit changed: `The <field> changed from <old> to <new>: weights, sizes and carrier ranges already typed are not converted, only their label changes.`;
+- on an installation of several shops: `The pack was imported for the whole installation: states, taxes and units are shared by every shop.`
+
+**Notes**
+- `_installStates()` creates each missing state, with a zone created when none has its name, and turns **Contains states** on; `_installTaxes()` creates each tax and tax rule whose name is missing and never changes one that has it; `_installUnits()` overwrites the units; `_installGroups()` sets the price display. The country of the pack is enabled when it is not.
+- The scenario only tests refusals: an import changes the shop for good. `dev/shop-tests/run.php` imports the `units` of the pack of the default country and puts the units read before back in `finally`. The CI never reaches PrestaShop's servers: no real import of currencies or languages is tested.
+
+**Differences between 8.0.1 and 9.0.0** - none in `LocalizationPackImporter`,
+`LocalizationPack` or the 96 local files. The service is a class on 8.0.1 and
+an alias on 9.0.0: the same id on both. The language download differs as
+`somcp_install_language_pack` says (20 seconds on 8.0.1, up to three tries on
+9.0.0).
+
+#### `somcp_get_general_settings`
+**State**: written · [issue #385](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/385)
+**Nature**: `acts(VIEW, 'AdminPreferences')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the price rounding and the three storefront pages of
+**Shop Parameters > General**, tab **General**: **Round mode**, **Round
+type**, **Display suppliers**, **Display brands**, **Display best sellers**.
+The rounding decides every price the shop shows and every total it invoices.
+Read only.
+
+**Do not use for** - changing them (→ `somcp_update_general_settings`); the
+price of one product (→ `somcp_get_product`); the tax options (→
+`somcp_get_tax_options`); the language, country, currency and units (→
+`somcp_get_localization_settings`). The other fields of the tab (**Enable
+SSL**, **Increase front office security**, **Allow iframes on HTML fields**,
+**Use HTMLPurifier Library**, **Enable Multistore**, and **Main Shop
+Activity** on 8.0.1) are neither read nor written.
+
+**Parameters** - none. Unknown arguments through `SomcpTool::unknownFields()`,
+in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetGeneralSettings::settings()`, which the update reads too, under
+the names the update takes back. Each key read with `Configuration::get(<key>,
+null, $idShopGroup, $idShop)` for the shop of the token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `round_mode` | **Round mode** | `PS_PRICE_ROUND_MODE` | `half_up` (2), `half_down` (3), `half_even` (4), `half_odd` (5), `up` (0), `down` (1): `ROUND_MODES` |
+| `round_mode_label` | - | - | the words of the screen for that choice, for example **Round up away from zero, when it is half way there (recommended)** (computed) |
+| `round_type` | **Round type** | `PS_ROUND_TYPE` | `item` (1), `line` (2), `total` (3): `ROUND_TYPES` |
+| `round_type_label` | - | - | **Round on each item**, **Round on each line** or **Round on the total** (computed) |
+| `display_suppliers` | **Display suppliers** | `PS_DISPLAY_SUPPLIERS` | boolean |
+| `display_brands` | **Display brands** | `PS_DISPLAY_MANUFACTURERS` | boolean |
+| `display_best_sellers` | **Display best sellers** | `PS_DISPLAY_BEST_SELLERS` | boolean |
+
+A stored number outside the lists (an old shop): the code and the label are
+`null`, and a `warning` names the stored value and says to choose one with
+`somcp_update_general_settings`.
+
+**Notes**
+- The keys are those `src/Adapter/Preferences/PreferencesConfiguration.php` reads and writes, the same on both versions.
+- The demo shops differ on **Round type** (`item` on 8.0.1, `line` on 9.0.0): the scenario only expects the keys.
+
+**Differences between 8.0.1 and 9.0.0** - none for these five fields: the
+same keys, the same choices, the same help. The tab differs elsewhere (8.0.1
+has **Enable SSL on all pages** and **Main Shop Activity**), and those fields
+are not read.
+
+#### `somcp_update_general_settings`
+**State**: written · [issue #386](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/386)
+**Nature**: `acts(EDIT, 'AdminPreferences')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes the price rounding and the three storefront pages of
+**Shop Parameters > General**, tab **General**, as its **Save** button does
+for those fields: **Round mode**, **Round type**, **Display suppliers**,
+**Display brands**, **Display best sellers**.
+
+**Do not use for** - the tax options (→ `somcp_update_tax_options`); the
+language, country, currency and units (→
+`somcp_update_localization_settings`); enabling the suppliers or brands
+themselves (→ `somcp_set_supplier_active`, `somcp_set_manufacturer_active`).
+The other fields of the tab are never written, and are refused as unknown
+fields.
+
+**Parameters** - all optional; a key left out, or `null`, keeps its value.
+The read of `somcp_get_general_settings` given back whole writes nothing:
+`round_mode_label` and `round_type_label` are computed keys, ignored when
+given back as read and refused otherwise (`- round_mode_label: worked out by
+the shop, so it is not written here`), as `somcp_update_localization_settings`
+does; the read's `warning` is ignored.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `round_mode` | **Round mode** | string | a code of `SomcpToolGetGeneralSettings::ROUND_MODES`, otherwise `round_mode: one of half_up, half_down, half_even, half_odd, up, down` |
+| `round_type` | **Round type** | string | a code of `SomcpToolGetGeneralSettings::ROUND_TYPES`, otherwise `round_type: one of item, line, total` |
+| `display_suppliers` | **Display suppliers** | boolean | `true or false` |
+| `display_brands` | **Display brands** | boolean | `true or false` |
+| `display_best_sellers` | **Display best sellers** | boolean | `true or false` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is written.
+
+**Then**
+- `$before = SomcpToolGetGeneralSettings::settings($idShop)`;
+- the keys whose value differs, in the order of the screen, each saved with `Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for the shop of the token: the stored number for a code, `1` or `0` for a switch, as `PreferencesConfiguration::updateConfiguration()` saves them; a failed save stops the call and names what was saved before it;
+- nothing differs: `changed: false`, `reason` `The general settings already hold every value given. Nothing was written.`, `settings` as read;
+- logged as `general_settings_updated` with the fields saved, `general_settings_update_failed` with the failure.
+
+**Returns** - `changed: true`, `changes` (per field its `field`, `old`,
+`new`, under the names and codes of the parameters), and `settings` read
+back through `settings()`. Warnings, in `warning`:
+- `round_mode` or `round_type` changed: `Prices are now rounded with <new label>: orders and invoices already made keep their totals, new carts and orders use the new rounding.` (the core reads the keys at each computation, `Tools::ps_round()` and `Cart::getOrderTotal()`);
+- a display switch turned on: `The <suppliers, brands or best sellers> page is now shown on the storefront, even when its module is disabled.`;
+- on an installation of several shops: `The settings changed for this shop only, as the back office saves them in a shop context.`
+
+**Notes**
+- The back office saves the whole tab at once; this tool saves only the keys whose value differs, so the fields it leaves out are never touched.
+- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), turns **Display suppliers** over and puts it back.
+
+**Differences between 8.0.1 and 9.0.0** - none for these five fields.
+
+#### `somcp_get_maintenance_settings`
+**State**: written · [issue #387](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/387)
+**Nature**: `acts(VIEW, 'AdminMaintenance')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the tab **Maintenance** of **Shop Parameters > General**:
+**Enable store**, **Enable store for logged-in employees** (9.0.0 only) and
+**Custom maintenance text**. Whether the storefront is open to visitors.
+Read only.
+
+**Do not use for** - whether the shop answers at all (→ `somcp_ping`); the
+rounding and storefront pages (→ `somcp_get_general_settings`); opening or
+closing the storefront, or changing its text (→
+`somcp_update_maintenance_settings`). **Maintenance IP** is neither read nor
+written.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | - | array | no | the languages of **Custom maintenance text** to give, ISO codes among the shop's active languages, every one by default: the rule of #149 (`SomcpToolCreateProduct::languages()`), an unknown one refused |
+
+Unknown arguments through `SomcpTool::unknownFields()`, in the envelope
+`Nothing was read. Correct these and call again:`, with an unknown language
+in the same answer.
+
+**Returns** - one object, built in the public
+`SomcpToolGetMaintenanceSettings::settings($idShop, $idLangs)`, which the
+update reads too, under the names the update takes back. Each key read with
+`Configuration::get(<key>, ..., $idShopGroup, $idShop)` for the shop of the
+token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `store_enabled` | **Enable store** | `PS_SHOP_ENABLE` | boolean |
+| `open_for_logged_in_employees` | **Enable store for logged-in employees** | `PS_MAINTENANCE_ALLOW_ADMINS` | boolean on 9.0.0; `null` on 8.0.1, where the field does not exist (`hasEmployeeSwitch()`) |
+| `maintenance_text` | **Custom maintenance text** | `PS_MAINTENANCE_TEXT` | object keyed by ISO code, each language read with its `id_lang`, the HTML as stored |
+| `languages` | - | - | the ISO codes given in `maintenance_text` |
+
+When `store_enabled` is false, a `warning`: `The storefront is closed:
+visitors see the maintenance text, and only the addresses of Maintenance IP
+in the back office<, and the employees logged in to the back office> see the
+shop.` (the part in angle brackets on 9.0.0 when
+`open_for_logged_in_employees` is true).
+
+**Notes**
+- The keys are those `src/Adapter/Shop/MaintenanceConfiguration.php` reads and writes (`CONFIGURATION_FIELDS`), each a multistore field.
+- The scenario checks the shape, never a text.
+
+**Differences between 8.0.1 and 9.0.0** - **Enable store for logged-in
+employees** exists on 9.0.0 only (`PS_MAINTENANCE_ALLOW_ADMINS`, no row on
+8.0.1); the two other fields are the same.
+
+#### `somcp_update_maintenance_settings`
+**State**: written · [issue #388](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/388)
+**Nature**: `acts(EDIT, 'AdminMaintenance')` · **Scope**: `mcp.catalog.write`
+
+**Does** - opens or closes the storefront and changes its maintenance
+message, as the **Save** button of **Shop Parameters > General**, tab
+**Maintenance**, does for **Enable store**, **Enable store for logged-in
+employees** (9.0.0 only) and **Custom maintenance text**. The description
+says to close or open the storefront only when the merchant asks.
+
+**Do not use for** - the rounding and storefront pages (→
+`somcp_update_general_settings`); disabling one product, category or page
+(→ `somcp_set_product_active`, `somcp_set_category_active`). **Maintenance
+IP** is never written, and refused as an unknown field.
+
+**Parameters** - all optional; a key left out, or `null`, keeps its value.
+The read of `somcp_get_maintenance_settings` given back whole writes
+nothing; its `warning` is ignored.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `store_enabled` | **Enable store** | boolean | `true or false` |
+| `open_for_logged_in_employees` | **Enable store for logged-in employees** | boolean | `true or false`; on 8.0.1 any value other than `null` is refused: `open_for_logged_in_employees: this field exists on PrestaShop 9 only` |
+| `languages` | - | array | the languages of `maintenance_text` given, the rule of #149 (`SomcpToolCreateProduct::languages()`); a language left out keeps its text |
+| `maintenance_text` | **Custom maintenance text** | string or object | an object keyed by ISO code, or one text when one language is filled, through `SomcpToolCreateProduct::texts()`; a text given back as stored is no change; otherwise cleaned and checked by `SomcpToolCreateProduct::html()` (`Tools::purifyHTML()` then `Validate::isCleanHtml()` with the shop's iframe setting), at most 21844 characters (`maintenance_text (<iso>): 21844 characters at most, <n> given`, the limit `FormattedTextareaType::LIMIT_TEXT_UTF8` of the screen); an empty text refused (`maintenance_text (<iso>): required, never empty`) |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is written.
+
+**Then**
+- `$before = SomcpToolGetMaintenanceSettings::settings($idShop, $idLangs)`;
+- the keys whose value differs, each saved with `Configuration::updateValue(<key>, <value>, <html>, $idShopGroup, $idShop)` for the shop of the token: `PS_SHOP_ENABLE` and `PS_MAINTENANCE_ALLOW_ADMINS` as `1` or `0`, `PS_MAINTENANCE_TEXT` as an array `[id_lang => text]` of the languages that differ with `$html = true`, as `MaintenanceConfiguration::updateConfiguration()` saves them; a failed save stops the call and names what was saved before it;
+- nothing differs: `changed: false`, `reason` `The maintenance settings already hold every value given. Nothing was written.`, `settings` as read;
+- logged as `maintenance_settings_updated` with the fields saved (never the text), `maintenance_settings_update_failed` with the failure.
+
+**Returns** - `changed: true`, `changes` (per field its `field`, `old`,
+`new`; for the text one item per language changed, `field`
+`maintenance_text (<iso>)`), and `settings` read back through `settings()`.
+Warnings, in `warning`:
+- `store_enabled` turned off: `The storefront is now closed: visitors see the maintenance text. Only the addresses of Maintenance IP in the back office<, and the employees logged in to the back office,> see the shop.` (the part in angle brackets on 9.0.0 when `open_for_logged_in_employees` is true);
+- `store_enabled` turned on: `The storefront is now open to every visitor.`;
+- on an installation of several shops: `The settings changed for this shop only, as the back office saves them in a shop context.`
+
+**Notes**
+- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), changes the text of the default language and puts it back. `store_enabled` is never turned off in the CI: the shop tests read the storefront.
+
+**Differences between 8.0.1 and 9.0.0** - **Enable store for logged-in
+employees** on 9.0.0 only, see above; the rest the same.
 
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)
@@ -3097,9 +4307,10 @@ default. The `iso_code` is what the `currency` of the other tools takes
 (`somcp_create_order`, `somcp_set_order_currency`,
 `somcp_create_catalog_price_rule`). Read only.
 
-**Do not use for** - changing the currency of an order (→
-`somcp_set_order_currency`); adding, changing, enabling or deleting a
-currency, or updating the exchange rates (later tools).
+**Do not use for** - every field of one currency (→ `somcp_get_currency`);
+changing the currency of an order (→ `somcp_set_order_currency`); adding,
+changing, enabling or deleting a currency, or updating the exchange rates
+(later tools).
 
 **Parameters**
 
@@ -3133,11 +4344,285 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 `currencies: []`, `count: 0`.
 
 **Notes**
-- Read through a query on `currency` (`deleted = 0`) joined to `currency_shop` on the shop of the token and to `currency_lang` in the language asked, rather than `Currency::getCurrencies()`, which has no name or ISO code filter; the default read as `Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop)`.
-- The **Exchange rate** block below the list (**Live exchange rates**, **Update exchange rates**) holds actions, not part of this list.
+- Read through a query on `currency` (`deleted = 0`) joined to `currency_shop` on the shop of the token and to `currency_lang` in the language asked, rather than `Currency::getCurrencies()`, which has no name or ISO code filter; the default read as `Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop)`. The query and the building of a row are shared with `somcp_get_currency` (`SomcpToolListCurrencies::currency()` and `row()`).
+- The **Exchange rate** block below the list (**Live exchange rates**, **Update exchange rates**) holds actions, not part of this list: **Update exchange rates** is `somcp_update_exchange_rates`.
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its bulk actions, its labels or the tables (`currency`, `currency_lang`, `currency_shop`); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
+
+#### `somcp_get_currency`
+**State**: written · [issue #363](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/363)
+**Nature**: `acts(VIEW, 'AdminCurrencies')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads one currency of **International > Localization >
+Currencies** as its **Edit** page shows it: the fields of
+`somcp_list_currencies`, plus **Decimals**, the numeric ISO code, whether it
+is an alternative currency, the format of the language (**Customize symbol
+and format**) and whether its names or symbols differ from the CLDR ones. It
+is the read before the write: `somcp_update_currency` takes back what this
+one gives. Read only.
+
+**Do not use for** - many currencies (→ `somcp_list_currencies`); the
+currency of a country (→ `somcp_get_country`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | - | integer | yes | the currency, from `somcp_list_currencies`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_currency')`; not a currency of the shop (`currency_shop`, `deleted = 0`, as `somcp_list_currencies` filters it): `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')` |
+| `language` | - | string | no | ISO code of one of the shop's active languages, for **Currency name**, **Symbol** and the format (`SomcpTool::readLanguage()`, refused with `SomcpTool::languageProblem()`); the shop default language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - `language`, then the keys of the row of `somcp_list_currencies`
+(`id_currency`, `name`, `symbol`, `iso_code`, `conversion_rate`, `active`,
+`default`), built by `SomcpToolListCurrencies::row()` and read through
+`SomcpToolListCurrencies::currency()`, the query of the list; then:
+- `precision` (**Decimals**): an integer;
+- `numeric_iso_code`: a string, or `null` when empty;
+- `alternative`: boolean, `currency.unofficial` (**Create an alternative currency**, the words of the add page);
+- `pattern`: the stored `currency_lang.pattern` of that language, or `null` when empty (PrestaShop then formats with the CLDR pattern of the language);
+- `modified`: boolean, `currency.modified` (the names or symbols differ from the CLDR ones, which **Restore default settings** brings back).
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once.
+
+**Notes**
+- The back-office address of the page is never part of the answer.
+- A read: no log line, nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the page, the fields or the tables (page title **Currencies** on 8.0.1, **Editing currency <name>** on 9.0.0); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
+
+#### `somcp_create_currency`
+**State**: written · [issue #367](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/367)
+**Nature**: `acts(ADD, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds one currency to **International > Localization >
+Currencies**, as **Add new currency** does: with **Select a currency**, one of
+the official currencies PrestaShop knows (CLDR), its names and symbols in
+every language filled by the shop when not given; with **Create an alternative
+currency** (`alternative`, #373), a currency PrestaShop does not know (a local
+or loyalty currency), with the ISO code, names and symbols the merchant gives.
+
+**Do not use for** - a currency the shop already has (→
+`somcp_update_currency`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `alternative` | **Create an alternative currency** | boolean | no | `true`: the ISO code must be three letters CLDR does not know, otherwise `iso_code: <code> is an official currency - leave alternative out to add it`; `false` or left out: an official currency; not a boolean: `alternative: true or false` |
+| `iso_code` | **Select a currency** | string | yes | trimmed, upper-cased, three letters; a currency of CLDR (`getCurrency()` of the CLDR locale of the shop default language not null); otherwise `iso_code: <code> is not an official currency PrestaShop knows (ISO 4217, for example USD or EUR)`; already a currency not deleted: `iso_code: <code> is already currency <id> of this shop - change it with somcp_update_currency` |
+| `conversion_rate` | **Exchange rate** | number | yes | above 0, 6 decimals kept; otherwise `conversion_rate: a number above 0, the value of 1 <default currency> in this currency` |
+| `precision` | **Decimals** | integer | no | 0 or more, otherwise `precision: a whole number of 0 or more`; the CLDR decimals of the currency when left out, `2` (the value of the form) for an alternative one |
+| `active` | **Status** | boolean | no | `true` when left out, as the page; not a boolean: `active: true or false` |
+| `name`, `symbol` | **Currency name**, **Symbol** | string or object | no | keyed by ISO code with `languages`, by `SomcpToolCreateProduct::languages()` and `texts()` (#149); at most 255 characters, `Validate::isGenericName()`; empty or left out, the CLDR text |
+| `languages` | - | array | no | the languages `name` and `symbol` fill, every active language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+With `alternative: true`, as `AddUnofficialCurrencyHandler::handle()`: the
+ISO code checked against CLDR (`assertCurrencyIsNotInReference()`) and against
+the currencies not deleted, with the lines above; `unofficial = 1`,
+`numeric_iso_code` `null`; an empty name or symbol takes the ISO code, as
+`refreshLocalizedCurrencyData()` does, with a warning `<field> left empty in
+<languages>: the ISO code <code> is shown instead.`. When CLDR cannot be read:
+`iso_code: the currencies PrestaShop knows cannot be read here, so <code>
+cannot be checked - add it on the Add new currency page`.
+
+**Then** - the CLDR repository through `SomcpBackOffice::cldrLocaleRepository()`:
+the kernel container (the 9.0.0 identifier, then the 8.0.1 one), or the light
+container every front page builds (`ContainerBuilder::getContainer('front')`,
+as `FrontController::buildContainer()`); when none answers: `Nothing was
+created. The currencies PrestaShop knows cannot be read here - add it on the
+Add new currency page`. The deleted `Currency` of the same ISO code, or a new
+one, set as `AbstractCurrencyHandler::addEntity()` does: `iso_code`, `active`,
+`deleted = false`, `unofficial` (`alternative`), `conversion_rate`,
+`numeric_iso_code` and `precision` from CLDR (none and `2` for an alternative
+currency), `id_shop_list` the shop of the token so
+`currency_shop` gets its row and its rate; `refreshLocalizedCurrencyData()`
+with every language, `validateFields()` and `validateFieldsLang()`, then
+`save(true, true)`.
+
+**Returns** - `created: true`, `id_currency`, `restored: true` when the
+deleted row of the same ISO code was reused (its orders stay tied to it), and
+`currency`, the answer of `somcp_get_currency` read back (`alternative: true`
+for an alternative currency). A `warning` when:
+- a deleted row was reused: `<ISO code> was deleted before: the same currency is back, without the payment modules it had in Payment > Preferences.`;
+- no payment module accepts it (`module_currency`): `Payment > Preferences decides which payment modules accept <ISO code>; no module accepts it yet.`
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once; the shop refusing the save: `Nothing was
+created. The shop refused currency <ISO code>: <reason> - read
+somcp_list_currencies before calling again`.
+
+**Notes**
+- Logged as `currency_created`, `currency_create_failed` when the shop refuses.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the identifier of the CLDR service; the handler and the tables are the same.
+
+#### `somcp_update_currency`
+**State**: written · [issue #364](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/364)
+**Nature**: `acts(EDIT, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes one currency of **International > Localization >
+Currencies**, as its **Edit** page does for **Exchange rate**, **Decimals**,
+**Status**, **Currency name**, **Symbol**, **Customize symbol and format** and
+**Restore default settings** (#365), or as the **Enabled** switch of the list
+does. Only the fields given and different from the stored currency are
+written.
+
+**Do not use for** - deleting a currency (→ `somcp_delete_currency`); the currency of a country
+(→ `somcp_update_country`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | - | integer | yes | the currency, from `somcp_list_currencies`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_currency')`; not a currency of the shop: `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')`, found through `SomcpToolGetCurrency::read()` and `SomcpToolListCurrencies::currency()` |
+| `conversion_rate` | **Exchange rate** | number | no | above 0, 6 decimals kept (`currency_shop.conversion_rate`, decimal(13,6)); otherwise `conversion_rate: a number above 0, the value of 1 <default currency> in this currency`; a different rate for the default currency of the shop: `conversion_rate: <ISO code> is the default currency of this shop - every rate is relative to it, its rate stays 1` |
+| `precision` | **Decimals** | integer | no | 0 or more; otherwise `precision: a whole number of 0 or more` |
+| `active` | **Status** | boolean | no | not a boolean: `active: true or false`; `false` for the default currency of any shop (`PS_CURRENCY_DEFAULT` read per shop): `active: <name> is the default currency for shop <shop name>, and therefore cannot be disabled`, one line per shop |
+| `name` | **Currency name** | string or object | no | an object keyed by ISO code of language, or one text when one language is filled (`SomcpToolCreateProduct::languages()` and `texts()`, as `somcp_update_country` takes its name); a language left out keeps its name; `""` takes the CLDR name back; checked by `SomcpToolCreateCurrency::checkedText()`, as the add: `name (<iso>): <n> characters at most, <m> given`, `name (<iso>): a character PrestaShop refuses in a currency name (< > = { })` |
+| `symbol` | **Symbol** | string or object | no | the same shape and checks; `""` takes the CLDR symbol back |
+| `format` | **Customize symbol and format** | string or object | no | the position of the symbol, one of the four transformations of the core's `PatternTransformer` (`leftWithSpace`, `leftWithoutSpace`, `rightWithSpace`, `rightWithoutSpace`), or `default` for the CLDR format (an empty `pattern`); one word for every language filled, or an object keyed by ISO code; otherwise `format: leftWithSpace, leftWithoutSpace, rightWithSpace, rightWithoutSpace or default`. A raw pattern is never taken: the storefront prints it in every price |
+| `restore_defaults` | **Restore default settings** | boolean | no | `true`: every name, symbol and pattern emptied, then filled again from CLDR; beside `name`, `symbol` or `format`: `restore_defaults: alone, or the texts given beside it would be lost` |
+| `languages` | - | array of strings | no | the ISO codes of the languages `name`, `symbol` and `format` change; every active language when left out |
+
+The texts are set on the `Currency`, each pattern built as the core's
+`AbstractCurrencyHandler::applyPatternTransformations()` builds it (the
+currency pattern of the language's CLDR locale, `SomcpToolCreateCurrency::cldrLocale()`,
+moved by `PatternTransformer::transform()`), then
+`refreshLocalizedCurrencyData()` runs with every language, as the **Edit**
+page saves: an empty name or symbol takes the CLDR one again and `modified`
+is worked out. `validateFieldsLang()` is the last check. The CLDR repository
+comes from `SomcpBackOffice::cldrLocaleRepository()`; when it is null and a
+name, symbol, format or `restore_defaults` is given: `<field>: the formats of
+the shop cannot be read here - change it on the Edit page of the currency`.
+
+A row of `somcp_get_currency` given back whole writes nothing: its `name` and
+`symbol`, one text, are no change when they are the stored text of a language
+(`SomcpToolCreateProduct::givenBackAsRead()`); `language`, `iso_code`,
+`default`, `numeric_iso_code`, `alternative`, `pattern` and `modified` are
+taken only when they equal the stored value, read in the `language` given;
+otherwise `<field>: worked out by the shop`, or for `pattern` `pattern: worked
+out by the shop - change it with format`. At least one of `conversion_rate`,
+`precision`, `active`, `name`, `symbol`, `format` and `restore_defaults`,
+otherwise `conversion_rate, precision, active, name, symbol, format or
+restore_defaults: give at least one field to change`. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`id_currency` and `changes` (`field`, `old`, `new`; a name, symbol or pattern
+with its language, `name (fr)`, compared after the CLDR texts are filled
+again); nothing differed,
+`changed: false`, `id_currency` and `reason` (`The currency already holds
+every value given. Nothing was written.`). In both cases `currency`, the
+answer of `somcp_get_currency` read back. When something was written, a
+`warning` when:
+- `conversion_rate` changed: `Prices in <ISO code> are now converted at <rate>; orders already placed keep the rate they were placed at.`;
+- `active` set to `false` while payment modules accept the currency in the shop (`module_currency`): `<n> payment modules accept <ISO code> in Payment > Preferences; they keep that setting but the currency is no longer offered.`;
+- `precision` or `active` changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `Decimals and Status are shared by every shop: this change reaches every shop of this installation (<n + 1>).`; the exchange rate stays the one of this shop;
+- a name or symbol given empty for an alternative currency, which CLDR does not know: `<ISO code> is an alternative currency: an empty <field> takes its ISO code.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once.
+
+**Notes**
+- Written through `new Currency($id, null, $idShop)` with `id_shop_list` the shop of the token, so the rate goes to its `currency_shop` row only; the names, symbols and formats are put back in every language before `update()`, which the constructor had turned into the string of one language.
+- Replayable: the same call twice writes once, the second answers `changed: false`.
+- `iso_code` is read-only on the **Edit** page of both versions: never written here.
+- Logged as `currency_updated` with the fields changed, `currency_update_failed` when the shop refuses.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handlers, the checks or the tables.
+
+#### `somcp_delete_currency`
+**State**: written · [issue #366](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/366)
+**Nature**: `acts(DELETE, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one currency of **International > Localization >
+Currencies**, as the **Delete** of its row does (and **Delete selected** for
+one currency). PrestaShop keeps the row, flagged deleted, for the orders
+placed in it.
+
+**Do not use for** - switching a currency off (→ `somcp_update_currency`,
+`active`); many currencies at once (one call per currency).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | - | integer | yes | the currency to delete, from `somcp_list_currencies`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_currency')`; unknown: `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')`, through `SomcpToolGetCurrency::read()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Refusals, all at once:
+- the default currency of the shop of the token: `id_currency: <ISO code> is the default currency of this shop - PrestaShop never deletes it`;
+- the default currency of another shop (`PS_CURRENCY_DEFAULT` read for each shop): `id_currency: <name> is the default currency for shop <shop name>, and therefore cannot be removed`;
+- a country uses it as its **Default currency** (`country.id_currency`), which the back office does not check: `id_currency: <ISO code> is the default currency of <n> countries (<iso>, ...) - set them to the default store currency first with somcp_update_country (id_currency 0)`, the first ten named;
+- the installation has more than one shop (`SomcpToolCreateTax::otherShops()`): `id_currency: a currency is shared by every shop - deleting it here would remove it from the <n> other shops of this installation too`, the rule of `somcp_delete_zone` and `somcp_delete_state`.
+
+**Returns** - `deleted: true`, `id_currency`, `warning` and `currency`, the
+answer of `somcp_get_currency` read before the deletion. The warning:
+- payment restrictions removed (`module_currency`, counted before): `<n> payment modules no longer accept <ISO code> in Payment > Preferences; adding the currency again does not bring that setting back.`;
+- always: `Orders placed in <ISO code> keep it; PrestaShop keeps the currency hidden for them, and adding <ISO code> again brings the same currency back.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, every problem at once; the shop refusing `Currency::delete()`:
+`Nothing was deleted. The shop refused to delete currency <id> - read it again
+with somcp_list_currencies`.
+
+**Notes**
+- Deleted through `Currency::delete()`: the `module_currency` rows of the currency go, then `softDelete()` flags the row `deleted = 1`; it leaves every list.
+- Logged as `currency_deleted`, `currency_delete_failed` when the shop refuses.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler, `Currency::delete()` or the tables.
+
+#### `somcp_update_exchange_rates`
+**State**: written · [issue #378](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/378)
+**Nature**: `acts(EDIT, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - updates the exchange rates of every currency of the shop from
+PrestaShop's exchange rate server, as the **Update** button of **Update
+exchange rates**, in the **Exchange rate** block of **International >
+Localization > Currencies**. It waits up to 20 seconds for that server.
+
+**Do not use for** - setting one rate by hand (→ `somcp_update_currency`);
+reading the rates (→ `somcp_list_currencies`).
+
+**Parameters** - none. `{}`; any argument refused through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was changed. Correct
+these and call again:`.
+
+**Then**
+- the currencies of the shop read before, through `SomcpToolListCurrencies::query()`, `row()` and `defaultCurrency()`;
+- no currency other than the default one: `changed: false`, `reason` `<ISO code> is the only currency of this shop: its rate is always 1. Nothing was written.`, without calling the server;
+- otherwise the feed fetched by the public `feed()`, shared with `somcp_update_localization_settings`: `@set_time_limit(40)` when `max_execution_time` is above 0 and below 40, `_PS_CURRENCY_FEED_URL_` fetched with `Tools::file_get_contents(..., 20)` (constant `TIMEOUT`), parsed (`null` when empty or not XML); then stored in the cache `Tools::simplexml_load_file()` reads, then `Currency::refreshCurrencies()` in the shop of the token (`Somcp::actAsShop()`): it finds the feed in the cache and sends no second request;
+- the currencies read again and compared row by row (`currencies()` and `rateChanges()`, public, with `listed()`, the ISO codes of the feed, for `somcp_update_localization_settings`).
+
+**Returns** - the shape of every update tool:
+- `changed` (boolean);
+- `changes`, when a rate moved: one item per currency, `id_currency`, `iso_code`, `field` `conversion_rate`, `old`, `new`;
+- `reason` when nothing moved: `The exchange rates of PrestaShop give the rates the shop already holds. Nothing was written.`;
+- `not_in_feed`: the ISO codes of the non-default currencies the feed does not list, with the warning `PrestaShop's exchange rates do not include <ISO codes>: their rate was left unchanged; set it with somcp_update_currency.`;
+- `currencies`: the rows of `somcp_list_currencies` read back, the default one included.
+
+Warnings, when a rate moved: `Prices shown in these currencies change now;
+orders already placed keep their rate.`, and on an installation of several
+shops (`SomcpToolCreateTax::otherShops()` above 0) `The exchange rates changed
+for this shop only; the other shops keep theirs.`
+
+**Errors** - `SomcpTool::text(..., true)`:
+- feed empty or not XML: `PrestaShop's exchange rate server did not answer within 20 seconds, or sent something unreadable. Nothing was changed. Try again later, or set a rate with somcp_update_currency.`;
+- `Currency::refreshCurrencies()` returns an error: `The exchange rates could not be updated: <its message>. Nothing was changed.`
+
+**Notes**
+- The only outgoing request is the one PrestaShop's own button sends, to its own server; the core's 5-second wait is replaced by 20 seconds.
+- A currency absent from the feed keeps its rate: the core skips it without a word, so the tool names it.
+- Logged as `exchange_rates_updated` with the count of rates changed, `exchange_rates_update_failed` with the reason.
+- The rates of the feed change every day: the scenario only checks the refusal of an argument, and the CI never reaches PrestaShop's server.
+
+**Differences between 8.0.1 and 9.0.0** - none in the page, `Currency::refreshCurrencies()` or `Tools::file_get_contents()`; the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0, where the tool answers `changed: false` without calling the server).
 
 #### `somcp_create_tax`
 **State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)
@@ -3713,7 +5198,7 @@ The products and the categories they are sorted into: texts, prices, combination
 |---|---|---|---|
 | `basics` | `product_type` | merchant | a value of PrestaShop's `ProductType`: `standard`, `combinations`, `pack`, `virtual` |
 | | `name` | merchant | required; 128 characters at most per language (`ProductSettings::MAX_NAME_LENGTH`) |
-| | `description_short` (summary) | assistant | 100 to 200 characters per language, refused outside; HTML cleaned, 65 535 bytes at most on PrestaShop 8 |
+| | `description_short` (summary) | assistant | at most the shop's **Max size of short description** (Shop Parameters > Product Settings, `PS_PRODUCT_SHORT_DESC_LIMIT`, 800 when empty), counted on the visible text and refused past it; 100 to 200 characters reads best, outside that `seo_warnings` says so without blocking; HTML cleaned, 65 535 bytes at most on PrestaShop 8 |
 | | `description` | assistant | HTML cleaned; 65 535 bytes at most on PrestaShop 8 |
 | `categories` | `categories` | merchant, from the shop | ids from `somcp_list_categories` |
 | | `id_category_default` | merchant, from the shop | one of `categories`, added to them if missing; Home when none |
@@ -3788,7 +5273,7 @@ The products and the categories they are sorted into: texts, prices, combination
 
 **Do not use for** - creating a product (→ `somcp_create_product`), switching one on or off alone (→ `somcp_set_product_active`), or deleting one (→ `somcp_delete_product`).
 
-**Parameters** - `id_product` (required), `languages`, then the groups and fields of `somcp_create_product`, all optional. Every rule of that entry applies unchanged: who fills each field (merchant, merchant from the shop, assistant, both), the lengths (name 128, summary 100 to 200, reference 50, SEO title 55, meta description 512, counted on the visible text with spaces), the identifiers taken from the `somcp_list_*` tools, the SEO section and the image download guards. The tool extends `SomcpToolCreateProduct` and calls its checks, so the two cannot drift apart.
+**Parameters** - `id_product` (required), `languages`, then the groups and fields of `somcp_create_product`, all optional. Every rule of that entry applies unchanged: who fills each field (merchant, merchant from the shop, assistant, both), the lengths (name 128, summary at most the shop's Max size of short description with 100 to 200 as advice, reference 50, SEO title 55, meta description 512, counted on the visible text with spaces), the identifiers taken from the `somcp_list_*` tools, the SEO section and the image download guards. The tool extends `SomcpToolCreateProduct` and calls its checks, so the two cannot drift apart.
 
 **What "only what is given" means**
 

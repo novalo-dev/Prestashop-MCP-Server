@@ -75,6 +75,7 @@ class SomcpDownload
         'attribute_texture' => ['reader' => 'somcp_get_attribute_value'],
         'order_state_icon' => ['reader' => 'somcp_list_order_statuses'],
         'carrier_logo' => ['reader' => 'somcp_list_carriers'],
+        'language_flag' => ['reader' => 'somcp_list_languages'],
         'category_image' => ['reader' => 'somcp_get_category'],
         'category_thumbnail' => ['reader' => 'somcp_get_category'],
         'category_thumbnail_image' => ['reader' => 'somcp_get_category'],
@@ -613,6 +614,12 @@ class SomcpDownload
                 $path = _PS_SHIP_IMG_DIR_ . $number . '.jpg';
                 $shopTable = 'carrier_shop';
                 $shopKey = 'id_carrier';
+                break;
+            case 'language_flag':
+                // One JPEG per language, img/l/<id_lang>.jpg on 8 and 9.
+                $path = _PS_LANG_IMG_DIR_ . $number . '.jpg';
+                $shopTable = 'lang_shop';
+                $shopKey = 'id_lang';
                 break;
             case 'category_image':
                 $path = _PS_CAT_IMG_DIR_ . $number . '.jpg';

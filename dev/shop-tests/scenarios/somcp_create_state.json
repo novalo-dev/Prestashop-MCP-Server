@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "an ISO code another state of the same country has, given in lower case", "arguments": {"country": "US", "name": "Alabama", "iso_code": "al", "id_zone": 2}, "expect": "error", "contains": ["Nothing was created.", "- iso_code: state", "already has the ISO code AL"]},
+    {"why": "a country that does not use states", "arguments": {"country": "FR", "name": "x", "iso_code": "X", "id_zone": 1}, "expect": "error", "contains": ["Nothing was created.", "- country: France does not use states"]},
+    {"why": "a forbidden character in the name, a malformed ISO code, an unknown zone, a non-boolean status and a field the shop works out, all at once", "arguments": {"country": "US", "name": "a={b}", "iso_code": "TOOLONGX", "id_zone": 99999, "active": "yes", "id_state": 1}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- name: a character PrestaShop refuses in a state name", "- iso_code: 1 to 4 letters or digits", "- id_zone: no zone of this shop has the identifier 99999", "- active: true or false", "- id_state: worked out by the shop"]},
+    {"why": "no argument at all", "arguments": {}, "expect": "error", "contains": ["Nothing was created.", "- country: required", "- name: required", "- iso_code: required", "- id_zone: required"]}
+  ]
+}

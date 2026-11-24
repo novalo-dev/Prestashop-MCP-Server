@@ -123,27 +123,7 @@ class SomcpToolListCurrencies
         }
         [$idLang, $iso] = $language;
 
-        // A query rather than Currency::getCurrencies(), which has no name or
-        // ISO code filter. The list of a shop shows the currencies
-        // currency_shop ties to it, with the rate that shop converts at.
-        $query = new DbQuery();
-        $query->select('c.`id_currency`, cl.`name`, cl.`symbol`, c.`iso_code`, cs.`conversion_rate`, c.`active`');
-        $query->from('currency', 'c');
-        $query->innerJoin(
-            'currency_shop',
-            'cs',
-            'cs.`id_currency` = c.`id_currency` AND cs.`id_shop` = ' . (int) $idShop
-        );
-        // A left join, so a currency with no name in this language is still
-        // listed rather than silently missing from the only list of codes.
-        $query->leftJoin(
-            'currency_lang',
-            'cl',
-            'cl.`id_currency` = c.`id_currency` AND cl.`id_lang` = ' . (int) $idLang
-        );
-        // A deleted currency stays in the table, flagged, for the orders that
-        // used it; the back office list leaves it out, and so does this.
-        $query->where('c.`deleted` = 0');
+        $query = self::query($idShop, $idLang);
         // The ID, Currency, ISO code and Enabled (All / Yes / No) filters of the list.
         if ($idCurrency > 0) {
             $query->where('c.`id_currency` = ' . (int) $idCurrency);
@@ -163,19 +143,10 @@ class SomcpToolListCurrencies
         // the merchant sees it.
         $query->orderBy('c.`id_currency` ASC');
 
-        // The currency every rate of the shop is relative to.
-        $default = (int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop);
+        $default = self::defaultCurrency($idShop);
         $currencies = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
-            $currencies[] = [
-                'id_currency' => (int) $row['id_currency'],
-                'name' => (string) ($row['name'] ?? ''),
-                'symbol' => (string) ($row['symbol'] ?? ''),
-                'iso_code' => (string) $row['iso_code'],
-                'conversion_rate' => (float) $row['conversion_rate'],
-                'active' => (bool) $row['active'],
-                'default' => (int) $row['id_currency'] === $default,
-            ];
+            $currencies[] = self::row($row, $default);
         }
 
         return SomcpTool::json([
@@ -183,5 +154,100 @@ class SomcpToolListCurrencies
             'count' => count($currencies),
             'language' => $iso,
         ]);
+    }
+
+    /**
+     * One currency of the list, every column of its tables, or null when the shop lists none with this identifier.
+     *
+     * Public so somcp_get_currency finds a currency exactly where this list
+     * shows it, and reads its other fields from the same row.
+     *
+     * @param int $idShop
+     * @param int $idLang the language of the name, the symbol and the format
+     * @param int $idCurrency
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function currency(int $idShop, int $idLang, int $idCurrency): ?array
+    {
+        $query = self::query($idShop, $idLang);
+        $query->select('c.`precision`, c.`numeric_iso_code`, c.`unofficial`, c.`modified`, cl.`pattern`');
+        $query->where('c.`id_currency` = ' . (int) $idCurrency);
+        $row = Db::getInstance()->getRow($query);
+
+        return is_array($row) && $row !== [] ? $row : null;
+    }
+
+    /**
+     * A currency as the list answers it.
+     *
+     * Public so somcp_get_currency gives the same keys, built the same way,
+     * before the fields of the edit page.
+     *
+     * @param array<string, mixed> $row a row of query()
+     * @param int $default the identifier of the shop default currency
+     *
+     * @return array<string, mixed>
+     */
+    public static function row(array $row, int $default): array
+    {
+        return [
+            'id_currency' => (int) $row['id_currency'],
+            'name' => (string) ($row['name'] ?? ''),
+            'symbol' => (string) ($row['symbol'] ?? ''),
+            'iso_code' => (string) $row['iso_code'],
+            'conversion_rate' => (float) $row['conversion_rate'],
+            'active' => (bool) $row['active'],
+            'default' => (int) $row['id_currency'] === $default,
+        ];
+    }
+
+    /**
+     * The currency every rate of the shop is relative to.
+     *
+     * @param int $idShop
+     *
+     * @return int
+     */
+    public static function defaultCurrency(int $idShop): int
+    {
+        return (int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop);
+    }
+
+    /**
+     * The currencies of the shop, as the back office list shows them, before its filters.
+     *
+     * A query rather than Currency::getCurrencies(), which has no name or ISO
+     * code filter. The list of a shop shows the currencies currency_shop ties
+     * to it, with the rate that shop converts at. Public so
+     * somcp_update_exchange_rates compares the rates of the same rows.
+     *
+     * @param int $idShop
+     * @param int $idLang
+     *
+     * @return DbQuery
+     */
+    public static function query(int $idShop, int $idLang): DbQuery
+    {
+        $query = new DbQuery();
+        $query->select('c.`id_currency`, cl.`name`, cl.`symbol`, c.`iso_code`, cs.`conversion_rate`, c.`active`');
+        $query->from('currency', 'c');
+        $query->innerJoin(
+            'currency_shop',
+            'cs',
+            'cs.`id_currency` = c.`id_currency` AND cs.`id_shop` = ' . (int) $idShop
+        );
+        // A left join, so a currency with no name in this language is still
+        // listed rather than silently missing from the only list of codes.
+        $query->leftJoin(
+            'currency_lang',
+            'cl',
+            'cl.`id_currency` = c.`id_currency` AND cl.`id_lang` = ' . (int) $idLang
+        );
+        // A deleted currency stays in the table, flagged, for the orders that
+        // used it; the back office list leaves it out, and so does this.
+        $query->where('c.`deleted` = 0');
+
+        return $query;
     }
 }

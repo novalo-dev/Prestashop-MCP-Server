@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a country with states, its stored address format and no tax label", "arguments": {"id_country": 21}, "expect": "ok", "contains": ["\"iso_code\": \"US\"", "\"display_tax_label\": false", "\"id_currency\": 0", "city, State:name postcode"]},
+    {"why": "a country named in a language given", "arguments": {"id_country": 8, "language": "en"}, "expect": "ok", "contains": ["\"name\": \"France\"", "\"language\": \"en\""]},
+    {"why": "a country the shop does not have", "arguments": {"id_country": 99999}, "expect": "error", "contains": ["Nothing was read.", "- id_country: no country of this shop has the identifier 99999"]},
+    {"why": "a language the shop does not have and a field the tool does not take, at once", "arguments": {"id_country": 8, "language": "xx", "zone": 1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language:", "- zone: not a field of this tool"]}
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a value that is not true or false is refused, nothing written", "arguments": {"restrict_to_carriers": "yes"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- restrict_to_carriers: true or false"]},
+    {"why": "a field the tool does not take is refused", "arguments": {"restrict": true}, "expect": "error", "contains": ["- restrict: not a field of this tool"]},
+    {"why": "the value a fresh shop already holds writes nothing", "arguments": {"restrict_to_carriers": false}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written."]},
+    {"why": "no field given writes nothing", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false", "\"restrict_to_carriers\": false"]}
+  ]
+}

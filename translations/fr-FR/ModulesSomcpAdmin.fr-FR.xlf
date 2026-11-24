@@ -1122,6 +1122,21 @@
       <source>List zones</source>
       <target>Lister les zones</target>
     </trans-unit>
+    <!-- Create a zone -->
+    <trans-unit id="93a133ab3a5610dcffe875227f5b165e" resname="Create a zone">
+      <source>Create a zone</source>
+      <target>Créer une zone</target>
+    </trans-unit>
+    <!-- Change a zone -->
+    <trans-unit id="a08220fb8249b5c3630b3afb8c6ffe42" resname="Change a zone">
+      <source>Change a zone</source>
+      <target>Modifier une zone</target>
+    </trans-unit>
+    <!-- Delete a zone -->
+    <trans-unit id="dfd3591fce3ecf8efba63586fd38b641" resname="Delete a zone">
+      <source>Delete a zone</source>
+      <target>Supprimer une zone</target>
+    </trans-unit>
     <!-- List countries -->
     <trans-unit id="597d4652b89187306aaad598ec4d29d9" resname="List countries">
       <source>List countries</source>
@@ -1381,6 +1396,126 @@
     <trans-unit id="dc33f489fd940765f4aa64b1c2b3176e" resname="List states">
       <source>List states</source>
       <target>Lister les états</target>
+    </trans-unit>
+    <!-- Create a state -->
+    <trans-unit id="2468d5fdcf74da5ad9bbd14d2c64f0b6" resname="Create a state">
+      <source>Create a state</source>
+      <target>Créer un état</target>
+    </trans-unit>
+    <!-- Change a state -->
+    <trans-unit id="37a6c8bf0341c70131ce376fbaa9ea8a" resname="Change a state">
+      <source>Change a state</source>
+      <target>Modifier un état</target>
+    </trans-unit>
+    <!-- Delete a state -->
+    <trans-unit id="94d97d7be65301240bdce78d0f90629d" resname="Delete a state">
+      <source>Delete a state</source>
+      <target>Supprimer un état</target>
+    </trans-unit>
+    <!-- Read a country -->
+    <trans-unit id="1865dd68349e1c90e6cc8ced2fb634f9" resname="Read a country">
+      <source>Read a country</source>
+      <target>Lire un pays</target>
+    </trans-unit>
+    <!-- Read the localization settings -->
+    <trans-unit id="1dde4722155f5b1554359ff857a7e7bd" resname="Read the localization settings">
+      <source>Read the localization settings</source>
+      <target>Lire les paramètres de localisation</target>
+    </trans-unit>
+    <!-- Change the localization settings -->
+    <trans-unit id="edc519933d471087261b154009933bde" resname="Change the localization settings">
+      <source>Change the localization settings</source>
+      <target>Modifier les paramètres de localisation</target>
+    </trans-unit>
+    <!-- Read the general settings -->
+    <trans-unit id="8f88f1fcf5ceac3c6433368401993689" resname="Read the general settings">
+      <source>Read the general settings</source>
+      <target>Lire les paramètres généraux</target>
+    </trans-unit>
+    <!-- Change the general settings -->
+    <trans-unit id="05bac02aeb8ef93cffc90d54383a6590" resname="Change the general settings">
+      <source>Change the general settings</source>
+      <target>Modifier les paramètres généraux</target>
+    </trans-unit>
+    <!-- Read the maintenance settings -->
+    <trans-unit id="245260641c96cc624fce84fd42130807" resname="Read the maintenance settings">
+      <source>Read the maintenance settings</source>
+      <target>Lire les paramètres de maintenance</target>
+    </trans-unit>
+    <!-- Read the shipping preferences -->
+    <trans-unit id="00a3859a4a30a5019e7066c9f0d986fd" resname="Read the shipping preferences">
+      <source>Read the shipping preferences</source>
+      <target>Lire les préférences de livraison</target>
+    </trans-unit>
+    <!-- Import a localization pack -->
+    <trans-unit id="1240d2eed41a0fd4e898e6aab64c6732" resname="Import a localization pack">
+      <source>Import a localization pack</source>
+      <target>Importer un pack de localisation</target>
+    </trans-unit>
+    <!-- Change the maintenance settings -->
+    <trans-unit id="77fe780e8a117b42809870b42c1cc6c7" resname="Change the maintenance settings">
+      <source>Change the maintenance settings</source>
+      <target>Modifier les paramètres de maintenance</target>
+    </trans-unit>
+    <!-- Read the country options -->
+    <trans-unit id="4832df5ad50f78b3359bade7095832f9" resname="Read the country options">
+      <source>Read the country options</source>
+      <target>Lire les options des pays</target>
+    </trans-unit>
+    <!-- Change the country options -->
+    <trans-unit id="68a35758a2f83baec42383bf21679e41" resname="Change the country options">
+      <source>Change the country options</source>
+      <target>Modifier les options des pays</target>
+    </trans-unit>
+    <!-- Change a country -->
+    <trans-unit id="aeb962537896ceb3ac61f18ee5897a0b" resname="Change a country">
+      <source>Change a country</source>
+      <target>Modifier un pays</target>
+    </trans-unit>
+    <!-- Read a currency -->
+    <trans-unit id="2110c12263e46a5dfc402e56ea9c79d6" resname="Read a currency">
+      <source>Read a currency</source>
+      <target>Lire une devise</target>
+    </trans-unit>
+    <!-- Change a language -->
+    <trans-unit id="cbb66ee9de5a202f941c1f52cde89b45" resname="Change a language">
+      <source>Change a language</source>
+      <target>Modifier une langue</target>
+    </trans-unit>
+    <!-- Delete a language -->
+    <trans-unit id="0df232d987e6469fc7a1d53743a57228" resname="Delete a language">
+      <source>Delete a language</source>
+      <target>Supprimer une langue</target>
+    </trans-unit>
+    <!-- Add or update a language from PrestaShop -->
+    <trans-unit id="d0c6e19ce3834c627295b02fa67834c6" resname="Add or update a language from PrestaShop">
+      <source>Add or update a language from PrestaShop</source>
+      <target>Ajouter ou mettre à jour une langue depuis PrestaShop</target>
+    </trans-unit>
+    <!-- Add a language -->
+    <trans-unit id="369b8db3e9651d0b5d8a13a5f7f9a53a" resname="Add a language">
+      <source>Add a language</source>
+      <target>Ajouter une langue</target>
+    </trans-unit>
+    <!-- Change a currency -->
+    <trans-unit id="a746a7434a12991b1ac216076ec56d95" resname="Change a currency">
+      <source>Change a currency</source>
+      <target>Modifier une devise</target>
+    </trans-unit>
+    <!-- Add a currency -->
+    <trans-unit id="64c3155afa742d029eb8bcf37b522ec8" resname="Add a currency">
+      <source>Add a currency</source>
+      <target>Ajouter une devise</target>
+    </trans-unit>
+    <!-- Delete a currency -->
+    <trans-unit id="1209234e0a32d9bf3631d57ee92cb7fd" resname="Delete a currency">
+      <source>Delete a currency</source>
+      <target>Supprimer une devise</target>
+    </trans-unit>
+    <!-- Update the exchange rates -->
+    <trans-unit id="e50d51a385d5f3673a0da44b1b43e76a" resname="Update the exchange rates">
+      <source>Update the exchange rates</source>
+      <target>Mettre à jour les taux de change</target>
     </trans-unit>
     <!-- List currencies -->
     <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">

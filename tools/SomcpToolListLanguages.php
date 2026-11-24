@@ -47,7 +47,8 @@ class SomcpToolListLanguages
             'somcp_list_languages',
             Somcp::t('List languages'),
             'Lists the languages of International > Localization > Languages, by identifier as that list: '
-                . 'id_lang, name, iso_code, language code, locale, date formats, Enabled, and the shop default. '
+                . 'id_lang, name, iso_code, language code, locale, date formats, Enabled, the shop default and the '
+                . 'flag, a download_ref for somcp_download_file. '
                 . 'The iso_code is what the language and languages of every other tool take, and only an '
                 . 'enabled language is accepted there; a tool reads in the default when language is left out.',
             [
@@ -112,13 +113,7 @@ class SomcpToolListLanguages
             return SomcpTool::refused('read', $errors);
         }
 
-        // A query rather than Language::getLanguages(), so every filter stays
-        // one WHERE; the list of a shop shows the languages lang_shop ties to it.
-        $query = new DbQuery();
-        $query->select('l.`id_lang`, l.`name`, l.`iso_code`, l.`language_code`, l.`locale`');
-        $query->select('l.`date_format_lite`, l.`date_format_full`, l.`active`, l.`is_rtl`');
-        $query->from('lang', 'l');
-        $query->innerJoin('lang_shop', 'ls', 'ls.`id_lang` = l.`id_lang` AND ls.`id_shop` = ' . (int) $idShop);
+        $query = self::query($idShop);
         // The ID, Name, ISO code and Enabled (All / Yes / No) filters of the list.
         if ($idLang > 0) {
             $query->where('l.`id_lang` = ' . (int) $idLang);
@@ -138,28 +133,102 @@ class SomcpToolListLanguages
         // the merchant sees it.
         $query->orderBy('l.`id_lang` ASC');
 
-        // Read as somcp_ping reads it: the language every tool falls back to
-        // when its language is left out.
-        $default = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
+        $default = self::defaultLanguage($idShop);
         $languages = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
-            $languages[] = [
-                'id_lang' => (int) $row['id_lang'],
-                'name' => (string) $row['name'],
-                'iso_code' => (string) $row['iso_code'],
-                'language_code' => (string) $row['language_code'],
-                'locale' => (string) ($row['locale'] ?? ''),
-                'date_format' => (string) $row['date_format_lite'],
-                'date_format_full' => (string) $row['date_format_full'],
-                'active' => (bool) $row['active'],
-                'is_rtl' => (bool) $row['is_rtl'],
-                'default' => (int) $row['id_lang'] === $default,
-            ];
+            $languages[] = self::row($row, $default, $idShop);
         }
 
         return SomcpTool::json([
             'languages' => $languages,
             'count' => count($languages),
         ]);
+    }
+
+    /**
+     * One language of the list, as its table holds it, or null when the shop lists none with this identifier.
+     *
+     * Public so the tools that change a language find it exactly where this
+     * list shows it.
+     *
+     * @param int $idShop
+     * @param int $idLang
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function language(int $idShop, int $idLang): ?array
+    {
+        $query = self::query($idShop);
+        $query->where('l.`id_lang` = ' . (int) $idLang);
+        $row = Db::getInstance()->getRow($query);
+
+        return is_array($row) && $row !== [] ? $row : null;
+    }
+
+    /**
+     * A language as the list answers it.
+     *
+     * Public so the tools that change a language answer the same keys, built
+     * the same way, and a row of the list given back to them matches.
+     *
+     * @param array<string, mixed> $row a row of query()
+     * @param int $default the identifier of the shop default language
+     * @param int $idShop the shop of the token, the one a download_ref is made for
+     *
+     * @return array<string, mixed>
+     */
+    public static function row(array $row, int $default, int $idShop): array
+    {
+        return [
+            'id_lang' => (int) $row['id_lang'],
+            'name' => (string) $row['name'],
+            'iso_code' => (string) $row['iso_code'],
+            'language_code' => (string) $row['language_code'],
+            'locale' => (string) ($row['locale'] ?? ''),
+            'date_format' => (string) $row['date_format_lite'],
+            'date_format_full' => (string) $row['date_format_full'],
+            'active' => (bool) $row['active'],
+            'is_rtl' => (bool) $row['is_rtl'],
+            'default' => (int) $row['id_lang'] === $default,
+            // The Flag of the Edit page, given as every file is, so a row
+            // given back to somcp_update_language is recognised as no change.
+            'flag' => SomcpDownload::offer('language_flag', (int) $row['id_lang'], $idShop),
+        ];
+    }
+
+    /**
+     * The identifier of the shop default language.
+     *
+     * Read as somcp_ping reads it: the language every tool falls back to when
+     * its language is left out.
+     *
+     * @param int $idShop
+     *
+     * @return int
+     */
+    public static function defaultLanguage(int $idShop): int
+    {
+        return (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
+    }
+
+    /**
+     * The languages of a shop, before any filter.
+     *
+     * A query rather than Language::getLanguages(), so every filter stays one
+     * WHERE; the list of a shop shows the languages lang_shop ties to it.
+     *
+     * @param int $idShop
+     *
+     * @return DbQuery
+     */
+    private static function query(int $idShop): DbQuery
+    {
+        $query = new DbQuery();
+        $query->select('l.`id_lang`, l.`name`, l.`iso_code`, l.`language_code`, l.`locale`');
+        $query->select('l.`date_format_lite`, l.`date_format_full`, l.`active`, l.`is_rtl`');
+        $query->from('lang', 'l');
+        $query->innerJoin('lang_shop', 'ls', 'ls.`id_lang` = l.`id_lang` AND ls.`id_shop` = ' . (int) $idShop);
+
+        return $query;
     }
 }

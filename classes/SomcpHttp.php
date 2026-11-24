@@ -611,14 +611,86 @@ class SomcpHttp
 
         $public = [];
         foreach ($candidates as $address) {
-            if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                $public[] = $address;
+            if (self::isPublicAddress($address)) {
+                $public[] = self::reachedAddress($address);
             }
         }
 
         // One private answer among the public ones is enough to refuse: a name
         // that resolves both ways is exactly what an attacker sets up.
         return count($public) === count($candidates) ? $public : [];
+    }
+
+    /**
+     * The address a connection actually reaches: an IPv6 form that carries
+     * an IPv4 address (::ffff:a.b.c.d, the NAT64 prefix) is pinned as that
+     * IPv4 address, so what was checked is what curl connects to.
+     *
+     * @param string $address
+     *
+     * @return string
+     */
+    private static function reachedAddress(string $address): string
+    {
+        $packed = @inet_pton($address);
+        if ($packed !== false && strlen($packed) === 16
+            && (strncmp($packed, str_repeat("\0", 10) . "\xff\xff", 12) === 0 || strncmp($packed, "\x00\x64\xff\x9b" . str_repeat("\0", 8), 12) === 0)) {
+            return (string) inet_ntop(substr($packed, 12));
+        }
+
+        return $address;
+    }
+
+    /**
+     * Whether an address is on the public internet.
+     *
+     * The one definition of the module: every fetch it makes from a name it
+     * was given, and every check of whether the shop is reachable, asks this
+     * - a copy of the check elsewhere drifted once and let an internal
+     * address through.
+     *
+     * PHP's own flags cover the private and reserved ranges; the list below
+     * adds what they leave out and what can still lead inside - shared address
+     * space, benchmarking, documentation, multicast, and IPv6 forms that carry
+     * an IPv4 address.
+     *
+     * @param string $address
+     *
+     * @return bool
+     */
+    public static function isPublicAddress(string $address): bool
+    {
+        $packed = @inet_pton($address);
+        if ($packed === false) {
+            return false;
+        }
+        // ::ffff:a.b.c.d and the NAT64 prefix both end in an IPv4 address,
+        // which is the one actually reached.
+        if (strlen($packed) === 16
+            && (strncmp($packed, str_repeat("\0", 10) . "\xff\xff", 12) === 0 || strncmp($packed, "\x00\x64\xff\x9b" . str_repeat("\0", 8), 12) === 0)) {
+            return self::isPublicAddress((string) inet_ntop(substr($packed, 12)));
+        }
+        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        $blocked = strlen($packed) === 4
+            ? ['0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/3']
+            : ['::/8', '100::/64', '2001:db8::/32', 'fc00::/7', 'fe80::/10', 'ff00::/8'];
+        foreach ($blocked as $range) {
+            [$network, $bits] = explode('/', $range);
+            $base = (string) inet_pton($network);
+            $bytes = intdiv((int) $bits, 8);
+            $rest = (int) $bits % 8;
+            if (strncmp($packed, $base, $bytes) !== 0) {
+                continue;
+            }
+            if ($rest === 0 || ((ord($packed[$bytes]) ^ ord($base[$bytes])) & (0xFF << (8 - $rest)) & 0xFF) === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

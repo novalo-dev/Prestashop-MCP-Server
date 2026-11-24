@@ -327,6 +327,45 @@ class SomcpBackOffice
     }
 
     /**
+     * The CLDR locale repository of the core: the currencies PrestaShop knows, their names, symbols and decimals.
+     *
+     * The kernel container is tried first, with the identifier of 9 then the
+     * one of 8. The MCP endpoint is a front controller and the shop tests run
+     * without one, where that container is null: the light container every
+     * front page builds holds the same service (config/services/common.yml
+     * imports cldr.yml on both versions), so it is built the way
+     * FrontController::buildContainer() builds it, as LocalizationPack does.
+     *
+     * @return object|null null when no container offers it
+     */
+    public static function cldrLocaleRepository(): ?object
+    {
+        $ids = ['PrestaShop\\PrestaShop\\Core\\Localization\\CLDR\\LocaleRepository',
+            'prestashop.core.localization.cldr.locale_repository'];
+        foreach ($ids as $id) {
+            $service = self::coreService($id);
+            if ($service !== null && method_exists($service, 'getLocale')) {
+                return $service;
+            }
+        }
+        try {
+            $container = PrestaShop\PrestaShop\Adapter\ContainerBuilder::getContainer('front', _PS_MODE_DEV_);
+            foreach ($ids as $id) {
+                if ($container->has($id)) {
+                    $service = $container->get($id);
+                    if (is_object($service) && method_exists($service, 'getLocale')) {
+                        return $service;
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
      * Whether this PrestaShop routes its back office pages through Symfony.
      *
      * Version 9 does, and only there is the entry route needed: on 8 the

@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a zone the shop does not have and a non-boolean active, all at once", "arguments": {"id_zone": 99999, "active": "no"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_zone: no zone of this shop has the identifier 99999", "- active: true or false"]},
+    {"why": "nothing to change", "arguments": {"id_zone": 3}, "expect": "error", "contains": ["Nothing was changed.", "- name or active: give at least one field to change"]},
+    {"why": "a number of countries other than the one the shop counts", "arguments": {"id_zone": 3, "countries": 0}, "expect": "error", "contains": ["Nothing was changed.", "- countries: worked out by the shop"]}
+  ]
+}

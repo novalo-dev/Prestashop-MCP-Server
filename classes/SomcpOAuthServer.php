@@ -566,21 +566,26 @@ class SomcpOAuthServer
             return $error('invalid_request', 'code and code_verifier are required');
         }
 
-        $consumed = SomcpOAuthToken::consumeCode($code);
+        $consumed = SomcpOAuthToken::findCode($code);
         $row = $consumed['row'];
         if ($row === null) {
             return $error($consumed['error'], 'the authorization code is not usable');
         }
 
         if ((int) $row['id_client'] !== (int) $client['id_client']) {
+            SomcpOAuthToken::claimCode($row);
             SomcpOAuthToken::revokeFamily((string) $row['id_family']);
 
             return $error('invalid_grant', 'the code was issued to another client');
         }
         if ($redirectUri !== '' && !hash_equals((string) $row['redirect_uri'], $redirectUri)) {
+            // Spent all the same: a code is presented once, right or wrong.
+            SomcpOAuthToken::claimCode($row);
+
             return $error('invalid_grant', 'redirect_uri does not match the authorization request');
         }
         if (!SomcpRandom::verifyPkce($verifier, (string) $row['code_challenge'])) {
+            SomcpOAuthToken::claimCode($row);
             SomcpLogger::log(
                 'pkce_failed',
                 SomcpLogger::OUTCOME_FAILURE,
@@ -598,6 +603,9 @@ class SomcpOAuthServer
             (string) $row['resource'],
             (string) $row['id_family']
         );
+        if (!SomcpOAuthToken::claimCode($row)) {
+            return $error('invalid_grant', 'the authorization code is not usable');
+        }
 
         SomcpLogger::log(
             'token_issued',

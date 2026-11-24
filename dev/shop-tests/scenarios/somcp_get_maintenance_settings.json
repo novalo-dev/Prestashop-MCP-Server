@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "the maintenance settings of the shop, the text in every active language", "arguments": {}, "expect": "ok", "contains": ["\"store_enabled\":", "\"open_for_logged_in_employees\":", "\"maintenance_text\":", "\"languages\":"]},
+    {"why": "the text in one language given by its code", "arguments": {"languages": ["EN"]}, "expect": "ok", "contains": ["\"maintenance_text\": {", "\"en\":", "\"languages\": [", "\"en\""]},
+    {"why": "a language the shop does not have and a misspelt field, refused at once", "arguments": {"languages": ["zz"], "x": 1}, "expect": "error", "contains": ["Nothing was read.", "- languages: \"zz\" is not an active language of this shop", "- x: not a field of this tool"]}
+  ]
+}

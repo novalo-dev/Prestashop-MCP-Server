@@ -981,6 +981,997 @@ if ($createTax !== null) {
     }
 }
 
+// A zone created, changed and deleted (#348, #349, #350): the JSON scenario
+// cannot hold the identifier of a zone it created, and every demo zone holds
+// countries, so none can be the one made, changed or removed here. Two zones
+// are created, the second under the first one's name in other letters, the
+// first renamed and disabled, both deleted, then a third deleted while a
+// carrier serves it; whatever is left is cleaned up at the end.
+$createZone = $registry->get('somcp_create_zone');
+if ($createZone !== null) {
+    $zoneCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $zoneText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $zoneMissing = static function (string $text, array $needles): array {
+        return array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        }));
+    };
+
+    $calls += 2;
+    $zoneIds = [];
+    try {
+        $result = $zoneCall($createZone, ['name' => 'somcp zone']);
+        $text = $zoneText($result);
+        $answer = json_decode(trim($text), true);
+        $idZone = is_array($answer) ? (int) ($answer['id_zone'] ?? 0) : 0;
+        if ($idZone > 0) {
+            $zoneIds[] = $idZone;
+        }
+        $missing = $zoneMissing($text, ['"created": true', '"active": true', '"countries": 0', 'The zone has no country yet']);
+        if (!empty($result['isError']) || $idZone === 0 || $missing !== []) {
+            $failures[] = 'somcp_create_zone (a new zone): expected it created, enabled, empty, with the warning - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_zone (a new zone)');
+        }
+
+        // The same name in other letters is taken, as the form takes it, and
+        // the answer names the zone that already has it.
+        $result = $zoneCall($createZone, ['name' => 'SOMCP ZONE']);
+        $text = $zoneText($result);
+        $answer = json_decode(trim($text), true);
+        $idTwin = is_array($answer) ? (int) ($answer['id_zone'] ?? 0) : 0;
+        if ($idTwin > 0) {
+            $zoneIds[] = $idTwin;
+        }
+        if (!empty($result['isError']) || $idTwin === 0
+            || strpos($text, 'Zone ' . $idZone . ' already has this name') === false) {
+            $failures[] = 'somcp_create_zone (a name another zone has): expected it created with the second warning - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_zone (a name another zone has, warned)');
+        }
+
+        // The zone changed in place (#349): renamed, disabled, then its row
+        // of somcp_list_zones given back whole, which changes nothing.
+        $updateZone = $registry->get('somcp_update_zone');
+        if ($updateZone !== null && $idZone > 0) {
+            $calls += 2;
+            $zoneUpdates = [
+                'renamed' => [['name' => 'somcp zone 2'], [['field' => 'name', 'old' => 'somcp zone', 'new' => 'somcp zone 2']]],
+                'disabled' => [['active' => false], [['field' => 'active', 'old' => true, 'new' => false]]],
+            ];
+            foreach ($zoneUpdates as $why => [$arguments, $changes]) {
+                $result = $zoneCall($updateZone, ['id_zone' => $idZone] + $arguments);
+                $text = $zoneText($result);
+                $answer = json_decode(trim($text), true);
+                // A zone that serves no carrier: disabling it warns of none.
+                // The shape of every update tool (#356): changed a boolean,
+                // changes with the value before.
+                if (!empty($result['isError']) || !is_array($answer) || ($answer['changed'] ?? null) !== true
+                    || ($answer['changes'] ?? null) !== $changes || strpos($text, 'Shipping is now disallowed') !== false) {
+                    $failures[] = 'somcp_update_zone (' . $why . '): expected changes ' . implode(', ', array_column($changes, 'field')) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_zone (' . $why . ')');
+                }
+            }
+
+            $listZones = $registry->get('somcp_list_zones');
+            if ($listZones !== null) {
+                $calls += 2;
+                $listed = json_decode(trim($zoneText($zoneCall($listZones, ['id_zone' => $idZone]))), true);
+                $row = is_array($listed) ? ($listed['zones'][0] ?? null) : null;
+                if (!is_array($row) || (int) ($row['id_zone'] ?? 0) !== $idZone || ($row['name'] ?? '') !== 'somcp zone 2'
+                    || ($row['active'] ?? null) !== false) {
+                    $failures[] = 'somcp_update_zone (the row of somcp_list_zones given back): the changed row could not be read';
+                } else {
+                    $result = $zoneCall($updateZone, $row);
+                    $answer = json_decode(trim($zoneText($result)), true);
+                    if (!empty($result['isError']) || !is_array($answer) || ($answer['changed'] ?? null) !== false
+                        || ($answer['reason'] ?? null) !== 'The zone already holds every value given. Nothing was written.'
+                        || array_key_exists('changes', $answer)) {
+                        $failures[] = 'somcp_update_zone (the row of somcp_list_zones given back): expected no change - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_zone (the row of somcp_list_zones given back, nothing written)');
+                    }
+                }
+            }
+        }
+
+        // The zones deleted (#350): the two empty ones, then a third given to
+        // demo carrier 3, which no order uses, so it keeps its identifier.
+        // The zone is put on the carrier the way the carrier page does it,
+        // Carrier::addZone(), rather than through somcp_update_carrier, whose
+        // zones replace the whole list of the carrier.
+        $deleteZone = $registry->get('somcp_delete_zone');
+        if ($deleteZone !== null) {
+            foreach ($zoneIds as $idEmpty) {
+                $calls += 1;
+                $result = $zoneCall($deleteZone, ['id_zone' => $idEmpty]);
+                $answer = json_decode(trim($zoneText($result)), true);
+                if (!empty($result['isError']) || !is_array($answer) || ($answer['deleted'] ?? null) !== true
+                    || ($answer['carriers_detached'] ?? null) !== []) {
+                    $failures[] = 'somcp_delete_zone (an empty zone): expected it deleted, no carrier detached - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_delete_zone (an empty zone)');
+                    $zoneIds = array_values(array_diff($zoneIds, [$idEmpty]));
+                }
+            }
+
+            $calls += 2;
+            $result = $zoneCall($createZone, ['name' => 'somcp zone served']);
+            $answer = json_decode(trim($zoneText($result)), true);
+            $idServed = is_array($answer) ? (int) ($answer['id_zone'] ?? 0) : 0;
+            $carrier = new Carrier(3);
+            if ($idServed === 0 || !Validate::isLoadedObject($carrier) || !$carrier->addZone($idServed)) {
+                $failures[] = 'somcp_delete_zone (a zone a carrier serves): the zone could not be set up - ' . excerpt($result);
+                if ($idServed > 0) {
+                    $zoneIds[] = $idServed;
+                }
+            } else {
+                $result = $zoneCall($deleteZone, ['id_zone' => $idServed]);
+                $text = $zoneText($result);
+                $answer = json_decode(trim($text), true);
+                $left = (int) Db::getInstance()->getValue(
+                    'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier_zone` WHERE `id_zone` = ' . (int) $idServed
+                );
+                if (!empty($result['isError']) || !is_array($answer) || ($answer['deleted'] ?? null) !== true
+                    || ($answer['carriers_detached'] ?? null) !== [3] || strpos($text, 'no longer serve this zone') === false
+                    || $left !== 0) {
+                    $failures[] = 'somcp_delete_zone (a zone a carrier serves): expected it deleted, carrier 3 detached - ' . excerpt($result);
+                    $zoneIds[] = $idServed;
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_delete_zone (a zone a carrier serves, carrier detached)');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_zone (a new zone): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // What a failed check left behind: no country or state uses these
+        // zones, and Zone::delete() takes their carrier rows with them.
+        foreach ($zoneIds as $idZoneLeft) {
+            $zone = new Zone($idZoneLeft);
+            if (Validate::isLoadedObject($zone)) {
+                $zone->delete();
+            }
+        }
+    }
+}
+
+// A state created (#353): the JSON scenario cannot delete the state it made,
+// and a second run would then be refused by the ISO code test. ZZ is a code
+// no state of Italy has, on a fresh install as on the test shops; the state
+// is deleted at the end, no address uses it.
+$createState = $registry->get('somcp_create_state');
+if ($createState !== null) {
+    $calls += 1;
+    $idState = 0;
+    try {
+        $result = $createState->call(
+            ['country' => 'IT', 'name' => 'somcp state', 'iso_code' => 'zz', 'id_zone' => 1],
+            [
+                'id_shop' => (int) $context->shop->id,
+                'id_employee' => (int) $employee->id,
+                'id_lang' => (int) $context->language->id,
+                'id_client' => 0,
+                'scopes' => implode(' ', $createState->getRequiredScopes()),
+                'responses' => [],
+                'resumed' => [],
+                'capabilities' => [],
+                'arguments' => [],
+            ]
+        );
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $answer = json_decode(trim($text), true);
+        $idState = is_array($answer) ? (int) ($answer['id_state'] ?? 0) : 0;
+        $missing = array_values(array_filter(
+            ['"created": true', '"iso_code": "ZZ"', '"country": "IT"', '"zone": "Europe"'],
+            static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }
+        ));
+        if (!empty($result['isError']) || $idState === 0 || $missing !== []) {
+            $failures[] = 'somcp_create_state (a new state): expected ' . implode(', ', $missing ?: ['an id_state']) . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_state (a new state)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_state (a new state): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idState > 0) {
+            $state = new State($idState);
+            if (Validate::isLoadedObject($state)) {
+                $state->delete();
+            }
+        }
+    }
+}
+
+// A state changed, then the same change again (#357): the JSON scenario
+// cannot create the state it changes, and demo states are used by addresses
+// and tax rule rows the next tools read. The state is made as the check of
+// somcp_create_state makes it, then deleted.
+$updateState = $registry->get('somcp_update_state');
+if ($updateState !== null) {
+    $calls += 2;
+    $state = new State();
+    $state->id_country = (int) Country::getByIso('IT');
+    $state->id_zone = 1;
+    $state->name = 'somcp state';
+    $state->iso_code = 'ZZ';
+    $state->active = true;
+    $idState = $state->add() ? (int) $state->id : 0;
+    $stateContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $updateState->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $change = ['id_state' => $idState, 'name' => 'somcp state 2', 'active' => false];
+    try {
+        foreach ([
+            'a change' => ['"changed": true', '"field": "name"', '"old": "somcp state"', '"new": "somcp state 2"', '"field": "active"'],
+            'the same change again' => ['"changed": false', 'The state already holds every value given.'],
+        ] as $label => $needles) {
+            $result = $updateState->call($change, $stateContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            // Name before active, the order of the form.
+            if ($label === 'a change' && strpos($text, '"field": "name"') > strpos($text, '"field": "active"')) {
+                $missing[] = 'name before active in changes';
+            }
+            if ($idState === 0 || !empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_update_state (' . $label . '): expected ' . implode(', ', $missing ?: ['a state to change']) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_state (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_state: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idState > 0) {
+            $left = new State($idState);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
+// The default currency read in full (#363): its identifier depends on the
+// country the CI shop is installed for, so it is taken from
+// somcp_list_currencies rather than written in the JSON scenario.
+$listCurrencies = $registry->get('somcp_list_currencies');
+$getCurrency = $registry->get('somcp_get_currency');
+if ($listCurrencies !== null && $getCurrency !== null) {
+    ++$calls;
+    $currencyCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $answer = json_decode(trim($text), true);
+
+        return [$result, is_array($answer) && empty($result['isError']) ? $answer : []];
+    };
+    try {
+        $idDefault = 0;
+        foreach ($currencyCall($listCurrencies, [])[1]['currencies'] ?? [] as $row) {
+            if (is_array($row) && ($row['default'] ?? false) === true) {
+                $idDefault = (int) $row['id_currency'];
+            }
+        }
+        [$result, $answer] = $currencyCall($getCurrency, ['id_currency' => $idDefault]);
+        if ($idDefault === 0 || ($answer['id_currency'] ?? null) !== $idDefault || ($answer['default'] ?? null) !== true
+            || !is_int($answer['precision'] ?? null) || ($answer['alternative'] ?? null) !== false) {
+            $failures[] = 'somcp_get_currency (the default currency): expected default true, a precision and alternative false - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_get_currency (the default currency)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_get_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
+// The default currency changed (#364): its identifier, its rate and its
+// decimals depend on the country the CI shop is installed for, so they are
+// read first. Switching it off and giving it a rate are refused; its
+// decimals change once, the same call writes nothing, then they are put back.
+$updateCurrency = $registry->get('somcp_update_currency');
+if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault > 0) {
+    ++$calls;
+    $restorePrecision = null;
+    try {
+        $before = $currencyCall($getCurrency, ['id_currency' => $idDefault])[1];
+        [$offResult] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'active' => false]);
+        [$rateResult] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'conversion_rate' => 2]);
+        $precision = (int) ($before['precision'] ?? 2);
+        [$result, $answer] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'precision' => $precision + 1]);
+        if (($answer['changed'] ?? null) === true) {
+            $restorePrecision = $precision;
+        }
+        [$againResult, $again] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'precision' => $precision + 1]);
+        if (empty($offResult['isError']) || strpos(excerpt($offResult), 'and therefore cannot be disabled') === false) {
+            $failures[] = 'somcp_update_currency (switch off the default currency): expected a refusal - ' . excerpt($offResult);
+        } elseif (empty($rateResult['isError']) || strpos(excerpt($rateResult), 'its rate stays 1') === false) {
+            $failures[] = 'somcp_update_currency (a rate for the default currency): expected a refusal - ' . excerpt($rateResult);
+        } elseif (($answer['changed'] ?? null) !== true || ($answer['currency']['precision'] ?? null) !== $precision + 1) {
+            $failures[] = 'somcp_update_currency (the decimals): expected changed true - ' . excerpt($result);
+        } elseif (($again['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_currency (the same call again): expected changed false - ' . excerpt($againResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_currency (the default currency)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($restorePrecision !== null) {
+            Db::getInstance()->update('currency', ['precision' => (int) $restorePrecision], 'id_currency = ' . (int) $idDefault);
+        }
+    }
+}
+
+// The default language changed (#368): its identifier depends on the country
+// the CI shop is installed for, so it is read with somcp_list_languages.
+// Switching it off is refused; its full date format changes once, the same
+// call writes nothing, the row of the list given back whole writes nothing,
+// its flag given back alone writes nothing (#370), a flag at an http address is
+// refused by the one path every image takes, then its own format is put back.
+$listLanguages = $registry->get('somcp_list_languages');
+$updateLanguage = $registry->get('somcp_update_language');
+if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall)) {
+    ++$calls;
+    $restoreFormat = null;
+    $idDefaultLang = 0;
+    try {
+        $defaultRow = null;
+        foreach ($currencyCall($listLanguages, [])[1]['languages'] ?? [] as $row) {
+            if (is_array($row) && ($row['default'] ?? false) === true) {
+                $defaultRow = $row;
+                $idDefaultLang = (int) $row['id_lang'];
+            }
+        }
+        if ($defaultRow === null) {
+            $failures[] = 'somcp_update_language: somcp_list_languages gave no default language';
+        } else {
+            [$offResult] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'active' => false]);
+            $format = $defaultRow['date_format_full'] === 'Y-m-d H:i' ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+            [$result, $answer] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'date_format_full' => $format]);
+            if (($answer['changed'] ?? null) === true) {
+                $restoreFormat = (string) $defaultRow['date_format_full'];
+            }
+            [$againResult, $again] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'date_format_full' => $format]);
+            $whole = $answer['language'] ?? [];
+            [$wholeResult, $wholeAnswer] = $currencyCall($updateLanguage, is_array($whole) ? $whole : []);
+            [$flagResult, $flagAnswer] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'flag' => $defaultRow['flag'] ?? null]);
+            [$httpResult] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'flag' => ['url' => 'http://example.com/flag.jpg']]);
+            if (empty($offResult['isError']) || strpos(excerpt($offResult), 'it cannot be disabled') === false) {
+                $failures[] = 'somcp_update_language (switch off the default language): expected a refusal - ' . excerpt($offResult);
+            } elseif (($answer['changed'] ?? null) !== true || ($answer['language']['date_format_full'] ?? null) !== $format) {
+                $failures[] = 'somcp_update_language (the full date format): expected changed true - ' . excerpt($result);
+            } elseif (($again['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_language (the same call again): expected changed false - ' . excerpt($againResult);
+            } elseif (($wholeAnswer['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_language (the row of the list given back): expected changed false - ' . excerpt($wholeResult);
+            } elseif (!array_key_exists('flag', $defaultRow) || ($flagAnswer['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_language (the flag of the list given back): expected changed false - ' . excerpt($flagResult);
+            } elseif (empty($httpResult['isError']) || strpos(excerpt($httpResult), 'flag: only public https addresses are accepted') === false) {
+                $failures[] = 'somcp_update_language (a flag at an http address): expected a refusal - ' . excerpt($httpResult);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_language (the default language)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_language: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($restoreFormat !== null && $restoreFormat !== '') {
+            Db::getInstance()->update('lang', ['date_format_full' => pSQL($restoreFormat)], 'id_lang = ' . (int) $idDefaultLang);
+        }
+    }
+}
+
+// The ISO code of a language (#369): the default language given the code of
+// another language of the shop is refused. The change itself is not run: it
+// moves the real translation and e-mail folders of the CI shop. A shop
+// installed with one language has no other code to take, and says so.
+if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall)) {
+    ++$calls;
+    try {
+        $defaultIso = null;
+        $otherIso = null;
+        $idDefaultLang = 0;
+        foreach ($currencyCall($listLanguages, [])[1]['languages'] ?? [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            if (($row['default'] ?? false) === true) {
+                $idDefaultLang = (int) $row['id_lang'];
+                $defaultIso = (string) $row['iso_code'];
+            } elseif ($otherIso === null) {
+                $otherIso = (string) $row['iso_code'];
+            }
+        }
+        if ($idDefaultLang === 0) {
+            $failures[] = 'somcp_update_language (the ISO code of another language): somcp_list_languages gave no default language';
+        } elseif ($otherIso === null) {
+            printf("  %-6s %s\n", 'skip', 'somcp_update_language (the ISO code of another language): the shop has one language');
+        } else {
+            [$isoResult] = $currencyCall($updateLanguage, ['id_lang' => $idDefaultLang, 'iso_code' => $otherIso]);
+            if (empty($isoResult['isError']) || strpos(excerpt($isoResult), 'iso_code: ' . $otherIso . ' is already the code of') === false) {
+                $failures[] = 'somcp_update_language (the ISO code of another language): expected a refusal - ' . excerpt($isoResult);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_update_language (the ISO code of another language, refused)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_language (the ISO code of another language): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
+// The "No-picture" image of a language (#376) is not written on the CI shop:
+// it replaces the real pictures the storefront shows for every product,
+// category and brand without one. Its refusals are in the scenario.
+
+// A language deleted (#371): the default language is refused; a language
+// added for the test, without any _lang row copied, is deleted with the tool
+// and gone after. The CI shop's own languages are never deleted; the test
+// language is removed in finally if the tool failed.
+$deleteLanguage = $registry->get('somcp_delete_language');
+if ($deleteLanguage !== null && isset($currencyCall, $idDefaultLang) && $idDefaultLang > 0) {
+    ++$calls;
+    $testLangIso = 'zz';
+    try {
+        [$defaultResult] = $currencyCall($deleteLanguage, ['id_lang' => $idDefaultLang]);
+        $added = new Language();
+        $added->name = 'Somcp test language';
+        $added->iso_code = $testLangIso;
+        $added->language_code = 'zz-zz';
+        $added->locale = 'zz-ZZ';
+        $added->date_format_lite = 'Y-m-d';
+        $added->date_format_full = 'Y-m-d H:i:s';
+        $added->active = true;
+        $added->id_shop_list = [(int) $context->shop->id];
+        // $only_add: no text of the shop is copied into the test language.
+        if (!$added->add(true, false, true)) {
+            throw new RuntimeException('the test language could not be created');
+        }
+        $idTestLang = (int) $added->id;
+        [$result, $answer] = $currencyCall($deleteLanguage, ['id_lang' => $idTestLang]);
+        if (empty($defaultResult['isError']) || strpos(excerpt($defaultResult), 'PrestaShop never deletes it') === false) {
+            $failures[] = 'somcp_delete_language (the default language): expected a refusal - ' . excerpt($defaultResult);
+        } elseif (($answer['deleted'] ?? null) !== true || ($answer['iso_code'] ?? null) !== $testLangIso) {
+            $failures[] = 'somcp_delete_language (a test language): expected deleted true - ' . excerpt($result);
+        } elseif (Language::getIdByIso($testLangIso, true)) {
+            $failures[] = 'somcp_delete_language (a test language): the language is still there';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_language (a test language)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_language: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = (int) Db::getInstance()->getValue(
+            "SELECT `id_lang` FROM `" . _DB_PREFIX_ . "lang` WHERE `iso_code` = '" . pSQL($testLangIso) . "'"
+        );
+        if ($left > 0) {
+            Db::getInstance()->delete('lang_shop', 'id_lang = ' . $left);
+            Db::getInstance()->delete('lang', 'id_lang = ' . $left);
+        }
+    }
+}
+
+// A language added (#372): the flag and the "No-picture" image deposited as
+// the order status icon is, one upload_ref each since a reference is used
+// once; the language comes back created with the ISO code given, then is
+// deleted with somcp_delete_language (#371). The CI shop's own languages are
+// never touched; the test language is removed in finally if a tool failed.
+$createLanguage = $registry->get('somcp_create_language');
+if ($createLanguage !== null && $deleteLanguage !== null && isset($currencyCall)) {
+    $calls += 2;
+    $testLangIso = 'zz';
+    try {
+        // The smallest valid GIF: one transparent pixel.
+        $gif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        $references = [];
+        $entered = '';
+        foreach (['flag', 'no_picture'] as $field) {
+            $reference = SomcpUpload::inviteFor((int) $employee->id, $createLanguage, $field);
+            $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+            $entered .= $invitation === null ? 'no deposit could be opened' : SomcpUpload::enter($invitation, 'data', $gif, $field . '.gif');
+            $references[$field] = $reference;
+        }
+        if ($entered !== '') {
+            $failures[] = 'somcp_create_language (a test language): the images were not deposited - ' . $entered;
+        } else {
+            [$result, $answer] = $currencyCall($createLanguage, [
+                'name' => 'Somcp test language',
+                'iso_code' => $testLangIso,
+                'language_code' => 'zz-zz',
+                'flag' => ['upload_ref' => $references['flag']],
+                'no_picture' => ['upload_ref' => $references['no_picture']],
+            ]);
+            $idTestLang = (int) ($answer['id_lang'] ?? 0);
+            if (($answer['created'] ?? null) !== true || ($answer['language']['iso_code'] ?? null) !== $testLangIso
+                || empty($answer['flag']['stored']) || empty($answer['no_picture']['stored'])) {
+                $failures[] = 'somcp_create_language (a test language): expected created true with both images stored - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_language (a test language)');
+                [$deleteResult, $deleted] = $currencyCall($deleteLanguage, ['id_lang' => $idTestLang]);
+                if (($deleted['deleted'] ?? null) !== true) {
+                    $failures[] = 'somcp_delete_language (the language somcp_create_language added): expected deleted true - ' . excerpt($deleteResult);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_delete_language (the language somcp_create_language added)');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_language: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = (int) Language::getIdByIso($testLangIso, true);
+        if ($left > 0) {
+            $previousContext = Shop::getContext();
+            Shop::setContext(Shop::CONTEXT_ALL);
+            (new Language($left))->delete();
+            Shop::setContext($previousContext, $previousContext === Shop::CONTEXT_ALL ? null : (int) $context->shop->id);
+        }
+    }
+}
+
+// The symbol of the default currency changed, then its default settings
+// restored (#365): the demo currencies keep the CLDR texts (modified 0), so
+// restoring them puts the shop back as it was installed. The symbol is given
+// in one language, which a shop with several languages needs for a text.
+if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault > 0) {
+    ++$calls;
+    $restored = false;
+    try {
+        $before = $currencyCall($getCurrency, ['id_currency' => $idDefault])[1];
+        $symbolCall = ['id_currency' => $idDefault, 'symbol' => 'X$',
+            'languages' => [(string) Language::getIsoById((int) $context->language->id)]];
+        [$result, $answer] = $currencyCall($updateCurrency, $symbolCall);
+        [$againResult, $again] = $currencyCall($updateCurrency, $symbolCall);
+        [$restoreResult, $restore] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'restore_defaults' => true]);
+        $restored = ($restore['changed'] ?? null) === true;
+        if (($answer['changed'] ?? null) !== true || ($answer['currency']['modified'] ?? null) !== true) {
+            $failures[] = 'somcp_update_currency (a symbol): expected changed true and modified true - ' . excerpt($result);
+        } elseif (($again['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_currency (the same symbol again): expected changed false - ' . excerpt($againResult);
+        } elseif (!$restored || ($restore['currency']['symbol'] ?? null) !== ($before['symbol'] ?? false)
+            || ($restore['currency']['modified'] ?? null) !== false) {
+            $failures[] = 'somcp_update_currency (restore_defaults): expected changed true and the symbol of before - ' . excerpt($restoreResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_currency (a symbol, then the default settings)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_currency (texts): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if (!$restored) {
+            try {
+                $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'restore_defaults' => true]);
+            } catch (Throwable $e) {
+                // The failure is already recorded above.
+            }
+        }
+    }
+}
+
+// A currency deleted (#366): the default currency is refused, a currency
+// created for the test is deleted, then the same call is refused as
+// unknown. The CI shop's own currencies are never deleted; the test
+// currency is removed from every table in finally, the soft-deleted row
+// included.
+$deleteCurrency = $registry->get('somcp_delete_currency');
+if ($deleteCurrency !== null && isset($currencyCall, $idDefault) && $idDefault > 0) {
+    ++$calls;
+    $testIso = 'ZZZ';
+    try {
+        [$defaultResult] = $currencyCall($deleteCurrency, ['id_currency' => $idDefault]);
+        $created = new Currency();
+        $created->iso_code = $testIso;
+        $created->conversion_rate = 1;
+        $created->precision = 2;
+        $created->active = true;
+        $names = [];
+        $symbols = [];
+        foreach (Language::getLanguages(false) as $lang) {
+            $names[(int) $lang['id_lang']] = 'Somcp test currency';
+            $symbols[(int) $lang['id_lang']] = 'Z';
+        }
+        $created->setLocalizedNames($names);
+        $created->setLocalizedSymbols($symbols);
+        $created->id_shop_list = [(int) $context->shop->id];
+        if (!$created->add()) {
+            throw new RuntimeException('the test currency could not be created');
+        }
+        $idTest = (int) $created->id;
+        [$result, $answer] = $currencyCall($deleteCurrency, ['id_currency' => $idTest]);
+        [$againResult] = $currencyCall($deleteCurrency, ['id_currency' => $idTest]);
+        if (empty($defaultResult['isError']) || strpos(excerpt($defaultResult), 'PrestaShop never deletes it') === false) {
+            $failures[] = 'somcp_delete_currency (the default currency): expected a refusal - ' . excerpt($defaultResult);
+        } elseif (($answer['deleted'] ?? null) !== true || ($answer['currency']['iso_code'] ?? null) !== $testIso) {
+            $failures[] = 'somcp_delete_currency (a test currency): expected deleted true - ' . excerpt($result);
+        } elseif (empty($againResult['isError']) || strpos(excerpt($againResult), 'no currency of this shop has the identifier ' . $idTest) === false) {
+            $failures[] = 'somcp_delete_currency (the same call again): expected a refusal as unknown - ' . excerpt($againResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_currency (a test currency)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $ids = array_map('intval', array_column(Db::getInstance()->executeS(
+            "SELECT `id_currency` FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($testIso) . "'"
+        ) ?: [], 'id_currency'));
+        if ($ids !== []) {
+            foreach (['currency', 'currency_lang', 'currency_shop', 'module_currency'] as $table) {
+                Db::getInstance()->delete($table, 'id_currency IN (' . implode(', ', $ids) . ')');
+            }
+        }
+    }
+}
+
+// A currency added (#367): an official currency the CI shop does not have,
+// given in lower case, is created with the names and symbols CLDR gives;
+// the same call again is refused as a currency the shop already has. The
+// CI shop is installed for France and its currencies are not known in
+// advance, so the test is skipped when it already has CHF; the row is
+// removed from every table in finally.
+$createCurrency = $registry->get('somcp_create_currency');
+$createIso = 'CHF';
+if ($createCurrency !== null && isset($currencyCall) && (int) Db::getInstance()->getValue(
+    "SELECT COUNT(*) FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($createIso) . "'"
+) === 0) {
+    ++$calls;
+    try {
+        [$result, $answer] = $currencyCall($createCurrency, ['iso_code' => 'chf', 'conversion_rate' => 0.95]);
+        [$againResult] = $currencyCall($createCurrency, ['iso_code' => 'chf', 'conversion_rate' => 0.95]);
+        if (($answer['created'] ?? null) !== true || ($answer['currency']['iso_code'] ?? null) !== $createIso
+            || (string) ($answer['currency']['name'] ?? '') === '') {
+            $failures[] = 'somcp_create_currency (CHF): expected created true with a name from CLDR - ' . excerpt($result);
+        } elseif (empty($againResult['isError'])
+            || strpos(excerpt($againResult), 'is already currency ' . (int) $answer['id_currency'] . ' of this shop') === false) {
+            $failures[] = 'somcp_create_currency (the same call again): expected a refusal as already a currency of the shop - ' . excerpt($againResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_currency (CHF)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $testIso = $createIso;
+        $ids = array_map('intval', array_column(Db::getInstance()->executeS(
+            "SELECT `id_currency` FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($testIso) . "'"
+        ) ?: [], 'id_currency'));
+        if ($ids !== []) {
+            foreach (['currency', 'currency_lang', 'currency_shop', 'module_currency'] as $table) {
+                Db::getInstance()->delete($table, 'id_currency IN (' . implode(', ', $ids) . ')');
+            }
+        }
+    }
+}
+
+// An alternative currency added (#373): ZZP is no ISO 4217 code (ZZ codes
+// are not assigned), checked first against CLDR so a future CLDR that knows
+// it is said rather than failed on. It is created with the merchant's name
+// and symbol and the 2 decimals of the form, then deleted with
+// somcp_delete_currency; the row is removed from every table in finally.
+$alternativeIso = 'ZZP';
+if ($createCurrency !== null && isset($currencyCall) && (int) Db::getInstance()->getValue(
+    "SELECT COUNT(*) FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($alternativeIso) . "'"
+) === 0) {
+    ++$calls;
+    try {
+        $repository = SomcpBackOffice::cldrLocaleRepository();
+        $cldr = $repository !== null
+            ? SomcpToolCreateCurrency::cldrLocale($repository, (int) Configuration::get('PS_LANG_DEFAULT'))
+            : null;
+        if ($cldr === null) {
+            $failures[] = 'somcp_create_currency (alternative ZZP): CLDR could not be read on this shop';
+        } elseif ($cldr->getCurrency($alternativeIso) !== null) {
+            $failures[] = 'somcp_create_currency (alternative ZZP): CLDR now knows ZZP - pick another code for the test';
+        } else {
+            [$result, $answer] = $currencyCall($createCurrency, ['iso_code' => $alternativeIso, 'alternative' => true,
+                'conversion_rate' => 10, 'name' => 'Points', 'symbol' => 'P',
+                'languages' => [(string) Language::getIsoById((int) $context->language->id)]]);
+            $deleted = [];
+            if (($answer['created'] ?? null) === true && $deleteCurrency !== null) {
+                $deleted = $currencyCall($deleteCurrency, ['id_currency' => (int) $answer['id_currency']])[1];
+            }
+            if (($answer['created'] ?? null) !== true || ($answer['currency']['alternative'] ?? null) !== true
+                || ($answer['currency']['precision'] ?? null) !== 2 || ($answer['currency']['name'] ?? null) !== 'Points') {
+                $failures[] = 'somcp_create_currency (alternative ZZP): expected created true, alternative true and 2 decimals - ' . excerpt($result);
+            } elseif ($deleteCurrency !== null && ($deleted['deleted'] ?? null) !== true) {
+                $failures[] = 'somcp_create_currency (alternative ZZP): somcp_delete_currency did not delete it';
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_currency (alternative ZZP)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_currency (alternative ZZP): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $ids = array_map('intval', array_column(Db::getInstance()->executeS(
+            "SELECT `id_currency` FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($alternativeIso) . "'"
+        ) ?: [], 'id_currency'));
+        if ($ids !== []) {
+            foreach (['currency', 'currency_lang', 'currency_shop', 'module_currency'] as $table) {
+                Db::getInstance()->delete($table, 'id_currency IN (' . implode(', ', $ids) . ')');
+            }
+        }
+    }
+}
+
+// The address format of a country changed, given back, then the same call
+// again (#361): the JSON scenario cannot hold the lines France stores, which
+// the localization pack of the CI shop decides. France is read first and its
+// own lines are written back at the end, so the next tools find it as it was.
+$updateCountry = $registry->get('somcp_update_country');
+$getCountry = $registry->get('somcp_get_country');
+$idFrance = (int) Country::getByIso('FR');
+if ($updateCountry !== null && $getCountry !== null && $idFrance > 0) {
+    $calls += 4;
+    $countryContext = static function (SomcpTool $tool) use ($context, $employee): array {
+        return [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => [],
+        ];
+    };
+    $countryAnswer = static function (array $result): array {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $answer = json_decode(trim($text), true);
+
+        return is_array($answer) && empty($result['isError']) ? $answer : [];
+    };
+    $read = $countryAnswer($getCountry->call(['id_country' => $idFrance], $countryContext($getCountry)));
+    $lines = is_array($read['address_format'] ?? null) ? $read['address_format'] : [];
+    try {
+        if ($lines === []) {
+            $failures[] = 'somcp_get_country (France): expected the stored address format';
+        } else {
+            foreach ([
+                'the dni line added' => [array_merge($lines, ['dni']), true],
+                'the stored lines given back' => [$lines, true],
+                'the same call again' => [$lines, false],
+            ] as $label => [$format, $expected]) {
+                $result = $updateCountry->call(['id_country' => $idFrance, 'address_format' => $format], $countryContext($updateCountry));
+                $answer = $countryAnswer($result);
+                $stored = $answer['country']['address_format'] ?? null;
+                if (($answer['changed'] ?? null) !== $expected || $stored !== $format) {
+                    $failures[] = 'somcp_update_country (' . $label . '): expected changed ' . ($expected ? 'true' : 'false') . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country (' . $label . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_country (address format): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // France keeps its own lines whatever failed above.
+        if ($lines !== []) {
+            $addressFormat = new AddressFormat($idFrance);
+            if (Validate::isLoadedObject($addressFormat) && $addressFormat->format !== implode("\n", $lines)) {
+                $addressFormat->format = implode("\n", $lines);
+                $addressFormat->save();
+            }
+        }
+    }
+}
+
+// A state deleted, then deleted again (#358): the JSON scenario cannot create
+// the state it deletes, and every demo state is used by an address or a tax
+// rule row, or is one the next tools may read. Made as the check of
+// somcp_create_state makes it. Before that, one tax rule row is given to it
+// (#362), since the localization pack of the CI shop gives none to a state
+// of a country that has states: moving it to another country and deleting
+// it must both be refused while the row is there.
+$deleteState = $registry->get('somcp_delete_state');
+if ($deleteState !== null) {
+    $calls += 2;
+    $state = new State();
+    $state->id_country = (int) Country::getByIso('IT');
+    $state->id_zone = 1;
+    $state->name = 'somcp state';
+    $state->iso_code = 'ZZ';
+    $state->active = true;
+    $idState = $state->add() ? (int) $state->id : 0;
+    $stateContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $deleteState->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $idTaxGroup = (int) Db::getInstance()->getValue(
+        'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `deleted` = 0 ORDER BY `id_tax_rules_group` ASC'
+    );
+    try {
+        // Inserted as AdminTaxRulesGroupController does, there being no
+        // object that writes one row alone without the checks under test.
+        $taxRow = $idState > 0 && $idTaxGroup > 0 && Db::getInstance()->insert('tax_rule', [
+            'id_tax_rules_group' => $idTaxGroup,
+            'id_country' => (int) $state->id_country,
+            'id_state' => $idState,
+            'zipcode_from' => '0',
+            'zipcode_to' => '0',
+            'id_tax' => 0,
+            'behavior' => 0,
+            'description' => '',
+        ]);
+        $usedChecks = [
+            'a state a tax rule row uses' => [$deleteState, ['id_state' => $idState], ['Nothing was deleted.',
+                'is used by 1 tax rule rows (tax rules ' . $idTaxGroup . ') - delete them first with somcp_delete_country_rule']],
+        ];
+        // To the United States rather than France: a country without states
+        // is refused before the rows are counted.
+        $updateUsedState = $registry->get('somcp_update_state');
+        if ($updateUsedState !== null) {
+            $usedChecks = [
+                'a state a tax rule row uses, moved to another country' => [$updateUsedState, ['id_state' => $idState, 'country' => 'US'],
+                    ['0 addresses and 1 tax rule rows - a state of another country would no longer match them']],
+            ] + $usedChecks;
+        }
+        $calls += count($usedChecks);
+        foreach ($usedChecks as $label => [$tool, $arguments, $needles]) {
+            $result = $tool->call($arguments, ['scopes' => implode(' ', $tool->getRequiredScopes())] + $stateContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            $name = $tool === $deleteState ? 'somcp_delete_state' : 'somcp_update_state';
+            if (!$taxRow || empty($result['isError']) || $missing !== []) {
+                $failures[] = $name . ' (' . $label . '): expected ' . implode(', ', $missing ?: [$taxRow ? 'an error' : 'a tax rule row to test with']) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', $name . ' (' . $label . ', refused)');
+            }
+        }
+        Db::getInstance()->delete('tax_rule', '`id_state` = ' . (int) $idState);
+
+        foreach ([
+            'a state no address uses' => [false, ['"deleted": true', '"iso_code": "ZZ"']],
+            'the same state again' => [true, ['Nothing was deleted.', 'no state of this shop has the identifier']],
+        ] as $label => [$error, $needles]) {
+            $result = $deleteState->call(['id_state' => $idState], $stateContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            if ($idState === 0 || !empty($result['isError']) !== $error || $missing !== []) {
+                $failures[] = 'somcp_delete_state (' . $label . '): expected ' . implode(', ', $missing ?: [$error ? 'an error' : 'no error']) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_state (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_state: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idState > 0) {
+            Db::getInstance()->delete('tax_rule', '`id_state` = ' . (int) $idState);
+            $left = new State($idState);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
+// A country enabled, the same call again, then put back (#360): the JSON
+// scenario only covers the refusals, since a change it made would stay for
+// the tools read after it. Afghanistan is disabled on a fresh install, in a
+// zone no demo carrier serves and with no payment module offered to it, so
+// both warnings are due; it is put back as it was whatever happens.
+$updateCountry = $registry->get('somcp_update_country');
+$idAfghanistan = (int) Country::getByIso('AF');
+if ($updateCountry !== null && $idAfghanistan > 0) {
+    $calls += 3;
+    $before = new Country($idAfghanistan);
+    $wasActive = (bool) $before->active;
+    $wasLabel = (bool) $before->display_tax_label;
+    $countryContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $updateCountry->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $change = ['id_country' => $idAfghanistan, 'active' => true, 'display_tax_label' => false];
+    try {
+        foreach ([
+            'a country enabled' => [$change, ['"changed": true', '"field": "active"', '"field": "display_tax_label"', 'No payment module is offered to ', 'No carrier serves zone ']],
+            'the same call again' => [$change, ['"changed": false', 'The country already holds every value given.']],
+            'put back' => [['id_country' => $idAfghanistan, 'active' => $wasActive, 'display_tax_label' => $wasLabel], ['"changed": true']],
+        ] as $label => [$arguments, $needles]) {
+            $result = $updateCountry->call($arguments, $countryContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            // Active before the tax label, the order of the form.
+            if ($label === 'a country enabled' && strpos($text, '"field": "active"') > strpos($text, '"field": "display_tax_label"')) {
+                $missing[] = 'active before display_tax_label in changes';
+            }
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_update_country (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_country (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_country: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = new Country($idAfghanistan);
+        if ((bool) $left->active !== $wasActive || (bool) $left->display_tax_label !== $wasLabel) {
+            $left->active = $wasActive;
+            $left->display_tax_label = $wasLabel;
+            $left->update();
+        }
+    }
+}
+
 // A carrier read, given back, changed and put back (#320): the JSON scenario
 // cannot give a read back nor compare two reads. Demo carrier 3 is used by no
 // order, so it is changed in place and keeps its identifier; no call is made
@@ -1428,6 +2419,294 @@ if ($getTaxOptions !== null && $updateTaxOptions !== null) {
         }
         foreach ($ecotaxShops as $row) {
             Db::getInstance()->update('product_shop', ['ecotax' => (float) $row['ecotax']], '`id_product` = ' . (int) $row['id_product'] . ' AND `id_shop` = ' . (int) $row['id_shop']);
+        }
+    }
+}
+
+// The country options (#375) switched on, the same call again, then put
+// back: a JSON scenario cannot put the option back whatever happens, and the
+// scenarios after it read the option of a fresh shop.
+$updateCountryOptions = $registry->get('somcp_update_country_options');
+if ($updateCountryOptions !== null) {
+    $idShopCountry = (int) $context->shop->id;
+    $idGroupCountry = (int) Shop::getGroupFromShop($idShopCountry);
+    $restrictWas = Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES', null, $idGroupCountry, $idShopCountry);
+    $calls += 2;
+    try {
+        $steps = [
+            'the restriction switched on' => ['"changed": true', '"field": "restrict_to_carriers"', '"new": true'],
+            'the same call again, nothing written' => ['"changed": false', 'Nothing was written.'],
+        ];
+        foreach ($steps as $why => $needles) {
+            $result = $updateCountryOptions->call(['restrict_to_carriers' => true], [
+                'id_shop' => $idShopCountry,
+                'id_employee' => (int) $employee->id,
+                'id_lang' => (int) $context->language->id,
+                'id_client' => 0,
+                'scopes' => implode(' ', $updateCountryOptions->getRequiredScopes()),
+                'responses' => [],
+                'resumed' => [],
+                'capabilities' => [],
+                'arguments' => ['restrict_to_carriers' => true],
+            ]);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            });
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_update_country_options (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_country_options (' . $why . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_country_options: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the option of a
+        // fresh shop, false when it was never stored.
+        Configuration::updateValue('PS_RESTRICT_DELIVERED_COUNTRIES', (int) $restrictWas, false, $idGroupCountry, $idShopCountry);
+    }
+}
+
+// The localization settings (#383): the read given back whole writes
+// nothing, then the time zone is changed and put back. A JSON scenario cannot
+// give back what the read answered, nor put the time zone back whatever
+// happens, and the tools after this one date things in it.
+$getLocalization = $registry->get('somcp_get_localization_settings');
+$updateLocalization = $registry->get('somcp_update_localization_settings');
+if ($getLocalization !== null && $updateLocalization !== null) {
+    $idShopLocal = (int) $context->shop->id;
+    $idGroupLocal = (int) Shop::getGroupFromShop($idShopLocal);
+    $timezoneWas = Configuration::get('PS_TIMEZONE', null, $idGroupLocal, $idShopLocal);
+    $localContext = static function (SomcpTool $tool, array $arguments) use ($idShopLocal, $employee, $context): array {
+        return [
+            'id_shop' => $idShopLocal,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getLocalization->call([], $localContext($getLocalization, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !isset($decoded['localization']) || !is_array($decoded['localization'])) {
+            $failures[] = 'somcp_update_localization_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $whole = $decoded['localization'] + ['language' => $decoded['language'] ?? ''];
+            $timezone = $decoded['localization']['timezone'] === 'Europe/Paris' ? 'Europe/Berlin' : 'Europe/Paris';
+            $steps = [
+                ['the read given back whole, nothing written', $whole, ['"changed": false', 'Nothing was written.']],
+                ['the time zone changed', ['timezone' => $timezone], ['"changed": true', '"field": "timezone"', '"new": "' . $timezone . '"']],
+                ['the time zone put back', ['timezone' => $decoded['localization']['timezone']], ['"changed": true', '"field": "timezone"']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateLocalization->call($arguments, $localContext($updateLocalization, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_localization_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_localization_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_localization_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the time zone of a
+        // fresh shop; a key it never had stays unwritten.
+        if ($timezoneWas !== false) {
+            Configuration::updateValue('PS_TIMEZONE', $timezoneWas, false, $idGroupLocal, $idShopLocal);
+        }
+    }
+}
+
+// The localization pack (#389): the units of the pack of the default country
+// are imported, then the units read before are put back. A JSON scenario
+// cannot put them back whatever happens, and an import of states or taxes
+// would change the shop for good, so only the units are imported.
+$importPack = $registry->get('somcp_import_localization_pack');
+if ($importPack !== null) {
+    $idShopPack = (int) $context->shop->id;
+    $unitKeys = ['PS_WEIGHT_UNIT', 'PS_VOLUME_UNIT', 'PS_DIMENSION_UNIT', 'PS_BASE_DISTANCE_UNIT', 'PS_DISTANCE_UNIT'];
+    // Read as the core writes them: _installUnits() saves every key for the
+    // whole installation.
+    $unitsWere = [];
+    foreach ($unitKeys as $key) {
+        $unitsWere[$key] = Configuration::get($key, null, 0, 0);
+    }
+    $packIso = Tools::strtolower((string) Country::getIsoById((int) Configuration::get('PS_COUNTRY_DEFAULT')));
+    $arguments = ['country' => $packIso, 'content' => ['units']];
+    ++$calls;
+    try {
+        $result = $importPack->call($arguments, [
+            'id_shop' => $idShopPack,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $importPack->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = (string) ($result['content'][0]['text'] ?? '');
+        if (!empty($result['isError']) || strpos($text, '"changed":') === false || strpos($text, '"kept":') === false) {
+            $failures[] = 'somcp_import_localization_pack (the units of ' . $packIso . '): expected ok - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_import_localization_pack (the units of ' . $packIso . ')');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_import_localization_pack: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the units of a
+        // fresh shop; a key it never had stays unwritten.
+        foreach ($unitsWere as $key => $value) {
+            if ($value !== false) {
+                Configuration::updateValue($key, $value);
+            }
+        }
+    }
+}
+
+// The general settings (#386): the read given back whole writes nothing,
+// then Display suppliers is turned over and put back. A JSON scenario cannot
+// give back what the read answered, nor put the switch back whatever
+// happens, and the storefront tests after this one read that page.
+$getGeneral = $registry->get('somcp_get_general_settings');
+$updateGeneral = $registry->get('somcp_update_general_settings');
+if ($getGeneral !== null && $updateGeneral !== null) {
+    $idShopGeneral = (int) $context->shop->id;
+    $idGroupGeneral = (int) Shop::getGroupFromShop($idShopGeneral);
+    $suppliersWas = Configuration::get('PS_DISPLAY_SUPPLIERS', null, $idGroupGeneral, $idShopGeneral);
+    $generalContext = static function (SomcpTool $tool, array $arguments) use ($idShopGeneral, $employee, $context): array {
+        return [
+            'id_shop' => $idShopGeneral,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getGeneral->call([], $generalContext($getGeneral, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !array_key_exists('display_suppliers', $decoded)) {
+            $failures[] = 'somcp_update_general_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $suppliers = (bool) $decoded['display_suppliers'];
+            $steps = [
+                ['the read given back whole, nothing written', $decoded, ['"changed": false', 'Nothing was written.']],
+                ['Display suppliers turned over', ['display_suppliers' => !$suppliers], ['"changed": true', '"field": "display_suppliers"', '"new": ' . ($suppliers ? 'false' : 'true')]],
+                ['Display suppliers put back', ['display_suppliers' => $suppliers], ['"changed": true', '"field": "display_suppliers"', '"new": ' . ($suppliers ? 'true' : 'false')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateGeneral->call($arguments, $generalContext($updateGeneral, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_general_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_general_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_general_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the switch of a
+        // fresh shop; a key it never had stays unwritten.
+        if ($suppliersWas !== false) {
+            Configuration::updateValue('PS_DISPLAY_SUPPLIERS', $suppliersWas, false, $idGroupGeneral, $idShopGeneral);
+        }
+    }
+}
+
+// The maintenance settings (#388): the read given back whole writes nothing,
+// then the text of the default language is changed and put back. Enable
+// store is never turned off here: the storefront tests after this one read
+// the shop as a visitor.
+$getMaintenance = $registry->get('somcp_get_maintenance_settings');
+$updateMaintenance = $registry->get('somcp_update_maintenance_settings');
+if ($getMaintenance !== null && $updateMaintenance !== null) {
+    $idShopMaintenance = (int) $context->shop->id;
+    $idGroupMaintenance = (int) Shop::getGroupFromShop($idShopMaintenance);
+    $idLangMaintenance = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShopMaintenance);
+    $isoMaintenance = Tools::strtolower((string) Language::getIsoById($idLangMaintenance));
+    $textWas = Configuration::get('PS_MAINTENANCE_TEXT', $idLangMaintenance, $idGroupMaintenance, $idShopMaintenance);
+    $maintenanceContext = static function (SomcpTool $tool, array $arguments) use ($idShopMaintenance, $employee, $context): array {
+        return [
+            'id_shop' => $idShopMaintenance,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getMaintenance->call([], $maintenanceContext($getMaintenance, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !isset($decoded['maintenance_text'][$isoMaintenance])) {
+            $failures[] = 'somcp_update_maintenance_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $original = (string) $decoded['maintenance_text'][$isoMaintenance];
+            $steps = [
+                ['the read given back whole, nothing written', $decoded, ['"changed": false', 'Nothing was written.']],
+                ['the text of the default language changed', ['languages' => [$isoMaintenance], 'maintenance_text' => 'Back soon, the shop tests are running.'], ['"changed": true', '"field": "maintenance_text (' . $isoMaintenance . ')"', 'Back soon, the shop tests are running.']],
+                ['the text put back', ['languages' => [$isoMaintenance], 'maintenance_text' => [$isoMaintenance => $original]], ['"changed": true', '"field": "maintenance_text (' . $isoMaintenance . ')"']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateMaintenance->call($arguments, $maintenanceContext($updateMaintenance, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_maintenance_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_maintenance_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_maintenance_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the text of a
+        // fresh shop; a text it never had stays unwritten.
+        if ($textWas !== false) {
+            Configuration::updateValue('PS_MAINTENANCE_TEXT', [$idLangMaintenance => (string) $textWas], true, $idGroupMaintenance, $idShopMaintenance);
         }
     }
 }

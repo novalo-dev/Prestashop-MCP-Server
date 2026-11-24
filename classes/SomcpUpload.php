@@ -910,7 +910,7 @@ class SomcpUpload
             return 'the host does not resolve';
         }
         foreach ($addresses as $address) {
-            if (!self::isPublic($address)) {
+            if (!SomcpHttp::isPublicAddress($address)) {
                 return 'the host resolves to a private, local or reserved address';
             }
         }
@@ -1000,53 +1000,6 @@ class SomcpUpload
         }
 
         return array_values(array_unique($addresses));
-    }
-
-    /**
-     * Whether an address is on the public internet.
-     *
-     * PHP's own flags cover the private and reserved ranges; the list below
-     * adds what they leave out and what can still lead inside - shared address
-     * space, benchmarking, documentation, multicast, and IPv6 forms that carry
-     * an IPv4 address.
-     *
-     * @param string $address
-     *
-     * @return bool
-     */
-    private static function isPublic(string $address): bool
-    {
-        $packed = @inet_pton($address);
-        if ($packed === false) {
-            return false;
-        }
-        // ::ffff:a.b.c.d and the NAT64 prefix both end in an IPv4 address,
-        // which is the one actually reached.
-        if (strlen($packed) === 16
-            && (strncmp($packed, str_repeat("\0", 10) . "\xff\xff", 12) === 0 || strncmp($packed, "\x00\x64\xff\x9b" . str_repeat("\0", 8), 12) === 0)) {
-            return self::isPublic((string) inet_ntop(substr($packed, 12)));
-        }
-        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            return false;
-        }
-
-        $blocked = strlen($packed) === 4
-            ? ['0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/3']
-            : ['::/8', '100::/64', '2001:db8::/32', 'fc00::/7', 'fe80::/10', 'ff00::/8'];
-        foreach ($blocked as $range) {
-            [$network, $bits] = explode('/', $range);
-            $base = (string) inet_pton($network);
-            $bytes = intdiv((int) $bits, 8);
-            $rest = (int) $bits % 8;
-            if (strncmp($packed, $base, $bytes) !== 0) {
-                continue;
-            }
-            if ($rest === 0 || ((ord($packed[$bytes]) ^ ord($base[$bytes])) & (0xFF << (8 - $rest)) & 0xFF) === 0) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

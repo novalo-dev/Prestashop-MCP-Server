@@ -332,9 +332,20 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_carrier` | ● Read a carrier | Carriers › view |
 | `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
 | `somcp_delete_carrier` | ✎ Delete a carrier | Carriers › delete |
+| `somcp_get_shipping_preferences` | ● Read the shipping preferences | Shipping preferences › view |
 | `somcp_list_zones` | ● List zones | Zones › view |
+| `somcp_create_zone` | ✎ Create a zone | Zones › add |
+| `somcp_update_zone` | ✎ Change a zone | Zones › edit |
+| `somcp_delete_zone` | ✎ Delete a zone | Zones › delete |
 | `somcp_list_countries` | ● List countries | Countries › view |
+| `somcp_get_country` | ● Read a country | Countries › view |
+| `somcp_update_country` | ✎ Change a country | Countries › edit |
+| `somcp_get_country_options` | ● Read the country options | Countries › options |
+| `somcp_update_country_options` | ✎ Change the country options | Countries › options |
 | `somcp_list_states` | ● List states | States › view |
+| `somcp_create_state` | ✎ Create a state | States › add |
+| `somcp_update_state` | ✎ Change a state | States › edit |
+| `somcp_delete_state` | ✎ Delete a state | States › delete |
 | `somcp_set_order_status` | ✎ Change the status of an order | Orders › edit |
 | `somcp_set_order_tracking` | ✎ Set the tracking number of an order | Orders › edit |
 | `somcp_add_order_message` | ✎ Add a message to an order | Orders › edit |
@@ -449,7 +460,23 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_tax_rule` | ● Get a tax rule | Tax Rules › view |
 | `somcp_list_taxes` | ● List taxes | Taxes › view |
 | `somcp_list_languages` | ● List languages | Languages › view |
+| `somcp_create_language` | ✎ Add a language | Languages › add |
+| `somcp_update_language` | ✎ Change a language | Languages › edit |
+| `somcp_delete_language` | ✎ Delete a language | Languages › delete |
+| `somcp_install_language_pack` | ✎ Add or update a language from PrestaShop | Translations › add / update a language |
+| `somcp_get_localization_settings` | ● Read the localization settings | Localization › view |
+| `somcp_update_localization_settings` | ✎ Change the localization settings | Localization › edit |
+| `somcp_import_localization_pack` | ✎ Import a localization pack | Localization › edit |
+| `somcp_get_general_settings` | ● Read the general settings | General › view |
+| `somcp_update_general_settings` | ✎ Change the general settings | General › edit |
+| `somcp_get_maintenance_settings` | ● Read the maintenance settings | Maintenance › view |
+| `somcp_update_maintenance_settings` | ✎ Change the maintenance settings | Maintenance › edit |
 | `somcp_list_currencies` | ● List currencies | Currencies › view |
+| `somcp_get_currency` | ● Read a currency | Currencies › view |
+| `somcp_create_currency` | ✎ Add a currency | Currencies › add |
+| `somcp_update_currency` | ✎ Change a currency | Currencies › edit |
+| `somcp_delete_currency` | ✎ Delete a currency | Currencies › delete |
+| `somcp_update_exchange_rates` | ✎ Update the exchange rates | Currencies › update exchange rates |
 | `somcp_create_tax` | ✎ Create a tax | Taxes › add |
 | `somcp_update_tax` | ✎ Change a tax | Taxes › edit |
 | `somcp_delete_tax` | ✎ Delete a tax | Taxes › delete |

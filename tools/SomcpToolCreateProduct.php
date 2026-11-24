@@ -62,7 +62,11 @@ class SomcpToolCreateProduct
     /** @var int Stricter than PrestaShop's 64, as the specification asks. */
     protected const MAX_REFERENCE = 50;
 
-    /** @var int Summary bounds, counted on the visible text. */
+    /**
+     * @var int The summary length that reads best in a product list, counted on
+     *          the visible text. Advice only, given in seo_warnings: the limit is
+     *          the shop's own Max size of short description, as in the back office.
+     */
     protected const SUMMARY_MIN = 100;
     protected const SUMMARY_MAX = 200;
 
@@ -197,7 +201,7 @@ class SomcpToolCreateProduct
                                 . 'virtual_file.',
                         ],
                         'name' => $text('Merchant. Required, 128 characters at most.'),
-                        'description_short' => $text('Assistant. The summary, 100 to 200 characters.'),
+                        'description_short' => $text("Assistant. The summary, at most the shop's Max size of short description; 100 to 200 characters reads best."),
                         'description' => $text('Assistant. The description, HTML allowed.'),
                     ],
                     'required' => ['name'],
@@ -767,7 +771,7 @@ class SomcpToolCreateProduct
             'texts' => [],
         ];
 
-        self::basics($groups['basics'], $languages, $probe, $plan, $errors);
+        self::basics($groups['basics'], $languages, $probe, $idShop, $plan, $errors);
         self::categorise($groups['categories'], $shop, $plan, $errors);
         self::brand($groups['brand'], $plan, $errors);
         $plan['related_products'] = self::relatedProducts($arguments['related_products'] ?? null, $idShop, $errors);
@@ -874,13 +878,14 @@ class SomcpToolCreateProduct
      * @param array<string, mixed> $group
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
      * @param Product $probe
+     * @param int $idShop
      * @param array<string, mixed> $plan
      * @param array<int, string> $errors
      * @param bool $nameRequired false when changing a product, whose name is already there
      *
      * @return void
      */
-    protected static function basics(array $group, array $languages, Product $probe, array &$plan, array &$errors, bool $nameRequired = true): void
+    protected static function basics(array $group, array $languages, Product $probe, int $idShop, array &$plan, array &$errors, bool $nameRequired = true): void
     {
         // Given, a name is never empty, whether the product is new or not.
         $names = self::texts($group, 'name', 'basics.name', $languages, $errors, $nameRequired || array_key_exists('name', $group));
@@ -900,12 +905,14 @@ class SomcpToolCreateProduct
 
         $summaries = self::texts($group, 'description_short', 'basics.description_short', $languages, $errors);
         if ($summaries !== null) {
+            $limit = self::summaryLimit($idShop);
             foreach ($summaries as $idLang => $html) {
                 $html = self::html($html, 'basics.description_short (' . $languages['filled'][$idLang] . ')', $errors);
                 $length = self::visibleLength($html);
-                if ($length < self::SUMMARY_MIN || $length > self::SUMMARY_MAX) {
-                    $errors[] = 'basics.description_short (' . $languages['filled'][$idLang] . '): ' . self::SUMMARY_MIN
-                        . ' to ' . self::SUMMARY_MAX . ' characters of visible text, ' . $length . ' given';
+                if ($length > $limit) {
+                    $errors[] = 'basics.description_short (' . $languages['filled'][$idLang] . '): ' . $limit
+                        . ' characters of visible text at most (Max size of short description, Shop Parameters > Product Settings), '
+                        . $length . ' given';
                 } elseif (($bytes = SomcpTool::overTextColumn($probe, 'description_short', $html)) !== null) {
                     // The visible text is held short, not its markup: on 8.0.1
                     // the column would cut a heavily styled summary without a
@@ -3203,6 +3210,24 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * The longest summary the shop accepts, as its product page counts it.
+     *
+     * The back office refuses a summary past Max size of short description and
+     * falls back on its own default when the setting is empty, so a summary it
+     * would save is never refused here.
+     *
+     * @param int $idShop
+     *
+     * @return int
+     */
+    protected static function summaryLimit(int $idShop): int
+    {
+        $limit = (int) Configuration::get('PS_PRODUCT_SHORT_DESC_LIMIT', null, null, $idShop);
+
+        return $limit > 0 ? $limit : PrestaShop\PrestaShop\Core\Domain\Product\ProductSettings::MAX_DESCRIPTION_SHORT_LENGTH;
+    }
+
+    /**
      * What the merchant should know about the SEO of each language filled.
      *
      * @param Product $product
@@ -3229,6 +3254,15 @@ class SomcpToolCreateProduct
                     ? 'no meta_description: search engines pick a passage of the page'
                     : SomcpTool::metaLengthAdvice('meta_description', self::visibleLength($description), SomcpTool::metaDescriptionRecommended()),
             ];
+            if (isset($plan['texts']['description_short'][$idLang])) {
+                // Advice only: past the shop's limit the summary is refused
+                // earlier, between 100 and 200 it reads best in a list.
+                $length = self::visibleLength((string) $plan['texts']['description_short'][$idLang]);
+                if ($length < self::SUMMARY_MIN || $length > self::SUMMARY_MAX) {
+                    $lines[] = 'description_short is ' . $length . ' characters: ' . self::SUMMARY_MIN . ' to '
+                        . self::SUMMARY_MAX . ' reads best in a product list';
+                }
+            }
             foreach ($lines as $line) {
                 if ($line !== null) {
                     $list[] = $line;
@@ -3528,13 +3562,16 @@ class SomcpToolCreateProduct
     /**
      * HTML as the back office cleans it, refused when still unsafe.
      *
+     * Public so a tool that saves another HTML text of the shop, the
+     * maintenance text for one, cleans it by this very rule.
+     *
      * @param string $html
      * @param string $path
      * @param array<int, string> $errors
      *
      * @return string
      */
-    protected static function html(string $html, string $path, array &$errors): string
+    public static function html(string $html, string $path, array &$errors): string
     {
         $html = (string) Tools::purifyHTML(trim($html));
         if (!Validate::isCleanHtml($html, (bool) Configuration::get('PS_ALLOW_HTML_IFRAME'))) {

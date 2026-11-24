@@ -241,6 +241,24 @@ shop had no country with an empty code, as if a country were missing. It is now
 told to give an ISO code of 2 letters, and a state code given the wrong way is
 refused the same way instead of being ignored, which listed every state.
 
+
+### Security
+
+**Stricter handling of authorization codes and refresh tokens.** A code and
+a rotated refresh token are now marked used in the same step that checks
+them, and signing out with a refresh token now also ends the access token
+issued with it.
+
+**One check of a public address for every request the shop sends.** The
+addresses a fetch made by the module may reach, and the checks of whether
+the shop itself is reachable, now all use the same, stricter definition of
+a public address.
+
+**Sign-in attempts on the authorization page are counted before they are
+checked.** The limits on sign-ins and on e-mailed codes per address and per
+account, and the single use of an anti-robot check, now hold however the
+attempts arrive. A successful sign-in still does not count against them.
+
 ## 2.0.4 - 2026-11-22
 
 ### Added

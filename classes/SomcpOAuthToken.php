@@ -93,16 +93,7 @@ class SomcpOAuthToken
         }
 
         if (!empty($row['used_at'])) {
-            self::revokeFamily((string) $row['id_family']);
-            SomcpLogger::log(
-                'code_replayed',
-                SomcpLogger::OUTCOME_FAILURE,
-                'authorization code presented twice, grant revoked',
-                '',
-                (int) $row['id_employee']
-            );
-
-            return ['row' => null, 'error' => 'invalid_grant'];
+            return self::codeReplayed($row);
         }
 
         if (strtotime((string) $row['expires_at']) < time()) {
@@ -116,13 +107,42 @@ class SomcpOAuthToken
             return ['row' => null, 'error' => 'invalid_grant'];
         }
 
-        Db::getInstance()->update(
-            'somcp_oauth_code',
-            ['used_at' => pSQL(date('Y-m-d H:i:s'))],
-            '`id_code` = ' . (int) $row['id_code']
+        // Claimed in the statement that checks it: two requests carrying the
+        // same code at the same time would otherwise both read it unused, and
+        // neither would be seen as the second one.
+        $db = Db::getInstance();
+        $db->execute(
+            'UPDATE `' . _DB_PREFIX_ . "somcp_oauth_code`
+             SET `used_at` = '" . pSQL(date('Y-m-d H:i:s')) . "'
+             WHERE `id_code` = " . (int) $row['id_code'] . ' AND `used_at` IS NULL'
         );
+        if ((int) $db->Affected_Rows() !== 1) {
+            return self::codeReplayed($row);
+        }
 
         return ['row' => $row, 'error' => ''];
+    }
+
+    /**
+     * A code presented a second time: either a replay or a stolen code the
+     * thief got to first, and OAuth 2.1 asks to revoke what was issued from it.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array{row:null, error:string}
+     */
+    private static function codeReplayed(array $row): array
+    {
+        self::revokeFamily((string) $row['id_family']);
+        SomcpLogger::log(
+            'code_replayed',
+            SomcpLogger::OUTCOME_FAILURE,
+            'authorization code presented twice, grant revoked',
+            '',
+            (int) $row['id_employee']
+        );
+
+        return ['row' => null, 'error' => 'invalid_grant'];
     }
 
     /**
@@ -214,18 +234,25 @@ class SomcpOAuthToken
         }
 
         if (!empty($row['used_at'])) {
-            // Rotated already: whoever presents it now is one step behind the
-            // legitimate client, which is what a stolen token looks like.
-            self::revokeFamily((string) $row['id_family']);
-            SomcpLogger::log(
-                'refresh_reused',
-                SomcpLogger::OUTCOME_FAILURE,
-                'rotated refresh token presented again, grant revoked',
-                '',
-                (int) $row['id_employee']
-            );
+            return self::refreshReused($row);
+        }
 
-            return ['body' => null, 'error' => 'invalid_grant'];
+        $db = Db::getInstance();
+        $rotation = SomcpConfig::isOn(SomcpConfig::REFRESH_ROTATION);
+        if ($rotation) {
+            // Claimed before a new pair exists, in the statement that checks
+            // it: two requests carrying the same token at the same time would
+            // otherwise both be answered, each with a family of its own to
+            // keep, and the second presentation would never be noticed.
+            $db->execute(
+                'UPDATE `' . _DB_PREFIX_ . "somcp_oauth_refresh_token`
+                 SET `used_at` = '" . pSQL(date('Y-m-d H:i:s')) . "'
+                 WHERE `id_refresh_token` = " . (int) $row['id_refresh_token'] . '
+                   AND `used_at` IS NULL AND `revoked_at` IS NULL'
+            );
+            if ((int) $db->Affected_Rows() !== 1) {
+                return self::refreshReused($row);
+            }
         }
 
         $body = self::issuePair(
@@ -236,28 +263,45 @@ class SomcpOAuthToken
             (string) $row['id_family']
         );
 
-        Db::getInstance()->update('somcp_oauth_refresh_token', [
-            'used_at' => pSQL(date('Y-m-d H:i:s')),
-            'rotated_to' => pSQL(SomcpRandom::hash((string) $body['refresh_token'])),
-        ], '`id_refresh_token` = ' . (int) $row['id_refresh_token']);
-
-        if (!SomcpConfig::isOn(SomcpConfig::REFRESH_ROTATION)) {
-            // Rotation off: the client keeps using the token it already has,
-            // so the new one is dropped from the response rather than leaving
-            // two live tokens behind.
-            Db::getInstance()->update(
+        if ($rotation) {
+            $db->update(
                 'somcp_oauth_refresh_token',
-                [
-                    'used_at' => ['type' => 'sql', 'value' => 'NULL'],
-                    'rotated_to' => '',
-                ],
+                ['rotated_to' => pSQL(SomcpRandom::hash((string) $body['refresh_token']))],
                 '`id_refresh_token` = ' . (int) $row['id_refresh_token']
             );
+        } else {
+            // Rotation off: the token is reusable by design, so it is not
+            // claimed - a client refreshing twice must keep its grant - and
+            // the new one is dropped from the response rather than leaving
+            // two live tokens behind.
             self::revokeRefreshHash(SomcpRandom::hash((string) $body['refresh_token']));
             $body['refresh_token'] = $refreshToken;
         }
 
         return ['body' => $body, 'error' => ''];
+    }
+
+    /**
+     * A rotated refresh token presented again: whoever presents it is one
+     * step behind the legitimate client, which is what a stolen token looks
+     * like.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array{body:null, error:string}
+     */
+    private static function refreshReused(array $row): array
+    {
+        self::revokeFamily((string) $row['id_family']);
+        SomcpLogger::log(
+            'refresh_reused',
+            SomcpLogger::OUTCOME_FAILURE,
+            'rotated refresh token presented again, grant revoked',
+            '',
+            (int) $row['id_employee']
+        );
+
+        return ['body' => null, 'error' => 'invalid_grant'];
     }
 
     /**
@@ -319,6 +363,21 @@ class SomcpOAuthToken
         $db = Db::getInstance();
 
         $idShop = Somcp::currentShopId();
+
+        // A refresh token ends the whole session it belongs to: the access
+        // tokens issued with it must stop working too (RFC 7009, 2.1), not
+        // live on until they expire. An access token alone ends only itself.
+        $family = (string) $db->getValue(
+            'SELECT `id_family` FROM `' . _DB_PREFIX_ . "somcp_oauth_refresh_token`
+             WHERE `token_hash` = '" . $hash . "'
+               AND `id_client` = " . (int) $idClient . '
+               AND `id_shop` = ' . $idShop
+        );
+        if ($family !== '') {
+            self::revokeFamily($family);
+
+            return;
+        }
 
         foreach (['somcp_oauth_access_token', 'somcp_oauth_refresh_token'] as $table) {
             $db->execute(

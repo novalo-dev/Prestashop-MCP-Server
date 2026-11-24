@@ -916,7 +916,7 @@ class SomcpAssistantChat
 
         $addresses = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
         foreach ($addresses as $address) {
-            if (!filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            if (!SomcpHttp::isPublicAddress($address)) {
                 return false;
             }
         }

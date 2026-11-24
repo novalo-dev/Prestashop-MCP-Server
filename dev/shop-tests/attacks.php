@@ -105,6 +105,54 @@ $http = static function (string $method, string $url, array $headers = [], ?stri
     return ['status' => $status, 'headers' => $received, 'body' => $text, 'json' => json_decode($text, true)];
 };
 
+/**
+ * The same kind of request, several at once: what one client sends at the
+ * same moment has to be answered as if it came one after the other.
+ *
+ * @param array<int, array{0:string, 1:array<int, string>, 2:string}> $requests url, headers, body
+ *
+ * @return array<int, array{status:int, body:string, json:mixed}>
+ */
+$together = static function (array $requests): array {
+    $multi = curl_multi_init();
+    $handles = [];
+    foreach ($requests as $i => [$url, $headers, $body]) {
+        $curl = curl_init($url);
+        curl_setopt_array($curl, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $body,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_TIMEOUT => 120,
+            CURLOPT_HTTPHEADER => $headers,
+        ]);
+        curl_multi_add_handle($multi, $curl);
+        $handles[$i] = $curl;
+    }
+    do {
+        $running = 0;
+        curl_multi_exec($multi, $running);
+        if ($running > 0) {
+            curl_multi_select($multi, 1.0);
+        }
+    } while ($running > 0);
+    $answers = [];
+    foreach ($handles as $i => $curl) {
+        $text = (string) curl_multi_getcontent($curl);
+        $answers[$i] = ['status' => (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE), 'body' => $text, 'json' => json_decode($text, true)];
+        curl_multi_remove_handle($multi, $curl);
+        curl_close($curl);
+    }
+    curl_multi_close($multi);
+
+    return $answers;
+};
+$granted = static function (array $answers): array {
+    return array_values(array_filter($answers, static function (array $answer): bool {
+        return $answer['status'] === 200 && !empty($answer['json']['access_token']);
+    }));
+};
+
 $json = ['Content-Type: application/json', 'Accept: application/json, text/event-stream'];
 $bearer = static function (string $token) use ($json): array {
     return array_merge($json, ['Authorization: Bearer ' . $token]);
@@ -348,6 +396,69 @@ if ($expect('a refresh token is exchanged', $next, 200) && SomcpConfig::isOn(Som
     $expect('rotated refresh token presented again', $refresh($start['refresh_token']), 400);
     $expect('token issued after the reuse is revoked', $http('POST', $mcpUrl, $bearer((string) ($next['json']['access_token'] ?? '')), $ping), 401);
 }
+
+// A code or a rotated refresh token is good for one exchange, however the
+// requests that carry it arrive: at most one token, and a grant whose
+// credential was presented more than once is closed.
+$onlyOnce = static function (string $what, array $answers) use (&$failures, &$checks, $granted, $http, $mcpUrl, $bearer, $ping): void {
+    ++$checks;
+    $tokens = $granted($answers);
+    if (count($tokens) > 1) {
+        $failures[] = sprintf('%s: %d tokens given for one credential', $what, count($tokens));
+        echo "  FAIL  $what gives one token at most\n";
+
+        return;
+    }
+    echo "  ok    $what gives one token at most\n";
+    if ($tokens !== [] && count($answers) > 1) {
+        // The other requests were refused as a second presentation, which
+        // closes the grant: the one token given must not work either.
+        ++$checks;
+        $served = $http('POST', $mcpUrl, $bearer((string) $tokens[0]['json']['access_token']), $ping);
+        if ($served['status'] !== 401) {
+            $failures[] = sprintf('%s: the grant stays open after the credential was presented %d times (HTTP %d)', $what, count($answers), $served['status']);
+            echo "  FAIL  $what closes the grant\n";
+        } else {
+            echo "  ok    $what closes the grant\n";
+        }
+    }
+};
+foreach ([2, 8] as $times) {
+    $shared = $code();
+    $exchange = http_build_query([
+        'grant_type' => 'authorization_code',
+        'client_id' => $clientA,
+        'code' => $shared,
+        'code_verifier' => $verifier,
+        'redirect_uri' => 'http://127.0.0.1:9/callback',
+    ]);
+    $onlyOnce(sprintf('one code exchanged by %d requests at once', $times), $together(array_fill(0, $times, [$tokenUrl, $form, $exchange])));
+}
+if (SomcpConfig::isOn(SomcpConfig::REFRESH_ROTATION)) {
+    foreach ([2, 8] as $times) {
+        $shared = $pair($all);
+        $exchange = http_build_query(['grant_type' => 'refresh_token', 'client_id' => $clientA, 'refresh_token' => $shared['refresh_token']]);
+        $onlyOnce(sprintf('one refresh token exchanged by %d requests at once', $times), $together(array_fill(0, $times, [$tokenUrl, $form, $exchange])));
+    }
+}
+
+// Signing out ends the session: once its refresh token is revoked, the
+// access token issued with it stops working too, not when it expires.
+$session = $pair($all);
+$expect('the access token of a session is served', $http('POST', $mcpUrl, $bearer($session['access_token']), $ping), 200);
+$expect('a refresh token is revoked', $http('POST', $endpoint('oauth', 'a=revoke'), $form, http_build_query([
+    'client_id' => $clientA,
+    'token' => $session['refresh_token'],
+    'token_type_hint' => 'refresh_token',
+])), 200);
+$expect('the access token of a revoked session', $http('POST', $mcpUrl, $bearer($session['access_token']), $ping), 401);
+$kept = $pair($all);
+$http('POST', $endpoint('oauth', 'a=revoke'), $form, http_build_query([
+    'client_id' => $clientB,
+    'token' => $kept['refresh_token'],
+    'token_type_hint' => 'refresh_token',
+]));
+$expect('a session another client tried to revoke', $http('POST', $mcpUrl, $bearer($kept['access_token']), $ping), 200);
 
 // ---------------------------------------------------------------------------
 $section('Sign-in and registration');
@@ -776,6 +887,58 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
 
         return $response;
     };
+    // However the sign-ins arrive, no more passwords are compared than the
+    // limit allows: each one waits on its own solved check, and the right
+    // password sent last is not let in.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    $logStart = (int) $db->getValue('SELECT MAX(`id_log`) FROM `' . _DB_PREFIX_ . 'somcp_log`');
+    $wave = [];
+    $waveSize = SomcpGuard::SIGNIN_ATTEMPTS + 7;
+    for ($i = 1; $i <= $waveSize; ++$i) {
+        $page = $http('GET', $authorizeUrl, $withCookie);
+        $wave[] = [$authorizeUrl, $withCookie, http_build_query([
+            'somcp_step' => 'signin',
+            'somcp_csrf' => $guessCsrf,
+            'somcp_email' => (string) $signinEmployee->email,
+            'somcp_password' => $i === $waveSize ? $signinPassword : 'wave-' . $i,
+            'somcp_altcha' => $solve($page),
+        ])];
+    }
+    $together($wave);
+    $compared = (int) $db->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'somcp_log`'
+        . ' WHERE `id_log` > ' . $logStart . " AND `event` IN ('signin_refused', 'signin_succeeded')"
+        . " AND (`event` = 'signin_succeeded' OR `message` LIKE 'wrong email%')");
+    $letIn = (int) $db->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'somcp_log`'
+        . ' WHERE `id_log` > ' . $logStart . " AND `event` = 'signin_succeeded'");
+    ++$checks;
+    if ($compared > SomcpGuard::SIGNIN_ATTEMPTS || $letIn > 0) {
+        $failures[] = sprintf('%d sign-ins at once: %d passwords compared (limit %d), %d let in', $waveSize, $compared, SomcpGuard::SIGNIN_ATTEMPTS, $letIn);
+        echo "  FAIL  sign-ins at once stay within the limit\n";
+    } else {
+        printf("  ok    sign-ins at once stay within the limit (%d compared)\n", $compared);
+    }
+    // One solved check is good for one sign-in, however often it is posted.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    $logStart = (int) $db->getValue('SELECT MAX(`id_log`) FROM `' . _DB_PREFIX_ . 'somcp_log`');
+    $once = $solve($http('GET', $authorizeUrl, $withCookie));
+    $together(array_fill(0, 8, [$authorizeUrl, $withCookie, http_build_query([
+        'somcp_step' => 'signin',
+        'somcp_csrf' => $guessCsrf,
+        'somcp_email' => (string) $signinEmployee->email,
+        'somcp_password' => 'one-check',
+        'somcp_altcha' => $once,
+    ])]));
+    $passed = (int) $db->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'somcp_log`'
+        . ' WHERE `id_log` > ' . $logStart . " AND `event` = 'signin_refused' AND `message` LIKE 'wrong email%'");
+    ++$checks;
+    if ($passed > 1) {
+        $failures[] = sprintf('one solved check posted 8 times at once let %d sign-ins through', $passed);
+        echo "  FAIL  one solved check, one sign-in\n";
+    } else {
+        echo "  ok    one solved check, one sign-in\n";
+    }
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+
     for ($i = 1; $i <= SomcpGuard::SIGNIN_ATTEMPTS - 1; ++$i) {
         $guess('guess-' . $i);
     }

@@ -316,10 +316,22 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             $this->renderTooMany();
         }
 
+        // The attempt is counted before anything is compared, so sign-ins
+        // posted together cannot all pass the check above before any of them
+        // is counted.
+        if (!SomcpGuard::reserveSignin()) {
+            SomcpLogger::log('signin_blocked', SomcpLogger::OUTCOME_FAILURE, '', $clientId);
+            $this->renderTooMany();
+        }
+
         // Not counted against the account: anyone who knows an employee's
         // e-mail could otherwise block it without solving a single check.
         if (!SomcpGuard::solved((string) Tools::getValue('somcp_altcha', ''))) {
             $this->refuseSignIn($request, 'anti-robot check not solved', $clientId);
+        }
+        if (!SomcpGuard::reserveAccount($email)) {
+            SomcpLogger::log('signin_blocked', SomcpLogger::OUTCOME_FAILURE, 'too many failed sign-ins on this account', $clientId);
+            $this->renderTooMany();
         }
 
         $employee = false;
@@ -335,6 +347,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             $this->refuseSignIn($request, $refusal, $clientId, (int) $employee->id, $email);
         }
 
+        SomcpGuard::releaseSignin($email);
         SomcpOAuthServer::attachEmployee((int) $request['id_request'], (int) $employee->id);
         SomcpLogger::log('signin_succeeded', SomcpLogger::OUTCOME_SUCCESS, '', $clientId, (int) $employee->id);
         $this->sendCode($request, $employee);
@@ -390,6 +403,11 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             SomcpLogger::log('code_csrf_failed', SomcpLogger::OUTCOME_FAILURE, '', '', (int) $employee->id);
             $this->renderCode($request);
         }
+        // Counted before the code is compared, like a password.
+        if (!SomcpGuard::reserveSignin() || !SomcpGuard::reserveAccount((string) $employee->email)) {
+            SomcpLogger::log('signin_blocked', SomcpLogger::OUTCOME_FAILURE, '', '', (int) $employee->id);
+            $this->renderTooMany();
+        }
 
         // One field per digit, or a single one where a client posts it whole.
         $typed = Tools::getValue('somcp_otp', '');
@@ -397,11 +415,11 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
         $result = SomcpOAuthServer::checkOtp($request, $code);
         if ($result === 'ok') {
+            SomcpGuard::releaseSignin((string) $employee->email);
             SomcpLogger::log('code_verified', SomcpLogger::OUTCOME_SUCCESS, '', '', (int) $employee->id);
             $this->backToPage();
         }
 
-        SomcpGuard::signinFailed((string) $employee->email);
         SomcpLogger::log('code_refused', SomcpLogger::OUTCOME_FAILURE, $result === 'wrong' ? 'wrong code' : 'code spent', '', (int) $employee->id);
         $request = SomcpOAuthServer::loadPendingRequest($this->requestSecret()) ?? $request;
         if ($result === 'spent' && SomcpOAuthServer::otpWait($request) === -1) {
@@ -468,20 +486,20 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     }
 
     /**
-     * Counts a failed sign-in, logs its real reason and shows the form again,
-     * or the block once the address has failed too often.
+     * Logs the real reason of a failed sign-in, already counted when it was
+     * reserved, and shows the form again, or the block once the address has
+     * failed too often.
      *
      * @param array<string, mixed> $request
      * @param string $reason
      * @param string $clientId
      * @param int $idEmployee
-     * @param string $email the account tried, counted once the anti-robot check passed
+     * @param string $email the account tried, once the anti-robot check passed
      *
      * @return never
      */
     private function refuseSignIn(array $request, string $reason, string $clientId, int $idEmployee = 0, string $email = ''): void
     {
-        SomcpGuard::signinFailed($email);
         SomcpLogger::log('signin_refused', SomcpLogger::OUTCOME_FAILURE, $reason, $clientId, $idEmployee);
         if (SomcpGuard::signinBlocked() || ($email !== '' && SomcpGuard::accountBlocked($email))) {
             $this->renderTooMany();

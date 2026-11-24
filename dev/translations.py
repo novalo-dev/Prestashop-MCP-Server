@@ -1146,6 +1146,10 @@ T = {
  "Lire les paramètres de maintenance",
  "Leer los parámetros de mantenimiento",
  "Die Wartungseinstellungen lesen"),
+"Change the maintenance settings": (
+ "Modifier les paramètres de maintenance",
+ "Modificar los parámetros de mantenimiento",
+ "Die Wartungseinstellungen ändern"),
 "Read the country options": (
  "Lire les options des pays",
  "Leer las opciones de los países",

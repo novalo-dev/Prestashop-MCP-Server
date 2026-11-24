@@ -2598,6 +2598,71 @@ if ($getGeneral !== null && $updateGeneral !== null) {
     }
 }
 
+// The maintenance settings (#388): the read given back whole writes nothing,
+// then the text of the default language is changed and put back. Enable
+// store is never turned off here: the storefront tests after this one read
+// the shop as a visitor.
+$getMaintenance = $registry->get('somcp_get_maintenance_settings');
+$updateMaintenance = $registry->get('somcp_update_maintenance_settings');
+if ($getMaintenance !== null && $updateMaintenance !== null) {
+    $idShopMaintenance = (int) $context->shop->id;
+    $idGroupMaintenance = (int) Shop::getGroupFromShop($idShopMaintenance);
+    $idLangMaintenance = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShopMaintenance);
+    $isoMaintenance = Tools::strtolower((string) Language::getIsoById($idLangMaintenance));
+    $textWas = Configuration::get('PS_MAINTENANCE_TEXT', $idLangMaintenance, $idGroupMaintenance, $idShopMaintenance);
+    $maintenanceContext = static function (SomcpTool $tool, array $arguments) use ($idShopMaintenance, $employee, $context): array {
+        return [
+            'id_shop' => $idShopMaintenance,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getMaintenance->call([], $maintenanceContext($getMaintenance, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !isset($decoded['maintenance_text'][$isoMaintenance])) {
+            $failures[] = 'somcp_update_maintenance_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $original = (string) $decoded['maintenance_text'][$isoMaintenance];
+            $steps = [
+                ['the read given back whole, nothing written', $decoded, ['"changed": false', 'Nothing was written.']],
+                ['the text of the default language changed', ['languages' => [$isoMaintenance], 'maintenance_text' => 'Back soon, the shop tests are running.'], ['"changed": true', '"field": "maintenance_text (' . $isoMaintenance . ')"', 'Back soon, the shop tests are running.']],
+                ['the text put back', ['languages' => [$isoMaintenance], 'maintenance_text' => [$isoMaintenance => $original]], ['"changed": true', '"field": "maintenance_text (' . $isoMaintenance . ')"']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateMaintenance->call($arguments, $maintenanceContext($updateMaintenance, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_maintenance_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_maintenance_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_maintenance_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the text of a
+        // fresh shop; a text it never had stays unwritten.
+        if ($textWas !== false) {
+            Configuration::updateValue('PS_MAINTENANCE_TEXT', [$idLangMaintenance => (string) $textWas], true, $idGroupMaintenance, $idShopMaintenance);
+        }
+    }
+}
+
 // A supplier description too long for its column (#333): a JSON scenario
 // cannot hold a 65 KB string in a readable way. On PrestaShop 8 the class
 // declares no size and the text column would cut the description without a

@@ -48,8 +48,9 @@ class SomcpToolGetMaintenanceSettings
             'Reads the Maintenance tab of Shop Parameters > General: whether the store is enabled '
                 . '(store_enabled; false means visitors see the maintenance page), whether logged-in employees '
                 . 'still see it (PrestaShop 9 only, null on 8), and the Custom maintenance text in each language. '
-                . 'Read it before telling a merchant the shop is open. To check that the shop answers at all '
-                . 'use somcp_ping, for the price rounding and storefront pages somcp_get_general_settings.',
+                . 'Read it before telling a merchant the shop is open. To change them use '
+                . 'somcp_update_maintenance_settings, to check that the shop answers at all somcp_ping, for the '
+                . 'price rounding and storefront pages somcp_get_general_settings.',
             [
                 'type' => 'object',
                 'properties' => [

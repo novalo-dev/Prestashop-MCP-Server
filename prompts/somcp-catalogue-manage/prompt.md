@@ -39,6 +39,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_general_settings`
 - `somcp_update_general_settings`
 - `somcp_get_maintenance_settings`
+- `somcp_update_maintenance_settings`
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_create_currency`
@@ -396,6 +397,9 @@ carts and orders only, those already made keep their totals; confirm with the
 merchant before changing it. `somcp_get_maintenance_settings` says whether
 the storefront is open to visitors or shows the maintenance text: read it
 before telling the merchant the shop is live.
+`somcp_update_maintenance_settings` opens or closes the storefront and changes
+its maintenance text: close or open the shop only when the merchant asks, and
+reopen it when the set-up they asked for is done.
 
 ## Prices
 

@@ -38,6 +38,14 @@ back office still see it (PrestaShop 9), and the maintenance text in each
 language. The assistant can now tell whether the storefront is open to
 visitors before saying the shop is live.
 
+**Change the maintenance settings.** The new tool
+somcp_update_maintenance_settings does what the Save button of the
+Maintenance tab of Shop Parameters > General does: it opens or closes the
+storefront, lets employees logged in to the back office see a closed shop
+(PrestaShop 9), and changes the maintenance text in each language, cleaned as
+the back office cleans it. The addresses of Maintenance IP are never touched.
+The assistant closes or opens the shop only when the merchant asks.
+
 **Read the localization settings.** The new tool
 somcp_get_localization_settings reads International > Localization >
 Localization: the default language, country and currency, browser detection,

@@ -4079,8 +4079,10 @@ back through `settings()`. Warnings, in `warning`:
 Read only.
 
 **Do not use for** - whether the shop answers at all (→ `somcp_ping`); the
-rounding and storefront pages (→ `somcp_get_general_settings`).
-**Maintenance IP** is neither read nor written.
+rounding and storefront pages (→ `somcp_get_general_settings`); opening or
+closing the storefront, or changing its text (→
+`somcp_update_maintenance_settings`). **Maintenance IP** is neither read nor
+written.
 
 **Parameters**
 
@@ -4118,6 +4120,56 @@ shop.` (the part in angle brackets on 9.0.0 when
 **Differences between 8.0.1 and 9.0.0** - **Enable store for logged-in
 employees** exists on 9.0.0 only (`PS_MAINTENANCE_ALLOW_ADMINS`, no row on
 8.0.1); the two other fields are the same.
+
+#### `somcp_update_maintenance_settings`
+**State**: written · [issue #388](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/388)
+**Nature**: `acts(EDIT, 'AdminMaintenance')` · **Scope**: `mcp.catalog.write`
+
+**Does** - opens or closes the storefront and changes its maintenance
+message, as the **Save** button of **Shop Parameters > General**, tab
+**Maintenance**, does for **Enable store**, **Enable store for logged-in
+employees** (9.0.0 only) and **Custom maintenance text**. The description
+says to close or open the storefront only when the merchant asks.
+
+**Do not use for** - the rounding and storefront pages (→
+`somcp_update_general_settings`); disabling one product, category or page
+(→ `somcp_set_product_active`, `somcp_set_category_active`). **Maintenance
+IP** is never written, and refused as an unknown field.
+
+**Parameters** - all optional; a key left out, or `null`, keeps its value.
+The read of `somcp_get_maintenance_settings` given back whole writes
+nothing; its `warning` is ignored.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `store_enabled` | **Enable store** | boolean | `true or false` |
+| `open_for_logged_in_employees` | **Enable store for logged-in employees** | boolean | `true or false`; on 8.0.1 any value other than `null` is refused: `open_for_logged_in_employees: this field exists on PrestaShop 9 only` |
+| `languages` | - | array | the languages of `maintenance_text` given, the rule of #149 (`SomcpToolCreateProduct::languages()`); a language left out keeps its text |
+| `maintenance_text` | **Custom maintenance text** | string or object | an object keyed by ISO code, or one text when one language is filled, through `SomcpToolCreateProduct::texts()`; a text given back as stored is no change; otherwise cleaned and checked by `SomcpToolCreateProduct::html()` (`Tools::purifyHTML()` then `Validate::isCleanHtml()` with the shop's iframe setting), at most 21844 characters (`maintenance_text (<iso>): 21844 characters at most, <n> given`, the limit `FormattedTextareaType::LIMIT_TEXT_UTF8` of the screen); an empty text refused (`maintenance_text (<iso>): required, never empty`) |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before anything is written.
+
+**Then**
+- `$before = SomcpToolGetMaintenanceSettings::settings($idShop, $idLangs)`;
+- the keys whose value differs, each saved with `Configuration::updateValue(<key>, <value>, <html>, $idShopGroup, $idShop)` for the shop of the token: `PS_SHOP_ENABLE` and `PS_MAINTENANCE_ALLOW_ADMINS` as `1` or `0`, `PS_MAINTENANCE_TEXT` as an array `[id_lang => text]` of the languages that differ with `$html = true`, as `MaintenanceConfiguration::updateConfiguration()` saves them; a failed save stops the call and names what was saved before it;
+- nothing differs: `changed: false`, `reason` `The maintenance settings already hold every value given. Nothing was written.`, `settings` as read;
+- logged as `maintenance_settings_updated` with the fields saved (never the text), `maintenance_settings_update_failed` with the failure.
+
+**Returns** - `changed: true`, `changes` (per field its `field`, `old`,
+`new`; for the text one item per language changed, `field`
+`maintenance_text (<iso>)`), and `settings` read back through `settings()`.
+Warnings, in `warning`:
+- `store_enabled` turned off: `The storefront is now closed: visitors see the maintenance text. Only the addresses of Maintenance IP in the back office<, and the employees logged in to the back office,> see the shop.` (the part in angle brackets on 9.0.0 when `open_for_logged_in_employees` is true);
+- `store_enabled` turned on: `The storefront is now open to every visitor.`;
+- on an installation of several shops: `The settings changed for this shop only, as the back office saves them in a shop context.`
+
+**Notes**
+- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), changes the text of the default language and puts it back. `store_enabled` is never turned off in the CI: the shop tests read the storefront.
+
+**Differences between 8.0.1 and 9.0.0** - **Enable store for logged-in
+employees** on 9.0.0 only, see above; the rest the same.
 
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)

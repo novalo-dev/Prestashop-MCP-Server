@@ -1442,6 +1442,11 @@
       <source>Read the maintenance settings</source>
       <target>Die Wartungseinstellungen lesen</target>
     </trans-unit>
+    <!-- Change the maintenance settings -->
+    <trans-unit id="77fe780e8a117b42809870b42c1cc6c7" resname="Change the maintenance settings">
+      <source>Change the maintenance settings</source>
+      <target>Die Wartungseinstellungen ändern</target>
+    </trans-unit>
     <!-- Read the country options -->
     <trans-unit id="4832df5ad50f78b3359bade7095832f9" resname="Read the country options">
       <source>Read the country options</source>

@@ -40,6 +40,7 @@
     "somcp_get_general_settings",
     "somcp_update_general_settings",
     "somcp_get_maintenance_settings",
+    "somcp_update_maintenance_settings",
     "somcp_list_currencies",
     "somcp_get_currency",
     "somcp_create_currency",

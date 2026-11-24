@@ -3562,13 +3562,16 @@ class SomcpToolCreateProduct
     /**
      * HTML as the back office cleans it, refused when still unsafe.
      *
+     * Public so a tool that saves another HTML text of the shop, the
+     * maintenance text for one, cleans it by this very rule.
+     *
      * @param string $html
      * @param string $path
      * @param array<int, string> $errors
      *
      * @return string
      */
-    protected static function html(string $html, string $path, array &$errors): string
+    public static function html(string $html, string $path, array &$errors): string
     {
         $html = (string) Tools::purifyHTML(trim($html));
         if (!Validate::isCleanHtml($html, (bool) Configuration::get('PS_ALLOW_HTML_IFRAME'))) {

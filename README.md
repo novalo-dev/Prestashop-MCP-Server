@@ -468,6 +468,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_general_settings` | ● Read the general settings | General › view |
 | `somcp_update_general_settings` | ✎ Change the general settings | General › edit |
 | `somcp_get_maintenance_settings` | ● Read the maintenance settings | Maintenance › view |
+| `somcp_update_maintenance_settings` | ✎ Change the maintenance settings | Maintenance › edit |
 | `somcp_list_currencies` | ● List currencies | Currencies › view |
 | `somcp_get_currency` | ● Read a currency | Currencies › view |
 | `somcp_create_currency` | ✎ Add a currency | Currencies › add |

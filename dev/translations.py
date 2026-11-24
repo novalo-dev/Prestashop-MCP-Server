@@ -1146,6 +1146,10 @@ T = {
  "Lire les paramètres de maintenance",
  "Leer los parámetros de mantenimiento",
  "Die Wartungseinstellungen lesen"),
+"Read the shipping preferences": (
+ "Lire les préférences de livraison",
+ "Leer las preferencias de envío",
+ "Die Versandeinstellungen lesen"),
 "Import a localization pack": (
  "Importer un pack de localisation",
  "Importar un paquete de localización",

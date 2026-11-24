@@ -2322,7 +2322,7 @@ Unknown arguments through `SomcpTool::unknownFields()`.
 - `group_access`: `[{id_group, name}]` from `carrier_group`, among the groups of the shop, `name` in `language`, the `id_group` of `somcp_list_customer_groups`;
 - `zones`: `[{id_zone, name}]` from `carrier_zone`, sorted by name as the screen sorts them;
 - `id_tax_rules_group`: **Tax**, from `carrier_tax_rules_group_shop` for the shop of the token, `0` for **No tax**; `tax_rule`: its name through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or a rule deleted since (then a `warning`);
-- `handling_costs` (**Add handling costs** on 8.0.1, **Handling costs** on 9.0.0); when true, `handling_cost_tax_excl`: `PS_SHIPPING_HANDLING` for the shop and group of the token, set on **Shipping > Preferences**;
+- `handling_costs` (**Add handling costs** on 8.0.1, **Handling costs** on 9.0.0); when true, `handling_cost_tax_excl`: `PS_SHIPPING_HANDLING` for the shop and group of the token, set on **Shipping > Preferences** and read with the other preferences by `somcp_get_shipping_preferences`;
 - `billing`: `"price"` or `"weight"`, as `Carrier::getShippingMethod()` decides (a carrier stored with `shipping_method` 0 follows `PS_SHIPPING_METHOD`), `null` for a free carrier;
 - `out_of_range`: `"highest_range"` (**Apply the cost of the highest defined range**) or `"disable_carrier"` (**Disable carrier**);
 - `ranges`: the ranges of the kind `billing` names (`range_price` for `"price"`, `range_weight` for `"weight"`), sorted by `from`, each `{from, to, prices}`, `from` included and `to` excluded as the 8.0.1 header says (**>=**, **<**); `prices` is `[{id_zone, zone, price_tax_excl}]`, one per zone of `zones`, from `delivery`, the row of the shop of the token, else of its group, else the global one, as `Carrier::sqlDeliveryRangeShop()` picks it; a zone with no row has `price_tax_excl: null` and a `warning`, since the shop does not offer the carrier there. The rows of the other kind (a carrier stored with both, like demo carrier 2) are left out: the form does not show them and the core does not charge them. `[]` for a free carrier, whose form shows no ranges;
@@ -3077,6 +3077,59 @@ A delete that fails is checked on the table and answered `The carrier could not 
 **Notes** - not replayable: a second call finds no carrier. The demo carriers: 1 is the default and is refused, 2 is used by orders and is kept hidden, 3 and 4 are removed.
 
 **Differences between 8.0.1 and 9.0.0** - the core: the 8.0.1 list only flags every carrier `deleted`, used or not, and removes its logo; 9.0.0 removes a carrier no order uses and flags the others. The tool behaves the same on both, as 9.0.0 does, so `Carrier::delete()` is only called on a carrier no order uses, where it gives the same result on both.
+
+#### `somcp_get_shipping_preferences`
+**State**: written · [issue #391](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/391)
+**Nature**: `acts(VIEW, 'AdminShipping')` · **Scope**: `mcp.orders.read`, as `somcp_get_carrier`
+
+**Does** - reads **Shipping > Preferences**: the card **Handling**
+(**Handling charges**, **Free shipping starts at** a price and a weight) and
+the card **Carrier options** (**Default carrier**, **Sort by**, **Order
+by**). These settings decide what every order pays for shipping on top of the
+carriers' ranges, and which carrier a customer finds selected. Read only,
+replayable.
+
+**Do not use for** - the price ranges and costs of one carrier (→
+`somcp_get_carrier`); the free shipping of a cart rule (→
+`somcp_get_cart_rule`); changing them (no tool yet, #392).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code for the transit time of the default carrier, through `SomcpTool::readLanguage()` (#149); a code the shop does not have is refused with `SomcpTool::languageProblem()`. The shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`, in the envelope
+`Nothing was read. Correct these and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetShippingPreferences::preferences($idShop, $idLang)`, for the
+update to answer with, each key read with `Configuration::get(<key>, null,
+$idShopGroup, $idShop)` for the shop of the token and its group:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `handling_cost_tax_excl` | **Handling charges** | `PS_SHIPPING_HANDLING` | float, tax excluded, the name `somcp_get_carrier` gives it |
+| `free_shipping_from_price` | **Free shipping starts at** (price) | `PS_SHIPPING_FREE_PRICE` | float, `0` when off |
+| `free_shipping_from_weight` | **Free shipping starts at** (weight) | `PS_SHIPPING_FREE_WEIGHT` | float, `0` when off |
+| `currency` | - | `PS_CURRENCY_DEFAULT` | ISO code of the default currency the two amounts are in |
+| `weight_unit` | - | `PS_WEIGHT_UNIT` | the unit of the weight, as `somcp_get_localization_settings` names it |
+| `default_carrier` | **Default carrier** | `PS_CARRIER_DEFAULT` | `best_price` (-1), `best_grade` (-2) or `carrier` |
+| `default_id_carrier`, `default_carrier_name`, `default_carrier_delay` | - | - | with `carrier`, the current version of the carrier of the stored **reference** (the value of the list is an `id_reference`), found through `SomcpToolListCarriers::query()` for the shop of the token: its `id_carrier` (the identifier `somcp_list_carriers` gives), name and transit time in `language`; `null` otherwise |
+| `carrier_sort` | **Sort by** | `PS_CARRIER_DEFAULT_SORT` | `price` (0) or `position` (1) |
+| `carrier_order` | **Order by** | `PS_CARRIER_DEFAULT_ORDER` | `ascending` (0) or `descending` (1) |
+| `language` | - | - | the ISO code of the transit time |
+
+A reference whose carrier is deleted or not in the shop: `default_id_carrier`
+`null` and `warning` `The default carrier no longer exists: customers get the
+first carrier available; choose another in Shipping > Preferences.`
+
+**Notes**
+- The core compares **Free shipping starts at** (price) with the products and discounts of the cart, tax included, and the weight with `Cart::getTotalWeight()`; each applies only above 0. Coupons are not taken into account.
+- The demo shops hold the same values: handling 2, both thresholds 0, default carrier reference 1, sorted by price, ascending.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same forms, keys and
+adapters (`HandlingConfiguration`, `CarrierOptionsConfiguration`).
 
 #### `somcp_list_tax_rules`
 **State**: written

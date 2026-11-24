@@ -61,6 +61,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
+- `somcp_get_shipping_preferences`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -239,6 +240,9 @@ Carriers come from `somcp_list_carriers`: give its `id_carrier` in
 say so before tying a product to it. No carrier given means every carrier
 may deliver the product. To tell which zones and customer groups a carrier
 serves before tying it, read it with `somcp_get_carrier`.
+`somcp_get_shipping_preferences` gives the handling charges, the price and
+weight from which shipping is free and the default carrier: read it before
+telling a customer what an order pays for shipping.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

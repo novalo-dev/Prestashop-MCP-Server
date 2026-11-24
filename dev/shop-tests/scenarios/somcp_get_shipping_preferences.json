@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the preferences of the shop", "arguments": {}, "expect": "ok", "contains": ["\"handling_cost_tax_excl\":", "\"free_shipping_from_price\":", "\"default_carrier\":", "\"carrier_sort\":", "\"carrier_order\":"]},
+    {"why": "a language the shop does not have and an unknown field, refused together", "arguments": {"language": "zz", "x": 1}, "expect": "error", "contains": ["Nothing was read.", "- language: not one of the shop's languages", "- x: not a field of this tool"]}
+  ]
+}

@@ -65,6 +65,13 @@ it: every exchange rate is reset and read again from PrestaShop's exchange
 rate server, which is asked first, so nothing changes when it does not
 answer. Product prices are not converted, and the answer says so.
 
+**Read the shipping preferences.** The new tool
+somcp_get_shipping_preferences reads Shipping > Preferences: the handling
+charges, the price and the weight from which shipping is free, the default
+carrier, and how carriers are sorted on the storefront. The assistant can now
+tell what every order pays for shipping on top of the carriers' prices, and
+which carrier a customer finds selected.
+
 **Import a localization pack.** The new tool somcp_import_localization_pack
 does what the card Import a localization pack of International > Localization
 > Localization does, from the shop's own pack: a country's states, taxes and

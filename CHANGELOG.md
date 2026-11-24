@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Add or update a language from PrestaShop.** The new tool
+somcp_install_language_pack does what the card Add / Update a language of
+International > Translations does: a language is added with PrestaShop's
+translations of the storefront, the e-mails and the back office, or the
+translations of an installed language are brought up to date. A language
+created by hand stayed untranslated; it can now be installed in one step. The
+call can take up to two minutes, and says so when PrestaShop's server does not
+answer.
+
 **Update the exchange rates.** The new tool somcp_update_exchange_rates does
 what the Update button of Update exchange rates does in International >
 Localization > Currencies: every currency of the shop takes the rate of

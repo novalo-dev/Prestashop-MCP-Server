@@ -1150,6 +1150,10 @@ T = {
  "Supprimer une langue",
  "Eliminar un idioma",
  "Eine Sprache löschen"),
+"Add or update a language from PrestaShop": (
+ "Ajouter ou mettre à jour une langue depuis PrestaShop",
+ "Añadir o actualizar un idioma desde PrestaShop",
+ "Eine Sprache von PrestaShop hinzufügen oder aktualisieren"),
 "Add a language": (
  "Ajouter une langue",
  "Añadir un idioma",

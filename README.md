@@ -462,6 +462,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_language` | ✎ Add a language | Languages › add |
 | `somcp_update_language` | ✎ Change a language | Languages › edit |
 | `somcp_delete_language` | ✎ Delete a language | Languages › delete |
+| `somcp_install_language_pack` | ✎ Add or update a language from PrestaShop | Translations › add / update a language |
 | `somcp_list_currencies` | ● List currencies | Currencies › view |
 | `somcp_get_currency` | ● Read a currency | Currencies › view |
 | `somcp_create_currency` | ✎ Add a currency | Currencies › add |

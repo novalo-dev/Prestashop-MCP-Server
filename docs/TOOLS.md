@@ -3604,7 +3604,7 @@ as **Add new language** does. A shop that opens to a new market needs the
 language before any product, page or e-mail can be written in it.
 
 **Do not use for** - changing a language (→ `somcp_update_language`);
-installing the translations of PrestaShop for a language (not a tool yet).
+installing a language with its translations (→ `somcp_install_language_pack`).
 
 **Parameters**
 
@@ -3791,6 +3791,56 @@ refusing: `Nothing was deleted. The shop refused to delete language <id>:
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - none in the handler, `Language::delete()` or the tables.
+
+#### `somcp_install_language_pack`
+**State**: written · [issue #380](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/380)
+**Nature**: `acts(ADD, 'AdminTranslations')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds a language with its translations, or updates the translations
+of an installed one, from PrestaShop's translation server, as the card **Add /
+Update a language** of **International > Translations** does (button **Add or
+update a language**). The call can take up to two minutes.
+
+**Do not use for** - creating a language by hand, without translations (→
+`somcp_create_language`); changing its name, status, formats or flag (→
+`somcp_update_language`); deleting it (→ `somcp_delete_language`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `iso_code` | **Please select the language you want to add or update** | string | yes | two letters, `Validate::isLanguageIsoCode()`, offered by `Language::getLangDetails()`; otherwise `iso_code: a language code PrestaShop offers, for example fr or de - the list of Add / Update a language`; missing: `iso_code: required` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was changed. Correct these and call again:`,
+before any download.
+
+**Then**
+- `@set_time_limit(120)` when `max_execution_time` is above 0 and below 120: the extraction, the translation of every `*_lang` table and the e-mails come after the download;
+- `$before = (int) Language::getIdByIso($iso, true)`, then `Language::downloadAndInstallLanguagePack($iso, _PS_VERSION_, null, $before === 0)`, as `LanguagePackInstaller` calls it: a fresh install for a new language, an update of the translations otherwise;
+- on success, the caches cleared through `SomcpToolClearCache::clear()`, as `LanguagePackImporter` clears them;
+- the language read back through `SomcpToolListLanguages::language()` and `row()`.
+
+**Returns** - `changed: true`, `added` (`true` when the language did not
+exist, `false` for an update), `id_lang`, `language` (the row of
+`somcp_list_languages`). Warnings, beside the answer:
+- on an update: `The translations of <name> were replaced by PrestaShop's, and the texts PrestaShop ships in the database (order statuses, page titles, contacts...) were translated again in this language, as the back office does.`;
+- on an installation of several shops (`SomcpToolCreateTax::otherShops()` above 0): `Languages are shared by every shop: this reaches every shop of this installation (<n + 1>).`;
+- on an add, when `language.active` is true: `The language is installed: check its Status with somcp_update_language before customers see it.`
+
+**Errors** - `SomcpTool::text(..., true)`:
+- the download failed (no language created, an error starting with the core's `Language pack unavailable.`): `PrestaShop's translation server did not send the <iso_code> pack within 20 seconds. Nothing was changed. Try again later.`; the address of the pack is not repeated;
+- an error after the language was created: `The language <iso_code> was created (id_lang <id>), but its translations could not all be installed: <messages>. Call again to finish, or delete it with somcp_delete_language.`;
+- any other error: `The language pack could not be installed: <the core's messages, joined>. Nothing was changed.`
+
+The folder of the shop is taken out of the core's messages.
+
+**Notes**
+- The only outgoing request is the one PrestaShop's own card sends, to its own translation server, with the core's wait (`Language::PACK_DOWNLOAD_TIMEOUT`, 20 seconds).
+- Logged as `language_pack_installed` with the ISO code and `added` or `updated`, `language_pack_install_failed` with the ISO code.
+- A real install reaches PrestaShop's server and rewrites translation files: the scenario only checks the refusals, made before any download.
+
+**Differences between 8.0.1 and 9.0.0** - none in the card, the controller, `LanguagePackImporter` or `LanguagePackInstaller`; 9.0.0 tries the download three times before giving up, 8.0.1 once, each attempt waiting 20 seconds.
 
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)

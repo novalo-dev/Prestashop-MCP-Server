@@ -33,6 +33,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_language`
 - `somcp_update_language`
 - `somcp_delete_language`
+- `somcp_install_language_pack`
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_create_currency`
@@ -367,7 +368,12 @@ moves the employees who use it to the default, and a new ISO code moves the
 translation files and e-mail templates of the old one: confirm with the
 merchant first. `somcp_delete_language` deletes a language with every
 text of the shop in it, which cannot be undone: offer to switch it off first,
-and confirm with the merchant before deleting.
+and confirm with the merchant before deleting. A language with PrestaShop's
+own translations of the storefront, the e-mails and the back office is added,
+or those translations of an installed one replaced, with
+`somcp_install_language_pack`: it reaches PrestaShop's server and can take two
+minutes, and an update replaces the texts PrestaShop ships (order statuses,
+page titles) in that language: confirm with the merchant first.
 
 ## Prices
 

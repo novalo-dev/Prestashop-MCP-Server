@@ -1447,6 +1447,11 @@
       <source>Delete a language</source>
       <target>Delete a language</target>
     </trans-unit>
+    <!-- Add or update a language from PrestaShop -->
+    <trans-unit id="d0c6e19ce3834c627295b02fa67834c6" resname="Add or update a language from PrestaShop">
+      <source>Add or update a language from PrestaShop</source>
+      <target>Add or update a language from PrestaShop</target>
+    </trans-unit>
     <!-- Add a language -->
     <trans-unit id="369b8db3e9651d0b5d8a13a5f7f9a53a" resname="Add a language">
       <source>Add a language</source>

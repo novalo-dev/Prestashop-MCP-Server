@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "the language is required, refused before any download", "arguments": {}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- iso_code: required"]},
+    {"why": "a code PrestaShop offers no pack for is refused before any download", "arguments": {"iso_code": "zz"}, "expect": "error", "contains": ["- iso_code: a language code PrestaShop offers"]},
+    {"why": "a field the tool does not take is refused before any download", "arguments": {"iso_code": "fr", "pack": 1}, "expect": "error", "contains": ["- pack: not a field of this tool"]}
+  ]
+}

@@ -3904,9 +3904,10 @@ comes from the `timezone` table, 560 rows on 8.0.1 and 559 on 9.0.0.
 **Does** - changes the settings of **International > Localization >
 Localization**, as the **Save** buttons of its **Configuration**, **Local
 units** and **Advanced** cards do: the default language and country, browser
-detection, the time zone, the four units and the two server identifiers. The
-default currency, which resets every exchange rate when it changes, is a
-second part (#384): until then only the value read passes.
+detection, the default currency, the time zone, the four units and the two
+server identifiers. A new default currency is set as the core sets it
+(#384): every exchange rate reset and read again from PrestaShop's feed,
+fetched before anything is written.
 
 **Do not use for** - enabling a language or a country (→
 `somcp_update_language`, `somcp_update_country`); the units of one carrier
@@ -3924,7 +3925,7 @@ computed keys, ignored when given back as read and refused otherwise, as
 | `detect_language_from_browser` | **Set language from browser** | boolean | `true or false` |
 | `default_id_country` | **Default country** | integer | `SomcpTool::id()`; an existing country, otherwise `notFound(..., 'country', ..., 'somcp_list_countries')`; a disabled country is accepted, as the form offers it, with the warning below |
 | `detect_country_from_browser` | **Set default country from browser language** | boolean | `true or false` |
-| `default_id_currency` | **Default currency** | integer | until #384, the value read is no change, any other `default_id_currency: changing the default currency is not available yet` |
+| `default_id_currency` | **Default currency** | integer | `SomcpTool::id()`; the value read is no change; otherwise a currency of the shop (`SomcpToolListCurrencies::query()`), otherwise `SomcpTool::notFound('default_id_currency', 'currency', <id>, 'somcp_list_currencies')`; a disabled one: `default_id_currency: the currency <id> is disabled - the form offers enabled currencies only; enable it with somcp_update_currency first` (the form offers the enabled currencies, `CurrencyByIdChoiceProvider`) |
 | `timezone` | **Time zone** | string | a `name` of the `timezone` table, compared exactly (`Europe/Paris`); otherwise `timezone: a time zone name of the list, for example Europe/Paris` |
 | `weight_unit`, `distance_unit`, `volume_unit`, `dimension_unit` | **Weight unit**, **Distance unit**, **Volume unit**, **Dimension unit** | string | trimmed, not empty (`<name>: required, never empty`), `Validate::isGenericName()` (`<name>: no <>={} in a unit`), 10 characters at most (`<name>: 10 characters at most, a unit such as kg or cm`) |
 | `language_identifier` | **Language identifier** | string | two letters, stored lowercase: otherwise `language_identifier: two letters, ISO 639-1, for example en` |
@@ -3936,20 +3937,29 @@ before anything is written.
 
 **Then**
 - `$before = SomcpToolGetLocalizationSettings::settings($idShop, $idLang)`;
+- a new `default_id_currency`, before anything is written: the currencies read through `SomcpToolUpdateExchangeRates::currencies()`, then the feed fetched by `SomcpToolUpdateExchangeRates::feed()`, shared with that tool (20 seconds). `null`: `PrestaShop's exchange rate server did not answer within 20 seconds, or sent something unreadable. Nothing was changed: the default currency stays <ISO>, since changing it needs new exchange rates. Try again later.`; the new currency absent from the feed (`SomcpToolUpdateExchangeRates::listed()`, its source included): `PrestaShop's exchange rates do not include <ISO>: the rates of the other currencies cannot be worked out from it. Nothing was changed.`;
 - the keys whose value differs, each saved with `Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for the shop of the token, in the order of the cards; a failed save stops the call and names what was saved before it;
+- right after `PS_CURRENCY_DEFAULT`, in the shop of the token (`Somcp::actAsShop()`): the feed stored in the cache `Tools::simplexml_load_file()` reads, then the core's own `CurrencyManager::updateDefaultCurrency()` (service `prestashop.adapter.manager.currency`, or `new CurrencyManager()` where no container runs), which sets every rate to 1 and calls `Currency::refreshCurrencies()`; it finds the feed in the cache and sends no second request;
 - nothing differs: `changed: false`, `reason` `The localization settings already hold every value given. Nothing was written.`, `localization` as read;
 - logged as `localization_settings_updated` with the fields saved, `localization_settings_update_failed` with the failure.
 
 **Returns** - `changed: true`, `changes` (per field its `field`, `old`,
 `new`, under the names of the parameters), and `localization` read back
-through `settings()`. Warnings, in `warning`:
+through `settings()`. When the default currency changed, also `rates` (one
+item per currency whose rate moved, the shape of `changes` of
+`somcp_update_exchange_rates`, `SomcpToolUpdateExchangeRates::rateChanges()`)
+and, when not empty, `not_in_feed` (the ISO codes the feed leaves out, now at
+rate 1). Warnings, in `warning`:
+- the default currency changed: `The default currency is now <ISO>. Product prices were not converted: each keeps its figure, now read in <ISO>, as the back office warns. Check them with somcp_get_product.`;
+- `not_in_feed` not empty: `PrestaShop's exchange rates do not include <ISO codes>: their rate is now 1; set it with somcp_update_currency.`;
 - `default_id_country` set to a disabled country: `<name> is the default country but is not enabled: customers cannot pick it in an address; enable it with somcp_update_country.`;
 - a unit changed: `The <field> changed from <old> to <new>: weights, sizes and carrier ranges already typed are not converted, only their label changes.`;
 - on an installation of several shops: `The settings changed for this shop only, as the back office saves them in a shop context.`
 
 **Notes**
 - The core's Save of the Configuration card also calls `LanguageActivator::enable()` on the language chosen; only enabled languages are accepted, so it has nothing to do.
-- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), sets the time zone and puts it back.
+- The scenario checks the refusals; `dev/shop-tests/run.php` gives the read back whole (no change), sets the time zone and puts it back. The CI never reaches PrestaShop's server: no real change of the default currency is tested.
+- Product prices are never converted by the core: they keep their figures, read in the new currency, which is what the warning of the field on screen says.
 
 **Differences between 8.0.1 and 9.0.0** - none in the adapters or the
 controller. The **Time zone** list has 560 names on 8.0.1, 559 on 9.0.0
@@ -4257,8 +4267,8 @@ these and call again:`.
 **Then**
 - the currencies of the shop read before, through `SomcpToolListCurrencies::query()`, `row()` and `defaultCurrency()`;
 - no currency other than the default one: `changed: false`, `reason` `<ISO code> is the only currency of this shop: its rate is always 1. Nothing was written.`, without calling the server;
-- otherwise `@set_time_limit(40)` when `max_execution_time` is above 0 and below 40, the feed `_PS_CURRENCY_FEED_URL_` fetched with `Tools::file_get_contents(..., 20)` (constant `TIMEOUT`), parsed, stored in the cache `Tools::simplexml_load_file()` reads, then `Currency::refreshCurrencies()` in the shop of the token (`Somcp::actAsShop()`): it finds the feed in the cache and sends no second request;
-- the currencies read again and compared row by row.
+- otherwise the feed fetched by the public `feed()`, shared with `somcp_update_localization_settings`: `@set_time_limit(40)` when `max_execution_time` is above 0 and below 40, `_PS_CURRENCY_FEED_URL_` fetched with `Tools::file_get_contents(..., 20)` (constant `TIMEOUT`), parsed (`null` when empty or not XML); then stored in the cache `Tools::simplexml_load_file()` reads, then `Currency::refreshCurrencies()` in the shop of the token (`Somcp::actAsShop()`): it finds the feed in the cache and sends no second request;
+- the currencies read again and compared row by row (`currencies()` and `rateChanges()`, public, with `listed()`, the ISO codes of the feed, for `somcp_update_localization_settings`).
 
 **Returns** - the shape of every update tool:
 - `changed` (boolean);

@@ -382,7 +382,9 @@ dimension units every product weight and carrier range is read in: read it
 before typing a weight or a size. `somcp_update_localization_settings`
 changes them; a unit is only a label, so values already typed are not
 converted: confirm with the merchant before changing a unit of a shop that
-already has products or carrier ranges.
+already has products or carrier ranges. A new default currency resets every
+exchange rate and converts no price, each keeps its figure in the new
+currency: confirm with the merchant, who may want maintenance mode on first.
 
 ## Prices
 

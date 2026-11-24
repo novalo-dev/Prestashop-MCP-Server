@@ -24,14 +24,19 @@ declare(strict_types=1);
  * Saved by their configuration keys for the shop of the token, the keys the
  * core's LocalizationConfiguration, LocalUnitsConfiguration and
  * AdvancedConfiguration write, with the choices their forms offer: enabled
- * languages, any country, the time zones of the timezone table. The default
- * currency resets every exchange rate when it changes, which is a part of
- * its own: until it is written, only the value read passes.
+ * languages, any country, the time zones of the timezone table. A new
+ * default currency is set as the core sets it: every exchange rate reset and
+ * read again from PrestaShop's feed, fetched before anything is written.
  */
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
+
+// Loaded here rather than left to the order the registry reads tools/ in: the
+// feed is fetched and the rates compared as somcp_update_exchange_rates does.
+require_once __DIR__ . '/SomcpToolListCurrencies.php';
+require_once __DIR__ . '/SomcpToolUpdateExchangeRates.php';
 
 class SomcpToolUpdateLocalizationSettings
 {
@@ -79,8 +84,9 @@ class SomcpToolUpdateLocalizationSettings
                 . 'country, browser detection, the time zone, the weight, distance, volume and dimension units and '
                 . 'the server identifiers. Only the fields given change; the answer of '
                 . 'somcp_get_localization_settings can be given back. Units are labels: values already typed are '
-                . 'not converted. The default currency cannot be changed yet. To enable a language or a country, '
-                . 'somcp_update_language or somcp_update_country.',
+                . 'not converted. A new default currency resets every exchange rate from PrestaShop\'s server (up '
+                . 'to ' . SomcpToolUpdateExchangeRates::TIMEOUT . ' seconds) and converts no price. To enable a '
+                . 'language or a country, somcp_update_language or somcp_update_country.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -96,7 +102,7 @@ class SomcpToolUpdateLocalizationSettings
                     'detect_country_from_browser' => $boolean('Set default country from browser language.'),
                     'default_id_currency' => [
                         'type' => 'integer',
-                        'description' => 'Default currency (ID): only the value read for now.',
+                        'description' => 'Default currency: an enabled currency (ID), from somcp_list_currencies.',
                     ],
                     'timezone' => $string('Time zone, a name of the list, for example Europe/Paris.'),
                     'weight_unit' => $string('Weight unit, for example kg.'),
@@ -148,7 +154,7 @@ class SomcpToolUpdateLocalizationSettings
         $given = [];
         self::checkLanguage($arguments, $idShop, $given, $problems);
         self::checkCountry($arguments, $given, $problems);
-        self::checkCurrency($arguments, (int) $stored['default_id_currency'], $given, $problems);
+        self::checkCurrency($arguments, (int) $stored['default_id_currency'], $idShop, $idLang, $given, $problems);
         foreach (self::SWITCHES as $field) {
             if (!array_key_exists($field, $arguments) || $arguments[$field] === null) {
                 continue;
@@ -187,6 +193,16 @@ class SomcpToolUpdateLocalizationSettings
             ]);
         }
 
+        $currency = null;
+        foreach ($plan as $change) {
+            if ($change['field'] === 'default_id_currency') {
+                $currency = self::prepareCurrency($idShop, (int) $change['old'], (int) $change['new'], $idEmployee);
+                if (isset($currency['content'])) {
+                    return $currency;
+                }
+            }
+        }
+
         $saved = [];
         foreach ($plan as $change) {
             $value = is_bool($change['new']) ? (int) $change['new'] : $change['new'];
@@ -194,6 +210,9 @@ class SomcpToolUpdateLocalizationSettings
                 return self::failed($saved, $change['field'] . ' could not be saved', $idEmployee);
             }
             $saved[] = $change['field'];
+            if ($change['field'] === 'default_id_currency' && $currency !== null) {
+                self::resetRates($currency['feed']);
+            }
         }
         SomcpLogger::log('localization_settings_updated', SomcpLogger::OUTCOME_SUCCESS, implode(', ', $saved), '', $idEmployee);
 
@@ -204,6 +223,30 @@ class SomcpToolUpdateLocalizationSettings
             }, $plan),
         ];
         $warnings = [];
+        if ($currency !== null) {
+            $after = SomcpToolUpdateExchangeRates::currencies($idShop);
+            $result['rates'] = SomcpToolUpdateExchangeRates::rateChanges($currency['before'], $after);
+            $iso = $currency['iso_code'];
+            $listed = SomcpToolUpdateExchangeRates::listed($currency['feed']);
+            $missing = [];
+            foreach ($after as $row) {
+                if ($row['id_currency'] !== (int) $currency['id_currency']
+                    && !in_array(strtoupper((string) $row['iso_code']), $listed, true)) {
+                    $missing[] = (string) $row['iso_code'];
+                }
+            }
+            if ($missing !== []) {
+                $result['not_in_feed'] = $missing;
+            }
+            $warnings[] = 'The default currency is now ' . $iso . '. Product prices were not converted: each keeps its '
+                . 'figure, now read in ' . $iso . ', as the back office warns. Check them with somcp_get_product.';
+            if ($missing !== []) {
+                // CurrencyManager sets every rate to 1 before the feed is read,
+                // and the feed cannot move a currency it does not list.
+                $warnings[] = 'PrestaShop\'s exchange rates do not include ' . implode(', ', $missing) . ': their rate '
+                    . 'is now 1; set it with somcp_update_currency.';
+            }
+        }
         foreach ($plan as $change) {
             if ($change['field'] === 'default_id_country' && !(new Country((int) $change['new']))->active) {
                 $warnings[] = Country::getNameById($idLang, (int) $change['new']) . ' is the default country but is not '
@@ -290,17 +333,21 @@ class SomcpToolUpdateLocalizationSettings
     }
 
     /**
-     * Default currency: changing it resets every exchange rate, which this
-     * tool does not do yet, so only the value read passes, as no change.
+     * Default currency: the form offers the enabled currencies of the shop.
+     *
+     * The value read always passes, as no change, so a read given back whole
+     * is never refused for it.
      *
      * @param array<string, mixed> $arguments
      * @param int $stored
+     * @param int $idShop
+     * @param int $idLang
      * @param array<string, mixed> $given
      * @param array<int, string> $problems
      *
      * @return void
      */
-    private static function checkCurrency(array $arguments, int $stored, array &$given, array &$problems): void
+    private static function checkCurrency(array $arguments, int $stored, int $idShop, int $idLang, array &$given, array &$problems): void
     {
         if (!array_key_exists('default_id_currency', $arguments) || $arguments['default_id_currency'] === null) {
             return;
@@ -308,11 +355,90 @@ class SomcpToolUpdateLocalizationSettings
         $id = SomcpTool::id($arguments, 'default_id_currency');
         if ($id === 0) {
             $problems[] = SomcpTool::notAnIdentifier('default_id_currency');
-        } elseif ($id !== $stored) {
-            $problems[] = 'default_id_currency: changing the default currency is not available yet';
+
+            return;
+        }
+        if ($id === $stored) {
+            $given['default_id_currency'] = $id;
+
+            return;
+        }
+        $query = SomcpToolListCurrencies::query($idShop, $idLang);
+        $query->where('c.`id_currency` = ' . (int) $id);
+        $row = Db::getInstance()->getRow($query);
+        if (!is_array($row)) {
+            $problems[] = SomcpTool::notFound('default_id_currency', 'currency', $id, 'somcp_list_currencies');
+        } elseif ((int) $row['active'] !== 1) {
+            $problems[] = 'default_id_currency: the currency ' . $id . ' is disabled - the form offers enabled '
+                . 'currencies only; enable it with somcp_update_currency first';
         } else {
             $given['default_id_currency'] = $id;
         }
+    }
+
+    /**
+     * What a new default currency needs before anything is written: the feed, and the rates read before.
+     *
+     * The core sets every rate to 1, then reads them from the feed; when the
+     * feed does not answer the back office leaves them at 1 without a word.
+     * Fetched first, so that case changes nothing.
+     *
+     * @param int $idShop
+     * @param int $old
+     * @param int $new
+     * @param int $idEmployee
+     *
+     * @return array<string, mixed> the refusal, with content, or feed, before, iso_code and id_currency
+     */
+    private static function prepareCurrency(int $idShop, int $old, int $new, int $idEmployee): array
+    {
+        // The rates live in currency_shop, one row per shop: the core resets
+        // and reads them for the shops of the context.
+        Somcp::actAsShop($idShop);
+        $before = SomcpToolUpdateExchangeRates::currencies($idShop);
+        $oldIso = isset($before[$old]) ? (string) $before[$old]['iso_code'] : (string) $old;
+        $newIso = isset($before[$new]) ? (string) $before[$new]['iso_code'] : (string) $new;
+
+        $feed = SomcpToolUpdateExchangeRates::feed();
+        if ($feed === null) {
+            SomcpLogger::log('localization_settings_update_failed', SomcpLogger::OUTCOME_FAILURE, 'feed unreadable', '', $idEmployee);
+
+            return SomcpTool::text(
+                'PrestaShop\'s exchange rate server did not answer within ' . SomcpToolUpdateExchangeRates::TIMEOUT
+                    . ' seconds, or sent something unreadable. Nothing was changed: the default currency stays '
+                    . $oldIso . ', since changing it needs new exchange rates. Try again later.',
+                true
+            );
+        }
+        if (!in_array(strtoupper($newIso), SomcpToolUpdateExchangeRates::listed($feed), true)) {
+            SomcpLogger::log('localization_settings_update_failed', SomcpLogger::OUTCOME_FAILURE, 'currency not in feed', '', $idEmployee);
+
+            return SomcpTool::text(
+                'PrestaShop\'s exchange rates do not include ' . $newIso . ': the rates of the other currencies '
+                    . 'cannot be worked out from it. Nothing was changed.',
+                true
+            );
+        }
+
+        return ['feed' => $feed, 'before' => $before, 'iso_code' => $newIso, 'id_currency' => $new];
+    }
+
+    /**
+     * The core's own steps after a new default currency, called rather than copied.
+     *
+     * @param SimpleXMLElement $feed the feed already fetched, so the core sends no second request
+     *
+     * @return void
+     */
+    private static function resetRates(SimpleXMLElement $feed): void
+    {
+        Cache::store('Tools::simplexml_load_file' . _PS_CURRENCY_FEED_URL_, $feed);
+        $manager = SomcpBackOffice::coreService('prestashop.adapter.manager.currency');
+        if (!$manager instanceof PrestaShop\PrestaShop\Adapter\Currency\CurrencyManager) {
+            // The MCP endpoint is a front controller, with no kernel container.
+            $manager = new PrestaShop\PrestaShop\Adapter\Currency\CurrencyManager();
+        }
+        $manager->updateDefaultCurrency();
     }
 
     /**

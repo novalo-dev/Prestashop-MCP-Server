@@ -108,17 +108,8 @@ class SomcpToolUpdateExchangeRates
             ]);
         }
 
-        // PHP may stop the request before the feed answers.
-        $limit = (int) ini_get('max_execution_time');
-        if ($limit > 0 && $limit < self::REQUEST_SECONDS && function_exists('set_time_limit')) {
-            @set_time_limit(self::REQUEST_SECONDS);
-        }
-        // Fetched here with a longer wait than the core's, then handed to the
-        // core through the cache Tools::simplexml_load_file() reads first, so
-        // Currency::refreshCurrencies() sends no second request.
-        $content = Tools::file_get_contents(_PS_CURRENCY_FEED_URL_, false, null, self::TIMEOUT);
-        $feed = is_string($content) && $content !== '' ? @simplexml_load_string($content) : false;
-        if ($feed === false) {
+        $feed = self::feed();
+        if ($feed === null) {
             SomcpLogger::log('exchange_rates_update_failed', SomcpLogger::OUTCOME_FAILURE, 'feed unreadable', '', $idEmployee);
 
             return SomcpTool::text(
@@ -128,6 +119,8 @@ class SomcpToolUpdateExchangeRates
                 true
             );
         }
+        // Handed to the core through the cache Tools::simplexml_load_file()
+        // reads first, so Currency::refreshCurrencies() sends no second request.
         Cache::store('Tools::simplexml_load_file' . _PS_CURRENCY_FEED_URL_, $feed);
 
         try {
@@ -144,29 +137,12 @@ class SomcpToolUpdateExchangeRates
         // Read again and compared row by row: the core saves only the rates
         // that differ and says nothing of the others.
         $after = self::currencies($idShop);
-        $changes = [];
-        foreach ($after as $id => $currency) {
-            $old = isset($before[$id]) ? (float) $before[$id]['conversion_rate'] : null;
-            if ($old !== null && abs($old - (float) $currency['conversion_rate']) > 0.0000001) {
-                $changes[] = [
-                    'id_currency' => $id,
-                    'iso_code' => (string) $currency['iso_code'],
-                    'field' => 'conversion_rate',
-                    'old' => $old,
-                    'new' => (float) $currency['conversion_rate'],
-                ];
-            }
-        }
+        $changes = self::rateChanges($before, $after);
         SomcpLogger::log('exchange_rates_updated', SomcpLogger::OUTCOME_SUCCESS, count($changes) . ' rates changed', '', $idEmployee);
 
         // The core leaves a currency the feed does not list as it was,
         // without a word: named, so the merchant sets it by hand.
-        $listed = [strtoupper((string) $feed->source['iso_code'])];
-        if (isset($feed->list->currency)) {
-            foreach ($feed->list->currency as $entry) {
-                $listed[] = strtoupper((string) $entry['iso_code']);
-            }
-        }
+        $listed = self::listed($feed);
         $missing = [];
         foreach ($others as $currency) {
             if (!in_array(strtoupper((string) $currency['iso_code']), $listed, true)) {
@@ -202,13 +178,84 @@ class SomcpToolUpdateExchangeRates
     }
 
     /**
+     * PrestaShop's exchange rate feed, or null when it does not answer in time or cannot be read.
+     *
+     * Fetched here with a longer wait than the core's. Public because
+     * somcp_update_localization_settings needs the same feed before it
+     * changes the default currency, and must fetch it the same way.
+     *
+     * @return SimpleXMLElement|null
+     */
+    public static function feed(): ?SimpleXMLElement
+    {
+        // PHP may stop the request before the feed answers.
+        $limit = (int) ini_get('max_execution_time');
+        if ($limit > 0 && $limit < self::REQUEST_SECONDS && function_exists('set_time_limit')) {
+            @set_time_limit(self::REQUEST_SECONDS);
+        }
+        $content = Tools::file_get_contents(_PS_CURRENCY_FEED_URL_, false, null, self::TIMEOUT);
+        $feed = is_string($content) && $content !== '' ? @simplexml_load_string($content) : false;
+
+        return $feed instanceof SimpleXMLElement ? $feed : null;
+    }
+
+    /**
+     * The ISO codes the feed gives a rate for, its source currency included, in capitals.
+     *
+     * @param SimpleXMLElement $feed
+     *
+     * @return array<int, string>
+     */
+    public static function listed(SimpleXMLElement $feed): array
+    {
+        $listed = [strtoupper((string) $feed->source['iso_code'])];
+        if (isset($feed->list->currency)) {
+            foreach ($feed->list->currency as $entry) {
+                $listed[] = strtoupper((string) $entry['iso_code']);
+            }
+        }
+
+        return $listed;
+    }
+
+    /**
+     * The rates that moved between two reads of currencies(), in the shape of changes.
+     *
+     * @param array<int, array<string, mixed>> $before
+     * @param array<int, array<string, mixed>> $after
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function rateChanges(array $before, array $after): array
+    {
+        $changes = [];
+        foreach ($after as $id => $currency) {
+            $old = isset($before[$id]) ? (float) $before[$id]['conversion_rate'] : null;
+            if ($old !== null && abs($old - (float) $currency['conversion_rate']) > 0.0000001) {
+                $changes[] = [
+                    'id_currency' => $id,
+                    'iso_code' => (string) $currency['iso_code'],
+                    'field' => 'conversion_rate',
+                    'old' => $old,
+                    'new' => (float) $currency['conversion_rate'],
+                ];
+            }
+        }
+
+        return $changes;
+    }
+
+    /**
      * The currencies of the shop as somcp_list_currencies answers them, keyed by identifier.
+     *
+     * Public so somcp_update_localization_settings compares the rates of the
+     * same rows when a new default currency resets them.
      *
      * @param int $idShop
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function currencies(int $idShop): array
+    public static function currencies(int $idShop): array
     {
         $language = SomcpTool::readLanguage([], $idShop);
         $idLang = $language !== null ? $language[0] : (int) Configuration::get('PS_LANG_DEFAULT');

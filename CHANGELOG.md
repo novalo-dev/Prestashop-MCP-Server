@@ -32,7 +32,10 @@ International > Localization > Localization do: the default language and country
 detection, the time zone, the units and the server's identifiers, so a new
 shop can be set to the language, country and units it sells in. A unit is only
 a label: the answer says that weights and sizes already typed are not
-converted. The default currency cannot be changed by the tool yet.
+converted. The default currency can be changed too, as the back office does
+it: every exchange rate is reset and read again from PrestaShop's exchange
+rate server, which is asked first, so nothing changes when it does not
+answer. Product prices are not converted, and the answer says so.
 
 **Add or update a language from PrestaShop.** The new tool
 somcp_install_language_pack does what the card Add / Update a language of

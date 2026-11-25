@@ -560,6 +560,21 @@ class Somcp extends Module
     }
 
     /**
+     * What _style.tpl links: the charte shared by the Novalo modules and the
+     * script that places its tips. Every page that includes that template
+     * assigns these, the page having no addCSS() on PrestaShop 9.
+     *
+     * @return array<string, string>
+     */
+    public function styleAssets(): array
+    {
+        return [
+            'somcp_charte_css' => $this->viewUrl('css/charte.css'),
+            'somcp_tip_js' => $this->viewUrl('js/admin-tip.js'),
+        ];
+    }
+
+    /**
      * The address of a file of views/, with what tells one copy from the next.
      *
      * The file's own date rides along with the module version: builds of one
@@ -872,13 +887,10 @@ class Somcp extends Module
         $tools = $this->toolList();
         $prompts = $this->promptList();
 
+        $this->context->smarty->assign($this->styleAssets());
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
             'somcp_pane' => $this->settingsPane,
-            // The charte and the script that places its tips: linked by the
-            // template, as the page has no addCSS() on PrestaShop 9.
-            'somcp_charte_css' => $this->viewUrl('css/charte.css'),
-            'somcp_tip_js' => $this->viewUrl('js/admin-tip.js'),
             'somcp_sponsor_url' => self::SPONSOR_URL,
             'somcp_name' => $this->displayName,
             'somcp_version' => $this->version,
@@ -1127,6 +1139,8 @@ class Somcp extends Module
             'somcp_endpoints' => $mayGrant ? SomcpConfig::contextEndpoints() : [],
             'somcp_multistore' => Shop::isFeatureActive(),
         ]);
+
+        $this->context->smarty->assign($this->styleAssets());
 
         return $this->context->smarty->fetch(
             _PS_MODULE_DIR_ . 'somcp/views/templates/admin/somcp/restricted.tpl'

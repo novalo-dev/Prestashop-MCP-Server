@@ -472,7 +472,7 @@
                 var kept = [];
                 var matched = 0;
                 groups.forEach(function (group) {
-                    var head = group.querySelector('.somcp-group-row');
+                    var head = group.querySelector('.nv-group-row');
                     var rows = Array.prototype.slice.call(group.querySelectorAll('[data-somcp-row]'));
                     var whole = query !== '' && head.textContent.toLowerCase().indexOf(query) !== -1;
                     var hits = rows.filter(function (row) {

@@ -16,7 +16,7 @@
 
 {include file='./_style.tpl'}
 
-<div class="somcp-consent">
+<div class="somcp-consent nv">
     <div class="panel">
         <div class="panel-heading">
             <i class="icon-upload"></i> {$somcp_title|escape:'html':'UTF-8'}
@@ -135,7 +135,11 @@
                     {l s='The request is dropped after fifteen minutes, and each file can only be collected once.' d='Modules.Somcp.Admin'}
                 </p>
 
-                <div class="somcp-actions somcp-actions-split">
+                {* Walking away belongs at the other end of the row. Put next to
+                   "send", it is one slip away from the button that does the
+                   opposite, and on this page the slip costs the merchant the
+                   files they just chose. *}
+                <div class="somcp-actions nv-bar-split">
                     <button type="submit" name="decision" value="cancel" class="btn btn-default" formnovalidate>
                         {l s='Send nothing' d='Modules.Somcp.Admin'}
                     </button>

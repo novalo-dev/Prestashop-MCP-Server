@@ -24,7 +24,7 @@
                 <div class="somcp-endpoint-shop">
                     {$endpoint.name|escape:'html':'UTF-8'}
                     {if $endpoint.current}
-                        <span class="badge somcp-badge">{l s='current shop' d='Modules.Somcp.Admin'}</span>
+                        <span class="badge nv-badge">{l s='current shop' d='Modules.Somcp.Admin'}</span>
                     {/if}
                 </div>
             {/if}

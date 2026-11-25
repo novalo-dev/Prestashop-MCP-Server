@@ -16,7 +16,7 @@
 
 {include file='./_style.tpl'}
 
-<div class="somcp">
+<div class="somcp nv">
     <div class="panel">
         <div class="panel-heading">
             <i class="icon-lock"></i> {$somcp_restricted_title|escape:'html':'UTF-8'}
@@ -29,7 +29,7 @@
             {include file='./_endpoints.tpl'}
 
             {if $somcp_multistore}
-                <p class="somcp-note">
+                <p class="nv-note">
                     {l s='Each shop has its own address and its own connections. An assistant connected to one shop reaches that shop only.' d='Modules.Somcp.Admin'}
                 </p>
             {/if}

@@ -158,14 +158,6 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     margin-bottom: 6px;
 }
 
-.somcp .somcp-badge {
-    background: #25b9d7;
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 400;
-    margin-left: 6px;
-}
-
 /* Retry sits at the right of the sentence it answers, on the same line, and
    drops under it only when the line is too narrow. */
 .somcp .somcp-relay-line {
@@ -308,37 +300,9 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     margin-bottom: 0;
 }
 
-.somcp .somcp-note {
-    margin-top: 10px;
-    color: #7a7a7a;
-    font-size: 12px;
-}
-
 .somcp .somcp-diagnostic th {
     white-space: nowrap;
     width: 1%;
-}
-
-.somcp .somcp-status {
-    width: 1%;
-    font-size: 16px;
-    vertical-align: middle;
-}
-
-.somcp .somcp-status-ok {
-    color: #3ca63c;
-}
-
-.somcp .somcp-status-warning {
-    color: #ff9a52;
-}
-
-.somcp .somcp-status-error {
-    color: #e08f95;
-}
-
-.somcp .somcp-status-skipped {
-    color: #a0a0a0;
 }
 
 .somcp .somcp-log code {
@@ -376,12 +340,6 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     padding: 12px 0;
 }
 
-/* Walking away belongs at the other end of the row. Put next to "send", it is
-   one slip away from the button that does the opposite, and on this page the
-   slip costs the merchant the files they just chose. */
-.somcp-consent .somcp-actions-split {
-    justify-content: space-between;
-}
 
 .somcp-consent .somcp-actions-go {
     display: inline-flex;
@@ -562,73 +520,16 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     margin-top: 10px;
 }
 
-/* A switch drawn over the checkbox itself: it is still a checkbox, posted and
-   read like the ones it replaced, with the look of the switches on the
-   Configuration tab. */
-.somcp .somcp-toggle {
-    -webkit-appearance: none;
-    appearance: none;
-    position: relative;
-    display: inline-block;
-    width: 36px;
-    height: 20px;
-    margin: 0;
-    border-radius: 10px;
-    background: #c3cdd1;
-    cursor: pointer;
-    vertical-align: middle;
-    transition: background-color .15s;
-}
-
-.somcp .somcp-toggle::before {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    transition: left .15s;
-}
-
-.somcp .somcp-toggle:checked {
-    background: #70b580;
-}
-
-.somcp .somcp-toggle:checked::before {
-    left: 18px;
-}
-
-.somcp .somcp-toggle:focus-visible {
-    outline: 2px solid #25b9d7;
-    outline-offset: 2px;
-}
-
-.somcp .somcp-toggle:disabled {
-    cursor: not-allowed;
-    opacity: .5;
-}
 
 /* A switch half on: some of the prompts of a group, not all. */
-.somcp .somcp-toggle:indeterminate {
+.somcp .nv-toggle:indeterminate {
     background: #fbc02d;
 }
 
-.somcp .somcp-toggle:indeterminate::before {
+.somcp .nv-toggle:indeterminate::before {
     left: 10px;
 }
 
-/* The row heading each group of the tools and prompts lists, with its
-   switches and how many of its rows are on. */
-.somcp .somcp-tools .somcp-group-row td {
-    background: #f5f8f9;
-    border-top: 1px solid #dbe6e9;
-}
-
-.somcp .somcp-tools .somcp-group-row code {
-    margin-left: 6px;
-}
 
 .somcp .somcp-group-caret {
     padding: 0;
@@ -655,11 +556,11 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
 
 /* A group switched off in a column: its tools keep their own switch, shown
    faded since none of them is offered there until the group is back on. */
-.somcp .somcp-off-on [data-somcp-row] [data-somcp-column="on"] .somcp-toggle,
-.somcp .somcp-off-chat [data-somcp-row] [data-somcp-column="chat"] .somcp-toggle,
-.somcp .somcp-is-held .somcp-toggle,
-.somcp .somcp-off-on .somcp-group-row [data-somcp-all="on"],
-.somcp .somcp-off-chat .somcp-group-row [data-somcp-all="chat"] {
+.somcp .somcp-off-on [data-somcp-row] [data-somcp-column="on"] .nv-toggle,
+.somcp .somcp-off-chat [data-somcp-row] [data-somcp-column="chat"] .nv-toggle,
+.somcp .somcp-is-held .nv-toggle,
+.somcp .somcp-off-on .nv-group-row [data-somcp-all="on"],
+.somcp .somcp-off-chat .nv-group-row [data-somcp-all="chat"] {
     opacity: .35;
 }
 

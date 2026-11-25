@@ -60,14 +60,14 @@
             <p>{l s='Paste this address into Claude, ChatGPT, Le Chat or any other MCP-compatible assistant. It will ask you to sign in to this shop and to approve the connection.' d='Modules.Somcp.Admin'}</p>
         {include file='./_endpoints.tpl'}
 
-        <p class="somcp-note">
+        <p class="nv-note">
             {if $somcp_multistore}
                 {l s='Each shop has its own address and its own connections. An assistant connected to one shop reaches that shop only.' d='Modules.Somcp.Admin'}
             {else}
                 {l s='Authorization server:' d='Modules.Somcp.Admin'} <code>{$somcp_issuer|escape:'html':'UTF-8'}</code>
             {/if}
         </p>
-            <p class="somcp-note">{l s='OAuth 2.1: every connection is approved by an employee, and an assistant never gets more rights than that employee.' d='Modules.Somcp.Admin'}</p>
+            <p class="nv-note">{l s='OAuth 2.1: every connection is approved by an employee, and an assistant never gets more rights than that employee.' d='Modules.Somcp.Admin'}</p>
         </div>
 
         <div class="panel">
@@ -79,7 +79,7 @@
                 <tbody>
                 {foreach from=$somcp_diagnostic item=check}
                     <tr>
-                        <td class="somcp-status somcp-status-{$check.status|escape:'html':'UTF-8'}">
+                        <td class="nv-status nv-status-{$check.status|escape:'html':'UTF-8'}">
                             {if $check.status === 'ok'}<i class="icon-check"></i>
                             {elseif $check.status === 'warning'}<i class="icon-warning"></i>
                             {elseif $check.status === 'skipped'}<i class="icon-minus"></i>
@@ -158,22 +158,22 @@
                         </thead>
                         {foreach from=$somcp_tools item=group}
                             <tbody class="somcp-group{if !$group.on} somcp-off-on{/if}{if !$group.chat} somcp-off-chat{/if}" data-somcp-group="{$group.scope|escape:'html':'UTF-8'}">
-                            <tr class="somcp-group-row">
+                            <tr class="nv-group-row">
                                 <td colspan="2">
                                     <button type="button" class="somcp-group-caret" data-somcp-expand aria-expanded="true"
                                             aria-label="{l s='Show or hide the tools of this group' d='Modules.Somcp.Admin'}"><i class="material-icons">expand_more</i></button>
                                     <strong>{$group.label|escape:'html':'UTF-8'}</strong>
                                     <span class="badge">{$group.items|count}</span>
-                                    <code>{$group.scope|escape:'html':'UTF-8'}</code>
+                                    <code class="nv-ml-s">{$group.scope|escape:'html':'UTF-8'}</code>
                                 </td>
                                 {if $group.switchable}
                                     <td class="somcp-tool-on">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_scope_on[{$group.scope|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_scope_on[{$group.scope|escape:'html':'UTF-8'}]"
                                                value="1" data-somcp-scope="on" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $group.on} checked{/if}>
                                         <span class="somcp-group-count" data-somcp-counted="on"></span>
                                     </td>
                                     <td class="somcp-tool-on">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_scope_chat[{$group.scope|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_scope_chat[{$group.scope|escape:'html':'UTF-8'}]"
                                                value="1" data-somcp-scope="chat" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $group.chat} checked{/if}>
                                         <span class="somcp-group-count" data-somcp-counted="chat"></span>
                                     </td>
@@ -209,11 +209,11 @@
                                         <td class="somcp-tool-on"><span class="text-muted">-</span></td>
                                     {else}
                                         <td class="somcp-tool-on" data-somcp-column="on">
-                                            <input type="checkbox" class="somcp-toggle" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
+                                            <input type="checkbox" class="nv-toggle" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
                                                    value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $tool.on} checked{/if}>
                                         </td>
                                         <td class="somcp-tool-on" data-somcp-column="chat">
-                                            <input type="checkbox" class="somcp-toggle" name="somcp_tool_chat[{$tool.name|escape:'html':'UTF-8'}]"
+                                            <input type="checkbox" class="nv-toggle" name="somcp_tool_chat[{$tool.name|escape:'html':'UTF-8'}]"
                                                    value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $tool.chat} checked{/if}>
                                         </td>
                                     {/if}
@@ -273,7 +273,7 @@
                         </thead>
                         {foreach from=$somcp_prompts item=group}
                             <tbody class="somcp-group" data-somcp-group="{$group.scope|escape:'html':'UTF-8'}">
-                            <tr class="somcp-group-row">
+                            <tr class="nv-group-row">
                                 <td colspan="2">
                                     <button type="button" class="somcp-group-caret" data-somcp-expand aria-expanded="true"
                                             aria-label="{l s='Show or hide the prompts of this group' d='Modules.Somcp.Admin'}"><i class="material-icons">expand_more</i></button>
@@ -284,12 +284,12 @@
                                    and are never posted. The group itself is
                                    switched in the tools list. *}
                                 <td class="somcp-tool-on">
-                                    <input type="checkbox" class="somcp-toggle" data-somcp-all="on"
+                                    <input type="checkbox" class="nv-toggle" data-somcp-all="on"
                                            aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}">
                                     <span class="somcp-group-count" data-somcp-counted="on"></span>
                                 </td>
                                 <td class="somcp-tool-on">
-                                    <input type="checkbox" class="somcp-toggle" data-somcp-all="chat"
+                                    <input type="checkbox" class="nv-toggle" data-somcp-all="chat"
                                            aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}">
                                     <span class="somcp-group-count" data-somcp-counted="chat"></span>
                                 </td>
@@ -306,12 +306,12 @@
                                         {else}{l s='This module' d='Modules.Somcp.Admin'}{/if}
                                     </td>
                                     <td class="somcp-tool-on{if $prompt.held} somcp-is-held{/if}" data-somcp-column="on">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_prompt_on[{$prompt.name|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_prompt_on[{$prompt.name|escape:'html':'UTF-8'}]"
                                                value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $prompt.on} checked{/if}>
                                         <span class="somcp-held"{if !$prompt.held} hidden{/if}>{l s='group switched off' d='Modules.Somcp.Admin'}</span>
                                     </td>
                                     <td class="somcp-tool-on{if $prompt.held_chat} somcp-is-held{/if}" data-somcp-column="chat">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_prompt_chat[{$prompt.name|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_prompt_chat[{$prompt.name|escape:'html':'UTF-8'}]"
                                                value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $prompt.chat} checked{/if}>
                                         <span class="somcp-held"{if !$prompt.held_chat} hidden{/if}>{l s='group switched off' d='Modules.Somcp.Admin'}</span>
                                     </td>

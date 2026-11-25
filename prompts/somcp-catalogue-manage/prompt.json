@@ -72,6 +72,7 @@
     "somcp_update_order_settings",
     "somcp_get_product_settings",
     "somcp_update_product_settings",
+    "somcp_get_customer_settings",
     "somcp_list_zones",
     "somcp_create_zone",
     "somcp_update_zone",

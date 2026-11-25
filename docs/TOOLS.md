@@ -3785,6 +3785,51 @@ somcp_get_product_settings before calling again.`).
 `feature_values_order` and the `sales` order on 9.0.0 only;
 `disabled_product_behavior` from 8.1.0.
 
+#### `somcp_get_customer_settings`
+**State**: written · [issue #411](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/411)
+**Nature**: `acts(VIEW, 'AdminCustomerPreferences')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - reads **Shop Parameters > Customer Settings**, tab **Customer
+Settings**, card **General**. Read only, replayable. The tabs **Groups** and
+**Titles** are other pages (`AdminGroups`, `AdminGenders`).
+`somcp_create_customer` and `somcp_search_customers` read B2B mode for their
+own fields; this tool is where the merchant's choice is read.
+
+**Do not use for** - the customer groups (→ `somcp_list_customer_groups`);
+one customer (→ `somcp_get_customer`); changing these settings (the back
+office, until `somcp_update_customer_settings`).
+
+**Parameters** - none. Unknown arguments through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
+and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetCustomerSettings::settings($idShop)` for the update to answer
+with, each key read with `Configuration::get(<key>, null, $idShopGroup,
+$idShop)` for the shop of the token and its group, as `CustomerConfiguration`
+reads them; a key with no row reads as the core's adapter reads it (`false`,
+`0`):
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `redisplay_cart_at_login` | **Re-display cart at login** | `PS_CART_FOLLOWING` | boolean |
+| `send_email_after_registration` | **Send an email after registration** | `PS_CUSTOMER_CREATION_EMAIL` | boolean |
+| `password_reset_delay_minutes` | **Password reset delay** (**minutes**) | `PS_PASSWD_TIME_FRONT` | integer, 0 or more |
+| `b2b_mode` | **Enable B2B mode** | `PS_B2B_ENABLE` | boolean |
+| `ask_for_birth_date` | **Ask for birth date** | `PS_CUSTOMER_BIRTHDATE` | boolean |
+| `partner_offers` | **Enable partner offers** | `PS_CUSTOMER_OPTIN` | boolean |
+
+No warning.
+
+**Errors** - an unknown argument, above.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 shows above the card **Make
+sure partner offers are not set as required in the Customers section of the
+back office before disabling them. Otherwise, new customers won't be able to
+create an account and proceed to checkout.**, 8.0.1 does not; 9.0.0 saves
+through the multistore form (a checkbox per field in a shop context), 8.0.1
+for the context.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

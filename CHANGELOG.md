@@ -95,6 +95,11 @@ change, a language left out keeps its texts, and the answer of
 somcp_get_product_settings can be given back as it is without writing
 anything.
 
+**Read the customer settings.** The new tool somcp_get_customer_settings reads
+Shop Parameters > Customer Settings: whether the last cart is shown again at
+login, the e-mail sent after registration, the delay between two password
+resets, B2B mode, the birth date field and partner offers.
+
 ### Changed
 
 **Limit a cart rule to countries, carriers and customer groups.**

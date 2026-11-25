@@ -71,6 +71,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_order_settings`
 - `somcp_get_product_settings`
 - `somcp_update_product_settings`
+- `somcp_get_customer_settings`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -289,6 +290,10 @@ why visitors cannot add a product to the cart.
 labels and delivery times included; give back the read with the change. Never
 turn catalog mode on, or stock management off, without the merchant's clear
 say-so: visitors could no longer order, or could order what is not there.
+`somcp_get_customer_settings` gives Customer Settings: the cart shown again at
+login, the e-mail after registration, the password reset delay, B2B mode, the
+birth date field and partner offers. Read it to know whether the shop is B2B
+before explaining the fields of an account.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

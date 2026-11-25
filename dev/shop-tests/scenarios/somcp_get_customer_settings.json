@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the customer settings of the shop", "arguments": {}, "expect": "ok", "contains": ["\"b2b_mode\":", "\"password_reset_delay_minutes\":"]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]}
+  ]
+}

@@ -82,7 +82,9 @@ localization pack with somcp_import_localization_pack refused the currencies
 from an assistant connected from outside the shop, which then had to add each
 currency one by one. The import now adds the currencies of the pack the shop
 does not have, at rate 1 and enabled for every payment module, then refreshes
-their rates, from every assistant as from the built-in chat.
+their rates, from every assistant as from the built-in chat. When one currency
+cannot be created, the answer names by their codes the currencies created
+before it, so the merchant knows which ones now exist.
 
 **The explanations of the settings are tips.** On the pages of the module,
 what a setting does was written in a paragraph under it, which made the pages

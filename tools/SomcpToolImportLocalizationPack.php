@@ -705,7 +705,16 @@ class SomcpToolImportLocalizationPack
     {
         $parts = [];
         if ($result['created'] !== []) {
-            $parts[] = self::counts($result['created']) . ' had been created';
+            $created = [];
+            foreach ($result['created'] as $kind => $rows) {
+                // The currencies named, not only counted: each one created is
+                // enabled and offered to every payment module, so the merchant
+                // has to know which ones exist now, and the assistant which
+                // one to call again for.
+                $created[] = count($rows) . ' ' . $kind
+                    . ($kind === 'currencies' ? ' (' . implode(', ', array_column($rows, 'iso_code')) . ')' : '');
+            }
+            $parts[] = implode(', ', $created) . ' had been created';
         }
         foreach ($result['changes'] as $change) {
             $parts[] = $change['field'] . ' had changed from ' . $change['old'] . ' to ' . $change['new'];

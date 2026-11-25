@@ -17,6 +17,11 @@
 {* Inline rather than a media file, for the same reason as the script: the
    settings page is rendered by Symfony on PrestaShop 9, where the controller
    addCSS() would need is a proxy without that method. *}
+{* The charte shared by the Novalo modules, then the rules of this module
+   alone. A link in the page for the reason given above; its address carries
+   the date of the file, so an update is not served from a cache. *}
+<link rel="stylesheet" type="text/css" href="{$somcp_charte_css|escape:'html':'UTF-8'}">
+<script type="text/javascript" src="{$somcp_tip_js|escape:'html':'UTF-8'}" defer></script>
 <style type="text/css">
 /* The heart of the Become a sponsor button, in the thank-you window. A primary
    button, so the heart is white like its text. Drawn as an image rather than

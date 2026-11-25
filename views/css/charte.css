@@ -1,0 +1,812 @@
+/*
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License version 3.0
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/AFL-3.0
+ * If you did not receive a copy of the license and are unable to obtain
+ * it through the world-wide-web, please send an email to
+ * contact@novalo.fr so we can send you a copy immediately.
+ *
+ * @author    Novalo <contact@novalo.fr>
+ * @copyright 2026 Novalo
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License v3.0 (AFL-3.0)
+ */
+/*
+ * Novalo back office charte - the look this module shares with the other
+ * Novalo modules. That look is PrestaShop's own: native panels, native
+ * forms, native switches, native tables and buttons, left as the back office
+ * draws them. This file only adds what the back office has no component for,
+ * and never restyles a native one. Everything is scoped under .nv: a Novalo
+ * page carries that class on its root, and these rules never reach the rest of
+ * the back office (a stylesheet that leaked its utilities once broke the header
+ * and other modules' pages). The rules written for
+ * this module alone stay in _style.tpl.
+ */
+
+/* ------------------------------------------------------------------ *
+ * Hidden means hidden                                                 *
+ * ------------------------------------------------------------------ */
+
+/* Scripts show and hide with the hidden attribute. Bootstrap's buttons and
+   the flex rows below set display themselves and would show through it. */
+.nv [hidden] {
+    display: none !important;
+}
+
+/* The back office draws a heavy outline on every focused link and button, and
+   a clicked button keeps the focus. Dropped for a mouse click only:
+   :focus-visible keeps it for someone moving with the keyboard. */
+.nv .btn:focus:not(:focus-visible) {
+    outline: 0;
+}
+
+/* An icon in a button keeps a gap before its label. */
+.nv .btn > [class^="icon-"],
+.nv .btn > [class*=" icon-"] {
+    display: inline-block;
+    position: static;
+    margin-right: 4px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Tables                                                              *
+ * ------------------------------------------------------------------ */
+
+/* PrestaShop draws a rule above each row and none below the last, so a table
+   stopped in mid-air and whatever came next sat against its final line and
+   read as one more row of it. Close the table, then leave a gap. */
+.nv .table {
+    border-bottom: 1px solid #eef1f4;
+}
+
+.nv .table + form,
+.nv .table + .nv-actions,
+.nv .nv-scroll + form,
+.nv .nv-scroll + .nv-actions {
+    margin-top: 18px;
+}
+
+.nv .table td,
+.nv .table th {
+    vertical-align: middle;
+}
+
+/* A wide table scrolls sideways inside its panel on a narrow screen, so the
+   columns keep their width and the page never grows a bar of its own. The
+   table keeps its own display: display:block on a table makes it shrink to
+   its content instead of filling the panel. */
+.nv-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* A box that scrolls sideways also cuts whatever sticks out of it downwards:
+   the menu behind the caret of a row's button opens under the last line,
+   outside the box, and the box grew two bars to reach it. While such a menu
+   is open the box is made taller by the room the menu needs, and pulled
+   back up by as much, so nothing moves on the page and the menu drops out
+   of the table as it does on the back office's own lists. */
+.nv-scroll:has(.btn-group.open) {
+    padding-bottom: 64px;
+    margin-bottom: -64px;
+}
+
+/* Inside its box a table keeps a width it can be read at. As soon as the
+   screen is narrower than that, the box scrolls sideways instead of the
+   columns being crushed against each other. A table with more columns asks
+   for more room. */
+.nv-scroll > .table {
+    min-width: 640px;
+    margin-bottom: 0;
+}
+
+.nv-scroll > .table.nv-wide {
+    min-width: 900px;
+}
+
+.nv-scroll > .table.nv-xwide {
+    min-width: 1100px;
+}
+
+/* The bar under a table that scrolls sideways is thin and quiet, and drawn
+   as soon as there is something to scroll: columns cut at the edge of the box
+   with no bar in sight read as a broken page. */
+/* Firefox only: where the WebKit rules below exist, the standard properties
+   would take over and bring back a bar that hides until one scrolls. */
+@supports not selector(::-webkit-scrollbar) {
+    .nv-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #9aa8ae #eef1f4;
+    }
+}
+
+.nv-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.nv-scroll::-webkit-scrollbar-track {
+    background: #eef1f4;
+}
+
+.nv-scroll::-webkit-scrollbar-thumb {
+    border: 2px solid #eef1f4;
+    border-radius: 5px;
+    background: #9aa8ae;
+}
+
+.nv-scroll::-webkit-scrollbar-thumb:hover {
+    background: #6c7a89;
+}
+
+/* A field never asks for more than the place it sits in: the fixed widths
+   of the back office are a wish, the row it sits in decides. */
+.nv .form-control {
+    max-width: 100%;
+}
+
+/* A command line or an address is one long word: it breaks where the line
+   ends instead of running off the screen. */
+.nv code {
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+/* A two-column list of facts: the name of each on the left, quiet, and the
+   value beside it. The name wraps: kept on one line, a long one pushed the
+   table out of its column and over the next. */
+.nv .nv-facts th {
+    width: 45%;
+    font-weight: normal;
+    color: #6c7a89;
+    text-align: right;
+}
+
+/* ------------------------------------------------------------------ *
+ * Text                                                                *
+ * ------------------------------------------------------------------ */
+
+/* A quiet footnote under a field or a list. */
+.nv .nv-note {
+    margin-top: 10px;
+    color: #7a7a7a;
+    font-size: 12px;
+}
+
+/* The small capital heading above a block inside a panel. */
+.nv .nv-label {
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c7a89;
+    margin-bottom: 6px;
+}
+
+.nv .nv-strong {
+    font-weight: 600;
+}
+
+/* Identifiers, keys, anything read character by character. */
+.nv .nv-mono {
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+/* A native badge in the accent. */
+.nv .nv-badge {
+    background: #25b9d7;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    margin-left: 6px;
+}
+
+/* A status mark in a table cell. */
+.nv .nv-status {
+    width: 1%;
+    font-size: 16px;
+    vertical-align: middle;
+}
+
+.nv .nv-status-ok {
+    color: #3ca63c;
+}
+
+.nv .nv-status-warning {
+    color: #ff9a52;
+}
+
+.nv .nv-status-error {
+    color: #e08f95;
+}
+
+.nv .nv-status-skipped {
+    color: #a0a0a0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Rows of controls                                                    *
+ * ------------------------------------------------------------------ */
+
+/* Buttons under a list or a form, on the right. */
+.nv .nv-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+/* Controls on one line that reads as a sentence: a picker and its button, a
+   filter and its field. Wraps on a narrow screen. */
+.nv .nv-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.nv .nv-bar-split {
+    justify-content: space-between;
+}
+
+.nv .nv-bar > form {
+    margin: 0;
+}
+
+/* Takes the room left on the line. */
+.nv .nv-grow {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Switch                                                              *
+ * ------------------------------------------------------------------ */
+
+/* A switch drawn over the checkbox itself, for a list where the native Yes/No
+   switch is too wide: it is still a checkbox, posted and read like one. */
+.nv .nv-toggle {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    margin: 0;
+    border-radius: 10px;
+    background: #c3cdd1;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color .15s;
+}
+
+.nv .nv-toggle::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left .15s;
+}
+
+.nv .nv-toggle:checked {
+    background: #70b580;
+}
+
+.nv .nv-toggle:checked::before {
+    left: 18px;
+}
+
+.nv .nv-toggle:focus-visible {
+    outline: 2px solid #25b9d7;
+    outline-offset: 2px;
+}
+
+.nv .nv-toggle:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+}
+
+/* ------------------------------------------------------------------ *
+ * Section menu                                                        *
+ * ------------------------------------------------------------------ */
+
+/* The menu of a page with many sections is PrestaShop's own list group. Only
+   the current section is marked in the accent instead of the theme's blue. */
+.nv .nv-menu .list-group-item.active,
+.nv .nv-menu .list-group-item.active:hover,
+.nv .nv-menu .list-group-item.active:focus {
+    background: #25b9d7;
+    border-color: #25b9d7;
+    color: #fff;
+}
+
+/* A section the merchant cannot open yet. Not a link, so nothing to click. */
+.nv .nv-menu .list-group-item.disabled {
+    cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------ *
+ * Empty state                                                         *
+ * ------------------------------------------------------------------ */
+
+.nv .nv-empty {
+    padding: 40px 16px;
+    text-align: center;
+    color: #6c7a89;
+}
+
+.nv .nv-empty > i {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 36px;
+    color: #c9ced6;
+}
+
+/* ------------------------------------------------------------------ *
+ * Account bar                                                         *
+ * ------------------------------------------------------------------ */
+
+/* The line at the top of every page: the logo, which account is connected,
+   and the picker to change it. */
+.nv .nv-account {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.nv .nv-account-state {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.nv .nv-account-state > i {
+    margin-right: 4px;
+}
+
+/* The seller's own logo, kept to the size of a letterhead. */
+.nv .nv-shop-logo {
+    max-width: 120px;
+    max-height: 60px;
+}
+
+/* A row of buttons above the panels it acts on. */
+.nv .nv-toolbar {
+    margin-bottom: 15px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Icons                                                               *
+ * ------------------------------------------------------------------ */
+
+/* A Material icon set in a line of text, a button or a heading sits on the
+   line at the size of that text, as the back office's own icons do. :where
+   keeps the rule as weak as a plain ".x i": a component that sizes its own
+   icon still wins, which it would not against ".nv .material-icons". */
+:where(.nv) i.material-icons {
+    font-size: 16px;
+    vertical-align: middle;
+}
+
+.nv .panel-heading .material-icons,
+.nv .btn > .material-icons {
+    margin-right: 4px;
+}
+
+/* Holds the place of an icon on a line that has none, so lines stay aligned. */
+.nv .nv-icon-gap {
+    display: inline-block;
+    width: 16px;
+}
+
+/* A partner's logo at the right of a panel heading. */
+.nv .nv-brand {
+    height: 28px;
+    opacity: .85;
+}
+
+/* ------------------------------------------------------------------ *
+ * Rows of controls, continued                                         *
+ * ------------------------------------------------------------------ */
+
+.nv .nv-bar-top {
+    align-items: flex-start;
+}
+
+.nv .nv-bar-center {
+    justify-content: center;
+}
+
+.nv .nv-bar-nowrap {
+    flex-wrap: nowrap;
+}
+
+/* Groups of controls side by side rather than controls of one group. */
+.nv .nv-bar-wide {
+    gap: 12px 24px;
+}
+
+.nv .nv-bottom {
+    align-self: flex-end;
+}
+
+/* Pushed to the far end of its row. */
+.nv .nv-push {
+    margin-left: auto;
+}
+
+/* A mark and its word, kept together on the line. */
+.nv .nv-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* A form that only carries a button stays in the sentence it belongs to. */
+.nv .nv-inline-form {
+    display: inline;
+}
+
+/* A native field is a block as wide as its column. These two put it in a
+   line: sized to its content, or to the fixed width it is given. */
+.nv .nv-auto {
+    display: inline-block;
+    width: auto;
+}
+
+.nv .nv-inline-control {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* A field or a block that should not run the full width of a wide panel. */
+.nv .nv-narrow {
+    max-width: 520px;
+}
+
+/* Lines up a bare element with the fields of a form row. */
+.nv .nv-pt {
+    padding-top: 7px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Spacing                                                             *
+ * ------------------------------------------------------------------ */
+
+/* Two steps only, so blocks keep the same rhythm on every page. */
+.nv .nv-m0 {
+    margin: 0;
+}
+
+.nv .nv-mt0 {
+    margin-top: 0;
+}
+
+.nv .nv-mb0 {
+    margin-bottom: 0;
+}
+
+.nv .nv-mt-s {
+    margin-top: 6px;
+}
+
+.nv .nv-mt {
+    margin-top: 15px;
+}
+
+.nv .nv-mb-s {
+    margin-bottom: 6px;
+}
+
+.nv .nv-mb {
+    margin-bottom: 15px;
+}
+
+.nv .nv-ml-s {
+    margin-left: 6px;
+}
+
+.nv .nv-ml {
+    margin-left: 12px;
+}
+
+.nv .nv-mr-s {
+    margin-right: 6px;
+}
+
+.nv .nv-mr {
+    margin-right: 12px;
+}
+
+/* Set under the choice it depends on. */
+.nv .nv-indent {
+    margin-left: 24px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Text, continued                                                     *
+ * ------------------------------------------------------------------ */
+
+/* A label that names an option rather than a field: the back office writes
+   every label in bold. */
+.nv .nv-plain {
+    font-weight: normal;
+}
+
+.nv .nv-click {
+    cursor: pointer;
+}
+
+/* Present but not in play: a control switched off by another one. */
+.nv .nv-dim {
+    opacity: .5;
+}
+
+/* A step already done. */
+.nv .nv-done {
+    text-decoration: line-through;
+}
+
+/* A status coloured as a whole carries its link with it. */
+.nv .text-success > a,
+.nv .text-danger > a {
+    color: inherit;
+}
+
+/* An address or a key with no space to break on. */
+.nv .nv-break {
+    word-break: break-all;
+}
+
+.nv .nv-sep {
+    padding: 0 4px;
+}
+
+/* A block set apart from the one above by a rule. */
+.nv .nv-rule {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #eef1f4;
+}
+
+/* Raw text as it was sent or received: scrolls in its own box. */
+.nv .nv-pre {
+    max-height: 300px;
+    margin: 4px 0;
+    padding: 8px;
+    overflow: auto;
+    border: 1px solid #dbe6e9;
+    border-radius: 3px;
+    background: #fff;
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 11px;
+    white-space: pre;
+    word-break: normal;
+}
+
+.nv .nv-pre-wrap {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.nv .nv-pre-tall {
+    max-height: 420px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Tables, continued                                                   *
+ * ------------------------------------------------------------------ */
+
+/* A row that completes the one above it: no rule between the two, and set
+   in from the edge. */
+.nv .table > tbody > tr.nv-subrow > td {
+    border-top: 0;
+    padding-left: 28px;
+}
+
+/* The heading of a group of rows, as on the tool lists:
+   the only tinted row of the table, so a tint always means "new group". */
+.nv .table > tbody > tr.nv-group-row > td {
+    background: #f5f8f9;
+    border-top: 1px solid #dbe6e9;
+}
+
+/* A list with a switch column, as the tool lists: fixed
+   widths, so the columns stay where they are whatever a row holds, the first
+   one taking the room left. */
+.nv .table.nv-list {
+    min-width: 900px;
+    table-layout: fixed;
+}
+
+/* A name and, under it, what tells it apart: its code, where it applies.
+   The second line is quiet and sits on a line of its own in every table. */
+.nv .table td > strong + small.text-muted {
+    display: block;
+}
+
+/* The line under a name stays one line: cut with an ellipsis rather than
+   wrapped, so every row keeps the same height. */
+.nv .nv-list td > small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nv .nv-list td {
+    overflow-wrap: anywhere;
+}
+
+.nv .nv-col-select {
+    width: 150px;
+}
+
+.nv .nv-col-switch {
+    width: 80px;
+}
+
+/* The heading of a group of rows. */
+.nv .table td.nv-label,
+.nv .table th.nv-label {
+    margin: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Pictures                                                            *
+ * ------------------------------------------------------------------ */
+
+/* The column that holds a product picture, and the picture in it. */
+.nv .nv-media {
+    flex: 0 0 120px;
+    width: 120px;
+}
+
+.nv .nv-thumb {
+    display: block;
+    max-width: 100%;
+    max-height: 100px;
+    margin: 0 auto;
+}
+
+/* ------------------------------------------------------------------ *
+ * Narrow screens                                                      *
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 767px) {
+    /* A form row stacks: its label reads from the left like its field. */
+    .nv .form-horizontal .control-label {
+        text-align: left;
+    }
+
+    .nv .nv-bar-nowrap {
+        flex-wrap: wrap;
+    }
+}
+
+/* The back office gives every cell its own text colour, which hides a tone
+   set on the cell itself. */
+.nv .table > tbody > tr > td.text-success {
+    color: #3c763d;
+}
+
+.nv .table > tbody > tr > td.text-danger {
+    color: #a94442;
+}
+
+.nv .table > tbody > tr > td.text-warning {
+    color: #8a6d3b;
+}
+
+.nv .table > tbody > tr > td.text-muted {
+    color: #999;
+}
+
+/* Takes a line of its own at the end of a row of controls. */
+.nv .nv-bar > .nv-full {
+    flex: 0 0 100%;
+    margin: 0;
+}
+
+/* A status label after a name in a list keeps a gap from it. */
+.nv .nv-list strong + .label {
+    margin-left: 4px;
+}
+
+/* Below the desktop width the section menu is one line that scrolls sideways:
+   stacked, its eleven entries filled the first screen and pushed the section
+   itself out of view. */
+@media (max-width: 991px) {
+    .nv .nv-menu {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 15px;
+    }
+
+    .nv .nv-menu .list-group-item {
+        flex: 0 0 auto;
+        margin: 0 -1px 0 0;
+        white-space: nowrap;
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Tip                                                                 *
+ * ------------------------------------------------------------------ */
+
+/* What a control is for, said on demand beside its name instead of in a
+   paragraph under it: a screen of filters read as a wall of text. Shown on
+   hover and on focus, so a keyboard and a touch screen reach it too, with
+   no script. */
+.nv .nv-tip {
+    position: relative;
+    display: inline-block;
+    margin-left: 4px;
+    color: #6c868e;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: help;
+}
+
+.nv .nv-tip:focus-visible {
+    outline: 2px solid #25b9d7;
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+/* Everything the place it sits in may have changed is set back: a tip
+   beside a heading in capitals is still a sentence. */
+.nv .nv-tip-text {
+    display: none;
+    position: absolute;
+    /* Above a modal window and the bar pinned to the top of the back office. */
+    z-index: 1100;
+    /* Where it opens without the script, which then places it itself. */
+    top: calc(100% + 6px);
+    left: -8px;
+    width: max-content;
+    max-width: min(320px, calc(100vw - 16px));
+    padding: 8px 10px;
+    border-radius: 4px;
+    background: #363a41;
+    color: #fff;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+}
+
+.nv .nv-tip:hover .nv-tip-text,
+.nv .nv-tip:focus .nv-tip-text {
+    display: block;
+}
+
+.nv .nv-tip-line {
+    display: block;
+    margin-top: 6px;
+}
+
+/* One tip for a whole row of buttons: a line per button, the first without
+   the gap that sets a line apart from the sentence above it. */
+.nv .nv-tip-list .nv-tip-line:first-child {
+    margin-top: 0;
+}
+
+@media (max-width: 767px) {
+    .nv .nv-tip-text {
+        max-width: min(220px, calc(100vw - 16px));
+    }
+}

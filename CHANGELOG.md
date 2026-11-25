@@ -16,6 +16,15 @@ are:
 
 ## Unreleased
 
+### Changed
+
+**The explanations of the settings are tips.** On the pages of the module,
+what a setting does was written in a paragraph under it, which made the pages
+long to read. It now opens from the question mark beside the name of the
+setting, or beside the title of a panel, with the mouse or the keyboard. What
+tells a state stays on the page: a missing key, a model that no longer passes,
+this month's usage.
+
 ## 2.0.5 - 2026-11-25
 
 ### Added

@@ -91,6 +91,18 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
     }
 
     /**
+     * @var array<string, array{0: string, 1: string, 2: string}> the restrictions of the Conditions tab this tool
+     *                                                            writes: table, column, and the key of an item as
+     *                                                            somcp_get_cart_rule answers it. Fixed here so no
+     *                                                            table name is ever built from an argument.
+     */
+    protected const RESTRICTION_TABLES = [
+        'country' => ['cart_rule_country', 'id_country', 'id_country'],
+        'carrier' => ['cart_rule_carrier', 'id_carrier', 'id_reference'],
+        'group' => ['cart_rule_group', 'id_group', 'id_group'],
+    ];
+
+    /**
      * The arguments, under the names somcp_get_cart_rule returns.
      *
      * @return array<string, mixed>
@@ -816,5 +828,133 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         }
 
         return '';
+    }
+
+    /**
+     * The rows each restriction given will hold, checked as the form offers them.
+     *
+     * Only the keys of RESTRICTION_TABLES are read; the caller decides what the
+     * others mean. A list becomes the identifiers to write, each once and in
+     * order, null switches the restriction off. An empty list is refused: with
+     * the box checked and nothing selected, the rule would match no cart.
+     *
+     * @param array<string, mixed> $restrictions as somcp_get_cart_rule answers them
+     * @param array<int, string> $errors
+     *
+     * @return array<string, array<int, int>|null>
+     */
+    protected static function planRestrictions(array $restrictions, array &$errors): array
+    {
+        $rows = [];
+        foreach (self::RESTRICTION_TABLES as $key => [, , $itemKey]) {
+            if (!array_key_exists($key, $restrictions)) {
+                continue;
+            }
+            $path = 'restrictions.' . $key;
+            $value = $restrictions[$key];
+            if ($value === null) {
+                $rows[$key] = null;
+                continue;
+            }
+            if (!is_array($value) || !array_is_list($value)) {
+                $errors[] = $path . ': a list of {"' . $itemKey . '": ...}, or null for no restriction';
+                continue;
+            }
+            if ($value === []) {
+                $errors[] = $path . ': at least one, or null for no restriction';
+                continue;
+            }
+            $ids = [];
+            foreach ($value as $item) {
+                $id = is_array($item) ? ($item[$itemKey] ?? null) : $item;
+                if (is_string($id) && ctype_digit($id)) {
+                    $id = (int) $id;
+                }
+                if (!is_int($id) || $id <= 0) {
+                    $errors[] = SomcpTool::notAnIdentifier($path);
+                    continue 2;
+                }
+                $ids[$id] = $id;
+            }
+            ksort($ids);
+            $ids = array_values($ids);
+            foreach (array_diff($ids, self::existing($key, $ids)) as $missing) {
+                $errors[] = $key === 'country'
+                    ? SomcpTool::notFound($path, 'country', $missing, 'somcp_list_countries')
+                    : ($key === 'group'
+                        ? SomcpTool::notFound($path, 'group', $missing, 'somcp_list_customer_groups')
+                        : SomcpTool::notFound($path, 'carrier', $missing, 'somcp_list_carriers', 'reference'));
+            }
+            $rows[$key] = $ids;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The identifiers of a list that name something the form would offer.
+     *
+     * A carrier is kept by its reference, the column the core stores, and only
+     * when a version of it is not deleted: somcp_get_cart_rule leaves the
+     * others out, so a row written for one would never be read back.
+     *
+     * @param string $key a key of RESTRICTION_TABLES
+     * @param array<int, int> $ids
+     *
+     * @return array<int, int>
+     */
+    private static function existing(string $key, array $ids): array
+    {
+        $in = implode(',', array_map('intval', $ids));
+        if ($key === 'country') {
+            $sql = 'SELECT `id_country` AS `id` FROM `' . _DB_PREFIX_ . 'country` WHERE `id_country` IN (' . $in . ')';
+        } elseif ($key === 'group') {
+            $sql = 'SELECT `id_group` AS `id` FROM `' . _DB_PREFIX_ . 'group` WHERE `id_group` IN (' . $in . ')';
+        } else {
+            $sql = 'SELECT DISTINCT `id_reference` AS `id` FROM `' . _DB_PREFIX_ . 'carrier`
+                    WHERE `deleted` = 0 AND `id_reference` IN (' . $in . ')';
+        }
+
+        return array_map('intval', array_column(Db::getInstance()->executeS($sql) ?: [], 'id'));
+    }
+
+    /**
+     * Writes the rows of planRestrictions() and sets the matching switches of the rule.
+     *
+     * The same rows AdminCartRulesController::afterAdd() inserts, through Db
+     * since these tables have no object, but only for the restrictions given:
+     * the back office's afterUpdate() would also wipe the product selection
+     * and the compatibility, which this tool does not write. The caller saves
+     * the rule afterwards, so the switches and the rows go in together, and
+     * runs both inside one transaction.
+     *
+     * @param CartRule $rule saved already, so it has its identifier
+     * @param array<string, array<int, int>|null> $rows from planRestrictions()
+     *
+     * @return bool
+     */
+    protected static function writeRestrictions(CartRule $rule, array $rows): bool
+    {
+        $idCartRule = (int) $rule->id;
+        $db = Db::getInstance();
+        foreach ($rows as $key => $ids) {
+            if (!isset(self::RESTRICTION_TABLES[$key])) {
+                continue;
+            }
+            [$table, $column] = self::RESTRICTION_TABLES[$key];
+            if (!$db->delete($table, '`id_cart_rule` = ' . $idCartRule)) {
+                return false;
+            }
+            $insert = [];
+            foreach ($ids ?? [] as $id) {
+                $insert[] = ['id_cart_rule' => $idCartRule, $column => (int) $id];
+            }
+            if ($insert !== [] && !$db->insert($table, $insert)) {
+                return false;
+            }
+            $rule->{$key . '_restriction'} = $ids !== null;
+        }
+
+        return true;
     }
 }

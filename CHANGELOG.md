@@ -77,6 +77,14 @@ screen.
 
 ### Changed
 
+**Limit a cart rule to countries, carriers and customer groups.**
+somcp_update_cart_rule refused every restriction of the Conditions tab, so a
+discount for wholesale customers only, or free shipping to one country with
+one carrier, had to be finished in the back office. It now sets the Country
+selection, the Carrier selection and the Customer group selection as the form
+does, or lifts them, and leaves the compatibility with other rules, the
+product selection and the shops untouched.
+
 **A localization pack names the country it turned on as the country tools do.**
 When somcp_import_localization_pack switched on the country of the pack, its
 answer said so with `enabled`, a name no other country tool uses, so an

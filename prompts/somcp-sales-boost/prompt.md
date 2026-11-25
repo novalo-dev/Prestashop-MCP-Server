@@ -147,8 +147,12 @@ dates you used.
    **Total available** is what is left, orders using the rule have lowered it
    already: do not add those uses again. Orders already placed keep the amount
    they had.
-3. The countries, carriers, groups, other rules and the product selection
-   stay with the merchant in the back office. A call that changes nothing
+3. **Countries, carriers and customer groups** go in `restrictions`, in the
+   shape `somcp_get_cart_rule` reads them: `country` from
+   `somcp_list_countries`, `carrier` by `id_reference` from
+   `somcp_list_carriers`, `group` from `somcp_list_customer_groups`, `null`
+   to lift one. The other rules it combines with, the product selection and
+   the shops stay with the merchant in the back office. A call that changes nothing
    answers `changed: false`. If an answer is lost, read the rule again with
    `somcp_get_cart_rule` before calling again.
 

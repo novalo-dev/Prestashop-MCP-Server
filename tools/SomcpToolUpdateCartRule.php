@@ -32,8 +32,10 @@ declare(strict_types=1);
  *
  * The rule is written through CartRule::update() only. The back office's
  * afterUpdate() deletes every restriction row of the rule and writes back
- * what its form posted; this tool posts no restriction, so going that way
- * would wipe them.
+ * what its form posted; going that way would wipe the product selection and
+ * the compatibility, which this tool does not write. The countries, carriers
+ * and groups given are written by writeRestrictions() instead, in the same
+ * transaction as the rule.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -86,8 +88,8 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             'Changes one cart rule, as Catalog > Discounts > Cart Rules > Edit, under the names of '
                 . 'somcp_create_cart_rule; what somcp_get_cart_rule returns can be given back. id_cart_rule from '
                 . 'somcp_list_cart_rules. Only what is given changes. quantity is what is left. Placed orders keep their '
-                . 'amount. Status: somcp_set_cart_rule_active; restrictions stay in the back office. Show the merchant the change and call once '
-                . 'they agree. Not to be retried: if the answer is lost, read somcp_get_cart_rule first.',
+                . 'amount. Status: somcp_set_cart_rule_active. restrictions: countries, carriers and groups; other rules, '
+                . 'products and shops stay in the back office. Show the merchant the change and call once they agree. Not to be retried: if the answer is lost, read somcp_get_cart_rule first.',
             self::inputSchema(),
             [SomcpScope::SALES_WRITE],
             [self::class, 'handle'],
@@ -141,6 +143,11 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
                         : ($field === 'restrictions' ? 'the merchant sets them on the Conditions tab of the rule.' : 'worked out by the shop.')),
             ];
         }
+        $schema['properties']['restrictions'] = [
+            'type' => 'object',
+            'description' => 'As somcp_get_cart_rule returns it. country, carrier, group: a list of {"id_country"}, '
+                . '{"id_reference"}, {"id_group"}, or null for none. cart_rule, product, shop: unchanged only.',
+        ];
         $schema['required'] = ['id_cart_rule'];
 
         return $schema;
@@ -179,6 +186,10 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         }
 
         $errors = [];
+        $restrictions = array_key_exists('restrictions', $arguments)
+            ? self::changedRestrictions($arguments['restrictions'], $current['restrictions'] ?? [], $errors)
+            : [];
+        unset($arguments['restrictions']);
         $given = self::given($arguments, $current, $errors);
         $plan = self::planRule(self::merged($given, $current), $idShop, $errors, $idCartRule);
         if ($errors !== [] || $plan === null) {
@@ -186,7 +197,8 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         }
 
         $write = self::differences($cartRule, $given, $plan);
-        if ($write['fields'] === [] && $write['names'] === []) {
+        $write['restrictions'] = $restrictions;
+        if ($write['fields'] === [] && $write['names'] === [] && $restrictions === []) {
             return SomcpTool::json([
                 'changed' => false,
                 'id_cart_rule' => $idCartRule,
@@ -220,8 +232,6 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             if (json_encode(self::withoutNames($arguments[$key])) !== json_encode(self::withoutNames($current[$key] ?? null))) {
                 if ($key === 'active') {
                     $errors[] = 'active: not changed by this tool - switch the rule on or off with somcp_set_cart_rule_active';
-                } elseif ($key === 'restrictions') {
-                    $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
                 } else {
                     $errors[] = $key . ': worked out by the shop, so it is not written here';
                 }
@@ -230,6 +240,71 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         }
 
         return $arguments;
+    }
+
+    /**
+     * The restrictions this call changes, as rows to write.
+     *
+     * country, carrier and group go through planRestrictions(), the checks
+     * the creation shares; one that holds what is stored already is left out,
+     * so a rule read and given back whole writes nothing. cart_rule, product
+     * and shop are still the merchant's on the Conditions tab: accepted only
+     * as read.
+     *
+     * @param mixed $restrictions as given
+     * @param array<string, mixed> $current as somcp_get_cart_rule returns them
+     * @param array<int, string> $errors
+     *
+     * @return array<string, array<int, int>|null>
+     */
+    private static function changedRestrictions($restrictions, array $current, array &$errors): array
+    {
+        if (!is_array($restrictions) || ($restrictions !== [] && array_is_list($restrictions))) {
+            $errors[] = 'restrictions: an object of country, carrier, group, cart_rule, product and shop, as '
+                . 'somcp_get_cart_rule returns it';
+
+            return [];
+        }
+        foreach ($restrictions as $key => $value) {
+            if (isset(self::RESTRICTION_TABLES[$key])) {
+                continue;
+            }
+            if (!array_key_exists($key, $current)) {
+                $errors[] = 'restrictions.' . $key . ': not a field of this tool';
+            } elseif (json_encode(self::withoutNames($value)) !== json_encode(self::withoutNames($current[$key]))) {
+                $errors[] = 'restrictions.' . $key . ': not set by this tool - the merchant sets it on the Conditions tab '
+                    . 'of the rule in the back office';
+            }
+        }
+
+        $rows = self::planRestrictions($restrictions, $errors);
+        foreach ($rows as $key => $ids) {
+            if ($ids === self::restrictionIds($current, $key)) {
+                unset($rows[$key]);
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The identifiers of one restriction as somcp_get_cart_rule reads it, null when it is off.
+     *
+     * @param array<string, mixed> $restrictions
+     * @param string $key a key of RESTRICTION_TABLES
+     *
+     * @return array<int, int>|null
+     */
+    private static function restrictionIds(array $restrictions, string $key): ?array
+    {
+        if (!is_array($restrictions[$key] ?? null)) {
+            return null;
+        }
+        $itemKey = self::RESTRICTION_TABLES[$key][2];
+        $ids = array_map('intval', array_column($restrictions[$key], $itemKey));
+        sort($ids);
+
+        return array_values(array_unique($ids));
     }
 
     /**
@@ -446,7 +521,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
      *
      * @param CartRule $cartRule
      * @param array<string, mixed> $current the rule before, as somcp_get_cart_rule returns it
-     * @param array{fields: array<string, mixed>, names: array<int, string>, specific_product: int} $write
+     * @param array{fields: array<string, mixed>, names: array<int, string>, specific_product: int, restrictions: array<string, array<int, int>|null>} $write
      * @param array<string, mixed> $plan
      * @param int $idLang
      * @param int $idShop
@@ -467,17 +542,32 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         }
 
         $failure = '';
+        $db = Db::getInstance();
+        // One transaction, so a rule is never left with a switch on and no
+        // rows, or rows for a switch that did not save.
+        $transaction = $write['restrictions'] !== [] && $db->execute('START TRANSACTION');
         try {
-            // update() only: it leaves the restriction tables as they are.
-            $done = (bool) $cartRule->update();
-            if (!$done) {
-                $failure = 'PrestaShop refused to save it';
-            } elseif ($write['specific_product'] > 0) {
-                $failure = self::productSelection($idCartRule, $write['specific_product']);
+            if ($write['restrictions'] !== [] && !$transaction) {
+                $done = false;
+                $failure = 'the restrictions could not be saved';
+            } elseif (!self::writeRestrictions($cartRule, $write['restrictions'])) {
+                $done = false;
+                $failure = 'the restrictions could not be saved';
+            } else {
+                // update() only: it leaves the other restriction tables as they are.
+                $done = (bool) $cartRule->update();
+                if (!$done) {
+                    $failure = 'PrestaShop refused to save it';
+                } elseif ($write['specific_product'] > 0) {
+                    $failure = self::productSelection($idCartRule, $write['specific_product']);
+                }
             }
         } catch (Throwable $e) {
             $done = false;
             $failure = $e->getMessage();
+        }
+        if ($transaction) {
+            $db->execute($done && $failure === '' ? 'COMMIT' : 'ROLLBACK');
         }
 
         if (!$done || $failure !== '') {
@@ -507,6 +597,14 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         foreach (array_keys(self::COLUMNS) as $field) {
             if (json_encode($current[$field] ?? null) !== json_encode($after[$field] ?? null)) {
                 $changes[] = ['field' => $field, 'old' => $current[$field] ?? null, 'new' => $after[$field] ?? null];
+            }
+        }
+        // Identifiers only: the names follow the language read in.
+        foreach (array_keys($write['restrictions']) as $key) {
+            $old = self::restrictionIds($current['restrictions'] ?? [], $key);
+            $new = self::restrictionIds($after['restrictions'] ?? [], $key);
+            if ($old !== $new) {
+                $changes[] = ['field' => 'restrictions.' . $key, 'old' => $old, 'new' => $new];
             }
         }
 

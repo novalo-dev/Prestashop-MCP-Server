@@ -1980,6 +1980,81 @@ if ($updateCountry !== null && $idAfghanistan > 0) {
     }
 }
 
+// A customer group restriction set on a cart rule, read back, then lifted
+// (#406): the JSON scenario only covers the refusals, since a restriction
+// left on a demo rule would change what the tools after it read. The rule is
+// created here for that alone and deleted whatever happens.
+$createRule = $registry->get('somcp_create_cart_rule');
+$updateRule = $registry->get('somcp_update_cart_rule');
+$getRule = $registry->get('somcp_get_cart_rule');
+if ($createRule !== null && $updateRule !== null && $getRule !== null) {
+    $calls += 4;
+    $ruleContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge(
+            $createRule->getRequiredScopes(),
+            $updateRule->getRequiredScopes(),
+            $getRule->getRequiredScopes()
+        ))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $idRule = 0;
+    $answer = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    try {
+        $created = $createRule->call([
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp group restriction'],
+            'code' => 'SOMCPGROUP',
+            'free_shipping' => true,
+        ], $ruleContext);
+        $decoded = json_decode(trim($answer($created)), true);
+        $idRule = (int) ($decoded['id_cart_rule'] ?? 0);
+        if (!empty($created['isError']) || $idRule <= 0) {
+            $failures[] = 'somcp_update_cart_rule (restrictions): the rule could not be created - ' . excerpt($created);
+        } else {
+            foreach ([
+                'group set' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['group' => [['id_group' => 3]]]], ['"changed": true', '"field": "restrictions.group"', '"new": [']],
+                'group read back' => [$getRule, ['id_cart_rule' => $idRule], ['"group": [', '"id_group": 3']],
+                'group lifted' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['group' => null]], ['"changed": true', '"field": "restrictions.group"', '"new": null']],
+                'nothing left' => [$getRule, ['id_cart_rule' => $idRule], ['"group": null']],
+            ] as $label => [$tool, $arguments, $needles]) {
+                $result = $tool->call($arguments, $ruleContext);
+                $text = $answer($result);
+                $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                }));
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_cart_rule (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_cart_rule (restrictions): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idRule > 0) {
+            $left = new CartRule($idRule);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
 // A carrier read, given back, changed and put back (#320): the JSON scenario
 // cannot give a read back nor compare two reads. Demo carrier 3 is used by no
 // order, so it is changed in place and keeps its identifier; no call is made

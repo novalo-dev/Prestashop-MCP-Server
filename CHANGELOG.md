@@ -28,6 +28,13 @@ anything.
 
 ### Changed
 
+**A localization pack brings its currencies from any assistant.** Importing a
+localization pack with somcp_import_localization_pack refused the currencies
+from an assistant connected from outside the shop, which then had to add each
+currency one by one. The import now adds the currencies of the pack the shop
+does not have, at rate 1 and enabled for every payment module, then refreshes
+their rates, from every assistant as from the built-in chat.
+
 **The explanations of the settings are tips.** On the pages of the module,
 what a setting does was written in a paragraph under it, which made the pages
 long to read. It now opens from the question mark beside the name of the

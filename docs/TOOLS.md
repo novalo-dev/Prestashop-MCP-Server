@@ -3585,6 +3585,98 @@ the answer:
 
 **Differences between 8.0.1 and 9.0.0** - `backorder_status` on 9.0.0 only.
 
+#### `somcp_get_product_settings`
+**State**: written · [issue #408](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/408)
+**Nature**: `acts(VIEW, 'AdminPPreferences')` · **Scope**: `mcp.catalog.read`, as `somcp_get_product`
+
+**Does** - reads **Shop Parameters > Product Settings**: the cards **General
+product settings**, **Product page**, **Products stock** and **Pagination**.
+Read only, replayable.
+
+**Do not use for** - the stock of one product (→ `somcp_get_stock`); the
+out-of-stock behavior or labels of one product (→ `somcp_get_product`); the
+customer groups that hide prices (Customer Settings > Groups, not covered).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `languages` | array | the ISO codes of the five texts, the rule of #149 through `SomcpToolCreateProduct::languages()`, as `somcp_get_maintenance_settings` takes it; left out, every active language |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetProductSettings::settings($idShop, $idLangs)` for the update to
+answer with, each key read with `Configuration::get(<key>, $idLang,
+$idShopGroup, $idShop)` for the shop of the token and its group, as
+`GeneralConfiguration`, `PageConfiguration`, `StockConfiguration` and
+`PaginationConfiguration` read them; a key with no row reads as the core's
+adapters read it (`false`, `0`, empty):
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `catalog_mode` | **Catalog mode** | `PS_CATALOG_MODE` | boolean |
+| `catalog_mode_show_prices` | **Show prices** | `PS_CATALOG_MODE_WITH_PRICES` | boolean; saved as false by the core whenever catalog mode is off |
+| `new_product_days` | **Number of days for which the product is considered 'new'** | `PS_NB_DAYS_NEW_PRODUCT` | integer |
+| `short_description_limit` | **Max size of short description** | `PS_PRODUCT_SHORT_DESC_LIMIT` | integer, in characters |
+| `quantity_discounts_based_on` | **Quantity discounts based on** | `PS_QTY_DISCOUNT_ON_COMBINATION` | `products` (0) or `combinations` (1) |
+| `force_friendly_url` | **Force update of friendly URL** | `PS_FORCE_FRIENDLY_PRODUCT` | boolean |
+| `breadcrumb_category` | **Category used in breadcrumbs** | `PS_PRODUCT_BREADCRUMB_CATEGORY` | `default` or `current`; `null` before 9.0.0 |
+| `activate_new_products` | **Activate new products by default** | `PS_PRODUCT_ACTIVATION_DEFAULT` | boolean |
+| `specific_price_priorities` | **Default order of priority for specific prices** | `PS_SPECIFIC_PRICE_PRIORITIES` | a list of four among `store`, `currency`, `country`, `group`, in the stored order; nothing stored: the core's default, `group`, `currency`, `country`, `store` |
+| `disabled_product_behavior` | **Default behavior for disabled products** | `PS_PRODUCT_REDIRECTION_DEFAULT` | the stored code, `404`, `410`, `200-displayed`, `404-displayed` or `410-displayed`; `null` before 8.1.0 |
+| `display_available_quantities` | **Display available quantities on the product page** | `PS_DISPLAY_QTIES` | boolean |
+| `add_to_cart_with_combinations` | **Display the "Add to cart" button when a product has combinations** | `PS_ATTRIBUTE_CATEGORY_DISPLAY` | boolean |
+| `combination_image_in_listings` | **Use combination image in listings** | `PS_USE_COMBINATION_IMAGE_IN_LISTING` | boolean; `null` before 9.0.0 |
+| `attribute_anchor_separator` | **Separator of attribute anchor on the product links** | `PS_ATTRIBUTE_ANCHOR_SEPARATOR` | `-` or `,` |
+| `display_discounted_unit_price` | **Display the discounted unit price** | `PS_DISPLAY_DISCOUNT_PRICE` | boolean |
+| `notify_product_in_cart` | **Display notifications if the product is already in the cart** | `PS_DISPLAY_AMOUNT_IN_CART` | boolean; `null` before 9.0.0 |
+| `feature_values_order` | **Order of feature values** | `PS_FEATURE_VALUES_ORDER` | `alphabetical` (`name`) or `position`; `null` before 9.0.0 |
+| `stock_management` | **Enable stock management** | `PS_STOCK_MANAGEMENT` | boolean |
+| `pack_stock_type` | **Default pack stock behavior** | `PS_PACK_STOCK_TYPE` | `pack`, `products` or `both`, the words of `somcp_get_product` (`SomcpToolGetProduct::PACK_STOCK_TYPES`) |
+| `display_unavailable_attributes` | **Display unavailable attributes on the product page** | `PS_DISP_UNAVAILABLE_ATTR` | boolean |
+| `remaining_quantities_below` | **Display remaining quantities when the quantity is lower than** | `PS_LAST_QTIES` | integer, `0` when off |
+| `allow_out_of_stock_ordering` | **Allow ordering of out-of-stock products** | `PS_ORDER_OUT_OF_STOCK` | boolean |
+| `label_in_stock` | **Label of in-stock products** | `PS_LABEL_IN_STOCK_PRODUCTS` | text per ISO code |
+| `label_backorders_allowed` | **Label of out-of-stock products with allowed backorders** | `PS_LABEL_OOS_PRODUCTS_BOA` | text per ISO code |
+| `label_backorders_denied` | **Label of out-of-stock products with denied backorders** | `PS_LABEL_OOS_PRODUCTS_BOD` | text per ISO code |
+| `delivery_time_in_stock` | **Delivery time of in-stock products** | `PS_LABEL_DELIVERY_TIME_AVAILABLE` | text per ISO code, empty when off |
+| `delivery_time_backorders` | **Delivery time of out-of-stock products with allowed backorders** | `PS_LABEL_DELIVERY_TIME_OOSBOA` | text per ISO code, empty when off |
+| `out_of_stock_label_in_listings` | **Display out-of-stock label on product listing pages** | `PS_SHOW_LABEL_OOS_LISTING_PAGES` | boolean |
+| `products_per_page` | **Products per page** | `PS_PRODUCTS_PER_PAGE` | integer |
+| `default_order_by` | **Default order by** | `PS_PRODUCTS_ORDER_BY` | `name`, `price`, `date_add`, `date_upd`, `position`, `brand`, `quantity`, `reference`, or `sales` on 9.0.0 |
+| `default_order_way` | **Default order method** | `PS_PRODUCTS_ORDER_WAY` | `asc` or `desc` |
+
+The five texts are objects keyed by ISO code, each language read from
+`configuration_lang` as the page shows it, the shape of `maintenance_text`;
+`languages`: the ISO codes read.
+
+Warnings: `catalog_mode` on, `Catalog mode is on: visitors can browse the
+products but cannot add them to the cart.`; `stock_management` off, `Stock
+management is off: quantities are not counted and every product can be
+ordered.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call
+again:` (`SomcpTool::refused('read', $problems)`): an unknown argument, a
+language of `languages` the shop does not have (the rule of #149).
+
+**Notes** - the demo shops, every row global: catalog mode off, 20 days new,
+5000 characters, priorities `group`, `currency`, `country`, `store`, stock
+management on, ordering out of stock denied, 3 remaining quantities, 12
+products per page by position ascending; no row for
+`PS_QTY_DISCOUNT_ON_COMBINATION`, `PS_FORCE_FRIENDLY_PRODUCT`,
+`PS_PRODUCT_ACTIVATION_DEFAULT`, `PS_DISPLAY_DISCOUNT_PRICE` and the two
+delivery times. **Default behavior for disabled products** came with 8.1.0,
+read in its `GeneralConfiguration`: `null` on 8.0, a code from 8.1.
+
+**Differences between 8.0.1 and 9.0.0** - **Category used in breadcrumbs**,
+**Default behavior for disabled products** (from 8.1.0), **Use combination
+image in listings**, **Display notifications if the product is already in the
+cart**, **Order of feature values** and the **Product sales** order on 9.0.0
+only; the wording of **Display the "Add to cart" button...** (8.0.1 **... has
+attributes**), of the pack stock field (8.0.1 **Default pack stock
+management**) and of the help of **Force update of friendly URL** differs.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

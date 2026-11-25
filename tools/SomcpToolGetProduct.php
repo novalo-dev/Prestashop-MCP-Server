@@ -47,8 +47,8 @@ class SomcpToolGetProduct
     /** @var array<int, string> Stored value of additional_delivery_times, as the merchant reads it. */
     private const DELIVERY_TIMES = [0 => 'none', 1 => 'default', 2 => 'product'];
 
-    /** @var array<int, string> pack_stock_type, the values of Pack::STOCK_TYPE_*, as the write tools take them. */
-    private const PACK_STOCK_TYPES = [0 => 'pack', 1 => 'products', 2 => 'both', 3 => 'default'];
+    /** @var array<int, string> pack_stock_type, the values of Pack::STOCK_TYPE_*, as the write tools take them; public for the product settings, which name the shop default with the same words. */
+    public const PACK_STOCK_TYPES = [0 => 'pack', 1 => 'products', 2 => 'both', 3 => 'default'];
 
     /** @var array<string, bool> Tables and columns already looked up during this request. */
     private static $schema = [];

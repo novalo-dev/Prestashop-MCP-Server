@@ -1477,6 +1477,11 @@
       <source>Read the order settings</source>
       <target>Lire les paramètres des commandes</target>
     </trans-unit>
+    <!-- Read the product settings -->
+    <trans-unit id="e8c0f4be6f3168f05a11db75a9a1f260" resname="Read the product settings">
+      <source>Read the product settings</source>
+      <target>Lire les paramètres des produits</target>
+    </trans-unit>
     <!-- Change the order settings -->
     <trans-unit id="3a474448782c3d5b952512199ad9c9b1" resname="Change the order settings">
       <source>Change the order settings</source>

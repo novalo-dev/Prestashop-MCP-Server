@@ -340,6 +340,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_email_settings` | ✎ Change the e-mail settings | E-mail settings › edit |
 | `somcp_get_order_settings` | ● Read the order settings | Order settings › view |
 | `somcp_update_order_settings` | ✎ Change the order settings | Order settings › edit |
+| `somcp_get_product_settings` | ● Read the product settings | Product settings › view |
 | `somcp_list_zones` | ● List zones | Zones › view |
 | `somcp_create_zone` | ✎ Create a zone | Zones › add |
 | `somcp_update_zone` | ✎ Change a zone | Zones › edit |

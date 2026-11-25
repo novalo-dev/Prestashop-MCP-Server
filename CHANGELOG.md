@@ -75,6 +75,14 @@ be given back as it is without writing anything. When a page of the terms no
 longer exists, somcp_get_order_settings now names this tool rather than the
 screen.
 
+**Read the product settings.** The new tool somcp_get_product_settings reads
+Shop Parameters > Product Settings: catalog mode, the days a product counts as
+new, the specific price priorities, the product page options, stock
+management, ordering out of stock with the labels and delivery times customers
+read in each language, pack stock, and the products per page with their
+order. It warns when catalog mode is on or stock management off, the two
+settings that explain why a visitor cannot buy.
+
 ### Changed
 
 **Limit a cart rule to countries, carriers and customer groups.**

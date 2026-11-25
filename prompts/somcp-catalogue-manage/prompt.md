@@ -285,10 +285,10 @@ will have to create an account to order.
 management and ordering out of stock with the labels customers read, the
 product page options and products per page. Read it before telling a merchant
 why visitors cannot add a product to the cart.
-`somcp_update_product_settings` changes the General product settings, Product
-page and Pagination cards; give back the read with the change. Never turn
-catalog mode on without the merchant's clear say-so: visitors could no longer
-order. The Products stock card stays in the back office for now.
+`somcp_update_product_settings` changes the four cards, the default stock
+labels and delivery times included; give back the read with the change. Never
+turn catalog mode on, or stock management off, without the merchant's clear
+say-so: visitors could no longer order, or could order what is not there.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

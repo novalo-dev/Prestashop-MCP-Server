@@ -2921,16 +2921,22 @@ if ($getOrderSettings !== null && $updateOrderSettings !== null) {
     }
 }
 
-// The product settings (#408, #409): the read given back whole writes nothing,
-// then Products per page is set to 13, read back, and put back whatever
-// happens. Catalog mode is never turned on: the order tools after this one
-// would find no cart.
+// The product settings (#408, #409, #410): the read given back whole writes
+// nothing, then Products per page is set to 13 and the English label of
+// out-of-stock products with denied backorders to "Somcp out", each read back
+// and put back whatever happens. Catalog mode is never turned on, and stock
+// management and out-of-stock ordering never change: the order and stock
+// tools after this one rely on them.
 $getProductSettings = $registry->get('somcp_get_product_settings');
 $updateProductSettings = $registry->get('somcp_update_product_settings');
 if ($getProductSettings !== null && $updateProductSettings !== null) {
     $idShopProductSettings = (int) $context->shop->id;
     $idShopGroupProductSettings = (int) Shop::getGroupFromShop($idShopProductSettings);
     $perPageWas = Configuration::get('PS_PRODUCTS_PER_PAGE', null, $idShopGroupProductSettings, $idShopProductSettings);
+    $idLangEnProductSettings = (int) Language::getIdByIso('en');
+    $deniedWas = $idLangEnProductSettings > 0
+        ? Configuration::get('PS_LABEL_OOS_PRODUCTS_BOD', $idLangEnProductSettings, $idShopGroupProductSettings, $idShopProductSettings)
+        : false;
     $productSettingsContext = static function (SomcpTool $tool, array $arguments) use ($idShopProductSettings, $employee, $context): array {
         return [
             'id_shop' => $idShopProductSettings,
@@ -2944,7 +2950,7 @@ if ($getProductSettings !== null && $updateProductSettings !== null) {
             'arguments' => $arguments,
         ];
     };
-    $calls += 3;
+    $calls += $deniedWas !== false ? 4 : 3;
     try {
         $read = $getProductSettings->call([], $productSettingsContext($getProductSettings, []));
         $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
@@ -2956,6 +2962,14 @@ if ($getProductSettings !== null && $updateProductSettings !== null) {
                 ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
                 ['Products per page changed', ['products_per_page' => $perPage], ['"changed": true', '"field": "products_per_page"', '"products_per_page": ' . $perPage]],
             ];
+            if ($deniedWas !== false) {
+                $denied = (string) $deniedWas === 'Somcp out' ? 'Somcp out again' : 'Somcp out';
+                $steps[] = [
+                    'a stock label changed in one language',
+                    ['languages' => ['en'], 'label_backorders_denied' => ['en' => $denied]],
+                    ['"changed": true', '"field": "label_backorders_denied (en)"', '"new": "' . $denied . '"', '"en": "' . $denied . '"'],
+                ];
+            }
             foreach ($steps as [$why, $arguments, $needles]) {
                 $result = $updateProductSettings->call($arguments, $productSettingsContext($updateProductSettings, $arguments));
                 $text = '';
@@ -2979,6 +2993,9 @@ if ($getProductSettings !== null && $updateProductSettings !== null) {
         // shop had them.
         if ($perPageWas !== false) {
             Configuration::updateValue('PS_PRODUCTS_PER_PAGE', $perPageWas, false, $idShopGroupProductSettings, $idShopProductSettings);
+        }
+        if ($deniedWas !== false) {
+            Configuration::updateValue('PS_LABEL_OOS_PRODUCTS_BOD', [$idLangEnProductSettings => (string) $deniedWas], false, $idShopGroupProductSettings, $idShopProductSettings);
         }
     }
 }

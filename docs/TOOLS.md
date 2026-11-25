@@ -3679,22 +3679,22 @@ attributes**), of the pack stock field (8.0.1 **Default pack stock
 management**) and of the help of **Force update of friendly URL** differs.
 
 #### `somcp_update_product_settings`
-**State**: written · [issue #409](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/409)
+**State**: written · [issue #409](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/409), [#410](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/410)
 **Nature**: `acts(EDIT, 'AdminPPreferences')` · **Scope**: `mcp.catalog.write`, as `somcp_update_product`
 
 **Does** - changes **Shop Parameters > Product Settings**, as the **Save**
-buttons of its cards **General product settings**, **Product page** and
-**Pagination** do. Only the fields given change. The card **Products stock**
-comes with #410.
+buttons of its cards **General product settings**, **Product page**,
+**Products stock** and **Pagination** do. Only the fields given change.
 
-**Do not use for** - the stock settings, until #410 (back office); the stock
-of a product (→ `somcp_set_stock_quantity`); the priorities, status or
-out-of-stock behavior of one product (→ `somcp_update_product`).
+**Do not use for** - the stock of a product (→ `somcp_set_stock_quantity`);
+the priorities, status, stock labels or out-of-stock behavior of one product
+(→ `somcp_update_product`).
 
 **Parameters** - all optional, under the names and words of
 `somcp_get_product_settings`, whose read given back whole writes nothing. The
 fields, their keys and kinds are one constant map,
-`SomcpToolUpdateProductSettings::FIELDS`, which #410 extends.
+`SomcpToolUpdateProductSettings::FIELDS`; the five texts are
+`SomcpToolGetProductSettings::LABELS`.
 
 | Name | On screen | Type | Rule |
 |---|---|---|---|
@@ -3715,6 +3715,18 @@ fields, their keys and kinds are one constant map,
 | `display_discounted_unit_price` | **Display the discounted unit price** | boolean | |
 | `notify_product_in_cart` | **Display notifications if the product is already in the cart** | boolean | from 9.0.0 |
 | `feature_values_order` | **Order of feature values** | string | `alphabetical` or `position` (stored `name`, `position`); from 9.0.0 |
+| `stock_management` | **Enable stock management** | boolean | |
+| `pack_stock_type` | **Default pack stock behavior** (9.0.0), **Default pack stock management** (8.0.1) | string | `pack`, `products` or `both`, stored 0, 1, 2; `default` (a product's own word) is refused by `SomcpTool::oneOf()` |
+| `display_unavailable_attributes` | **Display unavailable attributes on the product page** | boolean | |
+| `remaining_quantities_below` | **Display remaining quantities when the quantity is lower than** | integer | 0 or more, 0 turns it off: `remaining_quantities_below: a quantity, 0 or more` |
+| `allow_out_of_stock_ordering` | **Allow ordering of out-of-stock products** | boolean | |
+| `label_in_stock` | **Label of in-stock products** | object keyed by ISO code | the rule of the product field `available_now` |
+| `label_backorders_allowed` | **Label of out-of-stock products with allowed backorders** | object keyed by ISO code | the rule of `available_later` |
+| `label_backorders_denied` | **Label of out-of-stock products with denied backorders** | object keyed by ISO code | the rule of `available_later` |
+| `delivery_time_in_stock` | **Delivery time of in-stock products** | object keyed by ISO code | the rule of `delivery_in_stock`; empty turns it off |
+| `delivery_time_backorders` | **Delivery time of out-of-stock products with allowed backorders** | object keyed by ISO code | the rule of `delivery_out_stock`; empty turns it off |
+| `out_of_stock_label_in_listings` | **Display out-of-stock label on product listing pages** | boolean | |
+| `languages` | - | array | the languages of the texts given, the rule of #149 (`SomcpToolCreateProduct::languages()`); every active language when left out; a language left out keeps its texts |
 | `products_per_page` | **Products per page** | integer | 1 or more: `products_per_page: a number of products, 1 or more` |
 | `default_order_by` | **Default order by** | string | `name`, `price`, `date_add`, `date_upd`, `position`, `brand`, `quantity`, `reference`, and `sales` from 9.0.0 (before it, the list without `sales`) |
 | `default_order_way` | **Default order method** | string | `asc` or `desc` |
@@ -3722,25 +3734,31 @@ fields, their keys and kinds are one constant map,
 A field of a later version given a value: `SomcpTool::notOnThisVersion(<key>,
 <the words of the screen>)`; `null`, as read, is ignored. A choice outside its
 list: `SomcpTool::oneOf()`. Booleans are booleans only (`"false"` is refused).
-The keys of **Products stock** given back as read are ignored, otherwise
-refused with `<key>: not changed by this tool yet - the merchant sets it on
-the Product Settings page` (a text compared on the languages given, so a read
-made with `languages` can be given back); `languages` and `warning` are
-ignored. Unknown arguments through `SomcpTool::unknownFields()`; every problem
+The five texts are read with `SomcpToolCreateProduct::texts()`, each language
+`trim()`med and checked with `(new Product())->validateField()` against the
+product field it stands in for, so the size and rule come from
+`Product::$definition`; a refusal is under `<key> (<iso>)`. An empty text is
+allowed (nothing is displayed). A text given back as read is no change.
+`warning` is ignored. Unknown arguments through `SomcpTool::unknownFields()`; every problem
 in one answer, in the envelope of #169 under `Nothing was changed.`, before
 anything is written.
 
 **Returns** - the shape of every update tool (#356): `changed: true`,
 `changes` (per field its `field`, `old`, `new`, under the names and words of
-the parameters), and `settings` read back through
+the parameters; a text one line per language, `{"field": "label_in_stock
+(fr)", "old": "", "new": "En stock"}`), and `settings` read back through
 `SomcpToolGetProductSettings::settings()`. Nothing differs: `changed: false`,
 `reason` `The product settings already hold every value given. Nothing was
 written.`, `settings` as read.
 
 Warnings: `catalog_mode` just turned on, `The shop is now in catalog mode:
-visitors can browse the products but cannot add them to the cart.`; then the
-warnings of `somcp_get_product_settings` read back (its catalog mode sentence
-when it was on already); on an installation of several shops, `The settings
+visitors can browse the products but cannot add them to the cart.`;
+`stock_management` just turned off, `Stock management is now off: quantities
+are no longer counted and every product can be ordered.`; then the warnings
+of `somcp_get_product_settings` read back (its catalog mode and stock
+management sentences when they were so already);
+`allow_out_of_stock_ordering` just turned on with stock management on,
+`Products out of stock can now be ordered, unless a product says otherwise.`; on an installation of several shops, `The settings
 changed for this shop only, as the back office saves them in a shop context.`
 
 **Errors** - those above; a save that fails stops the call and names what was
@@ -3751,11 +3769,15 @@ somcp_get_product_settings before calling again.`).
 **Notes**
 - Each key that differs saved with `Configuration::updateValue(<key>, <value>,
   false, $idShopGroup, $idShop)` for the shop of the token, as
-  `GeneralConfiguration`, `PageConfiguration` and `PaginationConfiguration`
-  save them in a shop context: booleans as `0` or `1`, numbers as integers,
-  choices as their stored codes. The priorities are written as
+  `GeneralConfiguration`, `PageConfiguration`, `StockConfiguration` and
+  `PaginationConfiguration` save them in a shop context: booleans as `0` or
+  `1`, numbers as integers, choices as their stored codes. The texts are saved
+  as `StockConfiguration` saves them, `Configuration::updateValue(<key>,
+  <texts by id_lang>, false, ...)`, with only the languages given, so the
+  others, inactive ones included, keep theirs. The priorities are written as
   `SpecificPricePriorityUpdater::updateDefaultPriorities()` writes them.
-- Log line `product_settings_updated` with the names of the fields saved.
+- Log line `product_settings_updated` with the names of the fields saved,
+  never the texts.
 - Show the merchant the change before the call; catalog mode stops every order.
 
 **Differences between 8.0.1 and 9.0.0** - `breadcrumb_category`,

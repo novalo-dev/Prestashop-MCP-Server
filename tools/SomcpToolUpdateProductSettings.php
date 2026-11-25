@@ -17,13 +17,13 @@
 declare(strict_types=1);
 
 /*
- * somcp_update_product_settings - the Save buttons of the General product
- * settings, Product page and Pagination cards of Shop Parameters > Product
- * Settings.
+ * somcp_update_product_settings - the Save buttons of the four cards of Shop
+ * Parameters > Product Settings: General product settings, Product page,
+ * Products stock and Pagination.
  *
  * Saved by their configuration keys for the shop of the token, as the core's
- * GeneralConfiguration, PageConfiguration and PaginationConfiguration save
- * them. Compared with, and answered with, the reading of
+ * GeneralConfiguration, PageConfiguration, StockConfiguration and
+ * PaginationConfiguration save them. Compared with, and answered with, the reading of
  * somcp_get_product_settings, so the read given back whole writes nothing.
  */
 
@@ -41,7 +41,8 @@ class SomcpToolUpdateProductSettings
      * The fields saved, in the order of the cards: configuration key, kind,
      * and for a choice its words to the stored codes, for a number its
      * lowest value and the words of its refusal. The last item is the first
-     * version whose screen has the field. Products stock adds its rows here.
+     * version whose screen has the field. The five texts of Products stock
+     * are SomcpToolGetProductSettings::LABELS, saved per language.
      *
      * @var array<string, array{0: string, 1: string, 2: mixed, 3: string}>
      */
@@ -68,6 +69,12 @@ class SomcpToolUpdateProductSettings
         'display_discounted_unit_price' => ['PS_DISPLAY_DISCOUNT_PRICE', 'bool', null, '8.0.0'],
         'notify_product_in_cart' => ['PS_DISPLAY_AMOUNT_IN_CART', 'bool', null, '9.0.0'],
         'feature_values_order' => ['PS_FEATURE_VALUES_ORDER', 'choice', ['alphabetical' => 'name', 'position' => 'position'], '9.0.0'],
+        'stock_management' => ['PS_STOCK_MANAGEMENT', 'bool', null, '8.0.0'],
+        'pack_stock_type' => ['PS_PACK_STOCK_TYPE', 'choice', ['pack' => 0, 'products' => 1, 'both' => 2], '8.0.0'],
+        'display_unavailable_attributes' => ['PS_DISP_UNAVAILABLE_ATTR', 'bool', null, '8.0.0'],
+        'remaining_quantities_below' => ['PS_LAST_QTIES', 'int', [0, 'a quantity, 0 or more'], '8.0.0'],
+        'allow_out_of_stock_ordering' => ['PS_ORDER_OUT_OF_STOCK', 'bool', null, '8.0.0'],
+        'out_of_stock_label_in_listings' => ['PS_SHOW_LABEL_OOS_LISTING_PAGES', 'bool', null, '8.0.0'],
         'products_per_page' => ['PS_PRODUCTS_PER_PAGE', 'int', [1, 'a number of products, 1 or more'], '8.0.0'],
         'default_order_by' => ['PS_PRODUCTS_ORDER_BY', 'order_by', null, '8.0.0'],
         'default_order_way' => ['PS_PRODUCTS_ORDER_WAY', 'choice', ['asc' => 0, 'desc' => 1], '8.0.0'],
@@ -85,20 +92,21 @@ class SomcpToolUpdateProductSettings
     ];
 
     /**
-     * The card Products stock, read by somcp_get_product_settings and not
-     * written here yet: given back as read it is no change, otherwise named.
+     * The product field whose rule each text of Products stock follows: the
+     * shop shows these texts for every product that has none of its own.
      */
-    private const NOT_YET = [
-        'stock_management', 'pack_stock_type', 'display_unavailable_attributes', 'remaining_quantities_below',
-        'allow_out_of_stock_ordering', 'label_in_stock', 'label_backorders_allowed', 'label_backorders_denied',
-        'delivery_time_in_stock', 'delivery_time_backorders', 'out_of_stock_label_in_listings',
+    private const LABEL_RULES = [
+        'label_in_stock' => 'available_now',
+        'label_backorders_allowed' => 'available_later',
+        'label_backorders_denied' => 'available_later',
+        'delivery_time_in_stock' => 'delivery_in_stock',
+        'delivery_time_backorders' => 'delivery_out_stock',
     ];
 
     /**
-     * What the read answers beside the settings: the languages it read the
-     * texts in, and its warning.
+     * What the read answers beside the settings: its warning.
      */
-    private const COMPUTED = ['languages', 'warning'];
+    private const COMPUTED = ['warning'];
 
     /**
      * @return SomcpTool
@@ -111,15 +119,23 @@ class SomcpToolUpdateProductSettings
         $choice = static function (array $words, string $description): array {
             return ['type' => 'string', 'enum' => $words, 'description' => $description];
         };
+        $text = static function (string $description): array {
+            return [
+                'type' => 'object',
+                'additionalProperties' => ['type' => 'string'],
+                'description' => $description . ', one text per language keyed by ISO code, for example {"en": "In stock"}.',
+            ];
+        };
 
         return new SomcpTool(
             'somcp_update_product_settings',
             Somcp::t('Change the product settings'),
-            'Changes Shop Parameters > Product Settings, as the Save of its General product settings, Product page '
-                . 'and Pagination cards: catalog mode, new product days, short description size, specific price '
-                . 'priorities, product page options, products per page and their order. Only the fields given '
-                . 'change; the answer of somcp_get_product_settings can be given back. Products stock is set in the '
-                . 'back office. Show the merchant the change first; never turn catalog mode on unasked.',
+            'Changes Shop Parameters > Product Settings, as the Save of its four cards: catalog mode, new product '
+                . 'days, short description size, specific price priorities, product page options, stock management, '
+                . 'out-of-stock ordering, pack stock, default stock labels and delivery times per language, products '
+                . 'per page and their order. Only the fields given change; the answer of somcp_get_product_settings '
+                . 'can be given back. One product\'s stock or labels: somcp_update_product, somcp_set_stock_quantity. '
+                . 'Show the merchant the change first; never turn catalog mode on or stock management off unasked.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -147,6 +163,23 @@ class SomcpToolUpdateProductSettings
                     'display_discounted_unit_price' => $switch('Display the discounted unit price.'),
                     'notify_product_in_cart' => $switch('Display notifications if the product is already in the cart. PrestaShop 9 only.'),
                     'feature_values_order' => $choice(['alphabetical', 'position'], 'Order of feature values. PrestaShop 9 only.'),
+                    'stock_management' => $switch('Enable stock management; off, quantities are not counted and every product can be ordered.'),
+                    'pack_stock_type' => $choice(['pack', 'products', 'both'], 'Default pack stock behavior: the stock of the pack, of the products in it, or both.'),
+                    'display_unavailable_attributes' => $switch('Display unavailable attributes on the product page.'),
+                    'remaining_quantities_below' => ['type' => 'integer', 'description' => 'Display remaining quantities when the quantity is lower than this, 0 or more; 0 turns it off.'],
+                    'allow_out_of_stock_ordering' => $switch('Allow ordering of out-of-stock products, for the products that follow the default.'),
+                    'label_in_stock' => $text('Label of in-stock products'),
+                    'label_backorders_allowed' => $text('Label of out-of-stock products with allowed backorders'),
+                    'label_backorders_denied' => $text('Label of out-of-stock products with denied backorders'),
+                    'delivery_time_in_stock' => $text('Delivery time of in-stock products; empty shows none'),
+                    'delivery_time_backorders' => $text('Delivery time of out-of-stock products with allowed backorders; empty shows none'),
+                    'out_of_stock_label_in_listings' => $switch('Display out-of-stock label on product listing pages.'),
+                    'languages' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
+                        'description' => 'ISO codes among the shop\'s active languages of the texts given, for example '
+                            . '["en", "fr"]; every active language when left out. A language left out keeps its texts.',
+                    ],
                     'products_per_page' => ['type' => 'integer', 'description' => 'Products per page, 1 or more.'],
                     'default_order_by' => $choice(SomcpToolGetProductSettings::ORDER_BY, 'Default order by of the product lists; sales on PrestaShop 9 only.'),
                     'default_order_way' => $choice(['asc', 'desc'], 'Default order method.'),
@@ -170,32 +203,23 @@ class SomcpToolUpdateProductSettings
         $idShop = Somcp::currentShopId();
         $idShopGroup = (int) Shop::getGroupFromShop($idShop);
         $idEmployee = (int) ($context['id_employee'] ?? 0);
-        $languages = [];
-        foreach (Language::getLanguages(true, $idShop) as $language) {
-            $languages[(int) $language['id_lang']] = (string) $language['iso_code'];
-        }
-        $before = SomcpToolGetProductSettings::settings($idShop, $languages);
 
-        // What the read worked out, and the card not written yet given back
-        // as it reads, are no change and are taken out, so a read given back
-        // whole is not refused for them.
+        // What the read worked out is no change and is taken out, so a read
+        // given back whole is not refused for it.
         $checked = $arguments;
         foreach (self::COMPUTED as $key) {
             unset($checked[$key]);
         }
-        $problems = [];
-        foreach (self::NOT_YET as $key) {
-            if (!array_key_exists($key, $checked)) {
-                continue;
-            }
-            if (!self::asRead($checked[$key], $before[$key])) {
-                $problems[] = $key . ': not changed by this tool yet - the merchant sets it on the Product Settings page';
-            }
-            unset($checked[$key]);
-        }
 
-        // Every problem in one answer (#169), so the call is corrected in one go.
-        $problems = array_merge(SomcpTool::unknownFields($checked, array_keys(self::FIELDS)), $problems);
+        // Every problem in one answer (#169), so the call is corrected in one
+        // go; the languages of the texts by the rule of #149.
+        $problems = SomcpTool::unknownFields(
+            $checked,
+            array_merge(array_keys(self::FIELDS), array_keys(SomcpToolGetProductSettings::LABELS), ['languages'])
+        );
+        $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $problems);
+        $before = SomcpToolGetProductSettings::settings($idShop, $languages === null ? [] : $languages['filled']);
+        $texts = $languages === null ? [] : self::texts($arguments, $languages, $before, $problems);
 
         $given = [];
         foreach (self::FIELDS as $field => [, $kind, $rule, $since]) {
@@ -257,7 +281,7 @@ class SomcpToolUpdateProductSettings
             $given['catalog_mode_show_prices'] = false;
         }
 
-        if ($problems !== []) {
+        if ($problems !== [] || $languages === null) {
             return SomcpTool::refused('changed', $problems);
         }
 
@@ -267,7 +291,13 @@ class SomcpToolUpdateProductSettings
                 $changes[] = ['field' => $field, 'old' => $before[$field], 'new' => $given[$field]];
             }
         }
-        if ($changes === []) {
+        $textChanges = [];
+        foreach ($texts as $name => $byIso) {
+            foreach ($byIso as $iso => $text) {
+                $textChanges[] = ['field' => $name . ' (' . $iso . ')', 'old' => $before[$name][$iso] ?? '', 'new' => $text];
+            }
+        }
+        if ($changes === [] && $textChanges === []) {
             return SomcpTool::json([
                 'changed' => false,
                 'reason' => 'The product settings already hold every value given. Nothing was written.',
@@ -283,12 +313,27 @@ class SomcpToolUpdateProductSettings
             }
             $saved[] = $field;
         }
+        $byIso = array_flip($languages['filled']);
+        foreach ($texts as $name => $byIsoText) {
+            // Only the languages given: Configuration::updateValue() leaves
+            // the others, inactive ones included, as they were. Plain text,
+            // as StockConfiguration saves it.
+            $values = [];
+            foreach ($byIsoText as $iso => $text) {
+                $values[$byIso[$iso]] = $text;
+            }
+            if (!Configuration::updateValue(SomcpToolGetProductSettings::LABELS[$name], $values, false, $idShopGroup, $idShop)) {
+                return self::failed($saved, $name . ' could not be saved', $idEmployee);
+            }
+            $saved[] = $name . ' (' . implode(', ', array_keys($byIsoText)) . ')';
+        }
+        // The fields saved, never the texts.
         SomcpLogger::log('product_settings_updated', SomcpLogger::OUTCOME_SUCCESS, implode(', ', $saved), '', $idEmployee);
 
         // Read back rather than echoed: what the assistant shows is what the
         // shop stored.
-        $after = SomcpToolGetProductSettings::settings($idShop, $languages);
-        $result = ['changed' => true, 'changes' => $changes];
+        $after = SomcpToolGetProductSettings::settings($idShop, $languages['filled']);
+        $result = ['changed' => true, 'changes' => array_merge($changes, $textChanges)];
 
         $warnings = [];
         if (in_array('catalog_mode', $saved, true) && $after['catalog_mode']) {
@@ -296,8 +341,13 @@ class SomcpToolUpdateProductSettings
         } elseif ($after['catalog_mode']) {
             $warnings[] = 'Catalog mode is on: visitors can browse the products but cannot add them to the cart.';
         }
-        if (!$after['stock_management']) {
+        if (in_array('stock_management', $saved, true) && !$after['stock_management']) {
+            $warnings[] = 'Stock management is now off: quantities are no longer counted and every product can be ordered.';
+        } elseif (!$after['stock_management']) {
             $warnings[] = 'Stock management is off: quantities are not counted and every product can be ordered.';
+        }
+        if (in_array('allow_out_of_stock_ordering', $saved, true) && $after['allow_out_of_stock_ordering'] && $after['stock_management']) {
+            $warnings[] = 'Products out of stock can now be ordered, unless a product says otherwise.';
         }
         if (Shop::isFeatureActive() && count(Shop::getShops(false, null, true)) > 1) {
             $warnings[] = 'The settings changed for this shop only, as the back office saves them in a shop context.';
@@ -311,29 +361,49 @@ class SomcpToolUpdateProductSettings
     }
 
     /**
-     * Whether a value given back for a field this tool does not write is the one read.
+     * The texts of Products stock that differ from the stored ones, by name
+     * and ISO code, each trimmed and checked by the rule of the product field
+     * it stands in for, as a product's own labels are.
      *
-     * A text read in fewer languages than the shop has is compared on the
-     * languages given, so a read made with languages is given back too.
+     * @param array<string, mixed> $arguments
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param array<string, mixed> $before the reading of somcp_get_product_settings
+     * @param array<int, string> $problems
      *
-     * @param mixed $given
-     * @param mixed $read
-     *
-     * @return bool
+     * @return array<string, array<string, string>>
      */
-    private static function asRead($given, $read): bool
+    private static function texts(array $arguments, array $languages, array $before, array &$problems): array
     {
-        if (is_array($given) && !array_is_list($given) && is_array($read)) {
-            foreach ($given as $iso => $text) {
-                if (!array_key_exists($iso, $read) || $read[$iso] !== $text) {
-                    return false;
+        // The rules and sizes of Product::$definition, never a number written
+        // here, so the default label holds what a product's own label holds.
+        $probe = new Product();
+        $texts = [];
+        foreach (self::LABEL_RULES as $name => $rule) {
+            $byLang = SomcpToolCreateProduct::texts($arguments, $name, $name, $languages, $problems);
+            if ($byLang === null) {
+                continue;
+            }
+            $stored = is_array($before[$name]) ? $before[$name] : [];
+            foreach ($byLang as $idLang => $text) {
+                $iso = $languages['filled'][$idLang];
+                // The text given back as read is no change, even when
+                // trimming it would rewrite it.
+                if (array_key_exists($iso, $stored) && $stored[$iso] === $text) {
+                    continue;
+                }
+                $text = trim($text);
+                // An empty text is allowed: the shop then displays nothing.
+                if ($text !== '' && ($check = $probe->validateField($rule, $text, $idLang)) !== true) {
+                    $problems[] = $name . ' (' . $iso . '): ' . (is_string($check) ? strip_tags($check) : 'not accepted by PrestaShop');
+                    continue;
+                }
+                if (($stored[$iso] ?? '') !== $text) {
+                    $texts[$name][$iso] = $text;
                 }
             }
-
-            return true;
         }
 
-        return json_encode($given) === json_encode($read);
+        return $texts;
     }
 
     /**

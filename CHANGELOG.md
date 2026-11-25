@@ -85,12 +85,15 @@ settings that explain why a visitor cannot buy.
 
 **Change the product settings.** The new tool somcp_update_product_settings
 changes Shop Parameters > Product Settings as the Save buttons of its General
-product settings, Product page and Pagination cards do: catalog mode and its
-prices, the days a product counts as new, the size of the short description,
-the specific price priorities, what the product page shows, and the products
-per page with their order. Only the settings given change, and the answer of
+product settings, Product page, Products stock and Pagination cards do:
+catalog mode and its prices, the days a product counts as new, the size of the
+short description, the specific price priorities, what the product page shows,
+stock management, ordering out of stock, the pack stock, the remaining
+quantities, the default availability labels and delivery times in each
+language, and the products per page with their order. Only the settings given
+change, a language left out keeps its texts, and the answer of
 somcp_get_product_settings can be given back as it is without writing
-anything. The Products stock card is still set in the back office.
+anything.
 
 ### Changed
 

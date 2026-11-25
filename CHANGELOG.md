@@ -32,6 +32,13 @@ groups, countries and carriers it is offered to. The assistant can now check
 that customers of a new country or currency have a way to pay before saying
 the shop sells there, and it warns about a module offered to nobody.
 
+**Read the e-mail settings.** The new tool somcp_get_email_settings reads the
+Email card of Advanced Parameters > E-mail: where customer messages go, how
+the shop sends its e-mails (sendmail, SMTP or never), the SMTP server, the
+format, the e-mail log and DKIM signing. The assistant can now tell why
+customers get no order confirmation. The SMTP password and the DKIM key are
+never shown, only whether they are set.
+
 ### Changed
 
 **A localization pack brings its currencies from any assistant.** Importing a

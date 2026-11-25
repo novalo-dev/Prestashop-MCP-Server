@@ -1457,6 +1457,11 @@
       <source>Read the payment preferences</source>
       <target>Lire les préférences de paiement</target>
     </trans-unit>
+    <!-- Read the e-mail settings -->
+    <trans-unit id="86a6ca359021dd6771e18e1edf3f631b" resname="Read the e-mail settings">
+      <source>Read the e-mail settings</source>
+      <target>Lire les paramètres des e-mails</target>
+    </trans-unit>
     <!-- Import a localization pack -->
     <trans-unit id="1240d2eed41a0fd4e898e6aab64c6732" resname="Import a localization pack">
       <source>Import a localization pack</source>

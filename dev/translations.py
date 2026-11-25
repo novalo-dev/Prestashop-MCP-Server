@@ -1158,6 +1158,10 @@ T = {
  "Lire les préférences de paiement",
  "Leer las preferencias de pago",
  "Die Zahlungseinstellungen lesen"),
+"Read the e-mail settings": (
+ "Lire les paramètres des e-mails",
+ "Leer los parámetros de correo electrónico",
+ "Die E-Mail-Einstellungen lesen"),
 "Import a localization pack": (
  "Importer un pack de localisation",
  "Importar un paquete de localización",

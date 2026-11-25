@@ -3253,6 +3253,62 @@ carrier>: customers cannot pay with it.`, naming the empty lists.
 display names differ in the demo data (**Wire payment** on 8.0.1, **Bank
 transfer** on 9.0.0).
 
+#### `somcp_get_email_settings`
+**State**: written · [issue #398](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/398)
+**Nature**: `acts(VIEW, 'AdminEmails')` · **Scope**: `mcp.system.read`, as `somcp_get_cache_status`
+
+**Does** - reads the card **Email** of **Advanced Parameters > E-mail**: where
+customer messages go, how the shop sends its e-mails, the SMTP parameters,
+the subject prefix, the format, the e-mail log and the DKIM signing. Read
+only, replayable. The **SMTP password** and the **DKIM private key** are never
+read: the answer says only whether each one is set. The list of sent e-mails
+and **Send a test email** are not part of it.
+
+**Do not use for** - the e-mail of an order status (→
+`somcp_resend_order_status_email`); the layout of the e-mails (**Design >
+Email Theme**, not covered yet).
+
+**Parameters** - none. Unknown arguments through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
+and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetEmailSettings::settings($idShop)` for the update to answer with,
+each key read with `Configuration::get(<key>, null, $idShopGroup, $idShop)`
+for the shop of the token and its group, as `EmailDataConfigurator` reads
+them:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `send_emails_to` | **Send emails to** | `PS_MAIL_EMAIL_MESSAGE` | the `id_contact` stored, `null` when no row exists (the list then shows its first contact) |
+| `send_emails_to_choices` | - | - | the contacts the list offers, `{id_contact, name}`, `Contact::getContacts()` in the shop's default language |
+| `mail_method` | the three choices under **Send emails to** | `PS_MAIL_METHOD` | `sendmail` (1), `smtp` (2) or `never` (3) |
+| `smtp_domain` | **Email domain name** | `PS_MAIL_DOMAIN` | text |
+| `smtp_server` | **SMTP server** | `PS_MAIL_SERVER` | text |
+| `smtp_username` | **SMTP username** | `PS_MAIL_USER` | text |
+| `smtp_password_set` | **SMTP password** | `PS_MAIL_PASSWD` | `true` when not empty; the value is never in the answer |
+| `smtp_encryption` | **Encryption** | `PS_MAIL_SMTP_ENCRYPTION` | `off`, `tls` or `ssl` (8.0.1 only) |
+| `smtp_port` | **Port** | `PS_MAIL_SMTP_PORT` | integer, `null` when empty |
+| `subject_prefix` | **Enable the store name as a prefix in the email's subject** | `PS_MAIL_SUBJECT_PREFIX` | boolean on 9.0.0, `null` on 8.0.1 where the setting does not exist |
+| `mail_type` | the three choices of the format | `PS_MAIL_TYPE` | `html` (1), `text` (2) or `both` (3) |
+| `log_emails` | **Log Emails** | `PS_LOG_EMAILS` | boolean |
+| `dkim_enabled` | **DKIM signing** | `PS_MAIL_DKIM_ENABLE` | boolean |
+| `dkim_domain`, `dkim_selector` | **DKIM domain**, **DKIM selector** | `PS_MAIL_DKIM_DOMAIN`, `PS_MAIL_DKIM_SELECTOR` | text |
+| `dkim_key_set` | **DKIM private key** | `PS_MAIL_DKIM_KEY` | `true` when not empty; the key is never in the answer |
+
+A `warning` when `mail_method` is `never`: `The shop sends no e-mail at all:
+customers get no order confirmation.`; when it is `smtp` with `smtp_server`
+empty: `SMTP is chosen but no SMTP server is set: e-mails cannot leave the
+shop.`
+
+**Notes**
+- The SMTP fields are shown by the page's script only with **Set my own SMTP parameters**; they are saved whatever the method.
+- The demo shops: sendmail, both formats, server `smtp.`, port 25, no encryption, the e-mail log on, DKIM off, no password nor key; no row for `PS_MAIL_EMAIL_MESSAGE` nor `PS_MAIL_DOMAIN`.
+
+**Differences between 8.0.1 and 9.0.0** - **Enable the store name as a
+prefix in the email's subject** on 9.0.0 only; **SSL** among the encryptions
+on 8.0.1 only.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

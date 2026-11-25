@@ -3738,8 +3738,10 @@ The five texts are read with `SomcpToolCreateProduct::texts()`, each language
 `trim()`med and checked with `(new Product())->validateField()` against the
 product field it stands in for, so the size and rule come from
 `Product::$definition`; a refusal is under `<key> (<iso>)`. An empty text is
-allowed (nothing is displayed). A text given back as read is no change.
-`warning` is ignored. Unknown arguments through `SomcpTool::unknownFields()`; every problem
+allowed (nothing is displayed). A text given back as read is no change, and
+so is any other field given exactly as the read has it, skipped before its
+check: a stored value the rules refuse (a key with no row reads as `""`) never
+blocks the read given back whole. `warning` is ignored. Unknown arguments through `SomcpTool::unknownFields()`; every problem
 in one answer, in the envelope of #169 under `Nothing was changed.`, before
 anything is written.
 
@@ -3754,12 +3756,13 @@ written.`, `settings` as read.
 Warnings: `catalog_mode` just turned on, `The shop is now in catalog mode:
 visitors can browse the products but cannot add them to the cart.`;
 `stock_management` just turned off, `Stock management is now off: quantities
-are no longer counted and every product can be ordered.`; then the warnings
-of `somcp_get_product_settings` read back (its catalog mode and stock
-management sentences when they were so already);
+are no longer counted and every product can be ordered.`;
 `allow_out_of_stock_ordering` just turned on with stock management on,
-`Products out of stock can now be ordered, unless a product says otherwise.`; on an installation of several shops, `The settings
-changed for this shop only, as the back office saves them in a shop context.`
+`Products out of stock can now be ordered, unless a product says otherwise.`;
+then the warnings of `somcp_get_product_settings` read back (its catalog mode
+and stock management sentences, each only when this call did not just turn it
+so); on an installation of several shops, `The settings changed for this shop
+only, as the back office saves them in a shop context.`
 
 **Errors** - those above; a save that fails stops the call and names what was
 saved before it (`The product settings could not be changed: <field> could not

@@ -93,7 +93,8 @@ quantities, the default availability labels and delivery times in each
 language, and the products per page with their order. Only the settings given
 change, a language left out keeps its texts, and the answer of
 somcp_get_product_settings can be given back as it is without writing
-anything.
+anything, even on a shop where one of these settings was never saved. The
+warnings name what the call changed first, then what was already so.
 
 **Read the customer settings.** The new tool somcp_get_customer_settings reads
 Shop Parameters > Customer Settings: whether the last cart is shown again at

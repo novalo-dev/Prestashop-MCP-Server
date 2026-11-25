@@ -5,6 +5,7 @@
     {"why": "switches given as text, stock management among them", "arguments": {"force_friendly_url": "false", "stock_management": "no"}, "expect": "error", "contains": ["force_friendly_url: true or false", "stock_management: true or false"]},
     {"why": "a negative remaining quantity, and the pack stock word of a product", "arguments": {"remaining_quantities_below": -1, "pack_stock_type": "default"}, "expect": "error", "contains": ["Nothing was changed.", "remaining_quantities_below: a quantity, 0 or more", "pack_stock_type: one of pack, products, both"]},
     {"why": "a stock label the product rules refuse", "arguments": {"languages": ["en"], "label_in_stock": {"en": "<b>x</b>"}}, "expect": "error", "contains": ["Nothing was changed.", "label_in_stock (en): "]},
+    {"why": "values given as the demo shop holds them write nothing", "arguments": {"catalog_mode": false, "stock_management": true}, "expect": "ok", "contains": ["\"changed\": false", "already hold every value given"]},
     {"why": "an unknown field", "arguments": {"tone": 1}, "expect": "error", "contains": ["Nothing was changed.", "- tone: not a field of this tool"]}
   ]
 }

@@ -228,6 +228,12 @@ class SomcpToolUpdateProductSettings
                 continue;
             }
             $value = $arguments[$field];
+            if ($value === $before[$field]) {
+                // The read given back: a stored value the rules below would
+                // refuse (a key with no row reads as "") is no change, and
+                // must not block the other fields of the call.
+                continue;
+            }
             if (version_compare(_PS_VERSION_, $since, '<')) {
                 $problems[] = SomcpTool::notOnThisVersion($field, self::SCREEN[$field] ?? $field);
                 continue;
@@ -335,19 +341,25 @@ class SomcpToolUpdateProductSettings
         $after = SomcpToolGetProductSettings::settings($idShop, $languages['filled']);
         $result = ['changed' => true, 'changes' => array_merge($changes, $textChanges)];
 
+        // What this call changed first, then a state that was already there,
+        // each only when the call did not just say it.
         $warnings = [];
-        if (in_array('catalog_mode', $saved, true) && $after['catalog_mode']) {
+        $nowCatalog = in_array('catalog_mode', $saved, true) && $after['catalog_mode'];
+        $nowNoStock = in_array('stock_management', $saved, true) && !$after['stock_management'];
+        if ($nowCatalog) {
             $warnings[] = 'The shop is now in catalog mode: visitors can browse the products but cannot add them to the cart.';
-        } elseif ($after['catalog_mode']) {
-            $warnings[] = 'Catalog mode is on: visitors can browse the products but cannot add them to the cart.';
         }
-        if (in_array('stock_management', $saved, true) && !$after['stock_management']) {
+        if ($nowNoStock) {
             $warnings[] = 'Stock management is now off: quantities are no longer counted and every product can be ordered.';
-        } elseif (!$after['stock_management']) {
-            $warnings[] = 'Stock management is off: quantities are not counted and every product can be ordered.';
         }
         if (in_array('allow_out_of_stock_ordering', $saved, true) && $after['allow_out_of_stock_ordering'] && $after['stock_management']) {
             $warnings[] = 'Products out of stock can now be ordered, unless a product says otherwise.';
+        }
+        if (!$nowCatalog && $after['catalog_mode']) {
+            $warnings[] = 'Catalog mode is on: visitors can browse the products but cannot add them to the cart.';
+        }
+        if (!$nowNoStock && !$after['stock_management']) {
+            $warnings[] = 'Stock management is off: quantities are not counted and every product can be ordered.';
         }
         if (Shop::isFeatureActive() && count(Shop::getShops(false, null, true)) > 1) {
             $warnings[] = 'The settings changed for this shop only, as the back office saves them in a shop context.';

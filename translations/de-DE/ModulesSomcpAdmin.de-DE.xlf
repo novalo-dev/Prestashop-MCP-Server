@@ -1492,6 +1492,11 @@
       <source>Read the customer settings</source>
       <target>Die Kundeneinstellungen lesen</target>
     </trans-unit>
+    <!-- Change the customer settings -->
+    <trans-unit id="9ceb4247e8bfa672b6af512a5954b738" resname="Change the customer settings">
+      <source>Change the customer settings</source>
+      <target>Die Kundeneinstellungen ändern</target>
+    </trans-unit>
     <!-- Change the order settings -->
     <trans-unit id="3a474448782c3d5b952512199ad9c9b1" resname="Change the order settings">
       <source>Change the order settings</source>

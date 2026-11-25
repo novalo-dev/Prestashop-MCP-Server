@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "every mistake in one answer", "arguments": {"password_reset_delay_minutes": -5, "b2b_mode": "yes"}, "expect": "error", "contains": ["Nothing was changed.", "password_reset_delay_minutes: a number of minutes, 0 or more", "b2b_mode: true or false"]},
+    {"why": "an unknown field", "arguments": {"tone": 1}, "expect": "error", "contains": ["Nothing was changed.", "- tone: not a field of this tool"]}
+  ]
+}

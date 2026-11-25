@@ -100,6 +100,12 @@ Shop Parameters > Customer Settings: whether the last cart is shown again at
 login, the e-mail sent after registration, the delay between two password
 resets, B2B mode, the birth date field and partner offers.
 
+**Change the customer settings.** The new tool somcp_update_customer_settings
+changes the same settings as the Save button of Customer Settings does. Only
+the settings given change, the answer of somcp_get_customer_settings can be
+given back as it is without writing anything, and turning B2B mode on or off
+shows or hides the page of B2B outstanding amounts as the back office does.
+
 ### Changed
 
 **Limit a cart rule to countries, carriers and customer groups.**

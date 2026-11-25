@@ -3796,8 +3796,8 @@ Settings**, card **General**. Read only, replayable. The tabs **Groups** and
 own fields; this tool is where the merchant's choice is read.
 
 **Do not use for** - the customer groups (→ `somcp_list_customer_groups`);
-one customer (→ `somcp_get_customer`); changing these settings (the back
-office, until `somcp_update_customer_settings`).
+one customer (→ `somcp_get_customer`); changing these settings (→
+`somcp_update_customer_settings`).
 
 **Parameters** - none. Unknown arguments through
 `SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
@@ -3829,6 +3829,67 @@ back office before disabling them. Otherwise, new customers won't be able to
 create an account and proceed to checkout.**, 8.0.1 does not; 9.0.0 saves
 through the multistore form (a checkbox per field in a shop context), 8.0.1
 for the context.
+
+#### `somcp_update_customer_settings`
+**State**: written · [issue #412](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/412)
+**Nature**: `acts(EDIT, 'AdminCustomerPreferences')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes **Shop Parameters > Customer Settings**, card **General**,
+as its **Save** button does. Only the fields given change.
+
+**Do not use for** - the customer groups and their prices (Customer Settings >
+Groups, not covered); one customer (→ `somcp_update_customer`).
+
+**Parameters** - all optional, under the names of
+`somcp_get_customer_settings`, whose read given back whole writes nothing.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `redisplay_cart_at_login` | **Re-display cart at login** | boolean | |
+| `send_email_after_registration` | **Send an email after registration** | boolean | |
+| `password_reset_delay_minutes` | **Password reset delay** | integer | 0 or more: `password_reset_delay_minutes: a number of minutes, 0 or more` |
+| `b2b_mode` | **Enable B2B mode** | boolean | |
+| `ask_for_birth_date` | **Ask for birth date** | boolean | |
+| `partner_offers` | **Enable partner offers** | boolean | |
+
+Booleans are booleans only (`"false"` is refused: `<key>: true or false`).
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope of #169 under `Nothing was changed.`, before anything
+is written.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names of the
+parameters), and `settings` read back through
+`SomcpToolGetCustomerSettings::settings()`. Nothing differs: `changed: false`,
+`reason` `The customer settings already hold every value given. Nothing was
+written.`, `settings` as read.
+
+Warnings: `partner_offers` turned off on 9.0.0, the note of the screen, `Make
+sure partner offers are not set as required in the Customers section of the
+back office before disabling them. Otherwise, new customers won't be able to
+create an account and proceed to checkout.`; `send_email_after_registration`
+turned off, `New customers no longer get an e-mail with their account
+details.`; on an installation of several shops, `The settings changed for
+this shop only, as the back office saves them in a shop context.`
+
+**Errors** - those above; a save that fails stops the call and names what was
+saved before it (`The customer settings could not be changed: <field> could
+not be saved, after <fields> had been saved. Read them with
+somcp_get_customer_settings before calling again.`).
+
+**Notes**
+- Each key that differs saved with `Configuration::updateValue(<key>, <0 or 1,
+  or the integer>, false, $idShopGroup, $idShop)` for the shop of the token, as
+  `CustomerConfiguration::updateConfiguration()` saves them.
+- `b2b_mode` changed: the tab `AdminOutstanding` (the page of B2B outstanding
+  amounts) is set to the same state, as
+  `CustomerPreferencesFormHandler::handleB2bUpdate()` does, through the legacy
+  `Tab` object so it behaves the same on 8.0.1 and 9.0.0; a missing tab is
+  skipped, a failed update is named like a failed save.
+- Log line `customer_settings_updated` with the names of the fields saved.
+
+**Differences between 8.0.1 and 9.0.0** - the partner offers note on 9.0.0
+only; the rest the same.
 
 #### `somcp_list_tax_rules`
 **State**: written

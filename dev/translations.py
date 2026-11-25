@@ -1186,6 +1186,10 @@ T = {
  "Lire les paramètres clients",
  "Leer los parámetros de clientes",
  "Die Kundeneinstellungen lesen"),
+"Change the customer settings": (
+ "Modifier les paramètres clients",
+ "Cambiar los parámetros de clientes",
+ "Die Kundeneinstellungen ändern"),
 "Change the order settings": (
  "Modifier les paramètres des commandes",
  "Cambiar los parámetros de pedidos",

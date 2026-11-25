@@ -3000,6 +3000,68 @@ if ($getProductSettings !== null && $updateProductSettings !== null) {
     }
 }
 
+// The customer settings (#411, #412): the read given back whole writes
+// nothing, then Re-display cart at login is turned to the other value, read
+// back, and put back whatever happens. B2B mode is never changed: the
+// customer tools after this one read it.
+$getCustomerSettings = $registry->get('somcp_get_customer_settings');
+$updateCustomerSettings = $registry->get('somcp_update_customer_settings');
+if ($getCustomerSettings !== null && $updateCustomerSettings !== null) {
+    $idShopCustomerSettings = (int) $context->shop->id;
+    $idShopGroupCustomerSettings = (int) Shop::getGroupFromShop($idShopCustomerSettings);
+    // No row on a fresh shop reads false; putting it back as 0 is read the
+    // same way by the core and by the tools after this one.
+    $cartFollowingWas = Configuration::get('PS_CART_FOLLOWING', null, $idShopGroupCustomerSettings, $idShopCustomerSettings);
+    $customerSettingsContext = static function (SomcpTool $tool, array $arguments) use ($idShopCustomerSettings, $employee, $context): array {
+        return [
+            'id_shop' => $idShopCustomerSettings,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 3;
+    try {
+        $read = $getCustomerSettings->call([], $customerSettingsContext($getCustomerSettings, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('redisplay_cart_at_login', $settings)) {
+            $failures[] = 'somcp_update_customer_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $cartFollowing = !$settings['redisplay_cart_at_login'];
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Re-display cart at login changed', ['redisplay_cart_at_login' => $cartFollowing], ['"changed": true', '"field": "redisplay_cart_at_login"', '"redisplay_cart_at_login": ' . ($cartFollowing ? 'true' : 'false')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateCustomerSettings->call($arguments, $customerSettingsContext($updateCustomerSettings, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_customer_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_customer_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_customer_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the cart setting
+        // as the shop had it.
+        Configuration::updateValue('PS_CART_FOLLOWING', (int) $cartFollowingWas, false, $idShopGroupCustomerSettings, $idShopCustomerSettings);
+    }
+}
+
 // The localization pack (#389): the units of the pack of the default country
 // are imported, then the units read before are put back. A JSON scenario
 // cannot put them back whatever happens, and an import of states or taxes

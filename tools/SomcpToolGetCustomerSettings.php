@@ -42,7 +42,7 @@ class SomcpToolGetCustomerSettings
             Somcp::t('Read the customer settings'),
             'Reads Shop Parameters > Customer Settings, the General card: re-display of the cart at login, the '
                 . 'e-mail after registration, the password reset delay, B2B mode, the birth date field and partner '
-                . 'offers. Read only. This is where the merchant\'s '
+                . 'offers. Read only; change them with somcp_update_customer_settings. This is where the merchant\'s '
                 . 'choice of B2B mode is read. For the customer groups use somcp_list_customer_groups; for one '
                 . 'customer, somcp_get_customer.',
             [

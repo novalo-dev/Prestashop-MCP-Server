@@ -3384,6 +3384,61 @@ shop.`
 prefix in the email's subject** on 9.0.0 only; **SSL** among the encryptions
 on 8.0.1 only.
 
+#### `somcp_get_order_settings`
+**State**: written · [issue #400](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/400)
+**Nature**: `acts(VIEW, 'AdminOrderPreferences')` · **Scope**: `mcp.orders.read`, as `somcp_get_shipping_preferences`
+
+**Does** - reads **Shop Parameters > Order Settings**, tab **Order
+Settings**: the cards **General** and **Gift options**. Read only,
+replayable. The tab **Statuses** has its own tools.
+
+**Do not use for** - the order statuses (→ `somcp_list_order_statuses`);
+shipping costs and free shipping (→ `somcp_get_shipping_preferences`).
+
+**Parameters** - none. Unknown arguments through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
+and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetOrderSettings::settings($idShop)` for the update to answer with,
+each key read with `Configuration::get(<key>, null, $idShopGroup, $idShop)`
+for the shop of the token and its group, as `GeneralConfiguration` and
+`GiftOptionsConfiguration` read them; a key with no row reads as the core's
+adapters default it (`false`, `0`):
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `final_summary` | **Enable final summary** | `PS_FINAL_SUMMARY_ENABLED` | boolean |
+| `guest_checkout` | **Enable guest checkout** | `PS_GUEST_CHECKOUT_ENABLED` | boolean |
+| `disable_reordering` | **Disable reordering option** | `PS_DISALLOW_HISTORY_REORDERING` | boolean |
+| `minimum_purchase_tax_excl` | **Minimum purchase total required in order to validate the order** | `PS_PURCHASE_MINIMUM` | float, `0` when off; `currency` the ISO code of the default currency it is in |
+| `recalculate_shipping` | **Recalculate shipping costs after editing the order** | `PS_ORDER_RECALCULATE_SHIPPING` | boolean |
+| `delayed_shipping` | **Delayed shipping** | `PS_SHIP_WHEN_AVAILABLE` | boolean |
+| `terms_of_service` | **Terms of service** | `PS_CONDITIONS` | boolean |
+| `terms_id_cms` | **Page for terms and conditions** | `PS_CONDITIONS_CMS_ID` | the `id_cms` of `somcp_list_cms_pages`, `0` for **None**; `terms_page_title` its title in the shop's default language, found through `SomcpToolUpdateCmsSeo::page()`, `null` for **None** or a page that no longer exists in the shop |
+| `backorder_status` | **Set backorder status** | `PS_ENABLE_BACKORDER_STATUS` | boolean on 9.0.0, `null` on 8.0.1 where the setting does not exist |
+| `gift_wrapping` | **Offer gift wrapping** | `PS_GIFT_WRAPPING` | boolean |
+| `gift_wrapping_price_tax_excl` | **Gift-wrapping price** | `PS_GIFT_WRAPPING_PRICE` | float |
+| `gift_wrapping_id_tax_rules_group` | **Gift-wrapping tax** | `PS_GIFT_WRAPPING_TAX_RULES_GROUP` | the `id_tax_rules_group` of `somcp_list_tax_rules`, `0` for **None**; `gift_wrapping_tax_name` its name through `SomcpToolGetTaxRule::existingRule()`, or `null` |
+| `recycled_packaging` | **Offer recycled packaging** | `PS_RECYCLABLE_PACK` | boolean |
+
+`PS_ALLOW_MULTISHIPPING`, which `GeneralConfiguration` of 8.0.1 also reads,
+is left out, as its form shows no such field.
+
+Warnings: a page chosen that no longer exists, `The page for terms and
+conditions no longer exists: choose another in Shop Parameters > Order
+Settings.` (the screen rather than the update tool, not written yet);
+`terms_of_service` on with no page, `Terms of service are required but no page
+is chosen: customers are asked to accept a page that does not exist.`
+
+**Notes** - the demo shops, every row global: terms of service on with the
+page 3, guest checkout on, shipping recalculated, no minimum, no gift
+wrapping nor recycled packaging; no row for `PS_FINAL_SUMMARY_ENABLED`,
+`PS_SHIP_WHEN_AVAILABLE` and `PS_GIFT_WRAPPING_TAX_RULES_GROUP`.
+
+**Differences between 8.0.1 and 9.0.0** - **Set backorder status** on 9.0.0
+only; the help of **Offer gift wrapping** differs.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

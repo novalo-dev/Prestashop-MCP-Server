@@ -1467,6 +1467,11 @@
       <source>Read the e-mail settings</source>
       <target>Read the e-mail settings</target>
     </trans-unit>
+    <!-- Read the order settings -->
+    <trans-unit id="f8b79ca9484cd0d4735f3c389f0ef2ae" resname="Read the order settings">
+      <source>Read the order settings</source>
+      <target>Read the order settings</target>
+    </trans-unit>
     <!-- Import a localization pack -->
     <trans-unit id="1240d2eed41a0fd4e898e6aab64c6732" resname="Import a localization pack">
       <source>Import a localization pack</source>

@@ -66,6 +66,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_payment_preferences`
 - `somcp_update_payment_restrictions`
 - `somcp_get_email_settings`
+- `somcp_get_order_settings`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -264,6 +265,10 @@ before emptying a list.
 or never) and where customer messages go: read it before telling a merchant
 why a customer got no order confirmation. It says whether the SMTP password
 and the DKIM key are set, never their value: never ask the merchant for them.
+`somcp_get_order_settings` gives the checkout rules of Order Settings: guest
+checkout, the minimum purchase total, the terms of service and their page,
+gift wrapping and recycled packaging. Read it before telling a merchant why a
+customer could not place an order.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

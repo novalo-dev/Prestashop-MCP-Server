@@ -47,6 +47,13 @@ format, the e-mail log and DKIM signing. The assistant can now tell why
 customers get no order confirmation. The SMTP password and the DKIM key are
 never shown, only whether they are set.
 
+**Read the order settings.** The new tool somcp_get_order_settings reads Shop
+Parameters > Order Settings: guest checkout, the minimum purchase total, the
+terms of service and the page that holds them, reordering, delayed shipping,
+gift wrapping and recycled packaging. The assistant can now tell why a
+customer could not place an order, and it warns when the terms of service are
+required but no page is chosen.
+
 ### Changed
 
 **A localization pack brings its currencies from any assistant.** Importing a

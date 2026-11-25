@@ -1166,6 +1166,10 @@ T = {
  "Lire les paramètres des e-mails",
  "Leer los parámetros de correo electrónico",
  "Die E-Mail-Einstellungen lesen"),
+"Read the order settings": (
+ "Lire les paramètres des commandes",
+ "Leer los parámetros de pedidos",
+ "Die Bestellungseinstellungen lesen"),
 "Import a localization pack": (
  "Importer un pack de localisation",
  "Importar un paquete de localización",

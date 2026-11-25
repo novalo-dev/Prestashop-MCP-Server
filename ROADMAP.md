@@ -34,8 +34,9 @@ merchant does it:
   never the parent theme or its templates, and the native modules of the
   storefront those themes show - the slider, the home texts, the footer links,
   the newsletter block and the like.
-- **E-mails and preferences**: the shop's e-mails and the order, customer and
-  product preferences.
+- **E-mails and preferences**: the e-mail settings and the order settings are
+  read; changing them, the shop's e-mails, and the customer and product
+  preferences come next.
 
 The simplest tools, mostly reads, are labelled
 [`good first issue`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).

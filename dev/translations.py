@@ -1166,6 +1166,10 @@ T = {
  "Lire les paramètres des e-mails",
  "Leer los parámetros de correo electrónico",
  "Die E-Mail-Einstellungen lesen"),
+"Change the e-mail settings": (
+ "Modifier les paramètres des e-mails",
+ "Cambiar los parámetros de correo electrónico",
+ "Die E-Mail-Einstellungen ändern"),
 "Read the order settings": (
  "Lire les paramètres des commandes",
  "Leer los parámetros de pedidos",

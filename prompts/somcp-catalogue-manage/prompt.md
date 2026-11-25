@@ -66,6 +66,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_payment_preferences`
 - `somcp_update_payment_restrictions`
 - `somcp_get_email_settings`
+- `somcp_update_email_settings`
 - `somcp_get_order_settings`
 - `somcp_list_zones`
 - `somcp_create_zone`
@@ -265,6 +266,11 @@ before emptying a list.
 or never) and where customer messages go: read it before telling a merchant
 why a customer got no order confirmation. It says whether the SMTP password
 and the DKIM key are set, never their value: never ask the merchant for them.
+`somcp_update_email_settings` changes those settings; give back the read with
+the change. It never takes the SMTP password nor the DKIM key: when one is
+missing, ask the merchant to type it on the E-mail page of the back office.
+Never set the method to never without the merchant's clear say-so: customers
+would then get no order confirmation.
 `somcp_get_order_settings` gives the checkout rules of Order Settings: guest
 checkout, the minimum purchase total, the terms of service and their page,
 gift wrapping and recycled packaging. Read it before telling a merchant why a

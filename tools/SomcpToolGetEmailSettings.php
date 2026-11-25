@@ -38,6 +38,9 @@ class SomcpToolGetEmailSettings
     /** @var array<int, string> PS_MAIL_TYPE, as stored. */
     public const TYPES = [1 => 'html', 2 => 'text', 3 => 'both'];
 
+    /** The warning of a shop set to send nothing, which the update replaces with its own. */
+    public const NEVER_WARNING = 'The shop sends no e-mail at all: customers get no order confirmation.';
+
     /**
      * @return SomcpTool
      */
@@ -49,8 +52,9 @@ class SomcpToolGetEmailSettings
             'Reads the Email card of Advanced Parameters > E-mail: where customer messages go (with the contacts '
                 . 'to choose from), how the shop sends e-mails (sendmail, SMTP or never), the SMTP server, username, '
                 . 'encryption and port, the subject prefix, the format, the e-mail log and DKIM signing. The SMTP '
-                . 'password and the DKIM private key are never returned, only whether each is set. Read only. For '
-                . 'the e-mail of an order status use somcp_resend_order_status_email.',
+                . 'password and the DKIM private key are never returned, only whether each is set. Read only. To '
+                . 'change them use somcp_update_email_settings; for the e-mail of an order status use '
+                . 'somcp_resend_order_status_email.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),
@@ -77,17 +81,34 @@ class SomcpToolGetEmailSettings
 
         $idShop = Somcp::currentShopId();
         $result = self::settings($idShop);
-        $warnings = [];
-        if ($result['mail_method'] === 'never') {
-            $warnings[] = 'The shop sends no e-mail at all: customers get no order confirmation.';
-        } elseif ($result['mail_method'] === 'smtp' && $result['smtp_server'] === '') {
-            $warnings[] = 'SMTP is chosen but no SMTP server is set: e-mails cannot leave the shop.';
-        }
+        $warnings = self::warnings($result);
         if ($warnings !== []) {
             $result['warning'] = implode(' ', $warnings);
         }
 
         return SomcpTool::json($result);
+    }
+
+    /**
+     * What the settings leave the customers without, as sentences.
+     *
+     * Public so the update answers what it stored with the same sentences
+     * as the read.
+     *
+     * @param array<string, mixed> $settings as settings() reads them
+     *
+     * @return array<int, string>
+     */
+    public static function warnings(array $settings): array
+    {
+        if ($settings['mail_method'] === 'never') {
+            return [self::NEVER_WARNING];
+        }
+        if ($settings['mail_method'] === 'smtp' && $settings['smtp_server'] === '') {
+            return ['SMTP is chosen but no SMTP server is set: e-mails cannot leave the shop.'];
+        }
+
+        return [];
     }
 
     /**

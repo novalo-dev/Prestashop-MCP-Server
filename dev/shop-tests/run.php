@@ -2676,6 +2676,67 @@ if ($getPayment !== null && $updatePayment !== null) {
     }
 }
 
+// The e-mail settings (#398, #399): the read given back whole writes
+// nothing, then Log Emails is turned to the other value, read back, and put
+// back whatever happens. A JSON scenario cannot give back what the read
+// answered. The method is never changed: the CI shops would stop sending the
+// e-mails other tests read.
+$getEmail = $registry->get('somcp_get_email_settings');
+$updateEmail = $registry->get('somcp_update_email_settings');
+if ($getEmail !== null && $updateEmail !== null) {
+    $idShopEmail = (int) $context->shop->id;
+    $idShopGroupEmail = (int) Shop::getGroupFromShop($idShopEmail);
+    $logEmailsWas = Configuration::get('PS_LOG_EMAILS', null, $idShopGroupEmail, $idShopEmail);
+    $emailContext = static function (SomcpTool $tool, array $arguments) use ($idShopEmail, $employee, $context): array {
+        return [
+            'id_shop' => $idShopEmail,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 3;
+    try {
+        $read = $getEmail->call([], $emailContext($getEmail, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('log_emails', $settings)) {
+            $failures[] = 'somcp_update_email_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $toggled = !$settings['log_emails'];
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Log Emails turned to the other value', ['log_emails' => $toggled], ['"changed": true', '"field": "log_emails"', '"log_emails": ' . ($toggled ? 'true' : 'false')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateEmail->call($arguments, $emailContext($updateEmail, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_email_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_email_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_email_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the e-mail log as
+        // the shop had it.
+        Configuration::updateValue('PS_LOG_EMAILS', $logEmailsWas, false, $idShopGroupEmail, $idShopEmail);
+    }
+}
+
 // The localization pack (#389): the units of the pack of the default country
 // are imported, then the units read before are put back. A JSON scenario
 // cannot put them back whatever happens, and an import of states or taxes

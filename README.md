@@ -337,6 +337,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_payment_preferences` | ● Read the payment preferences | Payment preferences › view |
 | `somcp_update_payment_restrictions` | ✎ Change the payment restrictions | Payment preferences › edit |
 | `somcp_get_email_settings` | ● Read the e-mail settings | E-mail settings › view |
+| `somcp_update_email_settings` | ✎ Change the e-mail settings | E-mail settings › edit |
 | `somcp_get_order_settings` | ● Read the order settings | Order settings › view |
 | `somcp_list_zones` | ● List zones | Zones › view |
 | `somcp_create_zone` | ✎ Create a zone | Zones › add |

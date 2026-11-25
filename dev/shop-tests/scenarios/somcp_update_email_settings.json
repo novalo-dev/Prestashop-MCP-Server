@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "a method, a format and a port the screen does not offer, refused together", "arguments": {"mail_method": "mail", "mail_type": "rich", "smtp_port": 70000}, "expect": "error", "contains": ["Nothing was changed.", "- mail_method: one of sendmail, smtp, never", "- mail_type: one of html, text, both", "- smtp_port: a port number from 1 to 65535"]},
+    {"why": "the SMTP password, which only the back office takes", "arguments": {"smtp_password": "x"}, "expect": "error", "contains": ["- smtp_password: type it on the E-mail page of the back office; it never goes through a tool"]},
+    {"why": "a contact the shop does not have", "arguments": {"send_emails_to": 999999}, "expect": "error", "contains": ["- send_emails_to: no contact of this shop has the identifier 999999 - find it with somcp_get_email_settings"]},
+    {"why": "a boolean given as a text", "arguments": {"log_emails": "false"}, "expect": "error", "contains": ["- log_emails: true or false"]},
+    {"why": "a computed key given otherwise than read", "arguments": {"smtp_password_set": true, "dkim_key_set": true}, "expect": "error", "contains": ["worked out by the shop, so it is not written here"]},
+    {"why": "an unknown field", "arguments": {"tone": 1}, "expect": "error", "contains": ["- tone: not a field of this tool"]}
+  ]
+}

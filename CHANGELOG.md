@@ -49,6 +49,15 @@ format, the e-mail log and DKIM signing. The assistant can now tell why
 customers get no order confirmation. The SMTP password and the DKIM key are
 never shown, only whether they are set.
 
+**Change the e-mail settings.** The new tool somcp_update_email_settings does
+what the Save button of the Email card of Advanced Parameters > E-mail does:
+where customer messages go, how the shop sends its e-mails, the SMTP server,
+username, encryption and port, the format, the e-mail log and DKIM signing.
+Only the settings given change, and the answer of somcp_get_email_settings can
+be given back as it is without writing anything. The SMTP password and the
+DKIM private key are never taken by the tool: the merchant types them on the
+page, and the assistant says so when one is missing.
+
 **Read the order settings.** The new tool somcp_get_order_settings reads Shop
 Parameters > Order Settings: guest checkout, the minimum purchase total, the
 terms of service and the page that holds them, reordering, delayed shipping,

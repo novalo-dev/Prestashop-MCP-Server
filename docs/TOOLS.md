@@ -3342,7 +3342,8 @@ only, replayable. The **SMTP password** and the **DKIM private key** are never
 read: the answer says only whether each one is set. The list of sent e-mails
 and **Send a test email** are not part of it.
 
-**Do not use for** - the e-mail of an order status (→
+**Do not use for** - changing these settings (→
+`somcp_update_email_settings`); the e-mail of an order status (→
 `somcp_resend_order_status_email`); the layout of the e-mails (**Design >
 Email Theme**, not covered yet).
 
@@ -3377,7 +3378,8 @@ them:
 A `warning` when `mail_method` is `never`: `The shop sends no e-mail at all:
 customers get no order confirmation.`; when it is `smtp` with `smtp_server`
 empty: `SMTP is chosen but no SMTP server is set: e-mails cannot leave the
-shop.`
+shop.` Both sentences are built in the public
+`SomcpToolGetEmailSettings::warnings()`, which the update answers with too.
 
 **Notes**
 - The SMTP fields are shown by the page's script only with **Set my own SMTP parameters**; they are saved whatever the method.
@@ -3386,6 +3388,82 @@ shop.`
 **Differences between 8.0.1 and 9.0.0** - **Enable the store name as a
 prefix in the email's subject** on 9.0.0 only; **SSL** among the encryptions
 on 8.0.1 only.
+
+#### `somcp_update_email_settings`
+**State**: written · [issue #399](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/399)
+**Nature**: `acts(EDIT, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_clear_cache`
+
+**Does** - changes the card **Email** of **Advanced Parameters > E-mail**, as
+its **Save** button does, except the two secrets: the **SMTP password** and the
+**DKIM private key** are typed by the merchant on the page and never go
+through a tool, since what an assistant is given stays in its conversation.
+Replayable: the same call twice changes nothing the second time.
+
+**Do not use for** - sending a test e-mail (**Send a test email**, not
+covered); the e-mail of an order status (→ `somcp_resend_order_status_email`).
+
+**Parameters** - all optional; a key left out keeps its value. The keys are
+those of `somcp_get_email_settings`, whose answer can be given back whole:
+`send_emails_to_choices`, `smtp_password_set`, `dkim_key_set` and `warning`
+are worked out by the shop, ignored when given back as read and refused
+otherwise (`- <key>: worked out by the shop, so it is not written here`). A
+value equal to the one read is always taken, so a setting stored before the
+screen offered it does not refuse the read given back.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `send_emails_to` | **Send emails to** | integer | an `id_contact` of `send_emails_to_choices`; otherwise `SomcpTool::notFound('send_emails_to', 'contact', <id>, 'somcp_get_email_settings')`, or `send_emails_to: a whole number above 0` |
+| `mail_method` | the three choices | string | `SomcpTool::oneOf()`: `mail_method: one of sendmail, smtp, never` |
+| `smtp_domain` | **Email domain name** | string | `Validate::isCleanHtml()`, otherwise `<field>: holds a script or an event attribute, which PrestaShop refuses`; empty allowed |
+| `smtp_server` | **SMTP server** | string | the same rule |
+| `smtp_username` | **SMTP username** | string | the same rule |
+| `smtp_encryption` | **Encryption** | string | `off` or `tls`, and `ssl` on 8.0.1: `smtp_encryption: one of off, tls` on 9.0.0 |
+| `smtp_port` | **Port** | integer | 1 to 65535, or `null` to empty it: `smtp_port: a port number from 1 to 65535` |
+| `subject_prefix` | **Enable the store name as a prefix in the email's subject** | boolean | 9.0.0 only; on 8.0.1 `true` or `false` answers `SomcpTool::notOnThisVersion()`, `null` (as read) is ignored |
+| `mail_type` | the format | string | `mail_type: one of html, text, both` |
+| `log_emails` | **Log Emails** | boolean | `log_emails: true or false` |
+| `dkim_enabled` | **DKIM signing** | boolean | the same rule |
+| `dkim_domain` | **DKIM domain** | string | `Validate::isCleanHtml()`; empty allowed |
+| `dkim_selector` | **DKIM selector** | string | the same rule |
+
+`smtp_password`, `dkim_key`, or any name holding `passw`, `dkim_key` or
+`private_key`: `- <key>: type it on the E-mail page of the back office; it
+never goes through a tool`, before anything is written. Booleans are booleans
+only (`"false"` is refused). Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:` (`SomcpTool::refused('changed', $problems)`), every problem at once,
+before anything is written. A failed save stops the call and names what was
+saved before it, with the hint to read `somcp_get_email_settings` before
+calling again, logged as `email_settings_update_failed`.
+
+**Then** - `SomcpToolGetEmailSettings::settings($idShop)` is read first; the
+keys whose value differs are saved in the order of the card with
+`Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for
+the shop of the token, as `EmailDataConfigurator::updateConfiguration()` saves
+them: `PS_MAIL_METHOD` and `PS_MAIL_TYPE` as their codes 1, 2, 3, booleans as
+`0` or `1`, an emptied port as an empty string. `PS_MAIL_PASSWD` and
+`PS_MAIL_DKIM_KEY` are never written. Nothing differs: `changed: false`,
+`reason` `The e-mail settings already hold every value given. Nothing was
+written.`, `settings` as read. Logged as `email_settings_updated` with the
+names of the fields saved, never their values.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names and words of
+the parameters), and `settings` read back through `settings()`. Warnings,
+beside the answer:
+- `mail_method` set to `never`: `The shop now sends no e-mail at all: customers get no order confirmation.`;
+- `mail_method` set to `smtp` with no password set and `smtp_username` not empty: `The SMTP password is not set: type it on the E-mail page of the back office.`;
+- `dkim_enabled` set to `true` with no key set: `DKIM is on but no private key is set: type it on the E-mail page of the back office.`;
+- the warnings of `SomcpToolGetEmailSettings::warnings()` on what was read back (its sentence for `never` replaced by the one above);
+- more than one shop: `The settings changed for this shop only, as the back office saves them in a shop context.`, the sentence of `somcp_update_tax_options`.
+
+**Notes** - the tests never change `mail_method`: the CI shops would stop
+sending the e-mails other tests read.
+
+**Differences between 8.0.1 and 9.0.0** - `subject_prefix` on 9.0.0 only;
+`ssl` on 8.0.1 only.
 
 #### `somcp_get_order_settings`
 **State**: written · [issue #400](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/400)

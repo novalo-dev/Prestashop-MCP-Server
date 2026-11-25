@@ -1482,6 +1482,11 @@
       <source>Read the product settings</source>
       <target>Read the product settings</target>
     </trans-unit>
+    <!-- Change the product settings -->
+    <trans-unit id="6a282665fd476920712ddfc0d2baa341" resname="Change the product settings">
+      <source>Change the product settings</source>
+      <target>Change the product settings</target>
+    </trans-unit>
     <!-- Change the order settings -->
     <trans-unit id="3a474448782c3d5b952512199ad9c9b1" resname="Change the order settings">
       <source>Change the order settings</source>

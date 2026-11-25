@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "every mistake in one answer", "arguments": {"products_per_page": 0, "default_order_way": "up", "specific_price_priorities": ["group", "group", "country", "store"]}, "expect": "error", "contains": ["Nothing was changed.", "products_per_page: a number of products, 1 or more", "default_order_way: one of asc, desc", "specific_price_priorities: The selected condition must be different in each field to set an order of priority."]},
+    {"why": "prices shown in catalog mode with catalog mode off, as on the demo shops", "arguments": {"catalog_mode_show_prices": true}, "expect": "error", "contains": ["Nothing was changed.", "catalog_mode_show_prices: only with catalog_mode on"]},
+    {"why": "a switch given as text, and a stock setting this tool does not write", "arguments": {"force_friendly_url": "false", "stock_management": false}, "expect": "error", "contains": ["force_friendly_url: true or false", "stock_management: not changed by this tool yet"]},
+    {"why": "an unknown field", "arguments": {"tone": 1}, "expect": "error", "contains": ["Nothing was changed.", "- tone: not a field of this tool"]}
+  ]
+}

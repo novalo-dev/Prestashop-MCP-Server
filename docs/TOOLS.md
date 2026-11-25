@@ -3595,7 +3595,8 @@ Read only, replayable.
 
 **Do not use for** - the stock of one product (→ `somcp_get_stock`); the
 out-of-stock behavior or labels of one product (→ `somcp_get_product`); the
-customer groups that hide prices (Customer Settings > Groups, not covered).
+customer groups that hide prices (Customer Settings > Groups, not covered);
+changing these settings (→ `somcp_update_product_settings`).
 
 **Parameters**
 
@@ -3676,6 +3677,91 @@ cart**, **Order of feature values** and the **Product sales** order on 9.0.0
 only; the wording of **Display the "Add to cart" button...** (8.0.1 **... has
 attributes**), of the pack stock field (8.0.1 **Default pack stock
 management**) and of the help of **Force update of friendly URL** differs.
+
+#### `somcp_update_product_settings`
+**State**: written · [issue #409](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/409)
+**Nature**: `acts(EDIT, 'AdminPPreferences')` · **Scope**: `mcp.catalog.write`, as `somcp_update_product`
+
+**Does** - changes **Shop Parameters > Product Settings**, as the **Save**
+buttons of its cards **General product settings**, **Product page** and
+**Pagination** do. Only the fields given change. The card **Products stock**
+comes with #410.
+
+**Do not use for** - the stock settings, until #410 (back office); the stock
+of a product (→ `somcp_set_stock_quantity`); the priorities, status or
+out-of-stock behavior of one product (→ `somcp_update_product`).
+
+**Parameters** - all optional, under the names and words of
+`somcp_get_product_settings`, whose read given back whole writes nothing. The
+fields, their keys and kinds are one constant map,
+`SomcpToolUpdateProductSettings::FIELDS`, which #410 extends.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `catalog_mode` | **Catalog mode** | boolean | |
+| `catalog_mode_show_prices` | **Show prices** | boolean | `true` with `catalog_mode` off after the call: `catalog_mode_show_prices: only with catalog_mode on - the shop saves it off otherwise`; `catalog_mode` turned off saves it `false` too, as the core does, both lines in `changes` |
+| `new_product_days` | **Number of days for which the product is considered 'new'** | integer | 0 or more: `new_product_days: a number of days, 0 or more` |
+| `short_description_limit` | **Max size of short description** | integer | 1 or more: `short_description_limit: a number of characters, 1 or more` |
+| `quantity_discounts_based_on` | **Quantity discounts based on** | string | `products` or `combinations` |
+| `force_friendly_url` | **Force update of friendly URL** | boolean | |
+| `breadcrumb_category` | **Category used in breadcrumbs** | string | `default` or `current`; from 9.0.0 |
+| `activate_new_products` | **Activate new products by default** | boolean | |
+| `specific_price_priorities` | **Default order of priority for specific prices** | array | `store`, `currency`, `country`, `group`, each once, in the order wanted: a word twice, `specific_price_priorities: The selected condition must be different in each field to set an order of priority.` (the core's sentence); otherwise `specific_price_priorities: four of store, currency, country, group`; saved as `id_shop`, `id_currency`, `id_country`, `id_group` joined by `;` |
+| `disabled_product_behavior` | **Default behavior for disabled products** | string | `404`, `410`, `200-displayed`, `404-displayed`, `410-displayed`; from 8.1.0 |
+| `display_available_quantities` | **Display available quantities on the product page** | boolean | |
+| `add_to_cart_with_combinations` | **Display the "Add to cart" button when a product has combinations** | boolean | |
+| `combination_image_in_listings` | **Use combination image in listings** | boolean | from 9.0.0 |
+| `attribute_anchor_separator` | **Separator of attribute anchor on the product links** | string | `-` or `,` |
+| `display_discounted_unit_price` | **Display the discounted unit price** | boolean | |
+| `notify_product_in_cart` | **Display notifications if the product is already in the cart** | boolean | from 9.0.0 |
+| `feature_values_order` | **Order of feature values** | string | `alphabetical` or `position` (stored `name`, `position`); from 9.0.0 |
+| `products_per_page` | **Products per page** | integer | 1 or more: `products_per_page: a number of products, 1 or more` |
+| `default_order_by` | **Default order by** | string | `name`, `price`, `date_add`, `date_upd`, `position`, `brand`, `quantity`, `reference`, and `sales` from 9.0.0 (before it, the list without `sales`) |
+| `default_order_way` | **Default order method** | string | `asc` or `desc` |
+
+A field of a later version given a value: `SomcpTool::notOnThisVersion(<key>,
+<the words of the screen>)`; `null`, as read, is ignored. A choice outside its
+list: `SomcpTool::oneOf()`. Booleans are booleans only (`"false"` is refused).
+The keys of **Products stock** given back as read are ignored, otherwise
+refused with `<key>: not changed by this tool yet - the merchant sets it on
+the Product Settings page` (a text compared on the languages given, so a read
+made with `languages` can be given back); `languages` and `warning` are
+ignored. Unknown arguments through `SomcpTool::unknownFields()`; every problem
+in one answer, in the envelope of #169 under `Nothing was changed.`, before
+anything is written.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names and words of
+the parameters), and `settings` read back through
+`SomcpToolGetProductSettings::settings()`. Nothing differs: `changed: false`,
+`reason` `The product settings already hold every value given. Nothing was
+written.`, `settings` as read.
+
+Warnings: `catalog_mode` just turned on, `The shop is now in catalog mode:
+visitors can browse the products but cannot add them to the cart.`; then the
+warnings of `somcp_get_product_settings` read back (its catalog mode sentence
+when it was on already); on an installation of several shops, `The settings
+changed for this shop only, as the back office saves them in a shop context.`
+
+**Errors** - those above; a save that fails stops the call and names what was
+saved before it (`The product settings could not be changed: <field> could not
+be saved, after <fields> had been saved. Read them with
+somcp_get_product_settings before calling again.`).
+
+**Notes**
+- Each key that differs saved with `Configuration::updateValue(<key>, <value>,
+  false, $idShopGroup, $idShop)` for the shop of the token, as
+  `GeneralConfiguration`, `PageConfiguration` and `PaginationConfiguration`
+  save them in a shop context: booleans as `0` or `1`, numbers as integers,
+  choices as their stored codes. The priorities are written as
+  `SpecificPricePriorityUpdater::updateDefaultPriorities()` writes them.
+- Log line `product_settings_updated` with the names of the fields saved.
+- Show the merchant the change before the call; catalog mode stops every order.
+
+**Differences between 8.0.1 and 9.0.0** - `breadcrumb_category`,
+`combination_image_in_listings`, `notify_product_in_cart`,
+`feature_values_order` and the `sales` order on 9.0.0 only;
+`disabled_product_behavior` from 8.1.0.
 
 #### `somcp_list_tax_rules`
 **State**: written

@@ -62,8 +62,8 @@ class SomcpToolGetProductSettings
             Somcp::t('Read the product settings'),
             'Reads Shop Parameters > Product Settings: catalog mode, new product days, short description size, '
                 . 'specific price priorities, the product page options, stock management, out-of-stock ordering and '
-                . 'its labels per language, pack stock, and products per page with their order. Read only. For the '
-                . 'stock or the out-of-stock behavior of one product use somcp_get_stock or somcp_get_product.',
+                . 'its labels per language, pack stock, and products per page with their order. Read only; change '
+                . 'them with somcp_update_product_settings. For the stock or the out-of-stock behavior of one product use somcp_get_stock or somcp_get_product.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -2921,6 +2921,68 @@ if ($getOrderSettings !== null && $updateOrderSettings !== null) {
     }
 }
 
+// The product settings (#408, #409): the read given back whole writes nothing,
+// then Products per page is set to 13, read back, and put back whatever
+// happens. Catalog mode is never turned on: the order tools after this one
+// would find no cart.
+$getProductSettings = $registry->get('somcp_get_product_settings');
+$updateProductSettings = $registry->get('somcp_update_product_settings');
+if ($getProductSettings !== null && $updateProductSettings !== null) {
+    $idShopProductSettings = (int) $context->shop->id;
+    $idShopGroupProductSettings = (int) Shop::getGroupFromShop($idShopProductSettings);
+    $perPageWas = Configuration::get('PS_PRODUCTS_PER_PAGE', null, $idShopGroupProductSettings, $idShopProductSettings);
+    $productSettingsContext = static function (SomcpTool $tool, array $arguments) use ($idShopProductSettings, $employee, $context): array {
+        return [
+            'id_shop' => $idShopProductSettings,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 3;
+    try {
+        $read = $getProductSettings->call([], $productSettingsContext($getProductSettings, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('products_per_page', $settings)) {
+            $failures[] = 'somcp_update_product_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $perPage = (int) $settings['products_per_page'] === 13 ? 14 : 13;
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Products per page changed', ['products_per_page' => $perPage], ['"changed": true', '"field": "products_per_page"', '"products_per_page": ' . $perPage]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateProductSettings->call($arguments, $productSettingsContext($updateProductSettings, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_product_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_product_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_product_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the lists as the
+        // shop had them.
+        if ($perPageWas !== false) {
+            Configuration::updateValue('PS_PRODUCTS_PER_PAGE', $perPageWas, false, $idShopGroupProductSettings, $idShopProductSettings);
+        }
+    }
+}
+
 // The localization pack (#389): the units of the pack of the default country
 // are imported, then the units read before are put back. A JSON scenario
 // cannot put them back whatever happens, and an import of states or taxes

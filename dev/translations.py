@@ -1178,6 +1178,10 @@ T = {
  "Lire les paramètres des produits",
  "Leer los parámetros de productos",
  "Die Produkteinstellungen lesen"),
+"Change the product settings": (
+ "Modifier les paramètres des produits",
+ "Cambiar los parámetros de productos",
+ "Die Produkteinstellungen ändern"),
 "Change the order settings": (
  "Modifier les paramètres des commandes",
  "Cambiar los parámetros de pedidos",

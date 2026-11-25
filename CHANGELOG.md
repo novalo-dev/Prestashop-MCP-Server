@@ -83,6 +83,15 @@ read in each language, pack stock, and the products per page with their
 order. It warns when catalog mode is on or stock management off, the two
 settings that explain why a visitor cannot buy.
 
+**Change the product settings.** The new tool somcp_update_product_settings
+changes Shop Parameters > Product Settings as the Save buttons of its General
+product settings, Product page and Pagination cards do: catalog mode and its
+prices, the days a product counts as new, the size of the short description,
+the specific price priorities, what the product page shows, and the products
+per page with their order. Only the settings given change, and the answer of
+somcp_get_product_settings can be given back as it is without writing
+anything. The Products stock card is still set in the back office.
+
 ### Changed
 
 **Limit a cart rule to countries, carriers and customer groups.**

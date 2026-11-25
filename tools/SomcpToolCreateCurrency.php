@@ -60,7 +60,7 @@ class SomcpToolCreateCurrency
                 . 'currency). ISO code, Exchange rate, Decimals, Status, and optionally the names and symbols, '
                 . 'otherwise filled from CLDR. Read somcp_list_currencies first. The rate is '
                 . 'the merchant\'s - ask, never invent. For a currency the shop already has, '
-                . 'somcp_update_currency; payment modules accepting it are set in Payment > Preferences.',
+                . 'somcp_update_currency; payment modules accepting it are set in Payment > Preferences (somcp_update_payment_restrictions).',
             [
                 'type' => 'object',
                 'properties' => [
@@ -264,10 +264,10 @@ class SomcpToolCreateCurrency
         }
         if ($restored) {
             $warnings[] = $iso . ' was deleted before: the same currency is back, without the payment modules it had '
-                . 'in Payment > Preferences.';
+                . 'in Payment > Preferences (somcp_update_payment_restrictions).';
         }
         if (self::paymentModules($idCurrency, $idShop) === 0) {
-            $warnings[] = 'Payment > Preferences decides which payment modules accept ' . $iso . '; no module accepts '
+            $warnings[] = 'Payment > Preferences (somcp_update_payment_restrictions) decides which payment modules accept ' . $iso . '; no module accepts '
                 . 'it yet.';
         }
 

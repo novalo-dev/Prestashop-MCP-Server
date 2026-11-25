@@ -17,8 +17,8 @@
 declare(strict_types=1);
 
 /*
- * somcp_update_payment_restrictions - the Save buttons of the Currency
- * restrictions and Group restrictions cards of Payment > Preferences, for one
+ * somcp_update_payment_restrictions - the Save buttons of the four cards of
+ * Payment > Preferences (currencies, groups, countries, carriers), for one
  * payment module.
  *
  * The core's PaymentRestrictionsConfigurator lives in the back office's
@@ -34,10 +34,12 @@ if (!defined('_PS_VERSION_')) {
 }
 
 // Loaded here rather than left to the order the registry reads tools/ in: the
-// list of payment modules and the read before and after, and the currencies a
-// shop offers.
+// list of payment modules and the read before and after, and the currencies,
+// countries and carriers a shop offers.
 require_once __DIR__ . '/SomcpToolGetPaymentPreferences.php';
 require_once __DIR__ . '/SomcpToolListCurrencies.php';
+require_once __DIR__ . '/SomcpToolListCountries.php';
+require_once __DIR__ . '/SomcpToolListCarriers.php';
 
 class SomcpToolUpdatePaymentRestrictions
 {
@@ -60,6 +62,8 @@ class SomcpToolUpdatePaymentRestrictions
     private const LISTS = [
         'currencies' => ['currency', 'id_currency', 'currency'],
         'groups' => ['group', 'id_group', 'customer group'],
+        'countries' => ['country', 'id_country', 'country'],
+        'carriers' => ['carrier', 'id_carrier', 'carrier'],
     ];
 
     /**
@@ -68,12 +72,6 @@ class SomcpToolUpdatePaymentRestrictions
      * shop's, not as misspelt fields.
      */
     private const COMPUTED = ['display_name', 'active', 'currencies_mode', 'limited_countries', 'language', 'warning'];
-
-    /**
-     * The two cards of part 2 of #396, named so the assistant is not told
-     * they are misspelt.
-     */
-    private const LATER = ['countries', 'carriers'];
 
     /**
      * @return SomcpTool
@@ -96,8 +94,8 @@ class SomcpToolUpdatePaymentRestrictions
         return new SomcpTool(
             'somcp_update_payment_restrictions',
             Somcp::t('Change the payment restrictions'),
-            'Changes Payment > Preferences for one payment module, as the Save of its Currency restrictions and Group '
-                . 'restrictions cards: each list given replaces the stored one, a list left out is kept. One module '
+            'Changes Payment > Preferences for one payment module, as the Save of its Currency, Group, Country and '
+                . 'Carrier restrictions cards: each list given replaces the stored one, a list left out is kept. One module '
                 . 'of the answer of somcp_get_payment_preferences can be given back as it is. To install, enable or '
                 . 'configure a payment module use somcp_install_module or somcp_set_module_active.',
             [
@@ -110,6 +108,8 @@ class SomcpToolUpdatePaymentRestrictions
                     ],
                     'currencies' => $currencies,
                     'groups' => $item('id_group', 'somcp_list_customer_groups'),
+                    'countries' => $item('id_country', 'somcp_list_countries'),
+                    'carriers' => $item('id_carrier', 'somcp_list_carriers'),
                     'language' => [
                         'type' => 'string',
                         'description' => 'ISO code of one of the shop\'s active languages, for the names in the '
@@ -173,27 +173,12 @@ class SomcpToolUpdatePaymentRestrictions
                 unset($checked[$key]);
             }
         }
-        foreach (self::LATER as $key) {
-            if (!array_key_exists($key, $checked)) {
-                continue;
-            }
-            // The read of the module gives them back: as read they are no change.
-            if ($before === null || self::sameIds($checked[$key], $before[$key], $key === 'countries' ? 'id_country' : 'id_carrier')) {
-                unset($checked[$key]);
-            }
-        }
-
         // Every problem in one answer (#169), so the call is corrected in one go.
         $problems = array_merge($problems, SomcpTool::unknownFields(
-            array_diff_key($checked, array_flip(self::LATER)),
+            $checked,
             array_merge(['name'], array_keys(self::LISTS)),
             self::COMPUTED
         ));
-        foreach (self::LATER as $key) {
-            if (array_key_exists($key, $checked)) {
-                $problems[] = $key . ': not available yet';
-            }
-        }
         if (array_key_exists('language', $checked)) {
             $problems[] = SomcpTool::languageProblem($idShop);
         }
@@ -209,13 +194,17 @@ class SomcpToolUpdatePaymentRestrictions
             }
             if ($list === 'currencies') {
                 $ids = self::checkCurrencies($ids, $module, $idShop, $idLang, $problems);
-            } else {
+            } elseif ($list === 'groups') {
                 $groups = array_map('intval', array_column(Group::getGroups($idLang, $idShop), 'id_group'));
                 foreach ($ids as $id) {
                     if (!in_array($id, $groups, true)) {
                         $problems[] = SomcpTool::notFound('groups', $thing, $id, 'somcp_list_customer_groups');
                     }
                 }
+            } elseif ($list === 'countries') {
+                $ids = self::checkCountries($ids, $module, $idShop, $idLang, $problems);
+            } elseif (self::references($ids, $idShop, $idLang, $problems) === null) {
+                $ids = null;
             }
             if ($ids !== null) {
                 $wanted[$list] = $ids;
@@ -245,7 +234,10 @@ class SomcpToolUpdatePaymentRestrictions
 
         $saved = [];
         foreach ($plan as $list => $step) {
-            if (!self::replace(self::LISTS[$list][0], $module['id_module'], $idShop, $step['ids'])) {
+            // The card of the carriers stores their reference, which an
+            // edited carrier keeps under a new id_carrier.
+            $rows = $list === 'carriers' ? (array) self::references($step['ids'], $idShop, $idLang, $problems) : $step['ids'];
+            if (!self::replace(self::LISTS[$list][0], $module['id_module'], $idShop, $rows)) {
                 return self::failed($module['name'], $saved, $list . ' could not be saved', $idEmployee);
             }
             $saved[] = $list . ' (' . count($step['ids']) . ')';
@@ -427,32 +419,88 @@ class SomcpToolUpdatePaymentRestrictions
     }
 
     /**
-     * Whether a list given back holds the identifiers of the list read.
+     * The countries of a list checked against the shop and against the
+     * countries the module restricts itself to, as the card offers them.
      *
-     * @param mixed $given
-     * @param array<int, array<string, mixed>> $read
-     * @param string $key
+     * @param array<int, int> $ids
+     * @param array<string, mixed> $module a row of SomcpToolGetPaymentPreferences::modules()
+     * @param int $idShop
+     * @param int $idLang
+     * @param array<int, string> $problems
      *
-     * @return bool
+     * @return array<int, int>|null
      */
-    private static function sameIds($given, array $read, string $key): bool
+    private static function checkCountries(array $ids, array $module, int $idShop, int $idLang, array &$problems): ?array
     {
-        if (!is_array($given)) {
-            return false;
-        }
-        $ids = [];
-        foreach ($given as $item) {
-            $id = self::identifier(is_array($item) ? ($item[$key] ?? null) : $item);
-            if ($id === null) {
-                return false;
+        $valid = true;
+        $outside = [];
+        foreach ($ids as $id) {
+            // Read where somcp_list_countries reads, so a country of another
+            // shop is unknown here as it is there.
+            $country = SomcpToolListCountries::country($idShop, $idLang, $id);
+            if ($country === null) {
+                $problems[] = SomcpTool::notFound('countries', 'country', $id, 'somcp_list_countries');
+                $valid = false;
+            } elseif ($module['limited_countries'] !== null
+                && !in_array(Tools::strtolower((string) $country['iso_code']), $module['limited_countries'], true)) {
+                $outside[] = $id;
             }
-            $ids[] = $id;
         }
-        $stored = array_map('intval', array_column($read, $key));
-        sort($ids);
-        sort($stored);
+        if ($outside !== []) {
+            // The card offers only these countries for such a module.
+            $problems[] = 'countries: ' . $module['display_name'] . ' works only in '
+                . implode(', ', array_map('strtoupper', $module['limited_countries']));
+            $valid = false;
+        }
 
-        return array_values(array_unique($ids)) === array_values(array_unique($stored));
+        return $valid ? $ids : null;
+    }
+
+    /**
+     * The references of the carriers of a list, each once, or null when
+     * one is not offered by the Carrier restrictions list.
+     *
+     * The list offers every carrier of the shop not deleted, enabled or not,
+     * as the Default carrier list does: read with the query of the carrier
+     * list, since the core's choice provider lives in the back office's
+     * container.
+     *
+     * @param array<int, int> $ids identifiers of somcp_list_carriers
+     * @param int $idShop
+     * @param int $idLang
+     * @param array<int, string> $problems
+     *
+     * @return array<int, int>|null
+     */
+    private static function references(array $ids, int $idShop, int $idLang, array &$problems): ?array
+    {
+        $references = [];
+        $valid = true;
+        foreach ($ids as $id) {
+            $query = SomcpToolListCarriers::query($idShop, $idLang);
+            $query->where('c.`id_carrier` = ' . (int) $id);
+            $row = Db::getInstance()->getRow($query);
+            if (is_array($row) && $row !== []) {
+                $reference = (int) $row['id_reference'];
+                if (!in_array($reference, $references, true)) {
+                    $references[] = $reference;
+                }
+                continue;
+            }
+            $valid = false;
+            $older = (int) Db::getInstance()->getValue(
+                'SELECT c.`id_carrier` FROM `' . _DB_PREFIX_ . 'carrier` c'
+                . ' INNER JOIN `' . _DB_PREFIX_ . 'carrier_shop` cs'
+                . ' ON cs.`id_carrier` = c.`id_carrier` AND cs.`id_shop` = ' . (int) $idShop
+                . ' WHERE c.`id_carrier` = ' . (int) $id
+            );
+            $problems[] = $older > 0
+                ? 'carriers: the carrier ' . $id . ' is not offered by the Carrier restrictions list, which leaves out '
+                    . 'deleted carriers and older versions - find the current one with somcp_list_carriers'
+                : SomcpTool::notFound('carriers', 'carrier', $id, 'somcp_list_carriers');
+        }
+
+        return $valid ? $references : null;
     }
 
     /**

@@ -52,7 +52,7 @@ class SomcpToolGetPaymentPreferences
             'Reads Payment > Preferences: for each payment module, the currencies, customer groups, countries and '
                 . 'carriers it is offered to, with the identifiers of somcp_list_currencies, '
                 . 'somcp_list_customer_groups, somcp_list_countries and somcp_list_carriers. Read it before saying a '
-                . 'shop can take payments in a country or currency. Read only. To change the currencies and groups '
+                . 'shop can take payments in a country or currency. Read only. To change these lists '
                 . 'of a module use somcp_update_payment_restrictions; to install, enable or configure a '
                 . 'payment module use somcp_get_module or somcp_set_module_active; for the payment of an order, '
                 . 'somcp_get_order.',

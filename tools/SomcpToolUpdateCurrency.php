@@ -352,7 +352,7 @@ class SomcpToolUpdateCurrency
         if (isset($new['active']) && $new['active'] === false) {
             $modules = self::paymentModules($idCurrency, $idShop);
             if ($modules > 0) {
-                $warnings[] = $modules . ' payment modules accept ' . $iso . ' in Payment > Preferences; they keep '
+                $warnings[] = $modules . ' payment modules accept ' . $iso . ' in Payment > Preferences (somcp_update_payment_restrictions); they keep '
                     . 'that setting but the currency is no longer offered.';
             }
         }

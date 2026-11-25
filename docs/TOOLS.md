@@ -2684,7 +2684,7 @@ every shop. Logged as `country_updated` with the field names, or
 `country_update_failed`.
 
 Warnings, in `warning`:
-- **Active** set to `true` with no `module_country` row for the country and the shop: `No payment module is offered to <name> in this shop: its customers cannot pay until one is allowed for it in Payment > Preferences.`
+- **Active** set to `true` with no `module_country` row for the country and the shop: `No payment module is offered to <name> in this shop: its customers cannot pay until one is allowed for it in Payment > Preferences (somcp_update_payment_restrictions).`
 - **Active** set to `true` in a zone no carrier serves (`SomcpToolUpdateZone::carriers()`): `No carrier serves zone <id> (<name>): customers of <name> are offered no carrier until one serves it - see somcp_update_carrier.`
 - **Contains states** set to `false` while the country has states: `The <n> states of <name> are no longer offered in its address form; they are kept.`; set to `true` with none: `<name> has no state yet: add them with somcp_create_state.`
 - **Do you need a tax identification number?** set to `true`: `New addresses in <name> must now give an identification number; the existing ones are not checked.`
@@ -3208,8 +3208,8 @@ restrictions** and **Carrier restrictions**. A shop sells only where a
 payment module is offered. Read only, replayable. The payment modules
 themselves (installation, accounts, keys) are out of scope.
 
-**Do not use for** - changing the currencies and groups a module is offered
-to (→ `somcp_update_payment_restrictions`); installing, enabling or
+**Do not use for** - changing the currencies, groups, countries and carriers
+a module is offered to (→ `somcp_update_payment_restrictions`); installing, enabling or
 configuring a payment module (→ `somcp_get_module`,
 `somcp_set_module_active`); the payment methods of an order (→
 `somcp_get_order`).
@@ -3260,11 +3260,11 @@ transfer** on 9.0.0).
 **Nature**: `acts(EDIT, 'AdminPaymentPreferences')` · **Scope**: `mcp.orders.write`, as `somcp_update_shipping_preferences`
 
 **Does** - changes **Payment > Preferences** for one payment module, as the
-**Save** button of its cards **Currency restrictions** and **Group
-restrictions** does: each list given replaces the stored one, a list left out
-is kept. The cards **Country restrictions** and **Carrier restrictions** come
-in a second part (#397). One module of the answer of
-`somcp_get_payment_preferences` can be given back as it is.
+**Save** button of its cards **Currency restrictions**, **Group
+restrictions**, **Country restrictions** and **Carrier restrictions** does
+(#396, #397): each list given replaces the stored one, a list left out is
+kept. One module of the answer of `somcp_get_payment_preferences` can be
+given back as it is.
 
 **Do not use for** - installing, enabling or configuring a payment module (→
 `somcp_install_module`, `somcp_set_module_active`); the currencies and groups
@@ -3277,15 +3277,15 @@ and `warning` are worked out by the shop, ignored when given back as read
 (`language` when it is an active language of the shop, the names of the
 answer then read in it) and refused otherwise (`- <key>: worked out by the
 shop, so it is not written here`), as `SomcpToolUpdateShippingPreferences`
-does. `countries` and `carriers` given back as read are ignored; otherwise
-`- countries: not available yet` and `- carriers: not available yet` until
-part 2.
+does.
 
 | Name | On screen | Type | Rule |
 |---|---|---|---|
 | `name` | the module's column | string | required (`name: required`), the technical name of a payment module of `SomcpToolGetPaymentPreferences::modules()`, compared without case; otherwise `SomcpTool::notFound('name', 'payment module', <name>, 'somcp_get_payment_preferences', 'technical name')` |
 | `currencies` | **Currency restrictions** | array | the full list after the call. Each item an `id_currency` or the object the read gives (`{id_currency, ...}`, the other keys ignored); each a currency of `SomcpToolListCurrencies::currency()`, otherwise `SomcpTool::notFound('currencies', 'currency', <id>, 'somcp_list_currencies')`. A module in `checkbox` mode: any number, `[]` allowed; `-1` or `-2`: `currencies: -1 and -2 only for a module that takes one currency`. A module in `radio` mode: exactly one item, an `id_currency`, `-1` (**Customer currency**) or `-2` (**Shop default currency**), otherwise `currencies: <display name> takes one currency, or -1 (Customer currency) or -2 (Shop default currency)` |
 | `groups` | **Group restrictions** | array | the full list after the call, the same way: `id_group` or `{id_group, ...}`; each a group of `Group::getGroups($idLang, $idShop)`, otherwise `SomcpTool::notFound('groups', 'customer group', <id>, 'somcp_list_customer_groups')`; `[]` allowed |
+| `countries` | **Country restrictions** | array | the full list after the call, the same way: `id_country` or `{id_country, ...}`; each a country of `SomcpToolListCountries::country()`, otherwise `SomcpTool::notFound('countries', 'country', <id>, 'somcp_list_countries')`; a country outside the module's `limited_countries`: `countries: <display name> works only in <ISO codes>`; `[]` allowed |
+| `carriers` | **Carrier restrictions** | array | the full list after the call: `id_carrier` or `{id_carrier, ...}`, turned into its `id_reference` through `SomcpToolListCarriers::query()`, as the **Default carrier** of `somcp_update_shipping_preferences`; unknown: `SomcpTool::notFound('carriers', 'carrier', <id>, 'somcp_list_carriers')`; a deleted carrier or an older version: `carriers: the carrier <id> is not offered by the Carrier restrictions list, which leaves out deleted carriers and older versions - find the current one with somcp_list_carriers`; two versions of one carrier keep one row; `[]` allowed |
 | `language` | - | string | ISO code for the names of the answer, through `SomcpTool::readLanguage()`; the shop default when left out |
 
 A list that is not a list: `<list>: a list of <key>, [] for none`; an item
@@ -3315,15 +3315,18 @@ every list given. Nothing was written.`, `preferences` as read. Logged as
 counts only).
 
 **Returns** - the shape of every update tool (#356): `changed: true`,
-`changes` (per list its `field`, `added` and `removed` identifiers), and
-`preferences`, the module read back through `preferences()`. Warnings, beside
-the answer:
-- a list left empty: `<display name> is now offered to no <currency, customer group>: customers cannot pay with it.`;
+`changes` (per list its `field`, `added` and `removed` identifiers, carriers
+by `id_carrier`), and `preferences`, the module read back through
+`preferences()`. Warnings, beside the answer:
+- a list left empty: `<display name> is now offered to no <currency, customer group, country, carrier>: customers cannot pay with it.`;
 - the module disabled: `<display name> is disabled: these restrictions apply once it is enabled with somcp_set_module_active.`.
 
 **Notes** - the demo shops: every module in `checkbox` mode; `module_group`
 1, 2, 3 for each module on both; `module_currency` 1 and 2 on 8.0.1, 1 on
-9.0.0.
+9.0.0; `module_country` US only for `ps_cashondelivery`, `ps_checkpayment`
+and `ps_wirepayment`, 200 countries for `ps_checkout`; `module_carrier`
+references 1 to 4 for every module; no module limits its countries but
+`ps_checkout`.
 
 **Differences between 8.0.1 and 9.0.0** - none: the same configurator and
 tables.
@@ -4757,8 +4760,8 @@ with every language, `validateFields()` and `validateFieldsLang()`, then
 deleted row of the same ISO code was reused (its orders stay tied to it), and
 `currency`, the answer of `somcp_get_currency` read back (`alternative: true`
 for an alternative currency). A `warning` when:
-- a deleted row was reused: `<ISO code> was deleted before: the same currency is back, without the payment modules it had in Payment > Preferences.`;
-- no payment module accepts it (`module_currency`): `Payment > Preferences decides which payment modules accept <ISO code>; no module accepts it yet.`
+- a deleted row was reused: `<ISO code> was deleted before: the same currency is back, without the payment modules it had in Payment > Preferences (somcp_update_payment_restrictions).`;
+- no payment module accepts it (`module_currency`): `Payment > Preferences (somcp_update_payment_restrictions) decides which payment modules accept <ISO code>; no module accepts it yet.`
 
 **Errors** - in the envelope `Nothing was created. Correct these and call
 again:`, every problem at once; the shop refusing the save: `Nothing was
@@ -4830,7 +4833,7 @@ every value given. Nothing was written.`). In both cases `currency`, the
 answer of `somcp_get_currency` read back. When something was written, a
 `warning` when:
 - `conversion_rate` changed: `Prices in <ISO code> are now converted at <rate>; orders already placed keep the rate they were placed at.`;
-- `active` set to `false` while payment modules accept the currency in the shop (`module_currency`): `<n> payment modules accept <ISO code> in Payment > Preferences; they keep that setting but the currency is no longer offered.`;
+- `active` set to `false` while payment modules accept the currency in the shop (`module_currency`): `<n> payment modules accept <ISO code> in Payment > Preferences (somcp_update_payment_restrictions); they keep that setting but the currency is no longer offered.`;
 - `precision` or `active` changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `Decimals and Status are shared by every shop: this change reaches every shop of this installation (<n + 1>).`; the exchange rate stays the one of this shop;
 - a name or symbol given empty for an alternative currency, which CLDR does not know: `<ISO code> is an alternative currency: an empty <field> takes its ISO code.`
 
@@ -4872,7 +4875,7 @@ Unknown arguments through `SomcpTool::unknownFields()`. Refusals, all at once:
 
 **Returns** - `deleted: true`, `id_currency`, `warning` and `currency`, the
 answer of `somcp_get_currency` read before the deletion. The warning:
-- payment restrictions removed (`module_currency`, counted before): `<n> payment modules no longer accept <ISO code> in Payment > Preferences; adding the currency again does not bring that setting back.`;
+- payment restrictions removed (`module_currency`, counted before): `<n> payment modules no longer accept <ISO code> in Payment > Preferences (somcp_update_payment_restrictions); adding the currency again does not bring that setting back.`;
 - always: `Orders placed in <ISO code> keep it; PrestaShop keeps the currency hidden for them, and adding <ISO code> again brings the same currency back.`
 
 **Errors** - in the envelope `Nothing was deleted. Correct these and call

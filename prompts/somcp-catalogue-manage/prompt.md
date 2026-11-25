@@ -256,10 +256,10 @@ ranges: say so to the merchant before setting it.
 currencies, customer groups, countries and carriers it is offered to: read it
 before telling the merchant the shop can take payments in a new country or
 currency, since a module offered to none of them is not shown at the checkout.
-`somcp_update_payment_restrictions` changes the currencies and customer groups
-one payment module is offered to: each list given replaces the stored one, so
+`somcp_update_payment_restrictions` changes the currencies, customer groups,
+countries and carriers one payment module is offered to: each list given replaces the stored one, so
 read the module first and give back its whole list with the change. A module
-left with no currency or no group is shown to nobody: say so to the merchant
+left with an empty list is shown to nobody: say so to the merchant
 before emptying a list.
 `somcp_get_email_settings` says how the shop sends its e-mails (sendmail, SMTP
 or never) and where customer messages go: read it before telling a merchant

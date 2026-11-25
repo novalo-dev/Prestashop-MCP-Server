@@ -2598,9 +2598,10 @@ if ($getShipping !== null && $updateShipping !== null) {
     }
 }
 
-// The payment restrictions (#396): the read of ps_checkpayment given back
-// whole writes nothing, then its groups are set to 1 and 2, read back, and
-// put back to what was read. A JSON scenario cannot give back what the read
+// The payment restrictions (#396, #397): the read of ps_checkpayment given
+// back whole writes nothing, then its groups are set to 1 and 2 and its
+// countries to those read plus France, read back, and put back to what was
+// read. A JSON scenario cannot give back what the read
 // answered, nor put the rows back whatever happens, and the checkout of the
 // order tools after this one offers the module by these rows.
 $getPayment = $registry->get('somcp_get_payment_preferences');
@@ -2608,10 +2609,15 @@ $updatePayment = $registry->get('somcp_update_payment_restrictions');
 if ($getPayment !== null && $updatePayment !== null) {
     $idShopPayment = (int) $context->shop->id;
     $idModulePayment = (int) Module::getModuleIdByName('ps_checkpayment');
-    $groupsWere = array_map('intval', array_column(Db::getInstance()->executeS(
-        'SELECT `id_group` FROM `' . _DB_PREFIX_ . 'module_group` WHERE `id_module` = ' . $idModulePayment
-        . ' AND `id_shop` = ' . $idShopPayment
-    ) ?: [], 'id_group'));
+    $paymentRowsWere = [];
+    foreach (['group' => 'id_group', 'country' => 'id_country'] as $paymentType => $paymentColumn) {
+        $paymentRowsWere[$paymentType] = array_map('intval', array_column(Db::getInstance()->executeS(
+            'SELECT `' . $paymentColumn . '` FROM `' . _DB_PREFIX_ . 'module_' . $paymentType . '` WHERE `id_module` = '
+            . $idModulePayment . ' AND `id_shop` = ' . $idShopPayment
+        ) ?: [], $paymentColumn));
+    }
+    // Found by its ISO code rather than written as 8, as a fresh shop numbers it.
+    $idFrance = (int) Country::getByIso('FR');
     $paymentContext = static function (SomcpTool $tool, array $arguments) use ($idShopPayment, $employee, $context): array {
         return [
             'id_shop' => $idShopPayment,
@@ -2625,7 +2631,7 @@ if ($getPayment !== null && $updatePayment !== null) {
             'arguments' => $arguments,
         ];
     };
-    $calls += 3;
+    $calls += 4;
     try {
         $read = $getPayment->call(['name' => 'ps_checkpayment'], $paymentContext($getPayment, ['name' => 'ps_checkpayment']));
         $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
@@ -2636,6 +2642,7 @@ if ($getPayment !== null && $updatePayment !== null) {
             $steps = [
                 ['the read given back whole, nothing written', $module, ['"changed": false', 'Nothing was written.']],
                 ['the groups set to 1 and 2', ['name' => 'ps_checkpayment', 'groups' => [1, 2]], ['"changed": true', '"field": "groups"', '"id_group": 2']],
+                ['France added to the countries', ['name' => 'ps_checkpayment', 'countries' => array_merge($module['countries'], [$idFrance])], ['"changed": true', '"field": "countries"', '"iso_code": "FR"']],
             ];
             foreach ($steps as [$why, $arguments, $needles]) {
                 $result = $updatePayment->call($arguments, $paymentContext($updatePayment, $arguments));
@@ -2659,7 +2666,9 @@ if ($getPayment !== null && $updatePayment !== null) {
         // Whatever happened, the tools after this one find the groups of a
         // fresh shop.
         if ($idModulePayment > 0) {
-            SomcpToolUpdatePaymentRestrictions::replace('group', $idModulePayment, $idShopPayment, $groupsWere);
+            foreach ($paymentRowsWere as $paymentType => $paymentIds) {
+                SomcpToolUpdatePaymentRestrictions::replace($paymentType, $idModulePayment, $idShopPayment, $paymentIds);
+            }
         }
     }
 }

@@ -701,7 +701,7 @@ class SomcpToolUpdateCountry
             );
             if (!$payment) {
                 $warnings[] = 'No payment module is offered to ' . $name . ' in this shop: its customers cannot pay '
-                    . 'until one is allowed for it in Payment > Preferences.';
+                    . 'until one is allowed for it in Payment > Preferences (somcp_update_payment_restrictions).';
             }
             $idZone = (int) $country->id_zone;
             if (SomcpToolUpdateZone::carriers($idZone) === []) {

@@ -26,9 +26,8 @@ merchant does it:
   tax rules and the tax options are done.
 - **Shipping and payment preferences**: a carrier is read, changed and
   deleted today, and the delivery zones are listed; creating a carrier and
-  managing the zones come next. **Payment > Preferences** is read, and the
-  currencies and customer groups of each payment module changed; its
-  countries and carriers come next. The payment modules themselves,
+  managing the zones come next. **Payment > Preferences** is read and
+  changed, module by module. The payment modules themselves,
   their accounts and keys, stay with the merchant.
 - **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
   never the parent theme or its templates, and the native modules of the

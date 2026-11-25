@@ -33,12 +33,14 @@ that customers of a new country or currency have a way to pay before saying
 the shop sells there, and it warns about a module offered to nobody.
 
 **Change the payment restrictions.** The new tool
-somcp_update_payment_restrictions does what the Save buttons of the Currency
-restrictions and Group restrictions cards of Payment > Preferences do, for one
-payment module: the currencies and customer groups it is offered to. Each list
+somcp_update_payment_restrictions does what the Save buttons of the four cards
+of Payment > Preferences do, for one payment module: the currencies, customer
+groups, countries and carriers it is offered to. Each list
 given replaces the stored one, and a module read with
 somcp_get_payment_preferences can be given back as it is without writing
-anything. The assistant warns when a module is left offered to nobody.
+anything. The assistant warns when a module is left offered to nobody, and
+the tools that add a country or a currency now name it when they say a
+payment module must be offered there.
 
 **Read the e-mail settings.** The new tool somcp_get_email_settings reads the
 Email card of Advanced Parameters > E-mail: where customer messages go, how

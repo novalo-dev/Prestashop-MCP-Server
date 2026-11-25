@@ -32,7 +32,8 @@ declare(strict_types=1);
  * "expect" is ok, error (the tool answers with isError), input (the tool asks
  * the client for something before finishing) or any (only the absence of a
  * crash is checked - for a write whose outcome depends on the demo data).
- * "contains" lists strings the text of the answer must hold.
+ * "contains" lists strings the text of the answer must hold, "lacks" strings
+ * it must not: a scenario can then prove that a key stays out of an answer.
  *
  * A call fails when the tool throws, returns something that is not a tool
  * result, answers differently from "expect", or makes PHP raise a notice,
@@ -193,6 +194,13 @@ foreach (array_keys($shipped) as $name) {
         foreach ((array) ($call['contains'] ?? []) as $needle) {
             if (strpos($text, (string) $needle) === false) {
                 $failures[] = "$label: answer does not contain \"$needle\" - " . excerpt($result);
+            }
+        }
+        // "contains" alone cannot prove that a stored secret never comes back:
+        // a later change returning it would still hold every expected string.
+        foreach ((array) ($call['lacks'] ?? []) as $needle) {
+            if (strpos($text, (string) $needle) !== false) {
+                $failures[] = "$label: answer contains \"$needle\" - " . excerpt($result);
             }
         }
 

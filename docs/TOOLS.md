@@ -3245,8 +3245,11 @@ Each table is read on `id_module` and the `id_shop` of the token:
 
 and `language`. No payment module: `payment_modules: []` and `warning` `No
 payment module installed`, the sentence of the page. A module with an empty
-list: `warning` `<display name> is offered to no <currency, group, country,
-carrier>: customers cannot pay with it.`, naming the empty lists.
+list: `warning` `<display name> is offered to no <lists>: customers cannot pay
+with it.`, given as soon as one of the four lists is empty (the checkout
+offers a module only to a cart that matches a row of each), naming the empty
+lists joined with `, ` and ` or ` before the last one: `no carrier`, `no
+currency or group`, `no currency, group, country or carrier`.
 
 **Notes**
 - The demo shops: four payment modules (`ps_cashondelivery`, `ps_checkpayment`, `ps_checkout`, `ps_wirepayment`), each offered to the currencies of the shop, the groups 1 to 3 and the carrier references 1 to 4; `ps_checkout` to 200 countries, the three others to US only; every module in `checkbox` mode.
@@ -3318,7 +3321,7 @@ counts only).
 `changes` (per list its `field`, `added` and `removed` identifiers, carriers
 by `id_carrier`), and `preferences`, the module read back through
 `preferences()`. Warnings, beside the answer:
-- a list left empty: `<display name> is now offered to no <currency, customer group, country, carrier>: customers cannot pay with it.`;
+- a list left empty: `<display name> is now offered to no <lists>: customers cannot pay with it.`, the sentence of `somcp_get_payment_preferences` (`SomcpToolGetPaymentPreferences::offeredToNone()`), the empty lists joined with `, ` and ` or ` before the last one (`no customer group or carrier`);
 - the module disabled: `<display name> is disabled: these restrictions apply once it is enabled with somcp_set_module_active.`.
 
 **Notes** - the demo shops: every module in `checkbox` mode; `module_group`

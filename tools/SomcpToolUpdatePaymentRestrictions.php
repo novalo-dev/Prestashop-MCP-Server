@@ -261,8 +261,7 @@ class SomcpToolUpdatePaymentRestrictions
         if ($empty !== []) {
             // The checkout offers a module only to a cart that matches a row
             // of each table: one empty list hides it everywhere.
-            $warnings[] = $module['display_name'] . ' is now offered to no ' . implode(', ', $empty)
-                . ': customers cannot pay with it.';
+            $warnings[] = SomcpToolGetPaymentPreferences::offeredToNone((string) $module['display_name'], 'is now', $empty);
         }
         if (!$module['active']) {
             $warnings[] = $module['display_name'] . ' is disabled: these restrictions apply once it is enabled with '

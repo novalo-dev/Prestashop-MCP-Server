@@ -136,8 +136,7 @@ class SomcpToolGetPaymentPreferences
             if ($empty !== []) {
                 // The checkout offers a module only to a cart that matches a
                 // row of each table: one empty list hides it everywhere.
-                $warnings[] = $module['display_name'] . ' is offered to no ' . implode(', ', $empty)
-                    . ': customers cannot pay with it.';
+                $warnings[] = self::offeredToNone((string) $module['display_name'], 'is', $empty);
             }
         }
         if ($warnings !== []) {
@@ -199,6 +198,28 @@ class SomcpToolGetPaymentPreferences
         });
 
         return $modules;
+    }
+
+    /**
+     * The warning for a payment module with one empty list or more, one
+     * English sentence for one to four lists: "no currency or group",
+     * "no currency, group, country or carrier".
+     *
+     * Public so the update warns with this very sentence rather than a
+     * second one that could drift.
+     *
+     * @param string $displayName
+     * @param string $verb "is", or "is now" after a change
+     * @param array<int, string> $empty the words of the empty lists, in the order of the page
+     *
+     * @return string
+     */
+    public static function offeredToNone(string $displayName, string $verb, array $empty): string
+    {
+        $last = (string) array_pop($empty);
+        $words = $empty !== [] ? implode(', ', $empty) . ' or ' . $last : $last;
+
+        return $displayName . ' ' . $verb . ' offered to no ' . $words . ': customers cannot pay with it.';
     }
 
     /**

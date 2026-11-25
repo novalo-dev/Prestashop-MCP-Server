@@ -77,6 +77,13 @@ screen.
 
 ### Changed
 
+**A localization pack names the country it turned on as the country tools do.**
+When somcp_import_localization_pack switched on the country of the pack, its
+answer said so with `enabled`, a name no other country tool uses, so an
+assistant looking for `active` missed it and one giving `enabled` back to
+somcp_update_country was refused. The answer now says `active`, as
+somcp_get_country and somcp_update_country do.
+
 **A localization pack brings its currencies from any assistant.** Importing a
 localization pack with somcp_import_localization_pack refused the currencies
 from an assistant connected from outside the shop, which then had to add each

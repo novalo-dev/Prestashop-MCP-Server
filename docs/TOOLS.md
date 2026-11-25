@@ -4521,7 +4521,7 @@ pack brings for <contents>. Nothing was created.`
 
 **Returns**
 - `changed`;
-- `country`: `id_country`, `iso_code`, `name`, and `enabled` / `contains_states` (`true`) when the import turned them on;
+- `country`: `id_country`, `iso_code`, `name`, and `active` / `contains_states` (`true`) when the import turned them on;
 - `created`: `states` (the shape of `SomcpToolListStates::state()`), `zones` (`id_zone`, `name`), `taxes` (`id_tax`, `name`, `rate`), `tax_rules` (`id_tax_rules_group`, `name`), `currencies` (`id_currency`, `iso_code`, `name`, `conversion_rate`), `languages` (`id_lang`, `iso_code`, `name`), each only when not empty;
 - `changes`: per field its `field`, `old`, `new`: `weight_unit`, `volume_unit`, `dimension_unit`, `distance_unit` (the names of `somcp_get_localization_settings`), `base_distance_unit` (`PS_BASE_DISTANCE_UNIT`), and `price_display_method` (`tax_included` / `tax_excluded`), for the setting and, with `id_group`, for each of the three groups;
 - `rates`, with `currencies`: the currencies that existed and whose rate moved, the shape of `changes` of `somcp_update_exchange_rates` (`SomcpToolUpdateExchangeRates::rateChanges()`);

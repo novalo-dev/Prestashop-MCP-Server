@@ -256,7 +256,7 @@ class SomcpToolImportLocalizationPack
             $warnings[] = 'Taxes and tax rules that already had their name were kept as they are, even when the pack '
                 . 'has another rate: check them with somcp_list_taxes.';
         }
-        if (in_array('enabled', $result['country_turned_on'], true)) {
+        if (in_array('active', $result['country_turned_on'], true)) {
             $warnings[] = $after['country']['name'] . ' was not enabled: the import enabled it, as the back office does.';
         }
         foreach ($result['changes'] as $change) {
@@ -574,10 +574,11 @@ class SomcpToolImportLocalizationPack
         }
 
         $turned = [];
-        // Named as the answer names them: enabled for the country's active.
-        foreach (['active' => 'enabled', 'contains_states' => 'contains_states'] as $key => $name) {
+        // Named as somcp_get_country and somcp_update_country name them, so the
+        // assistant finds them where every country tool puts them.
+        foreach (['active', 'contains_states'] as $key) {
             if ($after[$key] && !$before[$key]) {
-                $turned[] = $name;
+                $turned[] = $key;
             }
         }
 

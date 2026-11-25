@@ -3208,9 +3208,11 @@ restrictions** and **Carrier restrictions**. A shop sells only where a
 payment module is offered. Read only, replayable. The payment modules
 themselves (installation, accounts, keys) are out of scope.
 
-**Do not use for** - installing, enabling or configuring a payment module (→
-`somcp_get_module`, `somcp_set_module_active`); the payment methods of an
-order (→ `somcp_get_order`).
+**Do not use for** - changing the currencies and groups a module is offered
+to (→ `somcp_update_payment_restrictions`); installing, enabling or
+configuring a payment module (→ `somcp_get_module`,
+`somcp_set_module_active`); the payment methods of an order (→
+`somcp_get_order`).
 
 **Parameters**
 
@@ -3252,6 +3254,79 @@ carrier>: customers cannot pay with it.`, naming the empty lists.
 **Differences between 8.0.1 and 9.0.0** - none in the restrictions; the
 display names differ in the demo data (**Wire payment** on 8.0.1, **Bank
 transfer** on 9.0.0).
+
+#### `somcp_update_payment_restrictions`
+**State**: written · [issue #396](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/396)
+**Nature**: `acts(EDIT, 'AdminPaymentPreferences')` · **Scope**: `mcp.orders.write`, as `somcp_update_shipping_preferences`
+
+**Does** - changes **Payment > Preferences** for one payment module, as the
+**Save** button of its cards **Currency restrictions** and **Group
+restrictions** does: each list given replaces the stored one, a list left out
+is kept. The cards **Country restrictions** and **Carrier restrictions** come
+in a second part (#397). One module of the answer of
+`somcp_get_payment_preferences` can be given back as it is.
+
+**Do not use for** - installing, enabling or configuring a payment module (→
+`somcp_install_module`, `somcp_set_module_active`); the currencies and groups
+themselves (→ `somcp_update_currency`, `somcp_list_customer_groups`).
+
+**Parameters**
+
+`display_name`, `active`, `currencies_mode`, `limited_countries`, `language`
+and `warning` are worked out by the shop, ignored when given back as read
+(`language` when it is an active language of the shop, the names of the
+answer then read in it) and refused otherwise (`- <key>: worked out by the
+shop, so it is not written here`), as `SomcpToolUpdateShippingPreferences`
+does. `countries` and `carriers` given back as read are ignored; otherwise
+`- countries: not available yet` and `- carriers: not available yet` until
+part 2.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `name` | the module's column | string | required (`name: required`), the technical name of a payment module of `SomcpToolGetPaymentPreferences::modules()`, compared without case; otherwise `SomcpTool::notFound('name', 'payment module', <name>, 'somcp_get_payment_preferences', 'technical name')` |
+| `currencies` | **Currency restrictions** | array | the full list after the call. Each item an `id_currency` or the object the read gives (`{id_currency, ...}`, the other keys ignored); each a currency of `SomcpToolListCurrencies::currency()`, otherwise `SomcpTool::notFound('currencies', 'currency', <id>, 'somcp_list_currencies')`. A module in `checkbox` mode: any number, `[]` allowed; `-1` or `-2`: `currencies: -1 and -2 only for a module that takes one currency`. A module in `radio` mode: exactly one item, an `id_currency`, `-1` (**Customer currency**) or `-2` (**Shop default currency**), otherwise `currencies: <display name> takes one currency, or -1 (Customer currency) or -2 (Shop default currency)` |
+| `groups` | **Group restrictions** | array | the full list after the call, the same way: `id_group` or `{id_group, ...}`; each a group of `Group::getGroups($idLang, $idShop)`, otherwise `SomcpTool::notFound('groups', 'customer group', <id>, 'somcp_list_customer_groups')`; `[]` allowed |
+| `language` | - | string | ISO code for the names of the answer, through `SomcpTool::readLanguage()`; the shop default when left out |
+
+A list that is not a list: `<list>: a list of <key>, [] for none`; an item
+that is not a whole number: `SomcpTool::notAnIdentifier(<list>)`. A list given
+twice the same identifier keeps it once. Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:` (`SomcpTool::refused('changed', $problems)`), every problem at once,
+before anything is written. A failed save stops the call and names the lists
+saved before it, with the hint to read `somcp_get_payment_preferences` before
+calling again, logged as `payment_restrictions_update_failed`.
+
+**Then** - `SomcpToolGetPaymentPreferences::preferences($idShop, $idLang,
+$name)` is read first; each list whose set of identifiers differs is written
+by the public `SomcpToolUpdatePaymentRestrictions::replace($type, $idModule,
+$idShop, $ids)`, shared with part 2, as the core's
+`PaymentRestrictionsConfigurator::configureRestrictions()` writes it, since
+the configurator lives in the back office's container: `Db::delete()` of the
+rows of `module_<type>` for the module and the shop of the token, then
+`Db::insert()` of one row per identifier, every value cast to `int`. `$type`
+is `currency`, `group`, `country` or `carrier`, a fixed map to the table and
+its column (`id_reference` for `carrier`), never built from the request.
+Nothing differs: `changed: false`, `reason` `The payment module already has
+every list given. Nothing was written.`, `preferences` as read. Logged as
+`payment_restrictions_updated` with the module and the lists saved (names and
+counts only).
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per list its `field`, `added` and `removed` identifiers), and
+`preferences`, the module read back through `preferences()`. Warnings, beside
+the answer:
+- a list left empty: `<display name> is now offered to no <currency, customer group>: customers cannot pay with it.`;
+- the module disabled: `<display name> is disabled: these restrictions apply once it is enabled with somcp_set_module_active.`.
+
+**Notes** - the demo shops: every module in `checkbox` mode; `module_group`
+1, 2, 3 for each module on both; `module_currency` 1 and 2 on 8.0.1, 1 on
+9.0.0.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same configurator and
+tables.
 
 #### `somcp_get_email_settings`
 **State**: written · [issue #398](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/398)

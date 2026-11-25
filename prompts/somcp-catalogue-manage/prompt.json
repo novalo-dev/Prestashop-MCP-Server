@@ -65,6 +65,7 @@
     "somcp_get_shipping_preferences",
     "somcp_update_shipping_preferences",
     "somcp_get_payment_preferences",
+    "somcp_update_payment_restrictions",
     "somcp_get_email_settings",
     "somcp_list_zones",
     "somcp_create_zone",

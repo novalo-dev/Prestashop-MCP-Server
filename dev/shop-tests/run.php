@@ -2598,6 +2598,72 @@ if ($getShipping !== null && $updateShipping !== null) {
     }
 }
 
+// The payment restrictions (#396): the read of ps_checkpayment given back
+// whole writes nothing, then its groups are set to 1 and 2, read back, and
+// put back to what was read. A JSON scenario cannot give back what the read
+// answered, nor put the rows back whatever happens, and the checkout of the
+// order tools after this one offers the module by these rows.
+$getPayment = $registry->get('somcp_get_payment_preferences');
+$updatePayment = $registry->get('somcp_update_payment_restrictions');
+if ($getPayment !== null && $updatePayment !== null) {
+    $idShopPayment = (int) $context->shop->id;
+    $idModulePayment = (int) Module::getModuleIdByName('ps_checkpayment');
+    $groupsWere = array_map('intval', array_column(Db::getInstance()->executeS(
+        'SELECT `id_group` FROM `' . _DB_PREFIX_ . 'module_group` WHERE `id_module` = ' . $idModulePayment
+        . ' AND `id_shop` = ' . $idShopPayment
+    ) ?: [], 'id_group'));
+    $paymentContext = static function (SomcpTool $tool, array $arguments) use ($idShopPayment, $employee, $context): array {
+        return [
+            'id_shop' => $idShopPayment,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 3;
+    try {
+        $read = $getPayment->call(['name' => 'ps_checkpayment'], $paymentContext($getPayment, ['name' => 'ps_checkpayment']));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        $module = is_array($decoded) ? ($decoded['payment_modules'][0] ?? null) : null;
+        if (!empty($read['isError']) || !is_array($module) || $idModulePayment === 0) {
+            $failures[] = 'somcp_update_payment_restrictions (the module read first): expected it read - ' . excerpt($read);
+        } else {
+            $steps = [
+                ['the read given back whole, nothing written', $module, ['"changed": false', 'Nothing was written.']],
+                ['the groups set to 1 and 2', ['name' => 'ps_checkpayment', 'groups' => [1, 2]], ['"changed": true', '"field": "groups"', '"id_group": 2']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updatePayment->call($arguments, $paymentContext($updatePayment, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_payment_restrictions (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_payment_restrictions (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_payment_restrictions: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the groups of a
+        // fresh shop.
+        if ($idModulePayment > 0) {
+            SomcpToolUpdatePaymentRestrictions::replace('group', $idModulePayment, $idShopPayment, $groupsWere);
+        }
+    }
+}
+
 // The localization pack (#389): the units of the pack of the default country
 // are imported, then the units read before are put back. A JSON scenario
 // cannot put them back whatever happens, and an import of states or taxes

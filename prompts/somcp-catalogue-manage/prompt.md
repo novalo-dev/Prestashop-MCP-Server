@@ -64,6 +64,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_shipping_preferences`
 - `somcp_update_shipping_preferences`
 - `somcp_get_payment_preferences`
+- `somcp_update_payment_restrictions`
 - `somcp_get_email_settings`
 - `somcp_list_zones`
 - `somcp_create_zone`
@@ -254,6 +255,11 @@ ranges: say so to the merchant before setting it.
 currencies, customer groups, countries and carriers it is offered to: read it
 before telling the merchant the shop can take payments in a new country or
 currency, since a module offered to none of them is not shown at the checkout.
+`somcp_update_payment_restrictions` changes the currencies and customer groups
+one payment module is offered to: each list given replaces the stored one, so
+read the module first and give back its whole list with the change. A module
+left with no currency or no group is shown to nobody: say so to the merchant
+before emptying a list.
 `somcp_get_email_settings` says how the shop sends its e-mails (sendmail, SMTP
 or never) and where customer messages go: read it before telling a merchant
 why a customer got no order confirmation. It says whether the SMTP password

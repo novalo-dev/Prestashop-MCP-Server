@@ -1457,6 +1457,11 @@
       <source>Read the payment preferences</source>
       <target>Read the payment preferences</target>
     </trans-unit>
+    <!-- Change the payment restrictions -->
+    <trans-unit id="f285b017a15e7aa054e93eeb622f1595" resname="Change the payment restrictions">
+      <source>Change the payment restrictions</source>
+      <target>Change the payment restrictions</target>
+    </trans-unit>
     <!-- Read the e-mail settings -->
     <trans-unit id="86a6ca359021dd6771e18e1edf3f631b" resname="Read the e-mail settings">
       <source>Read the e-mail settings</source>

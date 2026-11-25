@@ -1158,6 +1158,10 @@ T = {
  "Lire les préférences de paiement",
  "Leer las preferencias de pago",
  "Die Zahlungseinstellungen lesen"),
+"Change the payment restrictions": (
+ "Modifier les restrictions de paiement",
+ "Cambiar las restricciones de pago",
+ "Die Zahlungsbeschränkungen ändern"),
 "Read the e-mail settings": (
  "Lire les paramètres des e-mails",
  "Leer los parámetros de correo electrónico",

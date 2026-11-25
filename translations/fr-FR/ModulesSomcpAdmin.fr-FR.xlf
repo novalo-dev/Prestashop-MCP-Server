@@ -1452,6 +1452,11 @@
       <source>Change the shipping preferences</source>
       <target>Modifier les préférences de livraison</target>
     </trans-unit>
+    <!-- Read the payment preferences -->
+    <trans-unit id="ebae602812f89c6aef7f548228852758" resname="Read the payment preferences">
+      <source>Read the payment preferences</source>
+      <target>Lire les préférences de paiement</target>
+    </trans-unit>
     <!-- Import a localization pack -->
     <trans-unit id="1240d2eed41a0fd4e898e6aab64c6732" resname="Import a localization pack">
       <source>Import a localization pack</source>

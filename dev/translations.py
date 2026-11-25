@@ -1154,6 +1154,10 @@ T = {
  "Modifier les préférences de livraison",
  "Cambiar las preferencias de envío",
  "Die Versandeinstellungen ändern"),
+"Read the payment preferences": (
+ "Lire les préférences de paiement",
+ "Leer las preferencias de pago",
+ "Die Zahlungseinstellungen lesen"),
 "Import a localization pack": (
  "Importer un pack de localisation",
  "Importar un paquete de localización",

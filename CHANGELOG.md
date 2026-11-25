@@ -26,6 +26,12 @@ storefront. Only the settings given change, and the answer of
 somcp_get_shipping_preferences can be given back as it is without writing
 anything.
 
+**Read the payment preferences.** The new tool somcp_get_payment_preferences
+reads Payment > Preferences: for each payment module, the currencies, customer
+groups, countries and carriers it is offered to. The assistant can now check
+that customers of a new country or currency have a way to pay before saying
+the shop sells there, and it warns about a module offered to nobody.
+
 ### Changed
 
 **A localization pack brings its currencies from any assistant.** Importing a

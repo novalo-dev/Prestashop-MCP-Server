@@ -3198,6 +3198,61 @@ carrier reference 1 (**Click and collect**), sorted by price, ascending.
 **Differences between 8.0.1 and 9.0.0** - none: the same forms, keys and
 adapters.
 
+#### `somcp_get_payment_preferences`
+**State**: written · [issue #395](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/395)
+**Nature**: `acts(VIEW, 'AdminPaymentPreferences')` · **Scope**: `mcp.orders.read`, as `somcp_get_shipping_preferences`
+
+**Does** - reads **Payment > Preferences**: for each payment module, the four
+cards **Currency restrictions**, **Group restrictions**, **Country
+restrictions** and **Carrier restrictions**. A shop sells only where a
+payment module is offered. Read only, replayable. The payment modules
+themselves (installation, accounts, keys) are out of scope.
+
+**Do not use for** - installing, enabling or configuring a payment module (→
+`somcp_get_module`, `somcp_set_module_active`); the payment methods of an
+order (→ `somcp_get_order`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `name` | string | no | technical name of one payment module, as `somcp_list_modules` gives it, compared without case; every payment module when left out. Not a payment module: `SomcpTool::notFound('name', 'payment module', <name>, 'somcp_list_modules', 'technical name')` |
+| `language` | string | no | ISO code for the names of the groups and carriers, through `SomcpTool::readLanguage()` (#149); a code the shop does not have is refused with `SomcpTool::languageProblem()`. The shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns** - `payment_modules`, built in the public
+`SomcpToolGetPaymentPreferences::preferences($idShop, $idLang, $name)` for the
+update to answer with, one object per module in the order of the page
+(display name). The modules are the installed modules whose instance is a
+`PaymentModule`, enabled or not, as `PaymentModuleListProvider` lists the
+columns, in the public `SomcpToolGetPaymentPreferences::modules($idShop)`.
+Each table is read on `id_module` and the `id_shop` of the token:
+
+| Key | On screen | Value |
+|---|---|---|
+| `name`, `display_name` | the column | technical and display name |
+| `active` | - | the module enabled in this shop (a row of `module_shop`) |
+| `currencies_mode` | - | `checkbox` or `radio` (one choice, and the rows **Customer currency** and **Shop default currency**) |
+| `currencies` | **Currency restrictions** | `module_currency`: `{id_currency, iso_code}`, the identifiers of `somcp_list_currencies`, a deleted currency left out; `-1` as `{"id_currency": -1, "iso_code": null, "name": "Customer currency"}`, `-2` as `"Shop default currency"` |
+| `groups` | **Group restrictions** | `module_group`: `{id_group, name}`, the identifiers of `somcp_list_customer_groups`, the name in `language` |
+| `countries` | **Country restrictions** | `module_country`: `{id_country, iso_code}`, the identifiers of `somcp_list_countries` |
+| `carriers` | **Carrier restrictions** | `module_carrier` stores the **reference**: `{id_carrier, name}`, the current version of each reference through `SomcpToolGetShippingPreferences::carrierOfReference()`, the identifier `somcp_list_carriers` gives; a reference whose carrier is deleted is left out |
+| `limited_countries` | - | the ISO codes the module restricts itself to (`Module::$limited_countries`), lowercase, or `null` |
+
+and `language`. No payment module: `payment_modules: []` and `warning` `No
+payment module installed`, the sentence of the page. A module with an empty
+list: `warning` `<display name> is offered to no <currency, group, country,
+carrier>: customers cannot pay with it.`, naming the empty lists.
+
+**Notes**
+- The demo shops: four payment modules (`ps_cashondelivery`, `ps_checkpayment`, `ps_checkout`, `ps_wirepayment`), each offered to the currencies of the shop, the groups 1 to 3 and the carrier references 1 to 4; `ps_checkout` to 200 countries, the three others to US only; every module in `checkbox` mode.
+
+**Differences between 8.0.1 and 9.0.0** - none in the restrictions; the
+display names differ in the demo data (**Wire payment** on 8.0.1, **Bank
+transfer** on 9.0.0).
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

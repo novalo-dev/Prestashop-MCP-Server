@@ -63,6 +63,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
 - `somcp_update_shipping_preferences`
+- `somcp_get_payment_preferences`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -248,6 +249,10 @@ telling a customer what an order pays for shipping.
 the default carrier by the `id_carrier` of `somcp_list_carriers`. Free
 shipping from a price or a weight applies to every carrier, whatever its
 ranges: say so to the merchant before setting it.
+`somcp_get_payment_preferences` gives, for each payment module, the
+currencies, customer groups, countries and carriers it is offered to: read it
+before telling the merchant the shop can take payments in a new country or
+currency, since a module offered to none of them is not shown at the checkout.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

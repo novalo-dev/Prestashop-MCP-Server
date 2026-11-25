@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "the contacts of the shop, in full, with the one that receives the customers' messages", "arguments": {}, "expect": "ok", "contains": ["\"id_contact\":", "\"email\":", "\"customer_service\":", "\"used_for_customer_messages\":", "\"language\": \"en\""]},
+    {"why": "the texts read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"id_contact\":", "\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "xx"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages, which are ", "leave language out for the shop default"]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]}
+  ]
+}

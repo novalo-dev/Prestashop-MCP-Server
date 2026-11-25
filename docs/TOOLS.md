@@ -3363,7 +3363,7 @@ them:
 | Key | On screen | Configuration key | Value |
 |---|---|---|---|
 | `send_emails_to` | **Send emails to** | `PS_MAIL_EMAIL_MESSAGE` | the `id_contact` stored, `null` when no row exists (the list then shows its first contact) |
-| `send_emails_to_choices` | - | - | the contacts the list offers, `{id_contact, name}`, `Contact::getContacts()` in the shop's default language |
+| `send_emails_to_choices` | - | - | the contacts the list offers, `{id_contact, name}`, `Contact::getContacts()` in the shop's default language; each in full with `somcp_list_contacts` |
 | `mail_method` | the three choices under **Send emails to** | `PS_MAIL_METHOD` | `sendmail` (1), `smtp` (2) or `never` (3) |
 | `smtp_domain` | **Email domain name** | `PS_MAIL_DOMAIN` | text |
 | `smtp_server` | **SMTP server** | `PS_MAIL_SERVER` | text |
@@ -3415,7 +3415,7 @@ screen offered it does not refuse the read given back.
 
 | Name | On screen | Type | Rule |
 |---|---|---|---|
-| `send_emails_to` | **Send emails to** | integer | an `id_contact` of `send_emails_to_choices`; otherwise `SomcpTool::notFound('send_emails_to', 'contact', <id>, 'somcp_get_email_settings')`, or `send_emails_to: a whole number above 0` |
+| `send_emails_to` | **Send emails to** | integer | an `id_contact` of `send_emails_to_choices` or of `somcp_list_contacts`; otherwise `SomcpTool::notFound('send_emails_to', 'contact', <id>, 'somcp_get_email_settings')`, or `send_emails_to: a whole number above 0` |
 | `mail_method` | the three choices | string | `SomcpTool::oneOf()`: `mail_method: one of sendmail, smtp, never` |
 | `smtp_domain` | **Email domain name** | string | `Validate::isCleanHtml()`, otherwise `<field>: holds a script or an event attribute, which PrestaShop refuses`; empty allowed |
 | `smtp_server` | **SMTP server** | string | the same rule |
@@ -3890,6 +3890,53 @@ somcp_get_customer_settings before calling again.`).
 
 **Differences between 8.0.1 and 9.0.0** - the partner offers note on 9.0.0
 only; the rest the same.
+
+#### `somcp_list_contacts`
+**State**: written · [issue #413](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/413)
+**Nature**: `acts(VIEW, 'AdminContacts')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - lists the contacts of **Shop Parameters > Contact**, tab
+**Contacts**: the addresses the contact form of the storefront offers, and
+those **Send emails to** of `somcp_get_email_settings` chooses from
+(`send_emails_to_choices`). Read only, replayable. The tab **Stores** is
+another page (`AdminStores`).
+
+**Do not use for** - the messages customers sent (Customer Service, not
+covered); the e-mail settings (→ `somcp_get_email_settings`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `language` | string | the ISO code of an active language for the translated texts, as `somcp_list_cms_pages` takes it (`SomcpTool::readLanguage()`); the shop default language when left out; a code the shop does not have is refused |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns**
+- `contacts`: one object per contact of the shop of the token, in the order of
+  `Contact::getContacts()` (by name): `id_contact`, `name` (**Title**),
+  `email` (**Email address**), `description` (**Description**),
+  `customer_service` (boolean, whether the messages sent to it are kept in
+  **Customer Service**), `used_for_customer_messages` (`true` for the contact
+  of **Send emails to**, `PS_MAIL_EMAIL_MESSAGE` read through
+  `SomcpToolGetEmailSettings::settings()`; `false` for all when no row is
+  stored);
+- `count`; `language`: the ISO code of the texts.
+
+`id_contact` and `name` are those of `send_emails_to_choices`: a contact read
+here is given to `somcp_update_email_settings` (`send_emails_to`) as it is.
+
+No contact: `contacts: []`, `count: 0`, and a `warning`: `The shop has no
+contact: the contact form of the storefront cannot send a message.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`
+(`SomcpTool::refused('read', $problems)`): an unknown argument, a language the
+shop does not have (`SomcpTool::languageProblem()`).
+
+**Notes** - the addresses are the shop's own, shown on the page; nothing else
+about the contacts is hidden.
+
+**Differences between 8.0.1 and 9.0.0** - none on the list.
 
 #### `somcp_list_tax_rules`
 **State**: written

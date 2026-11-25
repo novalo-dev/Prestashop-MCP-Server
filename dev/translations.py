@@ -1190,6 +1190,10 @@ T = {
  "Modifier les paramètres clients",
  "Cambiar los parámetros de clientes",
  "Die Kundeneinstellungen ändern"),
+"List the contacts": (
+ "Lister les contacts",
+ "Listar los contactos",
+ "Die Kontakte auflisten"),
 "Change the order settings": (
  "Modifier les paramètres des commandes",
  "Cambiar los parámetros de pedidos",

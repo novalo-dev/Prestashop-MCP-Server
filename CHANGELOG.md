@@ -106,6 +106,12 @@ the settings given change, the answer of somcp_get_customer_settings can be
 given back as it is without writing anything, and turning B2B mode on or off
 shows or hides the page of B2B outstanding amounts as the back office does.
 
+**List the contacts.** The new tool somcp_list_contacts lists the contacts of
+Shop Parameters > Contact: their title, e-mail address and description, whether
+their messages are kept in Customer Service, and which one receives the
+customers' messages. A contact read there is given as it is to Send emails to
+of somcp_update_email_settings.
+
 ### Changed
 
 **Limit a cart rule to countries, carriers and customer groups.**

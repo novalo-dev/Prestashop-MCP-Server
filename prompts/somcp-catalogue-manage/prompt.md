@@ -65,6 +65,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_shipping_preferences`
 - `somcp_get_payment_preferences`
 - `somcp_update_payment_restrictions`
+- `somcp_list_contacts`
 - `somcp_get_email_settings`
 - `somcp_update_email_settings`
 - `somcp_get_order_settings`
@@ -267,6 +268,9 @@ countries and carriers one payment module is offered to: each list given replace
 read the module first and give back its whole list with the change. A module
 left with an empty list is shown to nobody: say so to the merchant
 before emptying a list.
+`somcp_list_contacts` lists the contacts of the storefront contact form, with
+their address and which one receives the customers' messages: read it before
+changing Send emails to, and give its id_contact as it is.
 `somcp_get_email_settings` says how the shop sends its e-mails (sendmail, SMTP
 or never) and where customer messages go: read it before telling a merchant
 why a customer got no order confirmation. It says whether the SMTP password

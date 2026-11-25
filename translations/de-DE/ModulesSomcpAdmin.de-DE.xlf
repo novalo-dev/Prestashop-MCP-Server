@@ -1497,6 +1497,11 @@
       <source>Change the customer settings</source>
       <target>Die Kundeneinstellungen ändern</target>
     </trans-unit>
+    <!-- List the contacts -->
+    <trans-unit id="1df335becaf09d48df5cf81212229d0e" resname="List the contacts">
+      <source>List the contacts</source>
+      <target>Die Kontakte auflisten</target>
+    </trans-unit>
     <!-- Change the order settings -->
     <trans-unit id="3a474448782c3d5b952512199ad9c9b1" resname="Change the order settings">
       <source>Change the order settings</source>

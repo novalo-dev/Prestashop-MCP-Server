@@ -2053,6 +2053,44 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
             }
         }
     }
+
+    // The same restriction given to the creation (#407): written with the
+    // rule, read back, and the rule deleted whatever happens.
+    $calls += 2;
+    $idRule = 0;
+    try {
+        $created = $createRule->call([
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp group at creation'],
+            'code' => 'SOMCPGROUPNEW',
+            'free_shipping' => true,
+            'restrictions' => ['group' => [['id_group' => 3]]],
+        ], $ruleContext);
+        $text = $answer($created);
+        $decoded = json_decode(trim($text), true);
+        $idRule = (int) ($decoded['id_cart_rule'] ?? 0);
+        if (!empty($created['isError']) || $idRule <= 0 || strpos($text, '"id_group": 3') === false) {
+            $failures[] = 'somcp_create_cart_rule (restrictions): expected the rule with group 3 - ' . excerpt($created);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (restrictions)');
+            $result = $getRule->call(['id_cart_rule' => $idRule], $ruleContext);
+            $text = $answer($result);
+            if (!empty($result['isError']) || strpos($text, '"group": [') === false || strpos($text, '"id_group": 3') === false) {
+                $failures[] = 'somcp_create_cart_rule (restrictions read back): expected group 3 - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (restrictions read back)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_cart_rule (restrictions): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idRule > 0) {
+            $left = new CartRule($idRule);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
 }
 
 // A carrier read, given back, changed and put back (#320): the JSON scenario

@@ -19,8 +19,9 @@ declare(strict_types=1);
 
 /*
  * somcp_create_cart_rule - one cart rule, with the fields of the Information,
- * Conditions and Actions tabs of Catalog > Discounts > Cart Rules > Add new,
- * restrictions apart.
+ * Conditions and Actions tabs of Catalog > Discounts > Cart Rules > Add new.
+ * Of the restrictions, countries, carriers and groups are written; the
+ * compatibility, the product selection and the shops stay in the back office.
  *
  * Every field takes the name and the shape somcp_get_cart_rule returns, so a
  * rule read there can be given back. The checks are the ones
@@ -79,8 +80,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             Somcp::t('Create a cart rule'),
             'Creates one cart rule, a voucher with a code or a discount applied on its own, as Catalog > Discounts > '
                 . 'Cart Rules > Add new. Fields have the names and shapes of somcp_get_cart_rule. Created off unless '
-                . 'active is true: confirm with the merchant first. Restrictions (countries, carriers, groups, other '
-                . 'rules, products, shops) are set in the back office. Not for changing a rule, nor for catalogue '
+                . 'active is true: confirm with the merchant first. restrictions: countries, carriers and groups; other '
+                . 'rules, products and shops stay in the back office. Not for changing a rule, nor for catalogue '
                 . 'price rules. Not to be retried: if the answer is lost, look for the rule with somcp_list_cart_rules '
                 . 'first.',
             self::inputSchema(),
@@ -96,6 +97,11 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      *                                                            somcp_get_cart_rule answers it. Fixed here so no
      *                                                            table name is ever built from an argument.
      */
+    /**
+     * @var array<int, string> the restrictions somcp_get_cart_rule reads that only the back office sets
+     */
+    private const BACK_OFFICE_RESTRICTIONS = ['cart_rule', 'product', 'shop'];
+
     protected const RESTRICTION_TABLES = [
         'country' => ['cart_rule_country', 'id_country', 'id_country'],
         'carrier' => ['cart_rule_carrier', 'id_carrier', 'id_reference'],
@@ -169,6 +175,11 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                     'description' => 'Send a free gift: {"id_product": 3, "id_product_attribute": 13}, the combination '
                         . 'from somcp_get_product, required when the product has some. Null: none.',
                 ],
+                'restrictions' => [
+                    'type' => 'object',
+                    'description' => 'As somcp_get_cart_rule returns it. country, carrier, group: a list of {"id_country"}, '
+                        . '{"id_reference"}, {"id_group"}, or null for none. cart_rule, product, shop: null only.',
+                ],
             ],
             'required' => ['name'],
             'additionalProperties' => false,
@@ -212,16 +223,9 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      */
     protected static function planRule(array $arguments, int $idShop, array &$errors, int $idSelf = 0): ?array
     {
-        if (array_key_exists('restrictions', $arguments)) {
-            // Given back from somcp_get_cart_rule with every restriction
-            // off, it asks for nothing this tool does not already do.
-            $given = is_array($arguments['restrictions']) ? array_filter($arguments['restrictions'], static function ($value): bool {
-                return $value !== null;
-            }) : [1];
-            if ($given !== []) {
-                $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
-            }
-        }
+        $restrictions = array_key_exists('restrictions', $arguments)
+            ? self::newRestrictions($arguments['restrictions'], $errors)
+            : [];
         $errors = array_merge($errors, SomcpTool::unknownFields(
             array_diff_key($arguments, ['restrictions' => true]),
             self::RULE_ARGUMENTS,
@@ -349,6 +353,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             'languages' => $languages,
             'names' => $names ?? [],
             'fields' => $fields,
+            // The rows of the restrictions switched on, by key of RESTRICTION_TABLES.
+            'restrictions' => $restrictions,
             // The product the back office adds to Product selection on its
             // own when the discount goes to one product.
             'specific_product' => $reductionProduct,
@@ -684,8 +690,51 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         $cartRule = new CartRule();
         self::fill($cartRule, $plan['fields']);
         self::fill($cartRule, self::completeTexts(['name' => $plan['names']], $plan['languages']));
+        // Switched on before add(), so the rule is saved once with the same
+        // switches the rows written right after it need.
+        foreach (array_keys($plan['restrictions'] ?? []) as $key) {
+            $cartRule->{$key . '_restriction'} = true;
+        }
 
         return $cartRule;
+    }
+
+    /**
+     * The restrictions a new rule starts with, as rows to write after it.
+     *
+     * Country, carrier and group are checked by planRestrictions(), as the
+     * update checks them. The others are only accepted off, so a rule read
+     * with somcp_get_cart_rule can be given back: the compatibility, the
+     * product selection and the shops stay on the Conditions tab.
+     *
+     * @param mixed $restrictions as given
+     * @param array<int, string> $errors
+     *
+     * @return array<string, array<int, int>> the keys switched on only
+     */
+    private static function newRestrictions($restrictions, array &$errors): array
+    {
+        if (!is_array($restrictions) || ($restrictions !== [] && array_is_list($restrictions))) {
+            $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
+
+            return [];
+        }
+        foreach ($restrictions as $key => $value) {
+            if (isset(self::RESTRICTION_TABLES[$key])) {
+                continue;
+            }
+            if (!in_array($key, self::BACK_OFFICE_RESTRICTIONS, true)) {
+                $errors[] = 'restrictions.' . $key . ': not a field of this tool';
+            } elseif ($value !== null) {
+                $errors[] = 'restrictions.' . $key . ': not set by this tool - the merchant sets it on the Conditions tab '
+                    . 'of the rule in the back office';
+            }
+        }
+
+        // A key given null asks for no restriction, which a new rule already has.
+        return array_filter(self::planRestrictions($restrictions, $errors), static function ($ids): bool {
+            return $ids !== null;
+        });
     }
 
     /**
@@ -712,6 +761,11 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             $done = (bool) $cartRule->add();
             if (!$done) {
                 $failure = 'PrestaShop refused to save it';
+            } elseif (!self::writeRestrictions($cartRule, $plan['restrictions'])) {
+                // No transaction: the rule is removed below, and
+                // CartRule::delete() takes its restriction rows with it.
+                $done = false;
+                $failure = 'the restrictions could not be saved';
             } else {
                 $failure = self::afterAdd((int) $cartRule->id, $idShop, (int) $plan['specific_product'], $multistore);
                 $done = $failure === '';

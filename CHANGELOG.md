@@ -83,7 +83,8 @@ discount for wholesale customers only, or free shipping to one country with
 one carrier, had to be finished in the back office. It now sets the Country
 selection, the Carrier selection and the Customer group selection as the form
 does, or lifts them, and leaves the compatibility with other rules, the
-product selection and the shops untouched.
+product selection and the shops untouched. somcp_create_cart_rule takes the
+same three selections, so such a rule is created in one call.
 
 **A localization pack names the country it turned on as the country tools do.**
 When somcp_import_localization_pack switched on the country of the pack, its

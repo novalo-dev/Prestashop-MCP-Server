@@ -3474,7 +3474,8 @@ Settings**: the cards **General** and **Gift options**. Read only,
 replayable. The tab **Statuses** has its own tools.
 
 **Do not use for** - the order statuses (→ `somcp_list_order_statuses`);
-shipping costs and free shipping (→ `somcp_get_shipping_preferences`).
+shipping costs and free shipping (→ `somcp_get_shipping_preferences`);
+changing these settings (→ `somcp_update_order_settings`).
 
 **Parameters** - none. Unknown arguments through
 `SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
@@ -3507,8 +3508,8 @@ adapters default it (`false`, `0`):
 is left out, as its form shows no such field.
 
 Warnings: a page chosen that no longer exists, `The page for terms and
-conditions no longer exists: choose another in Shop Parameters > Order
-Settings.` (the screen rather than the update tool, not written yet);
+conditions no longer exists: choose another with
+somcp_update_order_settings.`;
 `terms_of_service` on with no page, `Terms of service are required but no page
 is chosen: customers are asked to accept a page that does not exist.`
 
@@ -3519,6 +3520,67 @@ wrapping nor recycled packaging; no row for `PS_FINAL_SUMMARY_ENABLED`,
 
 **Differences between 8.0.1 and 9.0.0** - **Set backorder status** on 9.0.0
 only; the help of **Offer gift wrapping** differs.
+
+#### `somcp_update_order_settings`
+**State**: written · [issue #401](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/401)
+**Nature**: `acts(EDIT, 'AdminOrderPreferences')` · **Scope**: `mcp.orders.write`, as `somcp_update_shipping_preferences`
+
+**Does** - changes **Shop Parameters > Order Settings**, tab **Order
+Settings**, as the **Save** buttons of its cards **General** and **Gift
+options** do: `GeneralConfiguration::updateConfiguration()` and
+`GiftOptionsConfiguration::updateConfiguration()` write each value for the
+shop of the context, with no other step.
+
+**Do not use for** - the order statuses (→ `somcp_update_order_status`);
+shipping costs and free shipping (→ `somcp_update_shipping_preferences`).
+
+**Parameters** - all optional; a key left out keeps its value. The read of
+`somcp_get_order_settings` given back whole writes nothing: `currency`,
+`terms_page_title`, `gift_wrapping_tax_name` and `warning` are computed keys,
+ignored when given back as read and refused otherwise (`- <key>: worked out
+by the shop, so it is not written here`).
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `final_summary` | **Enable final summary** | boolean | |
+| `guest_checkout` | **Enable guest checkout** | boolean | |
+| `disable_reordering` | **Disable reordering option** | boolean | |
+| `minimum_purchase_tax_excl` | **Minimum purchase total required in order to validate the order** | number | 0 or more, `Validate::isPrice()`: `minimum_purchase_tax_excl: an amount of 0 or more, tax excluded, in <currency>`; 0 turns it off |
+| `recalculate_shipping` | **Recalculate shipping costs after editing the order** | boolean | |
+| `delayed_shipping` | **Delayed shipping** | boolean | |
+| `terms_of_service` | **Terms of service** | boolean | |
+| `terms_id_cms` | **Page for terms and conditions** | integer | `0` (**None**) or the `id_cms` of a page of the shop, through `SomcpTool::id()` and `SomcpToolUpdateCmsSeo::page()`; otherwise `notFound('terms_id_cms', 'CMS page', <id>, 'somcp_list_cms_pages')` |
+| `backorder_status` | **Set backorder status** | boolean | 9.0.0 only; on 8.0.1, `true` or `false` answers `backorder_status: not available in PrestaShop 8` (`null`, as read, is ignored) |
+| `gift_wrapping` | **Offer gift wrapping** | boolean | |
+| `gift_wrapping_price_tax_excl` | **Gift-wrapping price** | number | 0 or more, `Validate::isPrice()` |
+| `gift_wrapping_id_tax_rules_group` | **Gift-wrapping tax** | integer | `0` (**None**) or an `id_tax_rules_group` of the shop, through `SomcpToolGetTaxRule::existingRule()`; otherwise `notFound('gift_wrapping_id_tax_rules_group', 'tax rule', <id>, 'somcp_list_tax_rules')` |
+| `recycled_packaging` | **Offer recycled packaging** | boolean | |
+
+Booleans are booleans only (`"false"` is refused: `<field>: true or false`).
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope of #169 under `Nothing was changed.`, before anything
+is written.
+
+**Then** - `SomcpToolGetOrderSettings::settings($idShop)` is read first; the
+keys whose value differs are saved in the order of the two cards with
+`Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for
+the shop of the token: booleans as `0` or `1`, amounts as floats, the page and
+the tax as integers. A failed save stops the call and names what was saved
+before it, as `somcp_update_tax_options` does. Nothing differs:
+`changed: false`, `reason` `The order settings already hold every value
+given. Nothing was written.`, `settings` as read. Logged as
+`order_settings_updated` with the names of the fields saved.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names of the
+parameters), and `settings` read back through `settings()`. Warnings, beside
+the answer:
+- `gift_wrapping` changed on 9.0.0: the help of the screen, `Remember to regenerate email templates in Design > Email theme after enabling or disabling this feature.`;
+- `terms_of_service` on with `terms_id_cms` 0 after the call: the warning of `somcp_get_order_settings`;
+- `guest_checkout` set to `false`: `Visitors must now create an account before they order.`;
+- more than one shop: `The settings changed for this shop only, as the back office saves them in a shop context.`, the sentence of `somcp_update_tax_options`.
+
+**Differences between 8.0.1 and 9.0.0** - `backorder_status` on 9.0.0 only.
 
 #### `somcp_list_tax_rules`
 **State**: written

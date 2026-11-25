@@ -68,6 +68,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_email_settings`
 - `somcp_update_email_settings`
 - `somcp_get_order_settings`
+- `somcp_update_order_settings`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -275,6 +276,9 @@ would then get no order confirmation.
 checkout, the minimum purchase total, the terms of service and their page,
 gift wrapping and recycled packaging. Read it before telling a merchant why a
 customer could not place an order.
+`somcp_update_order_settings` changes those settings; give back the read with
+the change. Before turning guest checkout off, tell the merchant that visitors
+will have to create an account to order.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

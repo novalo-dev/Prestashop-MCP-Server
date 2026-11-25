@@ -1477,6 +1477,11 @@
       <source>Read the order settings</source>
       <target>Leer los parámetros de pedidos</target>
     </trans-unit>
+    <!-- Change the order settings -->
+    <trans-unit id="3a474448782c3d5b952512199ad9c9b1" resname="Change the order settings">
+      <source>Change the order settings</source>
+      <target>Cambiar los parámetros de pedidos</target>
+    </trans-unit>
     <!-- Import a localization pack -->
     <trans-unit id="1240d2eed41a0fd4e898e6aab64c6732" resname="Import a localization pack">
       <source>Import a localization pack</source>

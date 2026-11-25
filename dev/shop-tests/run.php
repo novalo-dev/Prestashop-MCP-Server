@@ -2737,6 +2737,69 @@ if ($getEmail !== null && $updateEmail !== null) {
     }
 }
 
+// The order settings (#400, #401): the read given back whole writes nothing,
+// then Offer recycled packaging is turned to the other value, read back, and
+// put back whatever happens. A JSON scenario cannot give back what the read
+// answered, and the checkout of the order tools after this one reads it.
+$getOrderSettings = $registry->get('somcp_get_order_settings');
+$updateOrderSettings = $registry->get('somcp_update_order_settings');
+if ($getOrderSettings !== null && $updateOrderSettings !== null) {
+    $idShopOrderSettings = (int) $context->shop->id;
+    $idShopGroupOrderSettings = (int) Shop::getGroupFromShop($idShopOrderSettings);
+    $recycledWas = Configuration::get('PS_RECYCLABLE_PACK', null, $idShopGroupOrderSettings, $idShopOrderSettings);
+    $orderSettingsContext = static function (SomcpTool $tool, array $arguments) use ($idShopOrderSettings, $employee, $context): array {
+        return [
+            'id_shop' => $idShopOrderSettings,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getOrderSettings->call([], $orderSettingsContext($getOrderSettings, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('recycled_packaging', $settings)) {
+            $failures[] = 'somcp_update_order_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $toggled = !$settings['recycled_packaging'];
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Offer recycled packaging turned to the other value', ['recycled_packaging' => $toggled], ['"changed": true', '"field": "recycled_packaging"', '"recycled_packaging": ' . ($toggled ? 'true' : 'false')]],
+                ['Offer recycled packaging put back', ['recycled_packaging' => !$toggled], ['"changed": true', '"field": "recycled_packaging"', '"recycled_packaging": ' . ($toggled ? 'false' : 'true')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateOrderSettings->call($arguments, $orderSettingsContext($updateOrderSettings, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_order_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_order_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_order_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the recycled
+        // packaging as the shop had it; a key it never had stays unwritten.
+        if ($recycledWas !== false) {
+            Configuration::updateValue('PS_RECYCLABLE_PACK', $recycledWas, false, $idShopGroupOrderSettings, $idShopOrderSettings);
+        }
+    }
+}
+
 // The localization pack (#389): the units of the pack of the default country
 // are imported, then the units read before are put back. A JSON scenario
 // cannot put them back whatever happens, and an import of states or taxes

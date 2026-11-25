@@ -65,6 +65,16 @@ gift wrapping and recycled packaging. The assistant can now tell why a
 customer could not place an order, and it warns when the terms of service are
 required but no page is chosen.
 
+**Change the order settings.** The new tool somcp_update_order_settings
+changes Shop Parameters > Order Settings as its two Save buttons do: guest
+checkout, the minimum purchase total, the terms of service and their page,
+reordering, the final summary, delayed shipping, the backorder status on
+PrestaShop 9, gift wrapping with its price and tax, and recycled packaging.
+Only the settings given change, and the answer of somcp_get_order_settings can
+be given back as it is without writing anything. When a page of the terms no
+longer exists, somcp_get_order_settings now names this tool rather than the
+screen.
+
 ### Changed
 
 **A localization pack brings its currencies from any assistant.** Importing a

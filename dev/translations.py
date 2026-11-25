@@ -1174,6 +1174,10 @@ T = {
  "Lire les paramètres des commandes",
  "Leer los parámetros de pedidos",
  "Die Bestellungseinstellungen lesen"),
+"Change the order settings": (
+ "Modifier les paramètres des commandes",
+ "Cambiar los parámetros de pedidos",
+ "Die Bestellungseinstellungen ändern"),
 "Import a localization pack": (
  "Importer un pack de localisation",
  "Importar un paquete de localización",

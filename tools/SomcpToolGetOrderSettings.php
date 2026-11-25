@@ -50,8 +50,8 @@ class SomcpToolGetOrderSettings
             'Reads Shop Parameters > Order Settings, the General and Gift options cards: final summary, guest '
                 . 'checkout, reordering, minimum purchase total, shipping recalculation, delayed shipping, terms of '
                 . 'service and their page, backorder status (PrestaShop 9), gift wrapping with its price and tax, '
-                . 'and recycled packaging. Read only. For the order statuses use somcp_list_order_statuses; for '
-                . 'shipping costs, somcp_get_shipping_preferences.',
+                . 'and recycled packaging. Read only; change them with somcp_update_order_settings. For the order '
+                . 'statuses use somcp_list_order_statuses; for shipping costs, somcp_get_shipping_preferences.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),
@@ -79,9 +79,8 @@ class SomcpToolGetOrderSettings
         $result = self::settings(Somcp::currentShopId());
         $warnings = [];
         if ($result['terms_id_cms'] > 0 && $result['terms_page_title'] === null) {
-            // The update tool is not shipped yet: the screen is named instead.
-            $warnings[] = 'The page for terms and conditions no longer exists: choose another in Shop Parameters > '
-                . 'Order Settings.';
+            $warnings[] = 'The page for terms and conditions no longer exists: choose another with '
+                . 'somcp_update_order_settings.';
         }
         if ($result['terms_of_service'] && $result['terms_id_cms'] === 0) {
             $warnings[] = 'Terms of service are required but no page is chosen: customers are asked to accept a '

@@ -69,6 +69,7 @@
     "somcp_get_email_settings",
     "somcp_update_email_settings",
     "somcp_get_order_settings",
+    "somcp_update_order_settings",
     "somcp_list_zones",
     "somcp_create_zone",
     "somcp_update_zone",

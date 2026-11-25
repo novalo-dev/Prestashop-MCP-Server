@@ -3091,7 +3091,7 @@ replayable.
 
 **Do not use for** - the price ranges and costs of one carrier (→
 `somcp_get_carrier`); the free shipping of a cart rule (→
-`somcp_get_cart_rule`); changing them (no tool yet, #392).
+`somcp_get_cart_rule`); changing them (→ `somcp_update_shipping_preferences`).
 
 **Parameters**
 
@@ -3130,6 +3130,73 @@ first carrier available; choose another in Shipping > Preferences.`
 
 **Differences between 8.0.1 and 9.0.0** - none: the same forms, keys and
 adapters (`HandlingConfiguration`, `CarrierOptionsConfiguration`).
+
+#### `somcp_update_shipping_preferences`
+**State**: written · [issue #392](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/392)
+**Nature**: `acts(EDIT, 'AdminShipping')` · **Scope**: `mcp.orders.write`, as `somcp_update_carrier`
+
+**Does** - changes **Shipping > Preferences**, as the **Save** buttons of its
+cards **Handling** and **Carrier options** do: **Handling charges**, the two
+**Free shipping starts at**, **Default carrier**, **Sort by**, **Order by**.
+Replayable: the same call twice changes nothing the second time.
+
+**Do not use for** - the ranges and costs of one carrier, or whether it adds
+handling costs (→ `somcp_update_carrier`); a free shipping voucher (→
+`somcp_create_cart_rule`).
+
+**Parameters** - all optional; a key left out keeps its value. The keys are
+those of `somcp_get_shipping_preferences`, whose answer can be given back
+whole: `currency`, `weight_unit`, `default_carrier_name`,
+`default_carrier_delay`, `language` and `warning` are worked out by the shop,
+ignored when given back as read (`language` when it is an active language of
+the shop, the transit time then compared in it) and refused otherwise
+(`- <key>: worked out by the shop, so it is not written here`).
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `handling_cost_tax_excl` | **Handling charges** | number | 0 or more, `Validate::isPrice()`: `handling_cost_tax_excl: an amount of 0 or more, tax excluded, in <currency>` |
+| `free_shipping_from_price` | **Free shipping starts at** (price) | number | the same rule and line; 0 turns it off |
+| `free_shipping_from_weight` | **Free shipping starts at** (weight) | number | 0 or more, `Validate::isUnsignedFloat()`: `free_shipping_from_weight: a weight of 0 or more, in <weight unit>`; 0 turns it off |
+| `default_carrier` | **Default carrier** | string | `best_price`, `best_grade` or `carrier`, otherwise `default_carrier: best_price, best_grade or carrier`; `carrier` without `default_id_carrier`: `default_id_carrier: required with default_carrier carrier`, except when a carrier is already the default (the read of a default carrier deleted since, given back) |
+| `default_id_carrier` | **Default carrier** | integer | from `somcp_list_carriers`, through `SomcpTool::id()`; implies `default_carrier` `carrier` when given alone; with `best_price` or `best_grade`: `default_id_carrier: only with default_carrier carrier`. The list of the screen offers every carrier of the shop not deleted, enabled or not (`CarrierByReferenceChoiceProvider` asks `Carrier::getCarriers()` for all of them), read through `SomcpToolListCarriers::query()` since the provider lives in the back office's container; unknown: `SomcpTool::notFound('default_id_carrier', 'carrier', <id>, 'somcp_list_carriers')`; a deleted carrier or an older version: `default_id_carrier: the carrier <id> is not offered by the Default carrier list, which leaves out deleted carriers and older versions - find the current one with somcp_list_carriers` |
+| `carrier_sort` | **Sort by** | string | `price` or `position`, otherwise `carrier_sort: price or position` |
+| `carrier_order` | **Order by** | string | `ascending` or `descending`, otherwise `carrier_order: ascending or descending` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:` (`SomcpTool::refused('changed', $problems)`), every problem at once,
+before anything is written. A failed save stops the call and names what was
+saved before it, with the hint to read `somcp_get_shipping_preferences`
+before calling again, logged as `shipping_preferences_update_failed`.
+
+**Then** - `SomcpToolGetShippingPreferences::preferences($idShop, $idLang)` is
+read first; the keys whose value differs (amounts compared as numbers, so `2`
+and `2.0` are equal) are saved in the order of the two cards with
+`Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for
+the shop of the token, as `HandlingConfiguration` and
+`CarrierOptionsConfiguration` save them: the amounts as floats,
+`PS_CARRIER_DEFAULT` as `-1`, `-2` or the carrier's **`id_reference`** (never
+its `id_carrier`: the default follows a new version of the carrier),
+`PS_CARRIER_DEFAULT_SORT` and `PS_CARRIER_DEFAULT_ORDER` as `0` or `1`.
+Nothing differs: `changed: false`, `reason` `The shipping preferences already
+hold every value given. Nothing was written.`, `preferences` as read. Logged
+as `shipping_preferences_updated` with the fields saved.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names and codes of
+the parameters; a new default carrier gives `default_carrier` and
+`default_id_carrier` as each changes), and `preferences` read back through
+`preferences()`. Warnings, beside the answer:
+- `handling_cost_tax_excl` changed: `Handling charges are added only by the carriers whose Handling costs is on (handling_costs of somcp_get_carrier).`;
+- `free_shipping_from_price` or `free_shipping_from_weight` set above 0: `Every carrier is now free from <amount> <currency or weight unit>, whatever its own ranges.`;
+- more than one shop: `The settings changed for this shop only, as the back office saves them in a shop context.`, the sentence of `somcp_update_tax_options`.
+
+**Notes** - the demo shops hold handling 2, both thresholds 0, default
+carrier reference 1 (**Click and collect**), sorted by price, ascending.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same forms, keys and
+adapters.
 
 #### `somcp_list_tax_rules`
 **State**: written

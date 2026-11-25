@@ -2535,6 +2535,69 @@ if ($getLocalization !== null && $updateLocalization !== null) {
     }
 }
 
+// The shipping preferences (#392): the read given back whole writes
+// nothing, then Order by is turned to the other value and put back. A JSON
+// scenario cannot give back what the read answered, nor put the setting back
+// whatever happens, and the carrier tools after this one list in that order.
+$getShipping = $registry->get('somcp_get_shipping_preferences');
+$updateShipping = $registry->get('somcp_update_shipping_preferences');
+if ($getShipping !== null && $updateShipping !== null) {
+    $idShopShipping = (int) $context->shop->id;
+    $idGroupShipping = (int) Shop::getGroupFromShop($idShopShipping);
+    $orderWas = Configuration::get('PS_CARRIER_DEFAULT_ORDER', null, $idGroupShipping, $idShopShipping);
+    $shippingContext = static function (SomcpTool $tool, array $arguments) use ($idShopShipping, $employee, $context): array {
+        return [
+            'id_shop' => $idShopShipping,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getShipping->call([], $shippingContext($getShipping, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !isset($decoded['carrier_order'])) {
+            $failures[] = 'somcp_update_shipping_preferences (the preferences read first): expected them read - ' . excerpt($read);
+        } else {
+            $other = $decoded['carrier_order'] === 'ascending' ? 'descending' : 'ascending';
+            $steps = [
+                ['the read given back whole, nothing written', $decoded, ['"changed": false', 'Nothing was written.']],
+                ['Order by turned to the other value', ['carrier_order' => $other], ['"changed": true', '"field": "carrier_order"', '"new": "' . $other . '"']],
+                ['Order by put back', ['carrier_order' => $decoded['carrier_order']], ['"changed": true', '"field": "carrier_order"']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateShipping->call($arguments, $shippingContext($updateShipping, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_shipping_preferences (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_shipping_preferences (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_shipping_preferences: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the order of a
+        // fresh shop; a key it never had stays unwritten.
+        if ($orderWas !== false) {
+            Configuration::updateValue('PS_CARRIER_DEFAULT_ORDER', $orderWas, false, $idGroupShipping, $idShopShipping);
+        }
+    }
+}
+
 // The localization pack (#389): the units of the pack of the default country
 // are imported, then the units read before are put back. A JSON scenario
 // cannot put them back whatever happens, and an import of states or taxes

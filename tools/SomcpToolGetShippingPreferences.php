@@ -58,7 +58,7 @@ class SomcpToolGetShippingPreferences
                 . 'means off), the Default carrier (best price, best grade or one carrier, with its id_carrier from '
                 . 'somcp_list_carriers), and how carriers are sorted on the storefront. Read only. For the ranges '
                 . 'and costs of one carrier use somcp_get_carrier; for the free shipping of a cart rule, '
-                . 'somcp_get_cart_rule.',
+                . 'somcp_get_cart_rule; to change them, somcp_update_shipping_preferences.',
             [
                 'type' => 'object',
                 'properties' => [

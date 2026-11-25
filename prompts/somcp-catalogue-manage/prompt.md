@@ -62,6 +62,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
+- `somcp_update_shipping_preferences`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -243,6 +244,10 @@ serves before tying it, read it with `somcp_get_carrier`.
 `somcp_get_shipping_preferences` gives the handling charges, the price and
 weight from which shipping is free and the default carrier: read it before
 telling a customer what an order pays for shipping.
+`somcp_update_shipping_preferences` changes them: only the fields given, and
+the default carrier by the `id_carrier` of `somcp_list_carriers`. Free
+shipping from a price or a weight applies to every carrier, whatever its
+ranges: say so to the merchant before setting it.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

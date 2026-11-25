@@ -333,6 +333,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
 | `somcp_delete_carrier` | ✎ Delete a carrier | Carriers › delete |
 | `somcp_get_shipping_preferences` | ● Read the shipping preferences | Shipping preferences › view |
+| `somcp_update_shipping_preferences` | ✎ Change the shipping preferences | Shipping preferences › edit |
 | `somcp_list_zones` | ● List zones | Zones › view |
 | `somcp_create_zone` | ✎ Create a zone | Zones › add |
 | `somcp_update_zone` | ✎ Change a zone | Zones › edit |

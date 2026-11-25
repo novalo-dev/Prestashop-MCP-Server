@@ -16,6 +16,16 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Change the shipping preferences.** The new tool
+somcp_update_shipping_preferences does what the Save buttons of Shipping >
+Preferences do: the handling charges, the price and the weight from which
+shipping is free, the default carrier, and how carriers are sorted on the
+storefront. Only the settings given change, and the answer of
+somcp_get_shipping_preferences can be given back as it is without writing
+anything.
+
 ### Changed
 
 **The explanations of the settings are tips.** On the pages of the module,

@@ -1447,6 +1447,11 @@
       <source>Read the shipping preferences</source>
       <target>Leer las preferencias de envío</target>
     </trans-unit>
+    <!-- Change the shipping preferences -->
+    <trans-unit id="ccf3048425a7b004f4ed4ae8decb19e2" resname="Change the shipping preferences">
+      <source>Change the shipping preferences</source>
+      <target>Cambiar las preferencias de envío</target>
+    </trans-unit>
     <!-- Import a localization pack -->
     <trans-unit id="1240d2eed41a0fd4e898e6aab64c6732" resname="Import a localization pack">
       <source>Import a localization pack</source>

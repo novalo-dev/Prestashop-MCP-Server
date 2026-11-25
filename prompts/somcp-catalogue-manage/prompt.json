@@ -63,6 +63,7 @@
     "somcp_list_carriers",
     "somcp_get_carrier",
     "somcp_get_shipping_preferences",
+    "somcp_update_shipping_preferences",
     "somcp_list_zones",
     "somcp_create_zone",
     "somcp_update_zone",

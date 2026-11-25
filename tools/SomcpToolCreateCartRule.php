@@ -92,16 +92,16 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
     }
 
     /**
+     * @var array<int, string> the restrictions somcp_get_cart_rule reads that only the back office sets
+     */
+    private const BACK_OFFICE_RESTRICTIONS = ['cart_rule', 'product', 'shop'];
+
+    /**
      * @var array<string, array{0: string, 1: string, 2: string}> the restrictions of the Conditions tab this tool
      *                                                            writes: table, column, and the key of an item as
      *                                                            somcp_get_cart_rule answers it. Fixed here so no
      *                                                            table name is ever built from an argument.
      */
-    /**
-     * @var array<int, string> the restrictions somcp_get_cart_rule reads that only the back office sets
-     */
-    private const BACK_OFFICE_RESTRICTIONS = ['cart_rule', 'product', 'shop'];
-
     protected const RESTRICTION_TABLES = [
         'country' => ['cart_rule_country', 'id_country', 'id_country'],
         'carrier' => ['cart_rule_carrier', 'id_carrier', 'id_reference'],
@@ -978,9 +978,14 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      * The same rows AdminCartRulesController::afterAdd() inserts, through Db
      * since these tables have no object, but only for the restrictions given:
      * the back office's afterUpdate() would also wipe the product selection
-     * and the compatibility, which this tool does not write. The caller saves
-     * the rule afterwards, so the switches and the rows go in together, and
-     * runs both inside one transaction.
+     * and the compatibility, which this tool does not write.
+     *
+     * somcp_create_cart_rule sets the switches before add() and calls this
+     * right after it, with no transaction: a write that fails removes the
+     * rule, and CartRule::delete() takes its rows with it.
+     * somcp_update_cart_rule calls this before update(), so the switches set
+     * here and the rows go in together, inside one transaction, since the
+     * rule it changes must keep its old rows if the save fails.
      *
      * @param CartRule $rule saved already, so it has its identifier
      * @param array<string, array<int, int>|null> $rows from planRestrictions()

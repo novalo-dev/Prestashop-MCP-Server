@@ -2599,9 +2599,10 @@ if ($getShipping !== null && $updateShipping !== null) {
 }
 
 // The payment restrictions (#396, #397): the read of ps_checkpayment given
-// back whole writes nothing, then its groups are set to 1 and 2 and its
-// countries to those read plus France, read back, and put back to what was
-// read. A JSON scenario cannot give back what the read
+// back whole writes nothing, then its groups are set to 1 and 2 and France is
+// added to its countries, or taken out where the installer already gave it
+// France (a fresh shop gives a payment module its active countries), read
+// back, and put back to what was read. A JSON scenario cannot give back what the read
 // answered, nor put the rows back whatever happens, and the checkout of the
 // order tools after this one offers the module by these rows.
 $getPayment = $registry->get('somcp_get_payment_preferences');
@@ -2642,7 +2643,9 @@ if ($getPayment !== null && $updatePayment !== null) {
             $steps = [
                 ['the read given back whole, nothing written', $module, ['"changed": false', 'Nothing was written.']],
                 ['the groups set to 1 and 2', ['name' => 'ps_checkpayment', 'groups' => [1, 2]], ['"changed": true', '"field": "groups"', '"id_group": 2']],
-                ['France added to the countries', ['name' => 'ps_checkpayment', 'countries' => array_merge($module['countries'], [$idFrance])], ['"changed": true', '"field": "countries"', '"iso_code": "FR"']],
+                in_array($idFrance, $paymentRowsWere['country'], true)
+                    ? ['France taken out of the countries', ['name' => 'ps_checkpayment', 'countries' => array_values(array_diff($paymentRowsWere['country'], [$idFrance]))], ['"changed": true', '"field": "countries"']]
+                    : ['France added to the countries', ['name' => 'ps_checkpayment', 'countries' => array_merge($paymentRowsWere['country'], [$idFrance])], ['"changed": true', '"field": "countries"', '"iso_code": "FR"']],
             ];
             foreach ($steps as [$why, $arguments, $needles]) {
                 $result = $updatePayment->call($arguments, $paymentContext($updatePayment, $arguments));

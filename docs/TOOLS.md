@@ -3463,7 +3463,8 @@ beside the answer:
 - more than one shop: `The settings changed for this shop only, as the back office saves them in a shop context.`, the sentence of `somcp_update_tax_options`.
 
 **Notes** - the tests never change `mail_method`: the CI shops would stop
-sending the e-mails other tests read.
+sending the e-mails other tests read. Next step: `somcp_send_test_email` proves the shop
+can send with what was saved.
 
 **Differences between 8.0.1 and 9.0.0** - `subject_prefix` on 9.0.0 only;
 `ssl` on 8.0.1 only.
@@ -3606,6 +3607,66 @@ again:` (`SomcpTool::refused('deleted', $problems)`): an unknown argument.
 
 **Differences between 8.0.1 and 9.0.0** - none: `Mail::eraseAllLogs()` is the
 same `TRUNCATE` on both.
+
+#### `somcp_send_test_email`
+**State**: written · [issue #426](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/426)
+**Nature**: `acts(EDIT, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_update_email_settings`
+
+**Does** - sends the test e-mail of **Advanced Parameters > E-mail**, card
+**Test your email configuration**, with the settings the shop has saved: after
+`somcp_update_email_settings`, it proves the shop can send before the first
+order e-mail is due, and gives the server's own message when it cannot. The
+page lets any right on it send the test; the tool asks **edit**, as
+`somcp_update_email_settings`, since it sends an e-mail in the shop's name.
+
+**Do not use for** - changing the settings (→ `somcp_update_email_settings`);
+the list of what was sent (→ `somcp_list_email_logs`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `send_email_to` | string | **Send a test email to**; the shop's address (`PS_SHOP_EMAIL`) when left out, as the page fills it; checked with `Validate::isEmail()`: `send_email_to: an e-mail address` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the settings are read through `SomcpToolGetEmailSettings::settings()`,
+plus the two secrets it never answers (`PS_MAIL_PASSWD`, `PS_MAIL_DKIM_KEY`),
+read with `Configuration::get()` for the shop of the token and passed to the
+core only. **Never send emails** chosen: refused, nothing sent. Otherwise the
+core's `EmailConfigurationTester::testConfiguration()`, built without the
+Symfony container (`PrestaShop\PrestaShop\Adapter\Configuration` and the
+context's translator), calls `Mail::sendMailTest()` with the text, subject,
+escaping and failure sentence of the running version. The page sends the
+values of its form, saved or not; this tool sends the saved ones, which are
+what every e-mail of the shop uses. The test is never written to the list of
+sent e-mails. Logged as `email_test_sent` or `email_test_failed` with the
+sending method only, never the address or the transport's message.
+
+**Returns** - sent: `sent: true`, `send_email_to`, `mail_method` (as the read
+names it), and the `warning` `Check the inbox of <send_email_to>, spam folder
+included: the shop handed the e-mail over, which does not prove it arrived.`
+Not sent: a tool error with the core's sentence of the running version -
+**Error: Please check your configuration** on 8.0.1, **An error has occurred.
+Please check your configuration** on 9.0.0 - then the transport's message when
+there is one, cut to 500 characters, then `Read the settings with
+somcp_get_email_settings.`
+
+**Errors** - in the envelope `Nothing was sent. Correct these and call again:`
+(`SomcpTool::refused('sent', $problems)`): an unknown argument, an address
+that is not one, **Never send emails** chosen (`mail_method: Never send emails
+is chosen, so the shop sends no e-mail - change it with
+somcp_update_email_settings first`).
+
+**Notes**
+- Sends an e-mail: the assistant asks first. Replayable: each call sends one more e-mail.
+- Neither secret ever appears in the answer, the log or an error: a transport message that quotes one is answered with `<hidden>` in its place.
+- The JSON scenario checks the refusals only; the shop test sends one test to the shop's own address and accepts either answer, `"sent": true` or the failure sentence of the version, with neither secret in the text.
+
+**Differences between 8.0.1 and 9.0.0** - the failure sentence and the
+escaping of the text (above), both taken from the core of the running
+version; the mail library underneath (SwiftMailer on 8.0.1, Symfony Mailer on
+9.0.0) is the core's business.
 
 #### `somcp_get_order_settings`
 **State**: written · [issue #400](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/400)

@@ -1186,6 +1186,10 @@ T = {
  "Effacer la liste des e-mails envoyés",
  "Borrar la lista de correos electrónicos enviados",
  "Die Liste der gesendeten E-Mails leeren"),
+"Send a test e-mail": (
+ "Envoyer un e-mail de test",
+ "Enviar un correo electrónico de prueba",
+ "Eine Test-E-Mail senden"),
 "Read the order settings": (
  "Lire les paramètres des commandes",
  "Leer los parámetros de pedidos",

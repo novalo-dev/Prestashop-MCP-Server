@@ -75,6 +75,13 @@ what the Erase all button of that list does. The answer gives the number of
 lines erased, and says when they belonged to every shop of a multistore
 installation or when Log Emails is off.
 
+**Send a test e-mail.** The new tool somcp_send_test_email does what the Send
+a test email button of Advanced Parameters > E-mail does, with the settings the
+shop has saved, to the shop's own address or to another one. The assistant can
+now prove the shop sends its e-mails right after changing those settings, and
+gives the server's own message when it cannot. It refuses when Never send
+emails is chosen, and the SMTP password and DKIM key never appear in its answer.
+
 **Read the order settings.** The new tool somcp_get_order_settings reads Shop
 Parameters > Order Settings: guest checkout, the minimum purchase total, the
 terms of service and the page that holds them, reordering, delayed shipping,

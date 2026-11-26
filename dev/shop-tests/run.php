@@ -3650,6 +3650,52 @@ if ($deleteCategory !== null) {
     }
 }
 
+// A test e-mail to the shop's own address (#426). Whether the CI shop can
+// deliver is not known in advance, so either answer passes: sent, or the
+// failure sentence of the running version. Neither secret may be in the text.
+$sendTestEmail = $registry->get('somcp_send_test_email');
+if ($sendTestEmail !== null) {
+    ++$calls;
+    try {
+        $result = $sendTestEmail->call([], [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $sendTestEmail->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => [],
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $failed = version_compare(_PS_VERSION_, '9.0.0', '>=')
+            ? 'An error has occurred. Please check your configuration'
+            : 'Error: Please check your configuration';
+        $answered = empty($result['isError'])
+            ? strpos($text, '"sent": true') !== false
+            : strpos($text, $failed) !== false;
+        $leaked = false;
+        foreach (['PS_MAIL_PASSWD', 'PS_MAIL_DKIM_KEY'] as $secretKey) {
+            $secret = (string) Configuration::get($secretKey);
+            if ($secret !== '' && strpos($text, $secret) !== false) {
+                $leaked = true;
+            }
+        }
+        if (!$answered || $leaked) {
+            $failures[] = 'somcp_send_test_email (to the shop): expected sent or the failure sentence, with no secret - '
+                . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_send_test_email (to the shop)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_send_test_email (to the shop): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // The list of sent e-mails erased (#425), last of all the calls: the
 // scenarios read that list, and the JSON one cannot run after them. Erasing it
 // must answer erased, a second time must find nothing left, and the list must

@@ -71,6 +71,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_email_logs`
 - `somcp_delete_email_log`
 - `somcp_erase_email_logs`
+- `somcp_send_test_email`
 - `somcp_get_order_settings`
 - `somcp_update_order_settings`
 - `somcp_get_product_settings`
@@ -294,6 +295,11 @@ undone, and the e-mail itself stays sent.
 `somcp_erase_email_logs` empties the whole list, as its Erase all button: on a
 multistore installation the lines of every shop go. Ask the merchant first, it
 cannot be undone; for one customer use `somcp_delete_email_log` instead.
+`somcp_send_test_email` sends the test e-mail of Advanced Parameters > E-mail
+with the saved settings, to the shop's own address unless another is given:
+call it after changing those settings, ask the merchant first, and give the
+server's message as it comes when it fails. A success only means the shop
+handed the e-mail over: tell the merchant to check the inbox, spam included.
 `somcp_get_order_settings` gives the checkout rules of Order Settings: guest
 checkout, the minimum purchase total, the terms of service and their page,
 gift wrapping and recycled packaging. Read it before telling a merchant why a

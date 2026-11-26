@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "not an address, and nothing sent", "arguments": {"send_email_to": "not-an-address"}, "expect": "error", "contains": ["Nothing was sent.", "- send_email_to: an e-mail address"]},
+    {"why": "an unknown field, and nothing sent", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was sent.", "- x: not a field of this tool"]}
+  ]
+}

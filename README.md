@@ -341,6 +341,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_email_logs` | ● List the sent e-mails | E-mail settings › view |
 | `somcp_delete_email_log` | ✎ Delete a sent e-mail from the list | E-mail settings › delete |
 | `somcp_erase_email_logs` | ✎ Erase the list of sent e-mails | E-mail settings › delete |
+| `somcp_send_test_email` | ✎ Send a test e-mail | E-mail settings › edit |
 | `somcp_get_order_settings` | ● Read the order settings | Order settings › view |
 | `somcp_update_order_settings` | ✎ Change the order settings | Order settings › edit |
 | `somcp_get_product_settings` | ● Read the product settings | Product settings › view |

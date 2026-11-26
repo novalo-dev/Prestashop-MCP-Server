@@ -3951,6 +3951,56 @@ somcp_get_customer_settings before calling again.`).
 **Differences between 8.0.1 and 9.0.0** - the partner offers note on 9.0.0
 only; the rest the same.
 
+#### `somcp_list_titles`
+**State**: written · [issue #430](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/430)
+**Nature**: `acts(VIEW, 'AdminGenders')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - lists the social titles of **Shop Parameters > Customer Settings**,
+tab **Titles**: their name in each language, the gender they stand for and
+their image. Read only, replayable. The `id_gender` is the one
+`somcp_create_customer` and `somcp_update_customer` take.
+
+**Do not use for** - a customer's own title (→ `somcp_get_customer`); the
+customer settings (→ `somcp_get_customer_settings`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `language` | string | the ISO code of an active language for `name`, as `somcp_list_contacts` takes it (`SomcpTool::readLanguage()`); the shop default when left out; a code the shop does not have is refused with `SomcpTool::languageProblem()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns**
+- `titles`: one object per title, by `id_gender`: `id_gender` (**ID**),
+  `name` (**Social title**, in `language`), `names` (every active language,
+  keyed by ISO code), `gender` (**Gender**: `male`, `female` or `other`, from
+  `type` 0, 1, 2; the screen calls the third **Neutral** on 8.0.1 and
+  **Other** on 9.0.0, the tool says `other` on both), `image` (**Image**:
+  `SomcpDownload::offer('gender_image', <id_gender>, $idShop)`, `null`
+  without a file);
+- `count`; `language`.
+
+The names are read through `SomcpToolCreateCustomer::titles()`, the one query
+behind `SomcpToolCreateCustomer::genders()`, so the customer tools and the
+list never name a title differently.
+
+**The image** - the kind `gender_image` of `SomcpDownload::KINDS`, reader
+`somcp_list_titles`, kept at `_PS_GENDERS_DIR_ . <id_gender> . '.jpg'` with no
+shop table, as `order_state_icon`: titles are shared by every shop.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`
+(`SomcpTool::refused('read', $problems)`): an unknown argument, a language the
+shop does not have.
+
+**Notes**
+- The object `Gender`: `type` (0 male, 1 female, 2 the third choice), per language `name` (20 characters at most); no shop table.
+- The demo shops: 1 **Mr.**, type 0; 2 **Mrs.**, type 1; no image file.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony
+on 9.0.0) and the word of the third gender (**Neutral** / **Other**); the
+table and the object are the same.
+
 #### `somcp_list_contacts`
 **State**: written · [issue #413](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/413)
 **Nature**: `acts(VIEW, 'AdminContacts')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
@@ -7504,7 +7554,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 | `lastname` | **Last name** | string | yes | same rule |
 | `email` | **Email** | string | yes | refused when a registered account of this shop already uses it, with that account's `id_customer` |
 | `is_guest` | **Guest account** (9.0.0 only on screen) | boolean | no | `false` by default; a guest has no password and may share its email with other guests |
-| `id_gender` | **Social title** | integer | no | `id_gender` of the shop, a whole number or a string of digits as `somcp_search_customers` takes it; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `id_gender` | **Social title** | integer | no | `id_gender` of the shop, from `somcp_list_titles`, a whole number or a string of digits as `somcp_search_customers` takes it; an unknown one is refused with the list of the shop's social titles and their identifiers |
 | `birthday` | **Birthday** | string | no | `YYYY-MM-DD`, in the past |
 | `active` | **Enabled** | boolean | no | `true` by default |
 | `partner_offers` | **Partner offers** | boolean | no | `false` by default (`optin`) |
@@ -7553,7 +7603,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 | `firstname` | **First name** | string | no | letters, the dot and spaces only (`Validate::isCustomerName`) |
 | `lastname` | **Last name** | string | no | same rule |
 | `email` | **Email** | string | no | refused when another registered account of this shop uses it, with that account's `id_customer` |
-| `id_gender` | **Social title** | integer | no | `0` clears it; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `id_gender` | **Social title** | integer | no | from `somcp_list_titles`; `0` clears it; an unknown one is refused with the list of the shop's social titles and their identifiers |
 | `birthday` | **Birthday** | string or null | no | `YYYY-MM-DD`, in the past; `null` clears it |
 | `active` | **Enabled** | boolean | no | |
 | `partner_offers` | **Partner offers** | boolean | no | `optin` |

@@ -1174,6 +1174,10 @@ T = {
  "Lister les e-mails envoyés",
  "Listar los correos electrónicos enviados",
  "Die gesendeten E-Mails auflisten"),
+"List the social titles": (
+ "Lister les titres de civilité",
+ "Listar los tratamientos",
+ "Die Anreden auflisten"),
 "Read the order settings": (
  "Lire les paramètres des commandes",
  "Leer los parámetros de pedidos",

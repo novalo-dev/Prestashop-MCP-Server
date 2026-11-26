@@ -75,6 +75,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_product_settings`
 - `somcp_get_customer_settings`
 - `somcp_update_customer_settings`
+- `somcp_list_titles`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -307,6 +308,8 @@ before explaining the fields of an account.
 `somcp_update_customer_settings` changes them; give back the read with the
 change. Before turning partner offers off, check that no customer field makes
 them required, or new customers could not sign up.
+`somcp_list_titles` lists the social titles (Mr., Mrs.) with their gender and
+name in each language: take the id_gender a customer tool needs from it.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts

@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "the social titles of the demo shop, Mr. first, with their names in every language and their image", "arguments": {}, "expect": "ok", "contains": ["\"id_gender\": 1", "\"gender\": \"male\"", "\"gender\": \"female\"", "\"names\":", "\"image\":", "\"count\": 2", "\"language\": \"en\""]},
+    {"why": "the names in a language given by its ISO code", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"name\": \"Mr.\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "xx"}, "expect": "error", "contains": ["Nothing was read.", "language: not one of the shop's languages"]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]}
+  ]
+}

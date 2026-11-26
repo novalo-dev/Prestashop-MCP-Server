@@ -120,6 +120,12 @@ their messages are kept in Customer Service, and which one receives the
 customers' messages. A contact read there is given as it is to Send emails to
 of somcp_update_email_settings.
 
+**List the social titles.** The new tool somcp_list_titles lists the titles of
+Shop Parameters > Customer Settings, tab Titles: their name in each language,
+the gender they stand for and their image. The assistant now finds the title
+to give a customer it creates or changes in this list, instead of learning it
+from a refusal.
+
 ### Changed
 
 **Limit a cart rule to countries, carriers and customer groups.**

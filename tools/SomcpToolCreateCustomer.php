@@ -122,8 +122,8 @@ class SomcpToolCreateCustomer
                     ],
                     'id_gender' => [
                         'type' => 'integer',
-                        'description' => 'Social title, by its identifier in this shop (an identifier the shop does '
-                            . 'not have is refused with the list of its social titles). None by default.',
+                        'description' => 'Social title, by its id_gender from somcp_list_titles (an identifier the shop '
+                            . 'does not have is refused with the list of its social titles). None by default.',
                     ],
                     'birthday' => [
                         'type' => 'string',
@@ -355,20 +355,45 @@ class SomcpToolCreateCustomer
     public static function genders(int $idLang): array
     {
         $genders = [];
-        foreach (Db::getInstance()->executeS('SELECT g.`id_gender`, gl.`name` FROM `' . _DB_PREFIX_ . 'gender` g'
-            . ' LEFT JOIN `' . _DB_PREFIX_ . 'gender_lang` gl ON gl.`id_gender` = g.`id_gender` AND gl.`id_lang` = ' . (int) $idLang
-            . ' ORDER BY g.`id_gender`') ?: [] as $row) {
-            $genders[(int) $row['id_gender']] = (string) $row['name'];
+        foreach (self::titles() as $idGender => $title) {
+            $genders[$idGender] = $title['names'][$idLang] ?? '';
         }
 
         return $genders;
     }
 
     /**
+     * Every social title with its gender and its name in each language.
+     *
+     * The one query behind genders() and somcp_list_titles, so the customer
+     * tools and the list never name a title differently. Titles have no shop
+     * table: they are shared by every shop.
+     *
+     * @return array<int, array{type: int, names: array<int, string>}> keyed by id_gender
+     */
+    public static function titles(): array
+    {
+        $titles = [];
+        foreach (Db::getInstance()->executeS('SELECT g.`id_gender`, g.`type`, gl.`id_lang`, gl.`name` FROM `' . _DB_PREFIX_ . 'gender` g'
+            . ' LEFT JOIN `' . _DB_PREFIX_ . 'gender_lang` gl ON gl.`id_gender` = g.`id_gender`'
+            . ' ORDER BY g.`id_gender`') ?: [] as $row) {
+            $idGender = (int) $row['id_gender'];
+            if (!isset($titles[$idGender])) {
+                $titles[$idGender] = ['type' => (int) $row['type'], 'names' => []];
+            }
+            if ($row['id_lang'] !== null) {
+                $titles[$idGender]['names'][(int) $row['id_lang']] = (string) $row['name'];
+            }
+        }
+
+        return $titles;
+    }
+
+    /**
      * The refusal of a social title the shop does not have.
      *
-     * No tool lists the social titles yet, so the list goes with the refusal,
-     * worded the same by every tool that takes one.
+     * The list goes with the refusal, worded the same by every tool that
+     * takes one, so the call can be corrected without somcp_list_titles.
      *
      * @param array<int, string> $genders as genders() returns them
      *

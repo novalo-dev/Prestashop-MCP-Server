@@ -132,6 +132,35 @@ class SomcpToolListCustomerGroups
         }
         [$idLang, $iso] = $language;
 
+        $groups = self::groups($idShop, $idShopGroup, (int) $idLang, [
+            'id_group' => $idGroupFilter,
+            'name' => $name,
+            'show_prices' => $showPrices,
+        ]);
+
+        return SomcpTool::json([
+            'groups' => $groups,
+            'count' => count($groups),
+            'customer_groups_enabled' => (bool) Configuration::get('PS_GROUP_FEATURE_ACTIVE', null, $idShopGroup, $idShop),
+            'language' => $iso,
+        ]);
+    }
+
+    /**
+     * The groups of a shop as the list answers them.
+     *
+     * Public so somcp_get_customer_group reads a group through this very
+     * query, and the list and the read never answer a group differently.
+     *
+     * @param int $idShop
+     * @param int $idShopGroup
+     * @param int $idLang the language of name
+     * @param array{id_group?: int, name?: string, show_prices?: bool|null} $filters
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function groups(int $idShop, int $idShopGroup, int $idLang, array $filters): array
+    {
         // The three Default groups options, read for the token's shop: one
         // group can hold several of them.
         $defaults = [];
@@ -146,18 +175,18 @@ class SomcpToolListCustomerGroups
         $query->select('g.`id_group`, gl.`name`, g.`reduction`, g.`price_display_method`, g.`show_prices`, g.`date_add`');
         $query->from('group', 'g');
         $query->innerJoin('group_shop', 'gs', 'gs.`id_group` = g.`id_group` AND gs.`id_shop` = ' . $idShop);
-        $query->leftJoin('group_lang', 'gl', 'gl.`id_group` = g.`id_group` AND gl.`id_lang` = ' . (int) $idLang);
+        $query->leftJoin('group_lang', 'gl', 'gl.`id_group` = g.`id_group` AND gl.`id_lang` = ' . $idLang);
         // The ID filter of the list: a group this shop does not have is an
         // empty list, as on screen, not a refusal - it narrows, it does not
         // look one group up.
-        if ($idGroupFilter > 0) {
-            $query->where('g.`id_group` = ' . $idGroupFilter);
+        if ((int) ($filters['id_group'] ?? 0) > 0) {
+            $query->where('g.`id_group` = ' . (int) $filters['id_group']);
         }
-        if ($name !== '') {
-            $query->where("gl.`name` LIKE '%" . pSQL($name) . "%'");
+        if ((string) ($filters['name'] ?? '') !== '') {
+            $query->where("gl.`name` LIKE '%" . pSQL((string) $filters['name']) . "%'");
         }
-        if ($showPrices !== null) {
-            $query->where('g.`show_prices` = ' . ($showPrices ? 1 : 0));
+        if (isset($filters['show_prices'])) {
+            $query->where('g.`show_prices` = ' . ($filters['show_prices'] ? 1 : 0));
         }
         $query->orderBy('g.`id_group` ASC');
 
@@ -185,12 +214,7 @@ class SomcpToolListCustomerGroups
             ];
         }
 
-        return SomcpTool::json([
-            'groups' => $groups,
-            'count' => count($groups),
-            'customer_groups_enabled' => (bool) Configuration::get('PS_GROUP_FEATURE_ACTIVE', null, $idShopGroup, $idShop),
-            'language' => $iso,
-        ]);
+        return $groups;
     }
 
     /**

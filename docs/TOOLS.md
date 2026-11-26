@@ -6302,11 +6302,70 @@ the shop does not have, with the ones it has.
   rather than the global context. `Group::getGroups()` takes the shop from the
   context.
 - **Category discount** (`group_reduction`) and **Authorized modules** are
-  settings of one group, shown only on its edit form: they belong to a future
+  settings of one group, shown only on its edit form: they belong to
   `somcp_get_customer_group`, not to the list.
 - Same legacy page, same columns, same options and same tables on PrestaShop
   8.0.1 and 9.0.0. The page is a tab of **Customer Settings**, not in the side
   menu, so the right asked is `view` on `AdminGroups` itself.
+
+#### `somcp_get_customer_group`
+**State**: written · [issue #442](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/442)
+**Nature**: `acts(VIEW, 'AdminGroups')` · **Scope**: `mcp.customers.read`, as `somcp_list_customer_groups`
+
+**Does** - reads one customer group of **Shop Parameters > Customer Settings >
+Groups** in full, as its **Edit** form shows it: what
+`somcp_list_customer_groups` answers, plus the name in every language, the
+**Category discount** rows and the **Authorized modules**. Read only,
+replayable.
+
+**Do not use for** - the list of groups (→ `somcp_list_customer_groups`); the
+customers of a group (→ `somcp_search_customers`); changing a group (→
+`somcp_update_customer_group`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_group` | integer | yes | from `somcp_list_customer_groups`; `SomcpTool::notAnIdentifier('id_group')`; a group this shop does not have (`group_shop`): `SomcpTool::notFound('id_group', 'customer group', <id>, 'somcp_list_customer_groups')` |
+| `language` | string | no | ISO code of an active language for `name` and the category names, through `SomcpTool::readLanguage()` and `languageProblem()`, as `somcp_list_customer_groups`; the shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - `group`, one object:
+- every field of one item of `somcp_list_customer_groups`, under the same
+  names and in the same formats (`id_group`, `name`, `reduction`,
+  `price_display_method`, `show_prices`, `members_count`, `date_add`,
+  `default_for`), read by `SomcpToolListCustomerGroups::groups()`, the query
+  the list itself calls;
+- `names`: every active language, keyed by ISO code, as `somcp_list_titles`
+  answers `names`;
+- `category_discounts`: one object per row of **Category discount**
+  (`GroupReduction::getGroupReductions()`, as the form reads it), sorted by
+  `id_category`: `id_category` (of `somcp_list_categories`), `category` (its
+  name in `language`, `null` when the category no longer exists, as the form
+  shows an empty path), `reduction` (**Discount (%)**, percent as shown:
+  `group_reduction.reduction * 100`, rounded to 2 decimals); `[]` when none;
+- `authorized_modules`: the technical `name` of every installed module
+  authorized for the group on the shop of the token
+  (`Module::getAuthorizedModules()`), sorted, the `name` of
+  `somcp_list_modules`; `unauthorized_modules`: the installed ones that are
+  not, so the two lists are the **Yes** / **No** of the screen.
+
+Plus `language`, and `customer_groups_enabled` as `somcp_list_customer_groups`
+answers it; when `false`, a `warning`: `Customer groups are disabled in
+Advanced Parameters > Performance: the discounts of this group do not apply.`
+(`SomcpToolGetCustomerGroup::GROUPS_DISABLED`, for the update tool too).
+
+**Errors** - in the envelope `Nothing was read. Correct these and call
+again:`: an unknown argument, `id_group` missing, not an identifier or not of
+this shop, a language the shop does not have, given in one answer.
+
+**Notes** - read only, replayable. The JSON scenario reads group 3
+(**Customer**) and checks it has no category discount and authorizes `somcp`.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form (only the label
+**Shop association** / **Store association**, multistore only); the installed
+modules differ between the shops.
 
 ### Diagnostics
 

@@ -181,6 +181,12 @@ and its image with it, which the back office leaves on the server. The answer
 gives the title as it was, so it can be created again, and says how many
 customers of the shop held it: their accounts then show no title.
 
+**Read a customer group in full.** The new tool somcp_get_customer_group reads
+one group of Shop Parameters > Customer Settings > Groups as its Edit form
+shows it: what the list of groups gives, plus its name in every language, its
+discounts by category, in percent as on screen, and the modules its members
+may use, authorized or not.
+
 ### Changed
 
 **Find the vouchers that run out.** The list of cart rules can be filtered by

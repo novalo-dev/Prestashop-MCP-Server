@@ -530,6 +530,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_customer` | ✎ Create a customer | Customers › add |
 | `somcp_update_customer` | ✎ Change a customer | Customers › edit |
 | `somcp_list_customer_groups` | ● List customer groups | Groups › view |
+| `somcp_get_customer_group` | ● Get a customer group | Groups › view |
 
 ### 📈 Statistics
 

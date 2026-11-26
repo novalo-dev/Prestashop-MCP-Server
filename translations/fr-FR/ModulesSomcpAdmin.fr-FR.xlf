@@ -1092,6 +1092,11 @@
       <source>List customer groups</source>
       <target>Lister les groupes de clients</target>
     </trans-unit>
+    <!-- Get a customer group -->
+    <trans-unit id="1a6bd08a730c4250afe455870226be7e" resname="Get a customer group">
+      <source>Get a customer group</source>
+      <target>Afficher un groupe de clients</target>
+    </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
       <source>List return statuses</source>

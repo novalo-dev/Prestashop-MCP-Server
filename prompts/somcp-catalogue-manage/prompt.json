@@ -60,6 +60,7 @@
     "somcp_update_country_rule",
     "somcp_delete_country_rule",
     "somcp_list_customer_groups",
+    "somcp_get_customer_group",
     "somcp_list_carriers",
     "somcp_get_carrier",
     "somcp_get_shipping_preferences",

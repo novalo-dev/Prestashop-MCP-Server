@@ -59,6 +59,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_country_rule`
 - `somcp_delete_country_rule`
 - `somcp_list_customer_groups`
+- `somcp_get_customer_group`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
@@ -551,6 +552,10 @@ A customer group - for a specific price, or for the groups that see a
 category - comes from `somcp_list_customer_groups`: take the `id_group` from
 there, never a guessed one. When `customer_groups_enabled` is false the shop
 ignores groups for prices: say so before writing a price for one group.
+`somcp_get_customer_group` reads one group in full: its name in every
+language, its discounts by category (a percent that replaces the group
+discount for the products whose default category it is) and the modules its
+members may use.
 
 ## Changing products
 

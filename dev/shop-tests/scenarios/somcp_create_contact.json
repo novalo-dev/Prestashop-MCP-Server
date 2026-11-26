@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "no title, and nothing created", "arguments": {}, "expect": "error", "contains": ["Nothing was created.", "- name: required"]},
+    {"why": "a character the form refuses in a title", "arguments": {"languages": ["en"], "name": {"en": "A<b"}}, "expect": "error", "contains": ["- name (en): no <, >, =, { or }"]},
+    {"why": "not an address", "arguments": {"languages": ["en"], "name": {"en": "Sales"}, "email": "nope"}, "expect": "error", "contains": ["- email: an e-mail address"]},
+    {"why": "an HTML tag in a description", "arguments": {"languages": ["en"], "name": {"en": "Sales"}, "description": {"en": "<b>x</b>"}}, "expect": "error", "contains": ["- description (en): no HTML tag"]},
+    {"why": "an unknown field, and nothing created", "arguments": {"x": 1, "languages": ["en"], "name": {"en": "Sales"}}, "expect": "error", "contains": ["Nothing was created.", "- x: not a field of this tool"]}
+  ]
+}

@@ -1214,6 +1214,10 @@ T = {
  "Lister les contacts",
  "Listar los contactos",
  "Die Kontakte auflisten"),
+"Create a contact": (
+ "Créer un contact",
+ "Crear un contacto",
+ "Einen Kontakt anlegen"),
 "Change the order settings": (
  "Modifier les paramètres des commandes",
  "Cambiar los parámetros de pedidos",

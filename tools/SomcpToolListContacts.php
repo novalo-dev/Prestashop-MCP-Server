@@ -89,15 +89,7 @@ class SomcpToolListContacts
 
         $contacts = [];
         foreach (Contact::getContacts($idLang) ?: [] as $contact) {
-            $idContact = (int) $contact['id_contact'];
-            $contacts[] = [
-                'id_contact' => $idContact,
-                'name' => (string) $contact['name'],
-                'email' => (string) $contact['email'],
-                'description' => (string) $contact['description'],
-                'customer_service' => (bool) $contact['customer_service'],
-                'used_for_customer_messages' => $receiver !== null && $receiver === $idContact,
-            ];
+            $contacts[] = self::item($contact, $receiver);
         }
 
         $result = [
@@ -110,5 +102,30 @@ class SomcpToolListContacts
         }
 
         return SomcpTool::json($result);
+    }
+
+    /**
+     * One contact as the list answers it.
+     *
+     * Public so the tools that create or change a contact answer it in this
+     * very shape, which the assistant can give back to them as it is.
+     *
+     * @param array<string, mixed> $contact a row of Contact::getContacts(), or the same keys
+     * @param int|null $receiver the id_contact of Send emails to, as SomcpToolGetEmailSettings reads it
+     *
+     * @return array<string, mixed>
+     */
+    public static function item(array $contact, ?int $receiver): array
+    {
+        $idContact = (int) $contact['id_contact'];
+
+        return [
+            'id_contact' => $idContact,
+            'name' => (string) $contact['name'],
+            'email' => (string) $contact['email'],
+            'description' => (string) $contact['description'],
+            'customer_service' => (bool) $contact['customer_service'],
+            'used_for_customer_messages' => $receiver !== null && $receiver === $idContact,
+        ];
     }
 }

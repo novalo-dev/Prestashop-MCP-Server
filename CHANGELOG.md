@@ -137,6 +137,13 @@ their messages are kept in Customer Service, and which one receives the
 customers' messages. A contact read there is given as it is to Send emails to
 of somcp_update_email_settings.
 
+**Create a contact.** The new tool somcp_create_contact does what Add new
+contact of Shop Parameters > Contact does: a title in each language, the
+address that receives the messages, whether they are kept in Customer Service,
+and a description, checked with the rules of the back office form. The answer
+gives the contact as the list shows it, ready for Send emails to of
+somcp_update_email_settings.
+
 **List the social titles.** The new tool somcp_list_titles lists the titles of
 Shop Parameters > Customer Settings, tab Titles: their name in each language,
 the gender they stand for and their image. The assistant now finds the title

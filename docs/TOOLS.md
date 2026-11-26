@@ -4191,6 +4191,65 @@ about the contacts is hidden.
 
 **Differences between 8.0.1 and 9.0.0** - none on the list.
 
+#### `somcp_create_contact`
+**State**: written · [issue #427](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/427)
+**Nature**: `acts(ADD, 'AdminContacts')` · **Scope**: `mcp.customers.write`, as `somcp_create_customer`
+
+**Does** - creates a contact of **Shop Parameters > Contact**, as **Add new
+contact** then **Save** do: a title per language, the address that receives
+the messages, whether they are kept in **Customer Service**, a description.
+The contact form of the storefront offers it, and **Send emails to** of
+`somcp_update_email_settings` chooses among the contacts.
+
+**Do not use for** - changing a contact (→ `somcp_update_contact`); the
+stores of the **Stores** tab (not covered).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `languages` | array | no | the languages being filled, #149 (`SomcpToolCreateProduct::languages()`) |
+| `name` | object | yes | **Title**, one text per language keyed by ISO code (`texts(..., true)`); each checked as `ContactType` does: `<`, `>`, `=`, `{`, `}` refused (`name (<iso>): no <, >, =, { or }`), 255 characters at most (`name (<iso>): 255 characters at most`) |
+| `email` | string | no | **Email address**, `Validate::isEmail()`, 255 at most (`email: an e-mail address`); empty when left out, as the form |
+| `customer_service` | boolean | no | **Save messages?**, `false` when left out, as the switch opens (`customer_service: true or false`) |
+| `description` | object | no | **Description**, one text per language keyed by ISO code; a text holding an HTML tag refused (`description (<iso>): no HTML tag`, the `NoTags` check `strip_tags($text) !== $text`) |
+
+Unknown arguments through `SomcpTool::unknownFields()`; `id_contact` and
+`used_for_customer_messages`, which the list answers, are named as worked out
+by the shop. The form fills an empty language with the default language's
+text; the tool keeps the rule of #149 instead (every language being filled
+needs its text, `languages` choosing which), and the languages not being
+filled take the default one's text. The checks are
+`SomcpToolCreateContact::planContact()`, public so `somcp_update_contact`
+applies the same.
+
+**Then** - as `AddContactHandler::handle()` does, on the `Contact` object (the
+MCP endpoint has no command bus): `name`, `description`, `email`,
+`customer_service`, the shop of the token only (`id_shop_list = [$idShop]`),
+then `add()`. A `false` or an exception: a tool error `The contact could not
+be created: <reason>.`, logged as `contact_create_failed`. Logged as
+`contact_created` with the `id_contact` only.
+
+**Returns** - `created: true`, `id_contact`, `contact`: the contact as
+`somcp_list_contacts` gives one item (`id_contact`, `name`, `email`,
+`description`, `customer_service`, `used_for_customer_messages`, through
+`SomcpToolListContacts::item()`) in the shop's default language, plus `names`
+and `descriptions`: every language, keyed by ISO code. `warning` when
+multistore is on with more than one shop: `The contact was created for this
+shop only; the back office can share it with others (Shop association).`
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:` (`SomcpTool::refused('created', $problems)`), every problem in one
+answer: unknown arguments, `name` missing, the rules above, a language of
+#149.
+
+**Notes**
+- Changes the shop: the assistant asks first. Not replayable: each call creates one more contact (two contacts may share a title, as on the page). To make it the receiver of the messages: `somcp_update_email_settings` with `send_emails_to` = the `id_contact`.
+- The JSON scenario checks the refusals only; the shop test creates a contact with every field, reads it with `somcp_list_contacts`, then deletes it whatever happens.
+
+**Differences between 8.0.1 and 9.0.0** - the label of the shop field only
+(**Shop association** / **Store association**), not taken by the tool.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

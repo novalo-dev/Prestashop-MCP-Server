@@ -67,6 +67,7 @@
     "somcp_get_payment_preferences",
     "somcp_update_payment_restrictions",
     "somcp_list_contacts",
+    "somcp_create_contact",
     "somcp_get_email_settings",
     "somcp_update_email_settings",
     "somcp_list_email_logs",

@@ -3696,6 +3696,70 @@ if ($sendTestEmail !== null) {
     }
 }
 
+// A contact created with every field (#427), read back with the list, then
+// deleted whatever happens: the JSON scenario only checks refusals, and the
+// demo contacts must stay as they are for the other tools.
+$createContact = $registry->get('somcp_create_contact');
+$listContacts = $registry->get('somcp_list_contacts');
+if ($createContact !== null && $listContacts !== null) {
+    $contactCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): string {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = !empty($result['isError']) ? "ERROR\n" : '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $names = [];
+    $descriptions = [];
+    foreach (Language::getLanguages(true, (int) $context->shop->id) as $row) {
+        $names[(string) $row['iso_code']] = 'Somcp test contact';
+        $descriptions[(string) $row['iso_code']] = 'Somcp test description';
+    }
+    $idTestContact = 0;
+    $calls += 2;
+    try {
+        $text = $contactCall($createContact, [
+            'name' => $names,
+            'email' => 'somcp-contact@example.com',
+            'customer_service' => true,
+            'description' => $descriptions,
+        ]);
+        if (preg_match('/"id_contact": (\d+)/', $text, $match)) {
+            $idTestContact = (int) $match[1];
+        }
+        if (strpos($text, 'ERROR') === 0 || $idTestContact === 0 || strpos($text, '"customer_service": true') === false) {
+            $failures[] = 'somcp_create_contact (every field): expected it created - ' . substr($text, 0, 300);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_contact (every field)');
+        }
+
+        $text = $contactCall($listContacts, []);
+        if (strpos($text, '"id_contact": ' . $idTestContact . ',') === false || strpos($text, 'somcp-contact@example.com') === false) {
+            $failures[] = 'somcp_list_contacts (after the create): expected the new contact - ' . substr($text, 0, 300);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_contacts (after the create, listed)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_contact (every field): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idTestContact > 0) {
+            (new Contact($idTestContact))->delete();
+        }
+    }
+}
+
 // The list of sent e-mails erased (#425), last of all the calls: the
 // scenarios read that list, and the JSON one cannot run after them. Erasing it
 // must answer erased, a second time must find nothing left, and the list must

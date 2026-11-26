@@ -170,6 +170,13 @@ setting, or beside the title of a panel, with the mouse or the keyboard. What
 tells a state stays on the page: a missing key, a model that no longer passes,
 this month's usage.
 
+**A switch never saved reads off, as on screen.** The SEO and performance
+settings an assistant reads showed a switch nobody had ever saved as a
+setting the shop's version does not have, while the back office shows it as
+No, and the performance warnings missed it: on PrestaShop 8, Smart cache for
+CSS and Smart cache for JavaScript left off were not named. Such a switch is
+now read as off, and only a setting the version truly lacks stays empty.
+
 **The built-in assistant runs on Neuron AI 4.1.28.** Nothing changes in how
 you use it.
 

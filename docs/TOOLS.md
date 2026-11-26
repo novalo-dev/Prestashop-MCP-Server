@@ -8016,7 +8016,7 @@ How the shop runs: caching.
 | `caching.servers` | Memcache servers table | `id_memcached_server`, `ip`, `port`, `weight`; empty list when none |
 | `warnings` | - | `code` and `why`, as `somcp_get_seo_settings`: `debug_mode_on`, `debug_profiling_on`, `force_compilation`, `smarty_cache_off`, `overrides_disabled`, `ccc_css_off`, `ccc_js_off`, `cache_system_unavailable` (**Use cache** is on and the stored system's extension is not loaded) |
 
-**Errors** - an unknown argument (`<name>: not a field of this tool`). A setting the running version does not have is `null`, never an error.
+**Errors** - an unknown argument (`<name>: not a field of this tool`). A setting the running version does not have is `null`, never an error: `debug.debug_cookie` and `debug.debug_profiling` on PrestaShop 8.0. A switch never saved reads `false`, as the back office shows it.
 
 **Notes**
 - Each `PS_` key is read for the token's shop with the helper of `somcp_get_seo_settings`, not through the back office form handlers, which take the shop from the global context. The optional features are the keys `Combination`, `Feature` and `Group::isFeatureActive()` read.
@@ -8266,7 +8266,7 @@ None.
 **Returns** - `friendly_urls`, `accented_urls`, `default_language_url_prefix` (**Use prefix for default language**, `null` on PrestaShop 8, which has no such option), `canonical_redirect` (none, 302 or 301), `disable_apache_multiviews` and `disable_apache_mod_security` (the two Apache options of the Set up URLs card), `https` (whether the shop answers in HTTPS) and `https_everywhere` (the PrestaShop 8 setting serving every page in HTTPS, `null` on PrestaShop 9, which dropped it), `domains` (main first, each with `domain`, `domain_ssl`, `uri`, `main`, `active`), `routes` (`product`, `category`, `brand`, `supplier`, `cms`, `cms_category`, `module`, each with its `pattern` and `customized`), `product_attributes_in_title` (**Display attributes in the product meta title**), `robots_txt_present`, `sitemap_module` (`installed`, `active`), `languages` (`iso_code`, `name`, `active`, `default`, `url_prefix` - whether this language's addresses carry its ISO code), `warnings` (each a `code` and `why`).
 
 **Notes**
-- Settings read by their configuration keys in each version, for the shop of the token; a key a version does not have is `null`, never guessed.
+- Settings read by their configuration keys in each version, for the shop of the token. A switch never saved reads `false`, as the back office shows it; only a setting the version does not have is `null` (`default_language_url_prefix` on PrestaShop 8, `https_everywhere` on PrestaShop 9), decided by the version, never guessed from a missing row.
 - A route's default pattern is read from `Dispatcher::$default_routes` of the running version (PrestaShop 8 puts the category and the EAN-13 in the product address), and `PS_ROUTE_<route>` replaces it when not empty, as `Dispatcher::loadRoutes()` does.
 - `sitemap_module.active` is read from `module_shop` for the shop of the token, since `Module::isEnabled()` answers for the shop of the global context.
 - A language's `url_prefix` follows what the storefront does: the ISO code is in the addresses only when the shop serves more than one active language, and then every language carries it, except the default language on PrestaShop 9 when **Use prefix for default language** is off.

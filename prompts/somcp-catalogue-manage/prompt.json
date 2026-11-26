@@ -69,6 +69,7 @@
     "somcp_list_contacts",
     "somcp_get_email_settings",
     "somcp_update_email_settings",
+    "somcp_list_email_logs",
     "somcp_get_order_settings",
     "somcp_update_order_settings",
     "somcp_get_product_settings",

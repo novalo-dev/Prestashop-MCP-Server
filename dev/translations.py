@@ -1170,6 +1170,10 @@ T = {
  "Modifier les paramètres des e-mails",
  "Cambiar los parámetros de correo electrónico",
  "Die E-Mail-Einstellungen ändern"),
+"List the sent e-mails": (
+ "Lister les e-mails envoyés",
+ "Listar los correos electrónicos enviados",
+ "Die gesendeten E-Mails auflisten"),
 "Read the order settings": (
  "Lire les paramètres des commandes",
  "Leer los parámetros de pedidos",

@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "the sent e-mails of the shop, with the Log Emails setting", "arguments": {}, "expect": "ok", "contains": ["\"emails\":", "\"returned\":", "\"total_count\":", "\"offset\": 0", "\"log_emails\":"]},
+    {"why": "a template no e-mail was sent with", "arguments": {"template": "zz_no_such_template"}, "expect": "ok", "contains": ["\"total_count\": 0", "\"returned\": 0"]},
+    {"why": "a page of one line in the shop default language", "arguments": {"language": "en", "limit": 1, "offset": 0}, "expect": "ok", "contains": ["\"total_count\":"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "xx"}, "expect": "error", "contains": ["Nothing was read.", "language: not one of the shop's languages"]},
+    {"why": "a period that ends before it starts", "arguments": {"date_from": "2026-11-09", "date_to": "2026-11-01"}, "expect": "error", "contains": ["- date_to: a date not before date_from"]},
+    {"why": "a date that is not a day", "arguments": {"date_from": "yesterday"}, "expect": "error", "contains": ["- date_from: a date, YYYY-MM-DD"]},
+    {"why": "a limit out of range and a text filter that is not a text, in one answer", "arguments": {"limit": 500, "recipient": 3}, "expect": "error", "contains": ["- limit: a whole number from 1 to 100", "- recipient: a text"]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]}
+  ]
+}

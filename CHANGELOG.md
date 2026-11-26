@@ -58,6 +58,13 @@ be given back as it is without writing anything. The SMTP password and the
 DKIM private key are never taken by the tool: the merchant types them on the
 page, and the assistant says so when one is missing.
 
+**List the sent e-mails.** The new tool somcp_list_email_logs lists the
+e-mails the shop sent, as the list of Advanced Parameters > E-mail shows them:
+recipient, template, language, subject and when, newest first, filtered like
+the list. The assistant can now check that the order and account e-mails
+really go out, and says when Log Emails is off and new e-mails are no longer
+kept.
+
 **Read the order settings.** The new tool somcp_get_order_settings reads Shop
 Parameters > Order Settings: guest checkout, the minimum purchase total, the
 terms of service and the page that holds them, reordering, delayed shipping,

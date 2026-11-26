@@ -3343,7 +3343,7 @@ customer messages go, how the shop sends its e-mails, the SMTP parameters,
 the subject prefix, the format, the e-mail log and the DKIM signing. Read
 only, replayable. The **SMTP password** and the **DKIM private key** are never
 read: the answer says only whether each one is set. The list of sent e-mails
-and **Send a test email** are not part of it.
+(→ `somcp_list_email_logs`) and **Send a test email** are not part of it.
 
 **Do not use for** - changing these settings (→
 `somcp_update_email_settings`); the e-mail of an order status (→
@@ -3373,7 +3373,7 @@ them:
 | `smtp_port` | **Port** | `PS_MAIL_SMTP_PORT` | integer, `null` when empty |
 | `subject_prefix` | **Enable the store name as a prefix in the email's subject** | `PS_MAIL_SUBJECT_PREFIX` | boolean on 9.0.0, `null` on 8.0.1 where the setting does not exist |
 | `mail_type` | the three choices of the format | `PS_MAIL_TYPE` | `html` (1), `text` (2) or `both` (3) |
-| `log_emails` | **Log Emails** | `PS_LOG_EMAILS` | boolean |
+| `log_emails` | **Log Emails** | `PS_LOG_EMAILS` | boolean; the e-mails kept are listed by `somcp_list_email_logs` |
 | `dkim_enabled` | **DKIM signing** | `PS_MAIL_DKIM_ENABLE` | boolean |
 | `dkim_domain`, `dkim_selector` | **DKIM domain**, **DKIM selector** | `PS_MAIL_DKIM_DOMAIN`, `PS_MAIL_DKIM_SELECTOR` | text |
 | `dkim_key_set` | **DKIM private key** | `PS_MAIL_DKIM_KEY` | `true` when not empty; the key is never in the answer |
@@ -3467,6 +3467,63 @@ sending the e-mails other tests read.
 
 **Differences between 8.0.1 and 9.0.0** - `subject_prefix` on 9.0.0 only;
 `ssl` on 8.0.1 only.
+
+#### `somcp_list_email_logs`
+**State**: written · [issue #423](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/423)
+**Nature**: `acts(VIEW, 'AdminEmails')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - lists the e-mails the shop sent, as the list **Email (<n>)** of
+**Advanced Parameters > E-mail** shows them: to whom, which template, in which
+language, with which subject, when. Read only, replayable. The scope is the
+customers' one because each line holds the address of a customer.
+
+**Do not use for** - the e-mail settings (→ `somcp_get_email_settings`); the
+messages customers wrote (Customer Service, not covered); sending a test (→
+`somcp_send_test_email`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `recipient` | string | **Recipient** contains this text, as the filter of the list |
+| `template` | string | **Template** contains this text, for example `order_conf` |
+| `subject` | string | **Subject** contains this text |
+| `language` | string | the ISO code of a language of the shop (**Language**); every language when left out; a code the shop does not have is refused with `SomcpTool::languageProblem()` |
+| `date_from` / `date_to` | string | **Sent**, `YYYY-MM-DD`, both days included (`date_to` up to 23:59:59), as `somcp_list_stock_movements` takes them; `date_to` before `date_from` refused (`date_to: a date not before date_from`) |
+| `limit` | integer | 20 by default, 100 at most (`limit: a whole number from 1 to 100`) |
+| `offset` | integer | 0 by default (`offset: a whole number, 0 at least`) |
+
+The three texts are trimmed and passed through `pSQL()` inside `LIKE
+'%<text>%'`, as the list does. Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Returns**
+- `emails`: one object per line, newest first (`id_mail` descending, as the
+  list opens): `id_mail` (**ID**), `recipient` (**Recipient**), `template`
+  (**Template**), `language` (the ISO code of **Language**, `null` for a
+  language deleted since), `subject` (**Subject**), `sent` (**Sent**,
+  `SomcpTool::isoDate()`);
+- `returned`, `total_count` (every line that matches the filters), `offset`,
+  as `somcp_list_stock_movements`;
+- `log_emails`: **Log Emails**, read through `SomcpToolGetEmailSettings::settings()`.
+
+`warning`, joined by a space when several apply:
+- **Log Emails** off: `Log Emails is off: e-mails sent from now on are not added to this list. Turn it on with somcp_update_email_settings (log_emails).` (the lines kept from before are still listed, unlike the page, which hides the list);
+- multistore on with more than one shop: `This list holds the e-mails of every shop: PrestaShop keeps one log for all of them.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`
+(`SomcpTool::refused('read', $problems)`), every problem in one answer: an
+unknown argument, a language the shop does not have, a date that is not
+`YYYY-MM-DD`, `date_to` before `date_from`, `limit` or `offset` out of range,
+a text filter that is not a string (`<field>: a text`).
+
+**Notes**
+- The table `mail` has no shop column: the log is one for every shop of the installation. A line is written by `Mail::send()` after each sent e-mail when **Log Emails** is on, one per recipient; the test e-mail of **Send a test email** is not logged.
+- The `id_mail` is the one `somcp_delete_email_log` takes.
+- The recipients of the test shops are real addresses: the scenario never names one.
+
+**Differences between 8.0.1 and 9.0.0** - only the column sizes of
+`recipient` and `subject`; the list, its filters and its query are the same.
 
 #### `somcp_get_order_settings`
 **State**: written · [issue #400](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/400)

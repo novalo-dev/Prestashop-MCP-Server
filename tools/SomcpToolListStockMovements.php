@@ -496,6 +496,7 @@ class SomcpToolListStockMovements
     /**
      * A day argument, null when left out; a value given but not a day is
      * refused rather than ignored, or the list would silently cover more.
+     * Public so somcp_list_email_logs reads its days with the same words.
      *
      * @param array<string, mixed> $arguments
      * @param string $field
@@ -503,7 +504,7 @@ class SomcpToolListStockMovements
      *
      * @return string|null
      */
-    private static function date(array $arguments, string $field, array &$problems): ?string
+    public static function date(array $arguments, string $field, array &$problems): ?string
     {
         if (!array_key_exists($field, $arguments) || $arguments[$field] === null || $arguments[$field] === '') {
             return null;

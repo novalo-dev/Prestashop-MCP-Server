@@ -68,6 +68,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_contacts`
 - `somcp_get_email_settings`
 - `somcp_update_email_settings`
+- `somcp_list_email_logs`
 - `somcp_get_order_settings`
 - `somcp_update_order_settings`
 - `somcp_get_product_settings`
@@ -280,6 +281,10 @@ the change. It never takes the SMTP password nor the DKIM key: when one is
 missing, ask the merchant to type it on the E-mail page of the back office.
 Never set the method to never without the merchant's clear say-so: customers
 would then get no order confirmation.
+`somcp_list_email_logs` lists the e-mails the shop sent, newest first: read it
+to check that the order and account e-mails really go out. It only grows while
+Log Emails is on; each line holds a customer's address, so quote only what the
+merchant needs.
 `somcp_get_order_settings` gives the checkout rules of Order Settings: guest
 checkout, the minimum purchase total, the terms of service and their page,
 gift wrapping and recycled packaging. Read it before telling a merchant why a

@@ -164,6 +164,11 @@ from a refusal.
 
 ### Changed
 
+**Find the vouchers that run out.** The list of cart rules can be filtered by
+priority, uses left and expiration date, and sorted as the back office list:
+"the vouchers that expire before the end of the month" or "the rules with no
+use left" no longer take the back office or reading every page.
+
 **Keep a voucher to some products.** somcp_create_cart_rule and
 somcp_update_cart_rule now write Product selection: a voucher can be kept to
 products, categories, brands, suppliers or attribute values, with the number

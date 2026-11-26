@@ -103,9 +103,11 @@ dates you used.
 
 1. **List them** with `somcp_list_cart_rules`, as **Catalog > Discounts > Cart
    Rules**: vouchers with a code and discounts applied on their own, newest
-   first. `has_code` splits the two; `current: true` keeps only the rules valid
-   now (their period holds and they have uses left); `active`, `name` and
-   `code` filter as the list does.
+   first by default. `has_code` splits the two; `current: true` keeps only the rules valid
+   now (their period holds and they have uses left); `active`, `name`,
+   `code`, `priority`, `quantity_min` / `quantity_max` (the uses left) and
+   `expiration_date_from` / `expiration_date_to` filter as the list does, and
+   `sort` orders it as its columns do.
 2. **Read what each one gives from `summary`**, the one line built from
    `reduction`, `free_shipping` and `gift`. `reduction` is `null`, a percent,
    or an amount with its `currency` and whether tax is in it; `reduction_applies_to`

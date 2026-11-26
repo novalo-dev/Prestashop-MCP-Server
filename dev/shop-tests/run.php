@@ -2043,6 +2043,83 @@ if ($updateCountry !== null && $idAfghanistan > 0) {
     }
 }
 
+// The filters and sorts of the list on Priority, Quantity and Expiration date
+// (#437), on two rules created here for that alone and deleted whatever
+// happens: the demo data holds no rule they could be read from. The name
+// keeps the rules of the shop out of the counts.
+$listRules = $registry->get('somcp_list_cart_rules');
+if ($listRules !== null) {
+    $calls += 8;
+    $listContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $listRules->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $listed = [];
+    try {
+        foreach ([
+            'A' => [3, 0, '2031-03-15 23:59:59'],
+            'B' => [4, 7, '2032-06-20 23:59:59'],
+        ] as $letter => [$priority, $quantity, $dateTo]) {
+            $rule = new CartRule();
+            foreach (Language::getIDs(false) as $idLanguage) {
+                $rule->name[(int) $idLanguage] = 'Somcp list filter ' . $letter;
+            }
+            $rule->priority = $priority;
+            $rule->quantity = $quantity;
+            $rule->quantity_per_user = 1;
+            $rule->date_from = '2026-01-01 00:00:00';
+            $rule->date_to = $dateTo;
+            $rule->free_shipping = true;
+            $rule->active = true;
+            if (!$rule->add()) {
+                throw new RuntimeException('rule ' . $letter . ' could not be created');
+            }
+            $listed[$letter] = (int) $rule->id;
+        }
+        $first = static function (string $text): int {
+            return preg_match('/"id_cart_rule": (\d+)/', $text, $m) ? (int) $m[1] : 0;
+        };
+        foreach ([
+            'priority' => [['priority' => 3], 1, $listed['A']],
+            'no use left' => [['quantity_max' => 0], 1, $listed['A']],
+            'uses left from 5' => [['quantity_min' => 5], 1, $listed['B']],
+            'expiring from a day' => [['expiration_date_from' => '2032-01-01'], 1, $listed['B']],
+            'expiring up to the day itself' => [['expiration_date_to' => '2031-03-15'], 1, $listed['A']],
+            'priority_asc' => [['sort' => 'priority_asc'], 2, $listed['A']],
+            'priority_desc' => [['sort' => 'priority_desc'], 2, $listed['B']],
+            'expiration_date_asc' => [['sort' => 'expiration_date_asc'], 2, $listed['A']],
+        ] as $label => [$filters, $count, $idFirst]) {
+            $result = $listRules->call(['name' => 'Somcp list filter'] + $filters, $listContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '');
+            }
+            if (!empty($result['isError']) || strpos($text, '"total_count": ' . $count) === false || $first($text) !== $idFirst) {
+                $failures[] = 'somcp_list_cart_rules (' . $label . '): expected ' . $count . ' rule(s), ' . $idFirst
+                    . ' first - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_cart_rules (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_list_cart_rules (filters): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        foreach ($listed as $idListed) {
+            $left = new CartRule($idListed);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
 // A customer group restriction set on a cart rule, read back, then lifted
 // (#406), and the same for Product selection (#433): the JSON scenario only
 // covers the refusals, since a restriction left on a demo rule would change

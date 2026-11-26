@@ -9,6 +9,14 @@
     {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language: not one of the shop's languages"]},
     {"why": "an empty code is refused: the split between coded and uncoded rules is has_code", "arguments": {"code": ""}, "expect": "error", "contains": ["code: a piece of a code to look for"]},
     {"why": "more than 100 rules at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "the rules of one priority, the uses left in a range, an expiration period, sorted by priority: an answer whatever the demo data holds", "arguments": {"priority": 1, "quantity_min": 0, "quantity_max": 1000, "expiration_date_from": "2000-01-01", "expiration_date_to": "2099-12-31", "sort": "priority_asc"}, "expect": "ok", "contains": ["\"cart_rules\""]},
+    {"why": "the rules with no use left", "arguments": {"quantity_max": 0, "sort": "expiration_date_desc"}, "expect": "ok", "contains": ["\"cart_rules\""]},
+    {"why": "a priority below 1 and a quantity that is not a whole number are refused", "arguments": {"priority": 0, "quantity_min": "many"}, "expect": "error", "contains": ["priority: a whole number, 1 at least", "quantity_min: a whole number, 0 at least"]},
+    {"why": "a negative quantity is refused", "arguments": {"quantity_max": -1}, "expect": "error", "contains": ["quantity_max: a whole number, 0 at least"]},
+    {"why": "a highest quantity below the lowest is refused", "arguments": {"quantity_min": 5, "quantity_max": 2}, "expect": "error", "contains": ["quantity_max: a whole number not below quantity_min"]},
+    {"why": "an expiration date that is not YYYY-MM-DD is refused", "arguments": {"expiration_date_from": "31/12/2026", "expiration_date_to": "2026-02-30"}, "expect": "error", "contains": ["expiration_date_from: a date, YYYY-MM-DD", "expiration_date_to: a date, YYYY-MM-DD"]},
+    {"why": "an expiration period that ends before it starts is refused", "arguments": {"expiration_date_from": "2026-12-31", "expiration_date_to": "2026-01-01"}, "expect": "error", "contains": ["expiration_date_to: a date not before expiration_date_from"]},
+    {"why": "an order outside the list is refused and the list is named, Status among none of them", "arguments": {"sort": "status_asc"}, "expect": "error", "contains": ["sort: one of id_desc, id_asc, name_asc, name_desc, priority_asc, priority_desc, code_asc, code_desc, quantity_asc, quantity_desc, expiration_date_asc, expiration_date_desc"]},
     {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
   ]
 }

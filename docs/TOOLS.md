@@ -9192,7 +9192,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 **State**: written · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)
 **Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the cart rules of this shop - vouchers with a code and discounts applied on their own - newest first, as **Catalog > Discounts > Cart Rules**, with what each one gives in one line. Read only.
+**Does** - lists the cart rules of this shop - vouchers with a code and discounts applied on their own - newest first unless sorted otherwise, as **Catalog > Discounts > Cart Rules**, with what each one gives in one line. Read only.
 
 **Do not use for** - one rule with its conditions (→ `somcp_get_cart_rule`); catalogue price rules (→ `somcp_list_catalog_price_rules`); the vouchers of one order (→ `somcp_get_order`).
 
@@ -9205,10 +9205,14 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `code` | string | no | part of the **Code**, without case; an empty code is refused (use `has_code`) |
 | `has_code` | boolean | no | true: vouchers the customer types a code for; false: rules applied on their own, with no code |
 | `current` | boolean | no | only the rules valid now: **Valid** **From**/**To** holds the shop's current time and **Quantity** is above 0 |
+| `priority` | integer | no | the rules of exactly this **Priority**, 1 at least |
+| `quantity_min` / `quantity_max` | integer | no | **Quantity**, the uses left, both included, 0 at least, as `somcp_search_products` names its quantity range; `quantity_max: 0` lists the rules with no use left |
+| `expiration_date_from` / `expiration_date_to` | string | no | **Expiration date** (`date_to`), `YYYY-MM-DD` in the shop's time zone, both days included, as `somcp_search_orders` takes its period; named after the screen, since `date_to` is a field of each rule answered |
+| `sort` | string | no | `id_desc` (default), `id_asc`, `name_asc`, `name_desc`, `priority_asc`, `priority_desc`, `code_asc`, `code_desc`, `quantity_asc`, `quantity_desc`, `expiration_date_asc`, `expiration_date_desc`: the sortable columns of the list (**Status** is not); ties newest first, so pages never overlap |
 | `language` | string | no | ISO code of one of the shop's active languages for `name` (#149); shop default when left out; unknown code refused |
 | `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - `cart_rules`, in the list's order (`id_cart_rule` descending, newest first), each with:
+**Returns** - `cart_rules`, in the order of `sort` (by default the list's: `id_cart_rule` descending, newest first), each with:
 
 | Field | Notes |
 |---|---|
@@ -9230,9 +9234,10 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `times_used` | orders that used the rule (`order_cart_rule`, not deleted), the use the screen does not show |
 | `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; an empty `code`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `cart_rules: []`, `total_count: 0`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an empty `code`; a `priority` that is not a whole number of 1 at least, a quantity that is not a whole number of 0 at least, a `quantity_max` below `quantity_min`; an expiration date that is not `YYYY-MM-DD`, an `expiration_date_to` before `expiration_date_from`; a `sort` outside the list (the values named); `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `cart_rules: []`, `total_count: 0`.
 
 **Notes**
+- The filters combine with AND, `current` among them.
 - The back office list shows every shop's rules; the token's shop keeps the rules it can use (`shop_restriction = 0`, or a `cart_rule_shop` row for it).
 - `reduction`, `reduction_applies_to`, `gift` and `summary` are built by one shared method (`SomcpToolListCartRules::describe()`) that `somcp_get_cart_rule` (#106) calls, so a rule reads the same whichever tool reads it.
 - No minimum amount, restriction list or product selection here: they belong to `somcp_get_cart_rule`. Read only.

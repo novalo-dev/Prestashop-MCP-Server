@@ -21,8 +21,8 @@ declare(strict_types=1);
  * somcp_list_cart_rules - the vouchers and cart discounts of the shop.
  *
  * The list matches Catalog > Discounts > Cart Rules: the cart_rule rows, their
- * cart_rule_lang name, newest first (id_cart_rule descending, the list's
- * _orderWay). What each rule gives is read straight from its own columns, so
+ * cart_rule_lang name, newest first by default (id_cart_rule descending, the
+ * list's _orderWay), filtered and sorted on the columns the list offers. What each rule gives is read straight from its own columns, so
  * reduction, gift and the one-line summary are built once here and the detail
  * tool (the get, #106) calls the same builder rather than keeping
  * a second copy that could drift.
@@ -45,7 +45,29 @@ class SomcpToolListCartRules
     private const MAX_LIMIT = 100;
 
     /** @var array<int, string> */
-    private const FIELDS = ['active', 'name', 'code', 'has_code', 'current', 'language', 'limit', 'offset'];
+    private const FIELDS = [
+        'active', 'name', 'code', 'has_code', 'current', 'priority', 'quantity_min', 'quantity_max',
+        'expiration_date_from', 'expiration_date_to', 'sort', 'language', 'limit', 'offset',
+    ];
+
+    /**
+     * @var array<string, string> The sortable columns of the back office list (Status is not), each way,
+     *                            as somcp_search_products names its orders
+     */
+    private const SORTS = [
+        'id_desc' => 'cr.`id_cart_rule` DESC',
+        'id_asc' => 'cr.`id_cart_rule` ASC',
+        'name_asc' => 'crl.`name` ASC',
+        'name_desc' => 'crl.`name` DESC',
+        'priority_asc' => 'cr.`priority` ASC',
+        'priority_desc' => 'cr.`priority` DESC',
+        'code_asc' => 'cr.`code` ASC',
+        'code_desc' => 'cr.`code` DESC',
+        'quantity_asc' => 'cr.`quantity` ASC',
+        'quantity_desc' => 'cr.`quantity` DESC',
+        'expiration_date_asc' => 'cr.`date_to` ASC',
+        'expiration_date_desc' => 'cr.`date_to` DESC',
+    ];
 
     /** @var array<string, string> The restriction columns, in the order has_restrictions reports them. */
     private const RESTRICTIONS = [
@@ -69,9 +91,9 @@ class SomcpToolListCartRules
             'somcp_list_cart_rules',
             Somcp::t('List cart rules'),
             'Lists the cart rules of this shop - vouchers the customer types a code for, and discounts applied on '
-                . 'their own - newest first, as the list Catalog > Discounts > Cart Rules shows them, with what each '
-                . 'one gives in one line. Read only: this is the list, not one rule\'s full conditions and '
-                . 'restrictions. For the vouchers used on one order use somcp_get_order.',
+                . 'their own - newest first unless sorted otherwise, as the list Catalog > Discounts > Cart Rules '
+                . 'shows them, with what each one gives in one line. Read only: this is the list, not one rule\'s '
+                . 'full conditions and restrictions. For the vouchers used on one order use somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -97,6 +119,38 @@ class SomcpToolListCartRules
                         'type' => 'boolean',
                         'description' => 'True keeps only the rules valid right now: their Valid From/To period holds '
                             . 'the shop\'s current time and they have uses left (Quantity above 0).',
+                    ],
+                    'priority' => [
+                        'type' => 'integer',
+                        'minimum' => 1,
+                        'description' => 'The rules of exactly this Priority, 1 at least.',
+                    ],
+                    'quantity_min' => [
+                        'type' => 'integer',
+                        'minimum' => 0,
+                        'description' => 'Lowest Quantity, the uses left, included.',
+                    ],
+                    'quantity_max' => [
+                        'type' => 'integer',
+                        'minimum' => 0,
+                        'description' => 'Highest Quantity, the uses left, included: 0 lists the rules with no use left.',
+                    ],
+                    'expiration_date_from' => [
+                        'type' => 'string',
+                        'description' => 'Earliest Expiration date (date_to of each rule), YYYY-MM-DD in the shop\'s '
+                            . 'time zone, that day included.',
+                    ],
+                    'expiration_date_to' => [
+                        'type' => 'string',
+                        'description' => 'Latest Expiration date, YYYY-MM-DD, that day included. Not before '
+                            . 'expiration_date_from.',
+                    ],
+                    'sort' => [
+                        'type' => 'string',
+                        'enum' => array_keys(self::SORTS),
+                        'description' => 'Order of the results: the sortable columns of the back office list (ID, '
+                            . 'Name, Priority, Code, Quantity, Expiration date), each way. Newest first (id_desc) '
+                            . 'by default; ties newest first.',
                     ],
                     'language' => [
                         'type' => 'string',
@@ -156,6 +210,39 @@ class SomcpToolListCartRules
             }
         }
 
+        $minimums = ['priority' => 1, 'quantity_min' => 0, 'quantity_max' => 0];
+        foreach ($minimums as $field => $minimum) {
+            if (array_key_exists($field, $arguments) && $arguments[$field] !== null
+                && (!is_int($arguments[$field]) || $arguments[$field] < $minimum)) {
+                $problems[] = $field . ': a whole number, ' . $minimum . ' at least';
+            }
+        }
+        if (is_int($arguments['quantity_min'] ?? null) && is_int($arguments['quantity_max'] ?? null)
+            && $arguments['quantity_max'] < $arguments['quantity_min']) {
+            $problems[] = 'quantity_max: a whole number not below quantity_min';
+        }
+        // Read as a day only, as the other tools that take a period do.
+        foreach (['expiration_date_from', 'expiration_date_to'] as $field) {
+            if (array_key_exists($field, $arguments) && $arguments[$field] !== null && SomcpTool::day($arguments[$field]) === null) {
+                $problems[] = $field . ': a date, YYYY-MM-DD';
+            }
+        }
+        $expiresFrom = SomcpTool::day($arguments['expiration_date_from'] ?? null);
+        $expiresTo = SomcpTool::day($arguments['expiration_date_to'] ?? null);
+        if ($expiresFrom !== null && $expiresTo !== null && $expiresTo < $expiresFrom) {
+            $problems[] = 'expiration_date_to: a date not before expiration_date_from';
+        }
+        // An order outside the list is named rather than dropped for the
+        // default one, which would answer a different question.
+        $sort = 'id_desc';
+        if (array_key_exists('sort', $arguments) && $arguments['sort'] !== null) {
+            if (!is_string($arguments['sort']) || !isset(self::SORTS[$arguments['sort']])) {
+                $problems[] = SomcpTool::oneOf('sort', array_keys(self::SORTS));
+            } else {
+                $sort = $arguments['sort'];
+            }
+        }
+
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
@@ -204,7 +291,7 @@ class SomcpToolListCartRules
             'SELECT cr.*, crl.`name`, ' . self::timesUsed() . ' AS `times_used`
              FROM ' . $from . '
              WHERE ' . $where . '
-             ORDER BY cr.`id_cart_rule` DESC
+             ORDER BY ' . self::SORTS[$sort] . ($sort === 'id_desc' || $sort === 'id_asc' ? '' : ', cr.`id_cart_rule` DESC') . '
              LIMIT ' . $offset . ', ' . $limit
         ) ?: [];
 
@@ -274,6 +361,24 @@ class SomcpToolListCartRules
             $conditions[] = "cr.`date_from` <= '" . pSQL($now) . "'";
             $conditions[] = "cr.`date_to` >= '" . pSQL($now) . "'";
             $conditions[] = 'cr.`quantity` > 0';
+        }
+        if (isset($arguments['priority']) && is_int($arguments['priority'])) {
+            $conditions[] = 'cr.`priority` = ' . (int) $arguments['priority'];
+        }
+        if (isset($arguments['quantity_min']) && is_int($arguments['quantity_min'])) {
+            $conditions[] = 'cr.`quantity` >= ' . (int) $arguments['quantity_min'];
+        }
+        if (isset($arguments['quantity_max']) && is_int($arguments['quantity_max'])) {
+            $conditions[] = 'cr.`quantity` <= ' . (int) $arguments['quantity_max'];
+        }
+        // Whole days, as the From / To pair of the list filters date_to.
+        $expiresFrom = SomcpTool::day($arguments['expiration_date_from'] ?? null);
+        if ($expiresFrom !== null) {
+            $conditions[] = "cr.`date_to` >= '" . pSQL($expiresFrom) . " 00:00:00'";
+        }
+        $expiresTo = SomcpTool::day($arguments['expiration_date_to'] ?? null);
+        if ($expiresTo !== null) {
+            $conditions[] = "cr.`date_to` <= '" . pSQL($expiresTo) . " 23:59:59'";
         }
 
         return implode(' AND ', $conditions);

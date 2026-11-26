@@ -255,7 +255,11 @@ class SomcpToolUpdateMetaPage
         $errors = array_merge($errors, self::fieldProblems($arguments));
 
         if (array_key_exists('meta_keywords', $arguments) && !self::hasKeywords()) {
-            $errors[] = 'meta_keywords: the Meta keywords field exists on PrestaShop 8 only, and this shop runs PrestaShop ' . _PS_VERSION_;
+            // The list answers null for the field on PrestaShop 9: that null
+            // given back is no change, only a text is named.
+            if ($arguments['meta_keywords'] !== null) {
+                $errors[] = SomcpTool::notOnThisVersion('meta_keywords', 'Meta keywords field');
+            }
             unset($arguments['meta_keywords']);
         }
 

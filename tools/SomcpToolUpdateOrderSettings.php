@@ -193,7 +193,7 @@ class SomcpToolUpdateOrderSettings
             if ($field === 'backorder_status' && !$nine) {
                 // The setting exists from PrestaShop 9 only: the null of the
                 // read is skipped above, a value is named rather than dropped.
-                $problems[] = 'backorder_status: not available in PrestaShop 8';
+                $problems[] = SomcpTool::notOnThisVersion('backorder_status', 'Set backorder status');
                 continue;
             }
             if (!is_bool($arguments[$field])) {

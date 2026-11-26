@@ -131,7 +131,7 @@ class SomcpToolUpdateMaintenanceSettings
             if (!SomcpToolGetMaintenanceSettings::hasEmployeeSwitch()) {
                 // Null stays accepted, so the read of PrestaShop 8 given back
                 // whole is no mistake.
-                $problems[] = 'open_for_logged_in_employees: this field exists on PrestaShop 9 only';
+                $problems[] = SomcpTool::notOnThisVersion('open_for_logged_in_employees', 'Enable store for logged-in employees');
             } elseif (is_bool($arguments['open_for_logged_in_employees'])) {
                 $given['open_for_logged_in_employees'] = $arguments['open_for_logged_in_employees'];
             } else {

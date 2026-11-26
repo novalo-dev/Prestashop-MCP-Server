@@ -3553,7 +3553,7 @@ by the shop, so it is not written here`).
 | `delayed_shipping` | **Delayed shipping** | boolean | |
 | `terms_of_service` | **Terms of service** | boolean | |
 | `terms_id_cms` | **Page for terms and conditions** | integer | `0` (**None**) or the `id_cms` of a page of the shop, through `SomcpTool::id()` and `SomcpToolUpdateCmsSeo::page()`; otherwise `notFound('terms_id_cms', 'CMS page', <id>, 'somcp_list_cms_pages')` |
-| `backorder_status` | **Set backorder status** | boolean | 9.0.0 only; on 8.0.1, `true` or `false` answers `backorder_status: not available in PrestaShop 8` (`null`, as read, is ignored) |
+| `backorder_status` | **Set backorder status** | boolean | 9.0.0 only; on 8.0.1, `true` or `false` answers `backorder_status: not on PrestaShop <version>, which has no Set backorder status; leave the field out` (`null`, as read, is ignored) |
 | `gift_wrapping` | **Offer gift wrapping** | boolean | |
 | `gift_wrapping_price_tax_excl` | **Gift-wrapping price** | number | 0 or more, `Validate::isPrice()` |
 | `gift_wrapping_id_tax_rules_group` | **Gift-wrapping tax** | integer | `0` (**None**) or an `id_tax_rules_group` of the shop, through `SomcpToolGetTaxRule::existingRule()`; otherwise `notFound('gift_wrapping_id_tax_rules_group', 'tax rule', <id>, 'somcp_list_tax_rules')` |
@@ -5079,7 +5079,7 @@ nothing; its `warning` is ignored.
 | Name | On screen | Type | Rule |
 |---|---|---|---|
 | `store_enabled` | **Enable store** | boolean | `true or false` |
-| `open_for_logged_in_employees` | **Enable store for logged-in employees** | boolean | `true or false`; on 8.0.1 any value other than `null` is refused: `open_for_logged_in_employees: this field exists on PrestaShop 9 only` |
+| `open_for_logged_in_employees` | **Enable store for logged-in employees** | boolean | `true or false`; on 8.0.1 any value other than `null` is refused: `open_for_logged_in_employees: not on PrestaShop <version>, which has no Enable store for logged-in employees; leave the field out` |
 | `languages` | - | array | the languages of `maintenance_text` given, the rule of #149 (`SomcpToolCreateProduct::languages()`); a language left out keeps its text |
 | `maintenance_text` | **Custom maintenance text** | string or object | an object keyed by ISO code, or one text when one language is filled, through `SomcpToolCreateProduct::texts()`; a text given back as stored is no change; otherwise cleaned and checked by `SomcpToolCreateProduct::html()` (`Tools::purifyHTML()` then `Validate::isCleanHtml()` with the shop's iframe setting), at most 21844 characters (`maintenance_text (<iso>): 21844 characters at most, <n> given`, the limit `FormattedTextareaType::LIMIT_TEXT_UTF8` of the screen); an empty text refused (`maintenance_text (<iso>): required, never empty`) |
 
@@ -7822,7 +7822,7 @@ At least one of `active` and `active_on_mobile` is given; both may be given in o
 **Returns** - the fields of `somcp_get_module` read back after the change, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`; plus `changed`: each field written with `from` and `to` (`{"active": {"from": true, "to": false}}`).
 
 **Errors** - in the shared envelope, under "Nothing was changed. Correct these and call again:", the mistakes of the call all at once, then the state of the module once they are corrected:
-- a field the tool does not take (`<field>: not a field of this tool`), a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, neither given, or `active_on_mobile` on PrestaShop 9 ("not available on this version of PrestaShop"): each naming the field;
+- a field the tool does not take (`<field>: not a field of this tool`), a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, neither given, or `active_on_mobile` on PrestaShop 9 (`active_on_mobile: not on PrestaShop <version>, which has no mobile switch for modules; leave the field out`): each naming the field;
 - a `name` that is not a module of the shop: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`);
 - a module not installed: refused, naming `somcp_install_module`;
 - a call that would change nothing (the state read is already the one asked): refused and nothing called, since the core answers success and fires the hooks anyway;
@@ -8237,7 +8237,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `languages` | array | no | ISO codes being filled, among the shop's active languages, all of them by default; each text below is then given in each of them |
 | `meta_title` | object | no | per ISO code; the form's **Page title**; 128 characters at most (the column); past 70, a search result cuts it, said in `seo_warnings`; an empty text removes it |
 | `meta_description` | object | no | per ISO code; the form's **Meta description**; 255 characters at most (the column), a warning over 160 |
-| `meta_keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (refused on 9, which has no such field); 255 characters at most, an empty text removes them |
+| `meta_keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (on 9 a text is refused, `meta_keywords: not on PrestaShop <version>, which has no Meta keywords field; leave the field out`, and the `null` of the read is ignored); 255 characters at most, an empty text removes them |
 | `link_rewrite` | object | no | per ISO code; the form's **Rewritten URL**; checked as typed with `Validate::isLinkRewrite()` (which follows `PS_ALLOW_ACCENTED_CHARS_URL`), never rewritten; 254 characters at most (`varchar(254)` on PrestaShop 8); required in the shop default language, may be empty in the others; refused if another page of the shop already uses it in that language |
 
 **Returns** - `changed`, `id_meta`; when something changed, `changes` (each a `field` named with its language, `meta_title (fr)`, then the `old` and `new` value, as every update tool records them), `seo_warnings` (per ISO code) and `page` (`id_meta`, `page`, and per language changed its `meta_title`, `meta_description`, `meta_keywords` (`null` on PrestaShop 9) and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.

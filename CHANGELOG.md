@@ -140,6 +140,14 @@ their rates, from every assistant as from the built-in chat. When one currency
 cannot be created, the answer names by their codes the currencies created
 before it, so the merchant knows which ones now exist.
 
+**A setting the shop's version does not have is refused in the same words.**
+The maintenance, order settings, module and page SEO tools each refused a
+setting of another PrestaShop version in their own sentence, and some did not
+say how to go on. Every tool now answers that the setting is not on the
+version the shop runs and that it should be left out, and somcp_update_meta_page
+takes the empty meta keywords of a page read on PrestaShop 9 given back as no
+change instead of refusing them.
+
 **The explanations of the settings are tips.** On the pages of the module,
 what a setting does was written in a paragraph under it, which made the pages
 long to read. It now opens from the question mark beside the name of the

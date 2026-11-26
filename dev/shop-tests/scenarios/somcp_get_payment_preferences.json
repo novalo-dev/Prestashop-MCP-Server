@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "the restrictions of every payment module", "arguments": {}, "expect": "ok", "contains": ["\"payment_modules\":", "\"ps_checkpayment\"", "\"currencies_mode\":"]},
+    {"why": "one payment module", "arguments": {"name": "ps_checkpayment"}, "expect": "ok", "contains": ["\"groups\":", "\"countries\":", "\"carriers\":"]},
+    {"why": "a module that takes no payment, a language the shop does not have and an unknown field, refused together", "arguments": {"name": "somcp", "language": "zz", "x": 1}, "expect": "error", "contains": ["Nothing was read.", "- name: ", "somcp_list_modules", "- language: not one of the shop's languages", "- x: not a field of this tool"]}
+  ]
+}

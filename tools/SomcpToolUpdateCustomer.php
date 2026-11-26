@@ -94,8 +94,8 @@ class SomcpToolUpdateCustomer
                     ],
                     'id_gender' => [
                         'type' => 'integer',
-                        'description' => 'Social title, by its identifier in this shop; 0 clears it (an identifier '
-                            . 'the shop does not have is refused with the list of its social titles).' . $kept,
+                        'description' => 'Social title, by its id_gender from somcp_list_titles; 0 clears it (an '
+                            . 'identifier the shop does not have is refused with the list of its social titles).' . $kept,
                     ],
                     'birthday' => [
                         'type' => ['string', 'null'],

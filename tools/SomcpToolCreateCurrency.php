@@ -60,7 +60,7 @@ class SomcpToolCreateCurrency
                 . 'currency). ISO code, Exchange rate, Decimals, Status, and optionally the names and symbols, '
                 . 'otherwise filled from CLDR. Read somcp_list_currencies first. The rate is '
                 . 'the merchant\'s - ask, never invent. For a currency the shop already has, '
-                . 'somcp_update_currency; payment modules accepting it are set in Payment > Preferences.',
+                . 'somcp_update_currency; payment modules accepting it are set in Payment > Preferences (somcp_update_payment_restrictions).',
             [
                 'type' => 'object',
                 'properties' => [
@@ -233,6 +233,105 @@ class SomcpToolCreateCurrency
         }
 
         $restored = $existing !== null;
+        $created = self::create($iso, $rate, $active, $idShop, $repository, $alternative, $precision, $names, $symbols);
+        if (is_string($created)) {
+            SomcpLogger::log('currency_create_failed', SomcpLogger::OUTCOME_FAILURE, $iso . ': '
+                . Tools::substr($created, 0, 500), '', $idEmployee);
+
+            return SomcpTool::text('Nothing was created. The shop refused currency ' . $iso . ': ' . $created
+                . ' - read somcp_list_currencies before calling again', true);
+        }
+        $idCurrency = $created;
+        SomcpLogger::log('currency_created', SomcpLogger::OUTCOME_SUCCESS, 'currency ' . $idCurrency . ' (' . $iso . ')'
+            . ($restored ? ' restored' : ''), '', $idEmployee);
+
+        $warnings = [];
+        if ($alternative) {
+            // refreshLocalizedCurrencyData() puts the ISO code where a name or
+            // a symbol was left empty: said, so the merchant can name it.
+            foreach (['name' => $names, 'symbol' => $symbols] as $field => $texts) {
+                $empty = [];
+                foreach ($texts as $idLang => $text) {
+                    if ($text === '') {
+                        $empty[] = (string) Language::getIsoById((int) $idLang);
+                    }
+                }
+                if ($empty !== []) {
+                    $warnings[] = $field . ' left empty in ' . implode(', ', $empty) . ': the ISO code ' . $iso
+                        . ' is shown instead.';
+                }
+            }
+        }
+        if ($restored) {
+            $warnings[] = $iso . ' was deleted before: the same currency is back, without the payment modules it had '
+                . 'in Payment > Preferences (somcp_update_payment_restrictions).';
+        }
+        if (self::paymentModules($idCurrency, $idShop) === 0) {
+            $warnings[] = 'Payment > Preferences (somcp_update_payment_restrictions) decides which payment modules accept ' . $iso . '; no module accepts '
+                . 'it yet.';
+        }
+
+        $result = ['created' => true, 'id_currency' => $idCurrency];
+        if ($restored) {
+            $result['restored'] = true;
+        }
+        if ($warnings !== []) {
+            $result['warning'] = implode(' ', $warnings);
+        }
+        $language = SomcpTool::readLanguage([], $idShop);
+        // Read back rather than echoed from the arguments: what the assistant
+        // shows the merchant is what the shop stored.
+        $result['currency'] = $language !== null ? SomcpToolGetCurrency::read($idShop, $language, $idCurrency) : null;
+
+        return SomcpTool::json($result);
+    }
+
+    /**
+     * One currency created as Add new currency does, its identifier returned, or the shop's refusal.
+     *
+     * Shared by somcp_create_currency and somcp_import_localization_pack,
+     * which creates the currencies of a pack the shop lacks where the core's
+     * command bus does not run: one creation, so both write the same row.
+     * The arguments are already checked; the deleted row of the same code is
+     * reused.
+     *
+     * @param string $iso uppercase ISO code
+     * @param float $rate
+     * @param bool $active
+     * @param int $idShop
+     * @param PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository $repository
+     * @param bool $alternative
+     * @param int|null $precision null for the decimals of CLDR, 2 for an alternative currency
+     * @param array<int, string> $names by language identifier, empty ones filled from CLDR
+     * @param array<int, string> $symbols by language identifier, empty ones filled from CLDR
+     *
+     * @return int|string
+     */
+    public static function create(
+        string $iso,
+        float $rate,
+        bool $active,
+        int $idShop,
+        $repository,
+        bool $alternative = false,
+        ?int $precision = null,
+        array $names = [],
+        array $symbols = [],
+    ) {
+        $cldr = self::cldrLocale($repository, (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop));
+        $reference = $cldr !== null ? $cldr->getCurrency($iso) : null;
+        if (!$alternative && $reference === null) {
+            return $iso . ' is not an official currency PrestaShop knows';
+        }
+        $existing = self::stored($iso);
+        if ($existing !== null && !$existing['deleted']) {
+            return $iso . ' is already currency ' . $existing['id_currency'] . ' of this shop';
+        }
+        foreach (Language::getIDs(false) as $idLang) {
+            $names[(int) $idLang] = $names[(int) $idLang] ?? '';
+            $symbols[(int) $idLang] = $symbols[(int) $idLang] ?? '';
+        }
+        $restored = $existing !== null;
         // The deleted row of the same code is reused, as the core's data
         // provider does: the orders placed in it stay tied to the one currency.
         $currency = $restored ? new Currency((int) $existing['id_currency']) : new Currency();
@@ -285,56 +384,8 @@ class SomcpToolCreateCurrency
             $done = false;
             $failure = $e->getMessage();
         }
-        if (!$done) {
-            SomcpLogger::log('currency_create_failed', SomcpLogger::OUTCOME_FAILURE, $iso . ': '
-                . Tools::substr($failure, 0, 500), '', $idEmployee);
 
-            return SomcpTool::text('Nothing was created. The shop refused currency ' . $iso . ': ' . $failure
-                . ' - read somcp_list_currencies before calling again', true);
-        }
-        $idCurrency = (int) $currency->id;
-        SomcpLogger::log('currency_created', SomcpLogger::OUTCOME_SUCCESS, 'currency ' . $idCurrency . ' (' . $iso . ')'
-            . ($restored ? ' restored' : ''), '', $idEmployee);
-
-        $warnings = [];
-        if ($alternative) {
-            // refreshLocalizedCurrencyData() puts the ISO code where a name or
-            // a symbol was left empty: said, so the merchant can name it.
-            foreach (['name' => $names, 'symbol' => $symbols] as $field => $texts) {
-                $empty = [];
-                foreach ($texts as $idLang => $text) {
-                    if ($text === '') {
-                        $empty[] = (string) Language::getIsoById((int) $idLang);
-                    }
-                }
-                if ($empty !== []) {
-                    $warnings[] = $field . ' left empty in ' . implode(', ', $empty) . ': the ISO code ' . $iso
-                        . ' is shown instead.';
-                }
-            }
-        }
-        if ($restored) {
-            $warnings[] = $iso . ' was deleted before: the same currency is back, without the payment modules it had '
-                . 'in Payment > Preferences.';
-        }
-        if (self::paymentModules($idCurrency, $idShop) === 0) {
-            $warnings[] = 'Payment > Preferences decides which payment modules accept ' . $iso . '; no module accepts '
-                . 'it yet.';
-        }
-
-        $result = ['created' => true, 'id_currency' => $idCurrency];
-        if ($restored) {
-            $result['restored'] = true;
-        }
-        if ($warnings !== []) {
-            $result['warning'] = implode(' ', $warnings);
-        }
-        $language = SomcpTool::readLanguage([], $idShop);
-        // Read back rather than echoed from the arguments: what the assistant
-        // shows the merchant is what the shop stored.
-        $result['currency'] = $language !== null ? SomcpToolGetCurrency::read($idShop, $language, $idCurrency) : null;
-
-        return SomcpTool::json($result);
+        return $done ? (int) $currency->id : $failure;
     }
 
     /**

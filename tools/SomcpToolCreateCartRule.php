@@ -19,8 +19,10 @@ declare(strict_types=1);
 
 /*
  * somcp_create_cart_rule - one cart rule, with the fields of the Information,
- * Conditions and Actions tabs of Catalog > Discounts > Cart Rules > Add new,
- * restrictions apart.
+ * Conditions and Actions tabs of Catalog > Discounts > Cart Rules > Add new.
+ * Of the restrictions, countries, carriers, groups, the product selection
+ * and the compatibility with other rules are written; the shops stay in the
+ * back office.
  *
  * Every field takes the name and the shape somcp_get_cart_rule returns, so a
  * rule read there can be given back. The checks are the ones
@@ -79,8 +81,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             Somcp::t('Create a cart rule'),
             'Creates one cart rule, a voucher with a code or a discount applied on its own, as Catalog > Discounts > '
                 . 'Cart Rules > Add new. Fields have the names and shapes of somcp_get_cart_rule. Created off unless '
-                . 'active is true: confirm with the merchant first. Restrictions (countries, carriers, groups, other '
-                . 'rules, products, shops) are set in the back office. Not for changing a rule, nor for catalogue '
+                . 'active is true: confirm with the merchant first. restrictions: countries, carriers, groups, product '
+                . 'selection and other rules it combines with; shops stay in the back office. Not for changing a rule, nor for catalogue '
                 . 'price rules. Not to be retried: if the answer is lost, look for the rule with somcp_list_cart_rules '
                 . 'first.',
             self::inputSchema(),
@@ -89,6 +91,37 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             SomcpTool::acts(SomcpPermission::ADD, 'AdminCartRules')
         );
     }
+
+    /**
+     * @var array<int, string> the restrictions somcp_get_cart_rule reads that only the back office sets
+     */
+    private const BACK_OFFICE_RESTRICTIONS = ['shop'];
+
+    /**
+     * @var array<string, array{0: string, 1: string, 2: string}> the restrictions of the Conditions tab this tool
+     *                                                            writes: table, column, and the key of an item as
+     *                                                            somcp_get_cart_rule answers it. Fixed here so no
+     *                                                            table name is ever built from an argument.
+     */
+    protected const RESTRICTION_TABLES = [
+        'country' => ['cart_rule_country', 'id_country', 'id_country'],
+        'carrier' => ['cart_rule_carrier', 'id_carrier', 'id_reference'],
+        'group' => ['cart_rule_group', 'id_group', 'id_group'],
+    ];
+
+    /**
+     * @var array<string, array{0: string, 1: string}> the types of a rule of Product selection, in the order
+     *                                                 the refusal names them: what an item is called and the
+     *                                                 tool that lists it. The item keys are the ones
+     *                                                 somcp_get_cart_rule reads (ITEM_KEYS).
+     */
+    protected const PRODUCT_RULE_TYPES = [
+        'products' => ['product', 'somcp_search_products'],
+        'attributes' => ['attribute value', 'somcp_list_attributes'],
+        'categories' => ['category', 'somcp_list_categories'],
+        'manufacturers' => ['brand', 'somcp_list_manufacturers'],
+        'suppliers' => ['supplier', 'somcp_list_suppliers'],
+    ];
 
     /**
      * The arguments, under the names somcp_get_cart_rule returns.
@@ -157,6 +190,12 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                     'description' => 'Send a free gift: {"id_product": 3, "id_product_attribute": 13}, the combination '
                         . 'from somcp_get_product, required when the product has some. Null: none.',
                 ],
+                'restrictions' => [
+                    'type' => 'object',
+                    'description' => 'As somcp_get_cart_rule gives it; null: none; cart_rule []: combines with none. product: '
+                        . '[{"quantity", "rules": [{"type", "values"}]}], type: products, attributes, categories, '
+                        . 'manufacturers, suppliers.',
+                ],
             ],
             'required' => ['name'],
             'additionalProperties' => false,
@@ -200,16 +239,9 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      */
     protected static function planRule(array $arguments, int $idShop, array &$errors, int $idSelf = 0): ?array
     {
-        if (array_key_exists('restrictions', $arguments)) {
-            // Given back from somcp_get_cart_rule with every restriction
-            // off, it asks for nothing this tool does not already do.
-            $given = is_array($arguments['restrictions']) ? array_filter($arguments['restrictions'], static function ($value): bool {
-                return $value !== null;
-            }) : [1];
-            if ($given !== []) {
-                $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
-            }
-        }
+        $restrictions = array_key_exists('restrictions', $arguments)
+            ? self::newRestrictions($arguments['restrictions'], $idShop, $errors)
+            : [];
         $errors = array_merge($errors, SomcpTool::unknownFields(
             array_diff_key($arguments, ['restrictions' => true]),
             self::RULE_ARGUMENTS,
@@ -337,6 +369,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             'languages' => $languages,
             'names' => $names ?? [],
             'fields' => $fields,
+            // The rows of the restrictions switched on, by key of RESTRICTION_TABLES.
+            'restrictions' => $restrictions,
             // The product the back office adds to Product selection on its
             // own when the discount goes to one product.
             'specific_product' => $reductionProduct,
@@ -672,8 +706,70 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         $cartRule = new CartRule();
         self::fill($cartRule, $plan['fields']);
         self::fill($cartRule, self::completeTexts(['name' => $plan['names']], $plan['languages']));
+        // Switched on before add(), so the rule is saved once with the same
+        // switches the rows written right after it need.
+        foreach (array_keys($plan['restrictions'] ?? []) as $key) {
+            $cartRule->{$key . '_restriction'} = true;
+        }
 
         return $cartRule;
+    }
+
+    /**
+     * The restrictions a new rule starts with, as rows to write after it.
+     *
+     * Country, carrier and group are checked by planRestrictions(), the
+     * compatibility with other rules by planCompatibility(), the product
+     * selection by planProductSelection(), as the update checks them. The
+     * shops are only accepted off, so a rule read with somcp_get_cart_rule can
+     * be given back: they stay on the Conditions tab.
+     *
+     * @param mixed $restrictions as given
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed> the keys switched on only: identifiers, the groups of
+     *                              planProductSelection() for product
+     */
+    private static function newRestrictions($restrictions, int $idShop, array &$errors): array
+    {
+        if (!is_array($restrictions) || ($restrictions !== [] && array_is_list($restrictions))) {
+            $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
+
+            return [];
+        }
+        foreach ($restrictions as $key => $value) {
+            if (isset(self::RESTRICTION_TABLES[$key]) || $key === 'cart_rule' || $key === 'product') {
+                continue;
+            }
+            if (!in_array($key, self::BACK_OFFICE_RESTRICTIONS, true)) {
+                $errors[] = 'restrictions.' . $key . ': not a field of this tool';
+            } elseif ($value !== null) {
+                $errors[] = 'restrictions.' . $key . ': not set by this tool - the merchant sets it on the Conditions tab '
+                    . 'of the rule in the back office';
+            }
+        }
+
+        $rows = self::planRestrictions($restrictions, $errors);
+        if (array_key_exists('cart_rule', $restrictions)) {
+            $ids = self::planCompatibility($restrictions['cart_rule'], $idShop, 0, $errors);
+            if ($ids !== false) {
+                $rows['cart_rule'] = $ids;
+            }
+        }
+        if (array_key_exists('product', $restrictions)) {
+            // [] is refused there: a new rule has no read to give back.
+            $groups = self::planProductSelection($restrictions['product'], $idShop, $errors);
+            if ($groups !== false) {
+                $rows['product'] = $groups;
+            }
+        }
+
+        // A key given null asks for no restriction, which a new rule already
+        // has; an empty cart_rule is kept, the box checked with no rule.
+        return array_filter($rows, static function ($ids): bool {
+            return $ids !== null;
+        });
     }
 
     /**
@@ -693,15 +789,38 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         if ($multistore) {
             $plan['fields']['shop_restriction'] = true;
         }
+        // The group of a specific product, added beside the groups given when
+        // no products rule holds it, as postProcess() adds it before saving.
+        $idSpecific = (int) $plan['specific_product'];
+        $groups = $plan['restrictions']['product'] ?? null;
+        $added = 0;
+        if ($groups !== null && $idSpecific > 0 && !self::holdsProduct($groups, $idSpecific)) {
+            $groups[] = self::productGroup($idSpecific);
+            $added = $idSpecific;
+        }
         $cartRule = self::newRule($plan);
 
         $failure = '';
+        $restricted = [];
         try {
             $done = (bool) $cartRule->add();
             if (!$done) {
                 $failure = 'PrestaShop refused to save it';
+            } elseif (!self::writeRestrictions($cartRule, $plan['restrictions'])) {
+                // No transaction: the rule is removed below, and
+                // CartRule::delete() takes its restriction rows with it.
+                $done = false;
+                $failure = 'the restrictions could not be saved';
             } else {
-                $failure = self::afterAdd((int) $cartRule->id, $idShop, (int) $plan['specific_product'], $multistore);
+                $failure = self::afterAdd($cartRule, $idShop, $idSpecific, $groups, $multistore);
+                // Always, and last: with the box unchecked the new rule joins
+                // the lists of the rules that keep one; with it checked, the
+                // boxes it checks on other rules are not undone by delete(),
+                // so nothing may fail after it.
+                if ($failure === ''
+                    && ($restricted = self::writeCompatibility($cartRule, $plan['restrictions']['cart_rule'] ?? null)) === null) {
+                    $failure = 'the compatibility with the other cart rules could not be saved';
+                }
                 $done = $failure === '';
             }
         } catch (Throwable $e) {
@@ -742,47 +861,56 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
 
         // Read back rather than echoed from the arguments: what the assistant
         // shows the merchant is what the shop stored.
-        return SomcpTool::json([
+        $result = [
             'created' => true,
             'id_cart_rule' => $idCartRule,
-            'cart_rule' => SomcpToolGetCartRule::byId($idCartRule, (int) $plan['languages']['fallback'], $idShop),
-        ]);
+        ];
+        $warnings = [];
+        $warning = self::compatibilityWarning($restricted ?? []);
+        if ($warning !== '') {
+            $warnings[] = $warning;
+        }
+        if ($added > 0) {
+            $warnings[] = self::productAddedWarning($added);
+        }
+        if ($warnings !== []) {
+            $result['warning'] = implode(' ', $warnings);
+        }
+        $result['cart_rule'] = SomcpToolGetCartRule::byId($idCartRule, (int) $plan['languages']['fallback'], $idShop);
+
+        return SomcpTool::json($result);
     }
 
     /**
      * The rows AdminCartRulesController::afterAdd() writes for a new rule that
      * CartRule::add() does not. These tables have no ObjectModel, so they are
-     * written as the back office writes them.
+     * written as the back office writes them. The compatibility with other
+     * rules comes after, from writeCompatibility().
      *
-     * @param int $idCartRule
+     * @param CartRule $cartRule just added
      * @param int $idShop
      * @param int $idProduct the product of a specific product discount, 0 for none
+     * @param array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}>|null $groups
+     *                                                                                                                    Product selection given, with the group of the specific product when it was added; null for none
      * @param bool $multistore
      *
      * @return string empty when every row went in, else what failed
      */
-    private static function afterAdd(int $idCartRule, int $idShop, int $idProduct, bool $multistore): string
+    private static function afterAdd(CartRule $cartRule, int $idShop, int $idProduct, ?array $groups, bool $multistore): string
     {
+        $idCartRule = (int) $cartRule->id;
         $db = Db::getInstance();
 
         if ($multistore && !$db->insert('cart_rule_shop', ['id_cart_rule' => $idCartRule, 'id_shop' => $idShop])) {
             return 'the shop of the rule could not be saved';
         }
 
-        if ($idProduct > 0 && ($failure = self::productSelection($idCartRule, $idProduct)) !== '') {
+        if ($groups !== null) {
+            if (!self::writeProductSelection($cartRule, $groups)) {
+                return 'the product selection could not be saved';
+            }
+        } elseif ($idProduct > 0 && ($failure = self::productSelection($idCartRule, $idProduct)) !== '') {
             return $failure;
-        }
-
-        // The new rule restricts nothing, so every rule that restricts its
-        // compatibility takes it on its white list, as the back office does on
-        // every save: otherwise a voucher made here could never be combined
-        // with them, while the same voucher made on screen can.
-        if (!$db->execute(
-            'INSERT INTO `' . _DB_PREFIX_ . 'cart_rule_combination` (`id_cart_rule_1`, `id_cart_rule_2`)
-             SELECT `id_cart_rule`, ' . $idCartRule . ' FROM `' . _DB_PREFIX_ . 'cart_rule`
-             WHERE `cart_rule_restriction` = 1 AND `id_cart_rule` != ' . $idCartRule
-        )) {
-            return 'the compatibility with the other cart rules could not be saved';
         }
 
         return '';
@@ -802,19 +930,620 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      */
     protected static function productSelection(int $idCartRule, int $idProduct): string
     {
-        $db = Db::getInstance();
-        if (!$db->insert('cart_rule_product_rule_group', ['id_cart_rule' => (int) $idCartRule, 'quantity' => 1])) {
-            return 'the product selection could not be saved';
-        }
-        $idGroup = (int) $db->Insert_ID();
-        if (!$db->insert('cart_rule_product_rule', ['id_product_rule_group' => $idGroup, 'type' => 'products'])) {
-            return 'the product selection could not be saved';
-        }
-        $idRule = (int) $db->Insert_ID();
-        if (!$db->insert('cart_rule_product_rule_value', ['id_product_rule' => $idRule, 'id_item' => (int) $idProduct])) {
-            return 'the product selection could not be saved';
+        return self::insertProductGroups($idCartRule, [self::productGroup($idProduct)])
+            ? '' : 'the product selection could not be saved';
+    }
+
+    /**
+     * What the merchant is told when the group of a specific product was
+     * added beside the Product selection given, by the creation or the update.
+     *
+     * @param int $idProduct
+     *
+     * @return string
+     */
+    protected static function productAddedWarning(int $idProduct): string
+    {
+        return 'Product ' . $idProduct . ' was added to Product selection, as the back office adds it: the discount '
+            . 'applies to that product.';
+    }
+
+    /**
+     * The group the back office adds for a discount on one product.
+     *
+     * @param int $idProduct
+     *
+     * @return array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}
+     */
+    protected static function productGroup(int $idProduct): array
+    {
+        return ['quantity' => 1, 'rules' => [['type' => 'products', 'ids' => [$idProduct]]]];
+    }
+
+    /**
+     * Whether a products rule of the groups holds the product, as
+     * AdminCartRulesController::postProcess() looks before it adds the group
+     * of a specific product.
+     *
+     * @param array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}> $groups
+     * @param int $idProduct
+     *
+     * @return bool
+     */
+    protected static function holdsProduct(array $groups, int $idProduct): bool
+    {
+        foreach ($groups as $group) {
+            foreach ($group['rules'] as $rule) {
+                if ($rule['type'] === 'products' && in_array($idProduct, $rule['ids'], true)) {
+                    return true;
+                }
+            }
         }
 
-        return '';
+        return false;
+    }
+
+    /**
+     * Product selection as given, checked as the Conditions tab offers it.
+     *
+     * The shape is read by productSelectionShape(), then each group needs 1
+     * at least and each item must be one the form offers for the token's shop.
+     *
+     * @param mixed $value restrictions.product as given
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}>|false|null
+     *                                                                                                                   the groups, null for no restriction, false when refused
+     */
+    protected static function planProductSelection($value, int $idShop, array &$errors)
+    {
+        $groups = self::productSelectionShape($value, $errors);
+        if (!is_array($groups)) {
+            return $groups;
+        }
+
+        $refused = false;
+        foreach ($groups as $g => $group) {
+            $groupPath = 'restrictions.product[' . $g . ']';
+            if ($group['quantity'] < 1) {
+                // A group of 0 would let every cart through, as no group does.
+                $errors[] = $groupPath . '.quantity: a whole number, 1 at least';
+                $refused = true;
+            }
+            foreach ($group['rules'] as $r => $rule) {
+                [$thing, $tool] = self::PRODUCT_RULE_TYPES[$rule['type']];
+                foreach (array_diff($rule['ids'], self::offeredItems($rule['type'], $rule['ids'], $idShop)) as $missing) {
+                    $errors[] = SomcpTool::notFound($groupPath . '.rules[' . $r . '].values', $thing, (int) $missing, $tool);
+                    $refused = true;
+                }
+            }
+        }
+
+        return $refused ? false : $groups;
+    }
+
+    /**
+     * The shape of a Product selection as given, before any check of the shop.
+     *
+     * The shape somcp_get_cart_rule reads: groups of a quantity and rules,
+     * each rule a type and the items of that type. Each item once, in the
+     * order of the identifiers; a name given back is ignored. The update
+     * compares this with readProductGroups() before checking anything, so a
+     * selection given back as read is never refused for what the form let
+     * the merchant save (a group of 0, an item since removed from the shop);
+     * planProductSelection() reads through it too, so the two never read a
+     * list differently.
+     *
+     * @param mixed $value restrictions.product as given
+     * @param array<int, string> $errors
+     *
+     * @return array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}>|false|null
+     *                                                                                                                   the groups, null for no restriction, false when malformed
+     */
+    public static function productSelectionShape($value, array &$errors)
+    {
+        $path = 'restrictions.product';
+        if ($value === null) {
+            return null;
+        }
+        if (!is_array($value) || !array_is_list($value)) {
+            $errors[] = $path . ': a list of {"quantity": ..., "rules": [...]}, or null for no restriction';
+
+            return false;
+        }
+        if ($value === []) {
+            // The page would show the box unchecked and no group.
+            $errors[] = $path . ': at least one group, or null for no restriction';
+
+            return false;
+        }
+
+        $refused = false;
+        $groups = [];
+        foreach ($value as $g => $group) {
+            $groupPath = $path . '[' . $g . ']';
+            if (!is_array($group) || ($group !== [] && array_is_list($group))
+                || array_diff(array_keys($group), ['quantity', 'rules']) !== []) {
+                $errors[] = $groupPath . ': an object of quantity and rules';
+                $refused = true;
+                continue;
+            }
+            // 1 when left out, as a new group of the form.
+            $quantity = $group['quantity'] ?? 1;
+            if (is_string($quantity) && ctype_digit($quantity)) {
+                $quantity = (int) $quantity;
+            }
+            if (!is_int($quantity) || $quantity < 0) {
+                $errors[] = $groupPath . '.quantity: a whole number, 1 at least';
+                $refused = true;
+                $quantity = 1;
+            }
+            $rules = $group['rules'] ?? null;
+            if (!is_array($rules) || !array_is_list($rules) || $rules === []) {
+                // The core deletes a group left without rules.
+                $errors[] = $groupPath . '.rules: at least one rule';
+                $refused = true;
+                continue;
+            }
+            $planned = [];
+            foreach ($rules as $r => $rule) {
+                $rulePath = $groupPath . '.rules[' . $r . ']';
+                $type = is_array($rule) ? ($rule['type'] ?? null) : null;
+                if (!is_string($type) || !isset(self::PRODUCT_RULE_TYPES[$type])) {
+                    $errors[] = $rulePath . '.type: one of ' . implode(', ', array_keys(self::PRODUCT_RULE_TYPES));
+                    $refused = true;
+                    continue;
+                }
+                $itemKey = SomcpToolGetCartRule::ITEM_KEYS[$type];
+                $values = $rule['values'] ?? null;
+                if (!is_array($values) || !array_is_list($values) || $values === []) {
+                    // The core deletes a rule left without values.
+                    $errors[] = $rulePath . '.values: at least one, a list of {"' . $itemKey . '": ...}';
+                    $refused = true;
+                    continue;
+                }
+                $ids = [];
+                foreach ($values as $item) {
+                    $id = is_array($item) ? ($item[$itemKey] ?? null) : $item;
+                    if (is_string($id) && ctype_digit($id)) {
+                        $id = (int) $id;
+                    }
+                    if (!is_int($id) || $id <= 0) {
+                        $errors[] = SomcpTool::notAnIdentifier($rulePath . '.values');
+                        $refused = true;
+                        continue 2;
+                    }
+                    $ids[$id] = $id;
+                }
+                ksort($ids);
+                $planned[] = ['type' => $type, 'ids' => array_values($ids)];
+            }
+            $groups[] = ['quantity' => $quantity, 'rules' => $planned];
+        }
+
+        return $refused ? false : $groups;
+    }
+
+    /**
+     * The identifiers of a Product selection rule that the form would offer.
+     *
+     * The products and the categories of the token's shop, the root category
+     * left out as the tree of the form starts under it; every attribute
+     * value, brand and supplier, as the form lists them all.
+     *
+     * @param string $type a key of PRODUCT_RULE_TYPES
+     * @param array<int, int> $ids
+     * @param int $idShop
+     *
+     * @return array<int, int>
+     */
+    private static function offeredItems(string $type, array $ids, int $idShop): array
+    {
+        $in = implode(',', array_map('intval', $ids));
+        $p = _DB_PREFIX_;
+        switch ($type) {
+            case 'products':
+                $sql = 'SELECT `id_product` AS `id` FROM `' . $p . 'product_shop`
+                        WHERE `id_shop` = ' . (int) $idShop . ' AND `id_product` IN (' . $in . ')';
+                break;
+            case 'categories':
+                $sql = 'SELECT `id_category` AS `id` FROM `' . $p . 'category_shop`
+                        WHERE `id_shop` = ' . (int) $idShop . ' AND `id_category` IN (' . $in . ')
+                        AND `id_category` <> ' . (int) Configuration::get('PS_ROOT_CATEGORY');
+                break;
+            case 'attributes':
+                $sql = 'SELECT `id_attribute` AS `id` FROM `' . $p . 'attribute` WHERE `id_attribute` IN (' . $in . ')';
+                break;
+            case 'manufacturers':
+                $sql = 'SELECT `id_manufacturer` AS `id` FROM `' . $p . 'manufacturer` WHERE `id_manufacturer` IN (' . $in . ')';
+                break;
+            default:
+                $sql = 'SELECT `id_supplier` AS `id` FROM `' . $p . 'supplier` WHERE `id_supplier` IN (' . $in . ')';
+        }
+
+        return array_map('intval', array_column(Db::getInstance()->executeS($sql) ?: [], 'id'));
+    }
+
+    /**
+     * Product selection read by somcp_get_cart_rule, in the shape planProductSelection() answers.
+     *
+     * @param mixed $read restrictions.product as somcp_get_cart_rule returns it
+     *
+     * @return array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}>|null
+     */
+    protected static function readProductGroups($read): ?array
+    {
+        if (!is_array($read)) {
+            return null;
+        }
+        $groups = [];
+        foreach ($read as $group) {
+            $rules = [];
+            foreach ((array) ($group['rules'] ?? []) as $rule) {
+                $type = (string) ($rule['type'] ?? '');
+                $itemKey = SomcpToolGetCartRule::ITEM_KEYS[$type] ?? '';
+                $ids = array_map('intval', array_column((array) ($rule['values'] ?? []), $itemKey));
+                sort($ids);
+                $rules[] = ['type' => $type, 'ids' => array_values(array_unique($ids))];
+            }
+            $groups[] = ['quantity' => (int) ($group['quantity'] ?? 1), 'rules' => $rules];
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Replaces Product selection, as AdminCartRulesController::afterUpdate()
+     * clears it and afterAdd() writes it back. These tables have no
+     * ObjectModel, so they are written as the controller writes them, with
+     * table names fixed here.
+     *
+     * somcp_update_cart_rule calls it before update(), inside its
+     * transaction, so the switch set here and the rows go in together;
+     * somcp_create_cart_rule right after add(), the switch set before it, and
+     * a failure deletes the rule with its rows.
+     *
+     * @param CartRule $rule saved already, so it has its identifier
+     * @param array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}>|null $groups
+     *                                                                                                                    null for no restriction
+     *
+     * @return bool
+     */
+    protected static function writeProductSelection(CartRule $rule, ?array $groups): bool
+    {
+        $idCartRule = (int) $rule->id;
+        $db = Db::getInstance();
+        $p = _DB_PREFIX_;
+        if (!$db->delete('cart_rule_product_rule_group', '`id_cart_rule` = ' . $idCartRule)
+            || !$db->delete('cart_rule_product_rule', '`id_product_rule_group` NOT IN '
+                . '(SELECT `id_product_rule_group` FROM `' . $p . 'cart_rule_product_rule_group`)')
+            || !$db->delete('cart_rule_product_rule_value', '`id_product_rule` NOT IN '
+                . '(SELECT `id_product_rule` FROM `' . $p . 'cart_rule_product_rule`)')) {
+            return false;
+        }
+        if ($groups !== null && !self::insertProductGroups($idCartRule, $groups)) {
+            return false;
+        }
+        $rule->product_restriction = $groups !== null;
+
+        return true;
+    }
+
+    /**
+     * The rows of groups of Product selection: one per group, one per rule,
+     * one per item, as afterAdd() inserts them.
+     *
+     * @param int $idCartRule
+     * @param array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}> $groups
+     *
+     * @return bool
+     */
+    private static function insertProductGroups(int $idCartRule, array $groups): bool
+    {
+        $db = Db::getInstance();
+        foreach ($groups as $group) {
+            if (!$db->insert('cart_rule_product_rule_group', ['id_cart_rule' => $idCartRule, 'quantity' => (int) $group['quantity']])) {
+                return false;
+            }
+            $idGroup = (int) $db->Insert_ID();
+            foreach ($group['rules'] as $rule) {
+                // The type comes from PRODUCT_RULE_TYPES, never as given.
+                $type = isset(self::PRODUCT_RULE_TYPES[$rule['type']]) ? $rule['type'] : 'products';
+                if (!$db->insert('cart_rule_product_rule', ['id_product_rule_group' => $idGroup, 'type' => $type])) {
+                    return false;
+                }
+                $idRule = (int) $db->Insert_ID();
+                $values = [];
+                foreach ($rule['ids'] as $id) {
+                    $values[] = ['id_product_rule' => $idRule, 'id_item' => (int) $id];
+                }
+                if ($values !== [] && !$db->insert('cart_rule_product_rule_value', $values)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The rows each restriction given will hold, checked as the form offers them.
+     *
+     * Only the keys of RESTRICTION_TABLES are read; the caller decides what the
+     * others mean. A list becomes the identifiers to write, each once and in
+     * order, null switches the restriction off. An empty list is refused: with
+     * the box checked and nothing selected, the rule would match no cart.
+     *
+     * @param array<string, mixed> $restrictions as somcp_get_cart_rule answers them
+     * @param array<int, string> $errors
+     *
+     * @return array<string, array<int, int>|null>
+     */
+    protected static function planRestrictions(array $restrictions, array &$errors): array
+    {
+        $rows = [];
+        foreach (self::RESTRICTION_TABLES as $key => [, , $itemKey]) {
+            if (!array_key_exists($key, $restrictions)) {
+                continue;
+            }
+            $path = 'restrictions.' . $key;
+            $value = $restrictions[$key];
+            if ($value === null) {
+                $rows[$key] = null;
+                continue;
+            }
+            if (!is_array($value) || !array_is_list($value)) {
+                $errors[] = $path . ': a list of {"' . $itemKey . '": ...}, or null for no restriction';
+                continue;
+            }
+            if ($value === []) {
+                $errors[] = $path . ': at least one, or null for no restriction';
+                continue;
+            }
+            $ids = [];
+            foreach ($value as $item) {
+                $id = is_array($item) ? ($item[$itemKey] ?? null) : $item;
+                if (is_string($id) && ctype_digit($id)) {
+                    $id = (int) $id;
+                }
+                if (!is_int($id) || $id <= 0) {
+                    $errors[] = SomcpTool::notAnIdentifier($path);
+                    continue 2;
+                }
+                $ids[$id] = $id;
+            }
+            ksort($ids);
+            $ids = array_values($ids);
+            foreach (array_diff($ids, self::existing($key, $ids)) as $missing) {
+                $errors[] = $key === 'country'
+                    ? SomcpTool::notFound($path, 'country', $missing, 'somcp_list_countries')
+                    : ($key === 'group'
+                        ? SomcpTool::notFound($path, 'group', $missing, 'somcp_list_customer_groups')
+                        : SomcpTool::notFound($path, 'carrier', $missing, 'somcp_list_carriers', 'reference'));
+            }
+            $rows[$key] = $ids;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The identifiers of a list that name something the form would offer.
+     *
+     * A carrier is kept by its reference, the column the core stores, and only
+     * when a version of it is not deleted: somcp_get_cart_rule leaves the
+     * others out, so a row written for one would never be read back.
+     *
+     * @param string $key a key of RESTRICTION_TABLES
+     * @param array<int, int> $ids
+     *
+     * @return array<int, int>
+     */
+    private static function existing(string $key, array $ids): array
+    {
+        $in = implode(',', array_map('intval', $ids));
+        if ($key === 'country') {
+            $sql = 'SELECT `id_country` AS `id` FROM `' . _DB_PREFIX_ . 'country` WHERE `id_country` IN (' . $in . ')';
+        } elseif ($key === 'group') {
+            $sql = 'SELECT `id_group` AS `id` FROM `' . _DB_PREFIX_ . 'group` WHERE `id_group` IN (' . $in . ')';
+        } else {
+            $sql = 'SELECT DISTINCT `id_reference` AS `id` FROM `' . _DB_PREFIX_ . 'carrier`
+                    WHERE `deleted` = 0 AND `id_reference` IN (' . $in . ')';
+        }
+
+        return array_map('intval', array_column(Db::getInstance()->executeS($sql) ?: [], 'id'));
+    }
+
+    /**
+     * The rules a rule combines with, checked as the Combinable cart rules list offers them.
+     *
+     * Unlike the other restrictions, an empty list is a choice of its own:
+     * the box checked with nothing selected, which the form saves without an
+     * error, is a rule that combines with no other.
+     *
+     * @param mixed $value restrictions.cart_rule as given
+     * @param int $idShop
+     * @param int $idSelf the rule being changed, 0 for a new one
+     * @param array<int, string> $errors
+     *
+     * @return array<int, int>|false|null the identifiers, null for no restriction, false when refused
+     */
+    protected static function planCompatibility($value, int $idShop, int $idSelf, array &$errors)
+    {
+        $path = 'restrictions.cart_rule';
+        if ($value === null) {
+            return null;
+        }
+        if (!is_array($value) || !array_is_list($value)) {
+            $errors[] = $path . ': a list of {"id_cart_rule": ...}, or null for no restriction';
+
+            return false;
+        }
+        $ids = [];
+        foreach ($value as $item) {
+            $id = is_array($item) ? ($item['id_cart_rule'] ?? null) : $item;
+            if (is_string($id) && ctype_digit($id)) {
+                $id = (int) $id;
+            }
+            if (!is_int($id) || $id <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path);
+
+                return false;
+            }
+            $ids[$id] = $id;
+        }
+        ksort($ids);
+        $ids = array_values($ids);
+        if ($idSelf > 0 && in_array($idSelf, $ids, true)) {
+            $errors[] = $path . ': a cart rule cannot list itself';
+
+            return false;
+        }
+        if ($ids === []) {
+            return [];
+        }
+        // The rules this shop can use, as the list and the get read them, so
+        // an identifier refused here is never one those tools give.
+        $found = array_map('intval', array_column(Db::getInstance()->executeS(
+            'SELECT cr.`id_cart_rule` FROM `' . _DB_PREFIX_ . 'cart_rule` cr
+             WHERE cr.`id_cart_rule` IN (' . implode(',', $ids) . ') AND ' . SomcpToolListCartRules::inShop($idShop)
+        ) ?: [], 'id_cart_rule'));
+        $missing = array_diff($ids, $found);
+        foreach ($missing as $id) {
+            $errors[] = SomcpTool::notFound($path, 'cart rule', $id, 'somcp_list_cart_rules');
+        }
+
+        return $missing === [] ? $ids : false;
+    }
+
+    /**
+     * Writes Compatibility with other cart rules as AdminCartRulesController saves it.
+     *
+     * The same four steps as the back office's afterUpdate() and afterAdd(),
+     * in their order, through Db since cart_rule_combination has no object:
+     * every pair of the rule removed; with the box checked, one pair per
+     * combinable rule; with it unchecked, the rule added to the list of every
+     * rule whose own box is checked; and with it checked, every rule left
+     * unrestricted that does not list this one gets its box checked and keeps
+     * every other active rule, so it stops combining with this one only.
+     * The switch of the rule is set on the object, saved by the caller.
+     *
+     * @param CartRule $rule saved already, so it has its identifier
+     * @param array<int, int>|null $ids from planCompatibility(), null for the box unchecked
+     *
+     * @return array<int, int>|null the other rules whose box was checked, null when a write failed
+     */
+    protected static function writeCompatibility(CartRule $rule, ?array $ids): ?array
+    {
+        $idCartRule = (int) $rule->id;
+        $table = _DB_PREFIX_ . 'cart_rule';
+        $db = Db::getInstance();
+        if (!$db->delete('cart_rule_combination', '`id_cart_rule_1` = ' . $idCartRule . ' OR `id_cart_rule_2` = ' . $idCartRule)) {
+            return null;
+        }
+        $rule->cart_rule_restriction = $ids !== null;
+        if ($ids === null) {
+            // The rule's own switch may still be stored on: it is saved after
+            // this, so the rule is left out by its identifier.
+            return $db->execute(
+                'INSERT INTO `' . _DB_PREFIX_ . 'cart_rule_combination` (`id_cart_rule_1`, `id_cart_rule_2`)
+                 SELECT `id_cart_rule`, ' . $idCartRule . ' FROM `' . $table . '`
+                 WHERE `cart_rule_restriction` = 1 AND `id_cart_rule` != ' . $idCartRule
+            ) ? [] : null;
+        }
+
+        $insert = [];
+        foreach ($ids as $id) {
+            $insert[] = ['id_cart_rule_1' => $idCartRule, 'id_cart_rule_2' => (int) $id];
+        }
+        if ($insert !== [] && !$db->insert('cart_rule_combination', $insert)) {
+            return null;
+        }
+
+        $others = array_map('intval', array_column($db->executeS(
+            'SELECT cr.`id_cart_rule` FROM `' . $table . '` cr
+             WHERE cr.`id_cart_rule` != ' . $idCartRule . ' AND cr.`cart_rule_restriction` = 0
+             AND NOT EXISTS (SELECT 1 FROM `' . _DB_PREFIX_ . 'cart_rule_combination` crc
+                 WHERE (crc.`id_cart_rule_1` = ' . $idCartRule . ' AND crc.`id_cart_rule_2` = cr.`id_cart_rule`)
+                    OR (crc.`id_cart_rule_2` = ' . $idCartRule . ' AND crc.`id_cart_rule_1` = cr.`id_cart_rule`))
+             ORDER BY cr.`id_cart_rule`'
+        ) ?: [], 'id_cart_rule'));
+        foreach ($others as $idOther) {
+            if (!$db->update('cart_rule', ['cart_rule_restriction' => 1], '`id_cart_rule` = ' . $idOther, 1)
+                || !$db->execute(
+                    'INSERT IGNORE INTO `' . _DB_PREFIX_ . 'cart_rule_combination` (`id_cart_rule_1`, `id_cart_rule_2`)
+                     SELECT `id_cart_rule`, ' . $idOther . ' FROM `' . $table . '`
+                     WHERE `active` = 1 AND `id_cart_rule` != ' . $idCartRule . ' AND `id_cart_rule` != ' . $idOther
+                )) {
+                return null;
+            }
+        }
+
+        return $others;
+    }
+
+    /**
+     * The line that names the rules Compatibility with other cart rules restricted on its own.
+     *
+     * @param array<int, int> $others from writeCompatibility()
+     *
+     * @return string empty when there are none
+     */
+    protected static function compatibilityWarning(array $others): string
+    {
+        if ($others === []) {
+            return '';
+        }
+
+        return count($others) . ' other cart rule(s) can no longer be combined with this one, as in the back office: '
+            . implode(', ', $others) . '.';
+    }
+
+    /**
+     * Writes the rows of planRestrictions() and sets the matching switches of the rule.
+     *
+     * The same rows AdminCartRulesController::afterAdd() inserts, through Db
+     * since these tables have no object, but only for the restrictions given:
+     * the back office's afterUpdate() wipes every restriction of the rule
+     * before writing back what its form posted. Product selection has its own
+     * steps, in writeProductSelection(), and so has the compatibility with
+     * other rules, in writeCompatibility().
+     *
+     * somcp_create_cart_rule sets the switches before add() and calls this
+     * right after it, with no transaction: a write that fails removes the
+     * rule, and CartRule::delete() takes its rows with it.
+     * somcp_update_cart_rule calls this before update(), so the switches set
+     * here and the rows go in together, inside one transaction, since the
+     * rule it changes must keep its old rows if the save fails.
+     *
+     * @param CartRule $rule saved already, so it has its identifier
+     * @param array<string, array<int, int>|null> $rows from planRestrictions()
+     *
+     * @return bool
+     */
+    protected static function writeRestrictions(CartRule $rule, array $rows): bool
+    {
+        $idCartRule = (int) $rule->id;
+        $db = Db::getInstance();
+        foreach ($rows as $key => $ids) {
+            if (!isset(self::RESTRICTION_TABLES[$key])) {
+                continue;
+            }
+            [$table, $column] = self::RESTRICTION_TABLES[$key];
+            if (!$db->delete($table, '`id_cart_rule` = ' . $idCartRule)) {
+                return false;
+            }
+            $insert = [];
+            foreach ($ids ?? [] as $id) {
+                $insert[] = ['id_cart_rule' => $idCartRule, $column => (int) $id];
+            }
+            if ($insert !== [] && !$db->insert($table, $insert)) {
+                return false;
+            }
+            $rule->{$key . '_restriction'} = $ids !== null;
+        }
+
+        return true;
     }
 }

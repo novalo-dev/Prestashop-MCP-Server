@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "the product settings of the shop", "arguments": {}, "expect": "ok", "contains": ["\"catalog_mode\":", "\"stock_management\":", "\"products_per_page\":", "\"label_in_stock\":", "\"specific_price_priorities\":"]},
+    {"why": "a language the shop does not have", "arguments": {"languages": ["xx"]}, "expect": "error", "contains": ["Nothing was read.", "xx"]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]}
+  ]
+}

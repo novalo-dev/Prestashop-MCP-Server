@@ -74,6 +74,7 @@ class SomcpDownload
         'supplier_logo' => ['reader' => 'somcp_get_supplier'],
         'attribute_texture' => ['reader' => 'somcp_get_attribute_value'],
         'order_state_icon' => ['reader' => 'somcp_list_order_statuses'],
+        'gender_image' => ['reader' => 'somcp_list_titles'],
         'carrier_logo' => ['reader' => 'somcp_list_carriers'],
         'language_flag' => ['reader' => 'somcp_list_languages'],
         'category_image' => ['reader' => 'somcp_get_category'],
@@ -609,6 +610,11 @@ class SomcpDownload
             case 'order_state_icon':
                 // Order statuses are shared by every shop.
                 $path = _PS_IMG_DIR_ . 'os/' . $number . '.gif';
+                break;
+            case 'gender_image':
+                // Social titles are shared by every shop, img/genders/<id>.jpg
+                // on 8 and 9.
+                $path = _PS_GENDERS_DIR_ . $number . '.jpg';
                 break;
             case 'carrier_logo':
                 $path = _PS_SHIP_IMG_DIR_ . $number . '.jpg';

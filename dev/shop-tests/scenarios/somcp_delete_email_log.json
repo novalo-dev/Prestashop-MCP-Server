@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a line the log does not hold", "arguments": {"id_mail": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "- id_mail: no logged e-mail of this shop has the identifier 999999 - find it with somcp_list_email_logs"]},
+    {"why": "an identifier that is not one", "arguments": {"id_mail": 0}, "expect": "error", "contains": ["- id_mail: a whole number above 0"]},
+    {"why": "no line named", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted.", "- id_mail:"]},
+    {"why": "an unknown field beside the line", "arguments": {"x": 1, "id_mail": 999999}, "expect": "error", "contains": ["- x: not a field of this tool"]}
+  ]
+}

@@ -333,6 +333,29 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
 | `somcp_delete_carrier` | ✎ Delete a carrier | Carriers › delete |
 | `somcp_get_shipping_preferences` | ● Read the shipping preferences | Shipping preferences › view |
+| `somcp_update_shipping_preferences` | ✎ Change the shipping preferences | Shipping preferences › edit |
+| `somcp_get_payment_preferences` | ● Read the payment preferences | Payment preferences › view |
+| `somcp_update_payment_restrictions` | ✎ Change the payment restrictions | Payment preferences › edit |
+| `somcp_get_email_settings` | ● Read the e-mail settings | E-mail settings › view |
+| `somcp_update_email_settings` | ✎ Change the e-mail settings | E-mail settings › edit |
+| `somcp_list_email_logs` | ● List the sent e-mails | E-mail settings › view |
+| `somcp_delete_email_log` | ✎ Delete a sent e-mail from the list | E-mail settings › delete |
+| `somcp_erase_email_logs` | ✎ Erase the list of sent e-mails | E-mail settings › delete |
+| `somcp_send_test_email` | ✎ Send a test e-mail | E-mail settings › edit |
+| `somcp_get_order_settings` | ● Read the order settings | Order settings › view |
+| `somcp_update_order_settings` | ✎ Change the order settings | Order settings › edit |
+| `somcp_get_product_settings` | ● Read the product settings | Product settings › view |
+| `somcp_update_product_settings` | ✎ Change the product settings | Product settings › edit |
+| `somcp_get_customer_settings` | ● Read the customer settings | Customer settings › view |
+| `somcp_update_customer_settings` | ✎ Change the customer settings | Customer settings › edit |
+| `somcp_list_titles` | ● List the social titles | Titles › view |
+| `somcp_create_title` | ✎ Create a social title | Titles › add |
+| `somcp_update_title` | ✎ Change a social title | Titles › edit |
+| `somcp_delete_title` | ✎ Delete a social title | Titles › delete |
+| `somcp_list_contacts` | ● List the contacts | Contacts › view |
+| `somcp_create_contact` | ✎ Create a contact | Contacts › add |
+| `somcp_update_contact` | ✎ Change a contact | Contacts › edit |
+| `somcp_delete_contact` | ✎ Delete a contact | Contacts › delete |
 | `somcp_list_zones` | ● List zones | Zones › view |
 | `somcp_create_zone` | ✎ Create a zone | Zones › add |
 | `somcp_update_zone` | ✎ Change a zone | Zones › edit |
@@ -507,6 +530,8 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_customer` | ✎ Create a customer | Customers › add |
 | `somcp_update_customer` | ✎ Change a customer | Customers › edit |
 | `somcp_list_customer_groups` | ● List customer groups | Groups › view |
+| `somcp_get_customer_group` | ● Get a customer group | Groups › view |
+| `somcp_update_customer_group` | ✎ Change a customer group | Groups › edit |
 
 ### 📈 Statistics
 

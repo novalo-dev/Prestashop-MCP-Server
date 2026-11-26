@@ -1151,6 +1151,19 @@ $expect('a format the field does not take', $post($deposit['door'], 'logo.pdf', 
 $expect('the image the field takes', $post($deposit['door'], 'logo.png', $png), 200);
 $expect('a second file on a deposit opened for one', $post($deposit['door'], 'other.png', $png), 400);
 $see('the file is in the deposit and nowhere under the web root', count(SomcpUpload::deposited((int) (SomcpUpload::find($deposit['ref'], $idEmployee)['id_upload'] ?? 0))) === 1, ['body' => '']);
+// The same image sent twelve times at once to a deposit opened for one: each
+// request used to read the count before any other was recorded.
+$wave = $openDeposit();
+$boundary = 'somcp' . bin2hex(random_bytes(8));
+$multipart = '--' . $boundary . "\r\n"
+    . 'Content-Disposition: form-data; name="' . SomcpUpload::DIRECT_FIELD . '"; filename="logo.png"' . "\r\n"
+    . "Content-Type: application/octet-stream\r\n\r\n" . $png . "\r\n--" . $boundary . "--\r\n";
+$sent = $together(array_fill(0, 12, [$wave['door'], ['Content-Type: multipart/form-data; boundary=' . $boundary], $multipart]));
+$taken = count(array_filter($sent, static function (array $answer): bool {
+    return $answer['status'] === 200;
+}));
+$keptAtOnce = count(SomcpUpload::deposited((int) (SomcpUpload::find($wave['ref'], $idEmployee)['id_upload'] ?? 0)));
+$see('twelve files at once on a deposit opened for one: one is kept', $keptAtOnce === 1 && $taken === 1, ['body' => $taken . ' accepted, ' . $keptAtOnce . ' kept']);
 $late = $openDeposit();
 $db->update('somcp_upload', ['expires_at' => '2000-01-01 00:00:00'], "`reference_hash` = '" . pSQL(SomcpRandom::hash($late['ref'])) . "'");
 $expect('a deposit that expired', $post($late['door'], 'logo.png', $png), 404);

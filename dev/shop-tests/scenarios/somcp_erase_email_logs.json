@@ -1,0 +1,5 @@
+{
+  "calls": [
+    {"why": "an unknown field, and nothing erased", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was deleted.", "- x: not a field of this tool"]}
+  ]
+}

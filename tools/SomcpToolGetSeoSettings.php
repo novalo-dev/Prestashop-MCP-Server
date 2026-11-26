@@ -157,8 +157,10 @@ class SomcpToolGetSeoSettings
             'friendly_urls' => $friendlyUrls,
             'accented_urls' => self::flag('PS_ALLOW_ACCENTED_CHARS_URL', $idShopGroup, $idShop),
             // Use prefix for default language: PrestaShop 9 only, null on 8
-            // which has no such key, as https_everywhere is null on 9.
-            'default_language_url_prefix' => self::flag('PS_DEFAULT_LANGUAGE_URL_PREFIX', $idShopGroup, $idShop),
+            // which has no such option, as https_everywhere is null on 9.
+            'default_language_url_prefix' => version_compare(_PS_VERSION_, '9.0.0', '>=')
+                ? self::flag('PS_DEFAULT_LANGUAGE_URL_PREFIX', $idShopGroup, $idShop)
+                : null,
             'canonical_redirect' => $canonical,
             // The two Apache options of the Set up URLs card.
             'disable_apache_multiviews' => self::flag('PS_HTACCESS_DISABLE_MULTIVIEWS', $idShopGroup, $idShop),
@@ -177,23 +179,25 @@ class SomcpToolGetSeoSettings
     }
 
     /**
-     * One yes or no setting of the shop, null when this version does not have it.
+     * One yes or no setting of the shop, read as the core reads it.
      * somcp_get_cache_status reads its settings through it too, for the
      * token's shop.
+     *
+     * A shop holds no row for a switch nobody ever saved, and the back office
+     * shows it as No, since the core reads these keys as
+     * (bool) get(<key>, false) or getBoolean(<key>): a missing row is off
+     * here too. Whether a version has a setting at all is decided by the
+     * caller from the version, never from a missing row.
      *
      * @param string $key
      * @param int $idShopGroup
      * @param int $idShop
      *
-     * @return bool|null
+     * @return bool
      */
-    public static function flag(string $key, int $idShopGroup, int $idShop): ?bool
+    public static function flag(string $key, int $idShopGroup, int $idShop): bool
     {
-        $value = Configuration::get($key, null, $idShopGroup, $idShop);
-
-        // false is what Configuration::get() returns for a key that does not
-        // exist; a key set to off is stored as '0'.
-        return $value === false ? null : (bool) $value;
+        return (bool) Configuration::get($key, null, $idShopGroup, $idShop);
     }
 
     /**

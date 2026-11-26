@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "three wrong values, named in one answer", "arguments": {"minimum_purchase_tax_excl": -1, "guest_checkout": "no", "terms_id_cms": 999999}, "expect": "error", "contains": ["Nothing was changed.", "- minimum_purchase_tax_excl: an amount of 0 or more, tax excluded, in ", "- guest_checkout: true or false", "- terms_id_cms: no CMS page of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]},
+    {"why": "a gift-wrapping tax that does not exist", "arguments": {"gift_wrapping_id_tax_rules_group": 999999}, "expect": "error", "contains": ["Nothing was changed.", "- gift_wrapping_id_tax_rules_group: no tax rule of this shop has the identifier 999999 - find it with somcp_list_tax_rules"]},
+    {"why": "an unknown field", "arguments": {"tone": 1}, "expect": "error", "contains": ["Nothing was changed.", "- tone: not a field of this tool"]}
+  ]
+}

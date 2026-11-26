@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "reads the group Customer every shop starts with, with the fields of the list, its names, no category discount and the module itself authorized", "arguments": {"id_group": 3}, "expect": "ok", "contains": ["\"group\"", "\"id_group\": 3", "\"name\": \"Customer\"", "\"reduction\"", "\"price_display_method\": \"tax_", "\"show_prices\": true", "\"members_count\"", "\"date_add\"", "\"default_for\"", "\"names\": {", "\"en\": \"Customer\"", "\"category_discounts\": []", "\"authorized_modules\": [", "\"somcp\"", "\"unauthorized_modules\"", "\"customer_groups_enabled\"", "\"language\": \"en\""]},
+    {"why": "the names read in a language the shop has, said by its code", "arguments": {"id_group": 3, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"name\": \"Customer\""]},
+    {"why": "an unknown group, and nothing read", "arguments": {"id_group": 999999}, "expect": "error", "contains": ["Nothing was read.", "id_group", "somcp_list_customer_groups"]},
+    {"why": "not an identifier, and nothing read", "arguments": {"id_group": 0}, "expect": "error", "contains": ["Nothing was read.", "- id_group: a whole number above 0"]},
+    {"why": "an unknown field, and nothing read", "arguments": {"x": 1, "id_group": 3}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]},
+    {"why": "the identifier left out and a language the shop does not have, reported together", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read.", "- id_group: required - find it with somcp_list_customer_groups", "- language: not one of the shop's languages, which are "]}
+  ]
+}

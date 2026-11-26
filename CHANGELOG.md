@@ -16,6 +16,279 @@ are:
 
 ## Unreleased
 
+## 2.0.6 - 2026-11-26
+
+### Added
+
+**Change the shipping preferences.** The new tool
+somcp_update_shipping_preferences does what the Save buttons of Shipping >
+Preferences do: the handling charges, the price and the weight from which
+shipping is free, the default carrier, and how carriers are sorted on the
+storefront. Only the settings given change, and the answer of
+somcp_get_shipping_preferences can be given back as it is without writing
+anything.
+
+**Read the payment preferences.** The new tool somcp_get_payment_preferences
+reads Payment > Preferences: for each payment module, the currencies, customer
+groups, countries and carriers it is offered to. The assistant can now check
+that customers of a new country or currency have a way to pay before saying
+the shop sells there, and it warns about a module offered to nobody.
+
+**Change the payment restrictions.** The new tool
+somcp_update_payment_restrictions does what the Save buttons of the four cards
+of Payment > Preferences do, for one payment module: the currencies, customer
+groups, countries and carriers it is offered to. Each list
+given replaces the stored one, and a module read with
+somcp_get_payment_preferences can be given back as it is without writing
+anything. The assistant warns when a module is left offered to nobody, and
+the tools that add a country or a currency now name it when they say a
+payment module must be offered there.
+
+**Read the e-mail settings.** The new tool somcp_get_email_settings reads the
+Email card of Advanced Parameters > E-mail: where customer messages go, how
+the shop sends its e-mails (sendmail, SMTP or never), the SMTP server, the
+format, the e-mail log and DKIM signing. The assistant can now tell why
+customers get no order confirmation. The SMTP password and the DKIM key are
+never shown, only whether they are set.
+
+**Change the e-mail settings.** The new tool somcp_update_email_settings does
+what the Save button of the Email card of Advanced Parameters > E-mail does:
+where customer messages go, how the shop sends its e-mails, the SMTP server,
+username, encryption and port, the format, the e-mail log and DKIM signing.
+Only the settings given change, and the answer of somcp_get_email_settings can
+be given back as it is without writing anything. The SMTP password and the
+DKIM private key are never taken by the tool: the merchant types them on the
+page, and the assistant says so when one is missing.
+
+**List the sent e-mails.** The new tool somcp_list_email_logs lists the
+e-mails the shop sent, as the list of Advanced Parameters > E-mail shows them:
+recipient, template, language, subject and when, newest first, filtered like
+the list. The assistant can now check that the order and account e-mails
+really go out, and says when Log Emails is off and new e-mails are no longer
+kept.
+
+**Delete a sent e-mail from the list.** The new tool somcp_delete_email_log
+does what the delete button of a line of that list does, for example for a
+customer who asked to be forgotten. The answer gives the line as it was, and
+the module's own log keeps only its number and template, never the address.
+
+**Erase the list of sent e-mails.** The new tool somcp_erase_email_logs does
+what the Erase all button of that list does. The answer gives the number of
+lines erased, and says when they belonged to every shop of a multistore
+installation or when Log Emails is off.
+
+**Send a test e-mail.** The new tool somcp_send_test_email does what the Send
+a test email button of Advanced Parameters > E-mail does, with the settings the
+shop has saved, to the shop's own address or to another one. The assistant can
+now prove the shop sends its e-mails right after changing those settings, and
+gives the server's own message when it cannot. It refuses when Never send
+emails is chosen, and the SMTP password and DKIM key never appear in its answer.
+
+**Read the order settings.** The new tool somcp_get_order_settings reads Shop
+Parameters > Order Settings: guest checkout, the minimum purchase total, the
+terms of service and the page that holds them, reordering, delayed shipping,
+gift wrapping and recycled packaging. The assistant can now tell why a
+customer could not place an order, and it warns when the terms of service are
+required but no page is chosen.
+
+**Change the order settings.** The new tool somcp_update_order_settings
+changes Shop Parameters > Order Settings as its two Save buttons do: guest
+checkout, the minimum purchase total, the terms of service and their page,
+reordering, the final summary, delayed shipping, the backorder status on
+PrestaShop 9, gift wrapping with its price and tax, and recycled packaging.
+Only the settings given change, and the answer of somcp_get_order_settings can
+be given back as it is without writing anything. When a page of the terms no
+longer exists, somcp_get_order_settings now names this tool rather than the
+screen.
+
+**Read the product settings.** The new tool somcp_get_product_settings reads
+Shop Parameters > Product Settings: catalog mode, the days a product counts as
+new, the specific price priorities, the product page options, stock
+management, ordering out of stock with the labels and delivery times customers
+read in each language, pack stock, and the products per page with their
+order. It warns when catalog mode is on or stock management off, the two
+settings that explain why a visitor cannot buy.
+
+**Change the product settings.** The new tool somcp_update_product_settings
+changes Shop Parameters > Product Settings as the Save buttons of its General
+product settings, Product page, Products stock and Pagination cards do:
+catalog mode and its prices, the days a product counts as new, the size of the
+short description, the specific price priorities, what the product page shows,
+stock management, ordering out of stock, the pack stock, the remaining
+quantities, the default availability labels and delivery times in each
+language, and the products per page with their order. Only the settings given
+change, a language left out keeps its texts, and the answer of
+somcp_get_product_settings can be given back as it is without writing
+anything, even on a shop where one of these settings was never saved. The
+warnings name what the call changed first, then what was already so.
+
+**Read the customer settings.** The new tool somcp_get_customer_settings reads
+Shop Parameters > Customer Settings: whether the last cart is shown again at
+login, the e-mail sent after registration, the delay between two password
+resets, B2B mode, the birth date field and partner offers.
+
+**Change the customer settings.** The new tool somcp_update_customer_settings
+changes the same settings as the Save button of Customer Settings does. Only
+the settings given change, the answer of somcp_get_customer_settings can be
+given back as it is without writing anything, and turning B2B mode on or off
+shows or hides the page of B2B outstanding amounts as the back office does.
+
+**List the contacts.** The new tool somcp_list_contacts lists the contacts of
+Shop Parameters > Contact: their title, e-mail address and description, whether
+their messages are kept in Customer Service, and which one receives the
+customers' messages. A contact read there is given as it is to Send emails to
+of somcp_update_email_settings.
+
+**Create a contact.** The new tool somcp_create_contact does what Add new
+contact of Shop Parameters > Contact does: a title in each language, the
+address that receives the messages, whether they are kept in Customer Service,
+and a description, checked with the rules of the back office form. The answer
+gives the contact as the list shows it, ready for Send emails to of
+somcp_update_email_settings.
+
+**Change a contact.** The new tool somcp_update_contact does what Edit then
+Save of a contact do, with the same checks as the creation. Only the fields
+given change, a language left out keeps its text, and a contact of the list
+given back as it is changes nothing. A contact of the list given back whole is
+accepted by every assistant, to the creation as to the change.
+
+**Delete a contact.** The new tool somcp_delete_contact does what Delete does
+on a contact of Shop Parameters > Contact. It answers the contact as it was, in
+every language, so it can be created again, and warns when the shop has no
+contact left. The contact that receives the customers' messages is kept: the
+back office would delete it and leave those messages without a receiver.
+
+**List the social titles.** The new tool somcp_list_titles lists the titles of
+Shop Parameters > Customer Settings, tab Titles: their name in each language,
+the gender they stand for and their image. The assistant now finds the title
+to give a customer it creates or changes in this list, instead of learning it
+from a refusal.
+
+**Create a social title.** The new tool somcp_create_title adds a title to
+Shop Parameters > Customer Settings, tab Titles, as Add new title does: its
+name in each language, the gender it stands for and an optional image, resized
+as the form resizes it. A title whose image the shop cannot read is not kept,
+so a failed call leaves nothing behind.
+
+**Change a social title.** The new tool somcp_update_title changes a title of
+Shop Parameters > Customer Settings, tab Titles, as Edit then Save do: its
+name in one language or more, the gender it stands for or its image, which can
+be replaced but not removed. Only what is given changes, and a title read from
+the list and given back as it is stays untouched. When the gender changes, the
+answer says how many customers of the shop hold the title.
+
+**Delete a social title.** The new tool somcp_delete_title deletes a title of
+Shop Parameters > Customer Settings, tab Titles, as its Delete action does,
+and its image with it, which the back office leaves on the server. The answer
+gives the title as it was, so it can be created again, and says how many
+customers of the shop held it: their accounts then show no title.
+
+**Read a customer group in full.** The new tool somcp_get_customer_group reads
+one group of Shop Parameters > Customer Settings > Groups as its Edit form
+shows it: what the list of groups gives, plus its name in every language, its
+discounts by category, in percent as on screen, and the modules its members
+may use, authorized or not.
+
+**Change a customer group.** The new tool somcp_update_customer_group changes
+a group of Shop Parameters > Customer Settings > Groups as Edit then Save do:
+its name in one language or more, its Discount, its Price display method and
+whether its members see prices. Only what is given changes, and a group read
+and given back as it is stays untouched. The storefront shows the new prices
+at once, and the answer warns when the group is the one of every visitor,
+guest or customer.
+
+### Changed
+
+**Find the vouchers that run out.** The list of cart rules can be filtered by
+priority, uses left and expiration date, and sorted as the back office list:
+"the vouchers that expire before the end of the month" or "the rules with no
+use left" no longer take the back office or reading every page.
+
+**Keep a voucher to some products.** somcp_create_cart_rule and
+somcp_update_cart_rule now write Product selection: a voucher can be kept to
+products, categories, brands, suppliers or attribute values, with the number
+of such products the cart must hold, as on the Conditions tab of the rule, and
+is created that way in one go. "10% on the shoes" no longer needs the back
+office. A selection given back as read changes nothing and is not
+checked again, so a rule saved in the back office with a group of quantity 0
+or a product since removed can still be updated from its own read.
+
+**Limit a cart rule to countries, carriers and customer groups.**
+somcp_update_cart_rule refused every restriction of the Conditions tab, so a
+discount for wholesale customers only, or free shipping to one country with
+one carrier, had to be finished in the back office. It now sets the Country
+selection, the Carrier selection and the Customer group selection as the form
+does, or lifts them, and leaves the compatibility with other rules, the
+product selection and the shops untouched. somcp_create_cart_rule takes the
+same three selections, so such a rule is created in one call.
+
+**A localization pack names the country it turned on as the country tools do.**
+When somcp_import_localization_pack switched on the country of the pack, its
+answer said so with `enabled`, a name no other country tool uses, so an
+assistant looking for `active` missed it and one giving `enabled` back to
+somcp_update_country was refused. The answer now says `active`, as
+somcp_get_country and somcp_update_country do.
+
+**A localization pack brings its currencies from any assistant.** Importing a
+localization pack with somcp_import_localization_pack refused the currencies
+from an assistant connected from outside the shop, which then had to add each
+currency one by one. The import now adds the currencies of the pack the shop
+does not have, at rate 1 and enabled for every payment module, then refreshes
+their rates, from every assistant as from the built-in chat. When one currency
+cannot be created, the answer names by their codes the currencies created
+before it, so the merchant knows which ones now exist.
+
+**Choose which cart rules a voucher combines with.** somcp_update_cart_rule
+refused Compatibility with other cart rules, so stopping two vouchers from
+adding up still meant opening the Conditions tab. It now sets the box and the
+list of Combinable cart rules as the back office does, or clears them, and
+says which other rules the back office stopped combining with this one when
+the box is checked.
+
+**A voucher created by an assistant combines as one created on screen.**
+somcp_create_cart_rule refused Compatibility with other cart rules, so a
+voucher that must not add up with the others needed a second step in the back
+office. It now takes the list of Combinable cart rules, or none at all, and
+names the rules the back office then stops combining with it. A voucher
+created without the box is also added, as on screen, to the rules that list
+the vouchers they combine with.
+
+**A setting the shop's version does not have is refused in the same words.**
+The maintenance, order settings, module and page SEO tools each refused a
+setting of another PrestaShop version in their own sentence, and some did not
+say how to go on. Every tool now answers that the setting is not on the
+version the shop runs and that it should be left out, and somcp_update_meta_page
+takes the empty meta keywords of a page read on PrestaShop 9 given back as no
+change instead of refusing them.
+
+**The explanations of the settings are tips.** On the pages of the module,
+what a setting does was written in a paragraph under it, which made the pages
+long to read. It now opens from the question mark beside the name of the
+setting, or beside the title of a panel, with the mouse or the keyboard. What
+tells a state stays on the page: a missing key, a model that no longer passes,
+this month's usage.
+
+**A switch never saved reads off, as on screen.** The SEO and performance
+settings an assistant reads showed a switch nobody had ever saved as a
+setting the shop's version does not have, while the back office shows it as
+No, and the performance warnings missed it: on PrestaShop 8, Smart cache for
+CSS and Smart cache for JavaScript left off were not named. Such a switch is
+now read as off, and only a setting the version truly lacks stays empty.
+
+**Compact mode finds a tool asked for without accents.** A request typed
+without its accents, as on a phone, now finds the tool whose words carry
+them. The tools and the checks on every call are unchanged.
+
+**The built-in assistant runs on Neuron AI 4.1.28.** Nothing changes in how
+you use it.
+
+### Security
+
+**A deposit never keeps more files than it was opened for.** Files sent to
+one deposit at the same moment were each counted before any of them was
+recorded, so a deposit opened for one file could keep several. The files of
+a deposit are now counted one after the other, whichever way they arrive.
+
 ## 2.0.5 - 2026-11-25
 
 ### Added

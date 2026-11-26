@@ -39,6 +39,7 @@ require_once __DIR__ . '/SomcpToolGetLocalizationSettings.php';
 require_once __DIR__ . '/SomcpToolCreateTax.php';
 require_once __DIR__ . '/SomcpToolUpdateExchangeRates.php';
 require_once __DIR__ . '/SomcpToolInstallLanguagePack.php';
+require_once __DIR__ . '/SomcpToolCreateCurrency.php';
 
 class SomcpToolImportLocalizationPack
 {
@@ -81,9 +82,9 @@ class SomcpToolImportLocalizationPack
             'somcp_import_localization_pack',
             Somcp::t('Import a localization pack'),
             'Imports a country\'s localization pack from the shop\'s own file, as Import a localization pack in '
-                . 'International > Localization > Localization: states, taxes and tax rules, currencies and '
-                . 'languages (fetched from PrestaShop\'s servers, up to two minutes), units, and the price display of '
-                . 'the default groups. Creates what is missing, never changes what exists; units are overwritten. '
+                . 'International > Localization > Localization: states, taxes and tax rules, currencies (created on '
+                . 'every connection) and languages (fetched from PrestaShop\'s servers, up to two minutes), units, '
+                . 'and the price display of the default groups. Creates what is missing, never changes what exists; units are overwritten. '
                 . 'Not undone by a second call, which creates nothing. For one state or tax, somcp_create_state or '
                 . 'somcp_create_tax.',
             [
@@ -131,13 +132,20 @@ class SomcpToolImportLocalizationPack
                 $problems[] = SomcpTool::notFound('country', 'country', $iso, 'somcp_list_countries', 'ISO code');
             }
         }
-        // The core creates a currency through the back office's command bus,
-        // which only runs where the kernel container does: refused before
+        // The core creates a missing currency through the back office's
+        // command bus, which only runs where the kernel container does; here
+        // the tool creates them first with the code of somcp_create_currency,
+        // so the core finds them all and only refreshes the rates. Without
+        // the official currencies nothing could be created: refused before
         // anything else is imported, rather than stopping half way.
+        $repository = null;
         if (in_array('currencies', $content, true)
             && SomcpBackOffice::coreService('prestashop.core.command_bus') === null) {
-            $problems[] = 'content: currencies are created by the back office, which this connection does not run - '
-                . 'add each currency with somcp_create_currency, then somcp_update_exchange_rates';
+            $repository = SomcpBackOffice::cldrLocaleRepository();
+            if ($repository === null) {
+                $problems[] = 'content: the currencies PrestaShop knows cannot be read here - add them on the Add new '
+                    . 'currency page';
+            }
         }
         if ($problems !== [] || $iso === null || $content === []) {
             return SomcpTool::refused('changed', $problems);
@@ -164,7 +172,12 @@ class SomcpToolImportLocalizationPack
         // units or the groups after it silently out.
         $errors = [];
         foreach ($content as $item) {
-            $found = self::import($iso, [$item], $xml);
+            $found = $item === 'currencies' && $repository !== null
+                ? self::createCurrencies($xml, $idShop, $repository)
+                : [];
+            if ($found === []) {
+                $found = self::import($iso, [$item], $xml);
+            }
             $errors = array_merge($errors, $found);
             if (self::softErrors($found, [$item])[0] !== []) {
                 break;
@@ -243,7 +256,7 @@ class SomcpToolImportLocalizationPack
             $warnings[] = 'Taxes and tax rules that already had their name were kept as they are, even when the pack '
                 . 'has another rate: check them with somcp_list_taxes.';
         }
-        if (in_array('enabled', $result['country_turned_on'], true)) {
+        if (in_array('active', $result['country_turned_on'], true)) {
             $warnings[] = $after['country']['name'] . ' was not enabled: the import enabled it, as the back office does.';
         }
         foreach ($result['changes'] as $change) {
@@ -388,6 +401,42 @@ class SomcpToolImportLocalizationPack
     }
 
     /**
+     * The currencies of the pack the shop lacks, created as the core's
+     * _installCurrencies() creates them, the failure returned.
+     *
+     * Rate 1 and enabled, then the cache cleared and every payment module
+     * allowed to take it, in the core's order; the rates are refreshed by the
+     * core's import that follows. Stops at the first currency the shop
+     * refuses, as the core stops at the first error.
+     *
+     * @param SimpleXMLElement $xml the shop's own file, already loaded
+     * @param int $idShop
+     * @param PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository $repository
+     *
+     * @return array<int, string>
+     */
+    private static function createCurrencies(SimpleXMLElement $xml, int $idShop, $repository): array
+    {
+        if (!isset($xml->currencies->currency)) {
+            return [];
+        }
+        foreach ($xml->currencies->currency as $data) {
+            $iso = Tools::strtoupper(trim((string) $data['iso_code']));
+            if ($iso === '' || Currency::exists($iso)) {
+                continue;
+            }
+            $created = SomcpToolCreateCurrency::create($iso, 1.0, true, $idShop, $repository);
+            if (is_string($created)) {
+                return ['a currency of the pack could not be created: ' . $iso . ' - ' . $created];
+            }
+            Cache::clear();
+            PaymentModule::addCurrencyPermissions($created);
+        }
+
+        return [];
+    }
+
+    /**
      * What an import can create or change, read before and after it.
      *
      * @param int $idShop
@@ -525,10 +574,11 @@ class SomcpToolImportLocalizationPack
         }
 
         $turned = [];
-        // Named as the answer names them: enabled for the country's active.
-        foreach (['active' => 'enabled', 'contains_states' => 'contains_states'] as $key => $name) {
+        // Named as somcp_get_country and somcp_update_country name them, so the
+        // assistant finds them where every country tool puts them.
+        foreach (['active', 'contains_states'] as $key) {
             if ($after[$key] && !$before[$key]) {
-                $turned[] = $name;
+                $turned[] = $key;
             }
         }
 
@@ -656,7 +706,16 @@ class SomcpToolImportLocalizationPack
     {
         $parts = [];
         if ($result['created'] !== []) {
-            $parts[] = self::counts($result['created']) . ' had been created';
+            $created = [];
+            foreach ($result['created'] as $kind => $rows) {
+                // The currencies named, not only counted: each one created is
+                // enabled and offered to every payment module, so the merchant
+                // has to know which ones exist now, and the assistant which
+                // one to call again for.
+                $created[] = count($rows) . ' ' . $kind
+                    . ($kind === 'currencies' ? ' (' . implode(', ', array_column($rows, 'iso_code')) . ')' : '');
+            }
+            $parts[] = implode(', ', $created) . ' had been created';
         }
         foreach ($result['changes'] as $change) {
             $parts[] = $change['field'] . ' had changed from ' . $change['old'] . ' to ' . $change['new'];

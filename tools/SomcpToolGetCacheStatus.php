@@ -99,7 +99,7 @@ class SomcpToolGetCacheStatus
 
         $idShop = Somcp::currentShopId();
         $idShopGroup = (int) Shop::getGroupFromShop($idShop);
-        $flag = static function (string $key) use ($idShopGroup, $idShop): ?bool {
+        $flag = static function (string $key) use ($idShopGroup, $idShop): bool {
             return SomcpToolGetSeoSettings::flag($key, $idShopGroup, $idShop);
         };
 

@@ -103,9 +103,11 @@ dates you used.
 
 1. **List them** with `somcp_list_cart_rules`, as **Catalog > Discounts > Cart
    Rules**: vouchers with a code and discounts applied on their own, newest
-   first. `has_code` splits the two; `current: true` keeps only the rules valid
-   now (their period holds and they have uses left); `active`, `name` and
-   `code` filter as the list does.
+   first by default. `has_code` splits the two; `current: true` keeps only the rules valid
+   now (their period holds and they have uses left); `active`, `name`,
+   `code`, `priority`, `quantity_min` / `quantity_max` (the uses left) and
+   `expiration_date_from` / `expiration_date_to` filter as the list does, and
+   `sort` orders it as its columns do.
 2. **Read what each one gives from `summary`**, the one line built from
    `reduction`, `free_shipping` and `gift`. `reduction` is `null`, a percent,
    or an amount with its `currency` and whether tax is in it; `reduction_applies_to`
@@ -129,12 +131,13 @@ dates you used.
    `somcp_get_cart_rule` returns. A rule must give something: a `reduction`,
    `free_shipping` or a `gift`. `id_customer` comes from
    `somcp_search_customers`, a product from `somcp_search_products`, a gift's
-   combination from `somcp_get_product`. The answer names every problem at
-   once: correct them all and call again.
+   combination from `somcp_get_product`. Countries, carriers, customer
+   groups, the product selection and the rules it combines with go in
+   `restrictions`, as for a change below. The answer names every
+   problem at once: correct them all and call again.
 3. **It is created off** unless `active` is true: say so, and switch it on
-   with `somcp_set_cart_rule_active` only once the merchant asks. Countries, carriers, groups, other rules and the
-   product selection are set on the rule's **Conditions** tab in the back
-   office. If an answer is lost, look for the rule with
+   with `somcp_set_cart_rule_active` only once the merchant asks. The
+   shops are set on the rule's **Conditions** tab in the back office. If an answer is lost, look for the rule with
    `somcp_list_cart_rules` before calling again.
 
 ## Changing a voucher or a discount
@@ -147,8 +150,20 @@ dates you used.
    **Total available** is what is left, orders using the rule have lowered it
    already: do not add those uses again. Orders already placed keep the amount
    they had.
-3. The countries, carriers, groups, other rules and the product selection
-   stay with the merchant in the back office. A call that changes nothing
+3. **Countries, carriers and customer groups** go in `restrictions`, in the
+   shape `somcp_get_cart_rule` reads them: `country` from
+   `somcp_list_countries`, `carrier` by `id_reference` from
+   `somcp_list_carriers`, `group` from `somcp_list_customer_groups`, `null`
+   to lift one. `cart_rule` lists the rules it combines with, by
+   `id_cart_rule` from `somcp_list_cart_rules`: `[]` for none, `null` for
+   all. Checking it stops the rules that combined with all from combining
+   with this one, as the back office does: tell the merchant the rules the
+   `warning` names. `product` is **Product selection**: groups of a
+   `quantity` (how many such products the cart must hold) and `rules`, each
+   a `type` (`products`, `attributes`, `categories`, `manufacturers`,
+   `suppliers`) and its `values` from the list tool of that type, `null` to
+   lift it. The shops stay with the merchant in the back office. A call that
+   changes nothing
    answers `changed: false`. If an answer is lost, read the rule again with
    `somcp_get_cart_rule` before calling again.
 

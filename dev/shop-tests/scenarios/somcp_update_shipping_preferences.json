@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a negative amount, an unknown sort and an unknown default carrier are refused at once", "arguments": {"handling_cost_tax_excl": -1, "carrier_sort": "name", "default_carrier": "cheapest"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- handling_cost_tax_excl: an amount of 0 or more, tax excluded, in ", "- carrier_sort: price or position", "- default_carrier: best_price, best_grade or carrier"]},
+    {"why": "a default carrier the shop does not have is refused, naming the list to find one", "arguments": {"default_id_carrier": 999999}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- default_id_carrier: ", "somcp_list_carriers"]},
+    {"why": "a carrier given with best price is refused", "arguments": {"default_carrier": "best_price", "default_id_carrier": 1}, "expect": "error", "contains": ["- default_id_carrier: only with default_carrier carrier"]},
+    {"why": "a field the tool does not take is refused", "arguments": {"tone": 1}, "expect": "error", "contains": ["- tone: not a field of this tool"]}
+  ]
+}

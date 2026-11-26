@@ -250,7 +250,8 @@ calls every tool there through
 `dev/shop-tests/scenarios/`. Each call says what it expects: `ok`, `error`
 (the tool answers with `isError`), `input` (the tool asks the client first) or
 `any` (a write whose outcome depends on the demo data), and optionally
-`contains`, text the answer must hold. A notice raised from a file of the
+`contains`, text the answer must hold, and `lacks`, text it must not hold
+(a secret that must stay out of the answer). A notice raised from a file of the
 module fails the call too. PrestaShop 8 also runs on PHP 8.2 and later, which
 it does not support: those runs report without failing CI.
 

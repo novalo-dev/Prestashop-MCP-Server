@@ -2684,7 +2684,7 @@ every shop. Logged as `country_updated` with the field names, or
 `country_update_failed`.
 
 Warnings, in `warning`:
-- **Active** set to `true` with no `module_country` row for the country and the shop: `No payment module is offered to <name> in this shop: its customers cannot pay until one is allowed for it in Payment > Preferences.`
+- **Active** set to `true` with no `module_country` row for the country and the shop: `No payment module is offered to <name> in this shop: its customers cannot pay until one is allowed for it in Payment > Preferences (somcp_update_payment_restrictions).`
 - **Active** set to `true` in a zone no carrier serves (`SomcpToolUpdateZone::carriers()`): `No carrier serves zone <id> (<name>): customers of <name> are offered no carrier until one serves it - see somcp_update_carrier.`
 - **Contains states** set to `false` while the country has states: `The <n> states of <name> are no longer offered in its address form; they are kept.`; set to `true` with none: `<name> has no state yet: add them with somcp_create_state.`
 - **Do you need a tax identification number?** set to `true`: `New addresses in <name> must now give an identification number; the existing ones are not checked.`
@@ -3091,7 +3091,7 @@ replayable.
 
 **Do not use for** - the price ranges and costs of one carrier (→
 `somcp_get_carrier`); the free shipping of a cart rule (→
-`somcp_get_cart_rule`); changing them (no tool yet, #392).
+`somcp_get_cart_rule`); changing them (→ `somcp_update_shipping_preferences`).
 
 **Parameters**
 
@@ -3130,6 +3130,1413 @@ first carrier available; choose another in Shipping > Preferences.`
 
 **Differences between 8.0.1 and 9.0.0** - none: the same forms, keys and
 adapters (`HandlingConfiguration`, `CarrierOptionsConfiguration`).
+
+#### `somcp_update_shipping_preferences`
+**State**: written · [issue #392](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/392)
+**Nature**: `acts(EDIT, 'AdminShipping')` · **Scope**: `mcp.orders.write`, as `somcp_update_carrier`
+
+**Does** - changes **Shipping > Preferences**, as the **Save** buttons of its
+cards **Handling** and **Carrier options** do: **Handling charges**, the two
+**Free shipping starts at**, **Default carrier**, **Sort by**, **Order by**.
+Replayable: the same call twice changes nothing the second time.
+
+**Do not use for** - the ranges and costs of one carrier, or whether it adds
+handling costs (→ `somcp_update_carrier`); a free shipping voucher (→
+`somcp_create_cart_rule`).
+
+**Parameters** - all optional; a key left out keeps its value. The keys are
+those of `somcp_get_shipping_preferences`, whose answer can be given back
+whole: `currency`, `weight_unit`, `default_carrier_name`,
+`default_carrier_delay`, `language` and `warning` are worked out by the shop,
+ignored when given back as read (`language` when it is an active language of
+the shop, the transit time then compared in it) and refused otherwise
+(`- <key>: worked out by the shop, so it is not written here`).
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `handling_cost_tax_excl` | **Handling charges** | number | 0 or more, `Validate::isPrice()`: `handling_cost_tax_excl: an amount of 0 or more, tax excluded, in <currency>` |
+| `free_shipping_from_price` | **Free shipping starts at** (price) | number | the same rule and line; 0 turns it off |
+| `free_shipping_from_weight` | **Free shipping starts at** (weight) | number | 0 or more, `Validate::isUnsignedFloat()`: `free_shipping_from_weight: a weight of 0 or more, in <weight unit>`; 0 turns it off |
+| `default_carrier` | **Default carrier** | string | `best_price`, `best_grade` or `carrier`, otherwise `default_carrier: best_price, best_grade or carrier`; `carrier` without `default_id_carrier`: `default_id_carrier: required with default_carrier carrier`, except when a carrier is already the default (the read of a default carrier deleted since, given back) |
+| `default_id_carrier` | **Default carrier** | integer | from `somcp_list_carriers`, through `SomcpTool::id()`; implies `default_carrier` `carrier` when given alone; with `best_price` or `best_grade`: `default_id_carrier: only with default_carrier carrier`. The list of the screen offers every carrier of the shop not deleted, enabled or not (`CarrierByReferenceChoiceProvider` asks `Carrier::getCarriers()` for all of them), read through `SomcpToolListCarriers::query()` since the provider lives in the back office's container; unknown: `SomcpTool::notFound('default_id_carrier', 'carrier', <id>, 'somcp_list_carriers')`; a deleted carrier or an older version: `default_id_carrier: the carrier <id> is not offered by the Default carrier list, which leaves out deleted carriers and older versions - find the current one with somcp_list_carriers` |
+| `carrier_sort` | **Sort by** | string | `price` or `position`, otherwise `carrier_sort: price or position` |
+| `carrier_order` | **Order by** | string | `ascending` or `descending`, otherwise `carrier_order: ascending or descending` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:` (`SomcpTool::refused('changed', $problems)`), every problem at once,
+before anything is written. A failed save stops the call and names what was
+saved before it, with the hint to read `somcp_get_shipping_preferences`
+before calling again, logged as `shipping_preferences_update_failed`.
+
+**Then** - `SomcpToolGetShippingPreferences::preferences($idShop, $idLang)` is
+read first; the keys whose value differs (amounts compared as numbers, so `2`
+and `2.0` are equal) are saved in the order of the two cards with
+`Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for
+the shop of the token, as `HandlingConfiguration` and
+`CarrierOptionsConfiguration` save them: the amounts as floats,
+`PS_CARRIER_DEFAULT` as `-1`, `-2` or the carrier's **`id_reference`** (never
+its `id_carrier`: the default follows a new version of the carrier),
+`PS_CARRIER_DEFAULT_SORT` and `PS_CARRIER_DEFAULT_ORDER` as `0` or `1`.
+Nothing differs: `changed: false`, `reason` `The shipping preferences already
+hold every value given. Nothing was written.`, `preferences` as read. Logged
+as `shipping_preferences_updated` with the fields saved.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names and codes of
+the parameters; a new default carrier gives `default_carrier` and
+`default_id_carrier` as each changes), and `preferences` read back through
+`preferences()`. Warnings, beside the answer:
+- `handling_cost_tax_excl` changed: `Handling charges are added only by the carriers whose Handling costs is on (handling_costs of somcp_get_carrier).`;
+- `free_shipping_from_price` or `free_shipping_from_weight` set above 0: `Every carrier is now free from <amount> <currency or weight unit>, whatever its own ranges.`;
+- more than one shop: `The settings changed for this shop only, as the back office saves them in a shop context.`, the sentence of `somcp_update_tax_options`.
+
+**Notes** - the demo shops hold handling 2, both thresholds 0, default
+carrier reference 1 (**Click and collect**), sorted by price, ascending.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same forms, keys and
+adapters.
+
+#### `somcp_get_payment_preferences`
+**State**: written · [issue #395](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/395)
+**Nature**: `acts(VIEW, 'AdminPaymentPreferences')` · **Scope**: `mcp.orders.read`, as `somcp_get_shipping_preferences`
+
+**Does** - reads **Payment > Preferences**: for each payment module, the four
+cards **Currency restrictions**, **Group restrictions**, **Country
+restrictions** and **Carrier restrictions**. A shop sells only where a
+payment module is offered. Read only, replayable. The payment modules
+themselves (installation, accounts, keys) are out of scope.
+
+**Do not use for** - changing the currencies, groups, countries and carriers
+a module is offered to (→ `somcp_update_payment_restrictions`); installing, enabling or
+configuring a payment module (→ `somcp_get_module`,
+`somcp_set_module_active`); the payment methods of an order (→
+`somcp_get_order`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `name` | string | no | technical name of one payment module, as `somcp_list_modules` gives it, compared without case; every payment module when left out. Not a payment module: `SomcpTool::notFound('name', 'payment module', <name>, 'somcp_list_modules', 'technical name')` |
+| `language` | string | no | ISO code for the names of the groups and carriers, through `SomcpTool::readLanguage()` (#149); a code the shop does not have is refused with `SomcpTool::languageProblem()`. The shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns** - `payment_modules`, built in the public
+`SomcpToolGetPaymentPreferences::preferences($idShop, $idLang, $name)` for the
+update to answer with, one object per module in the order of the page
+(display name). The modules are the installed modules whose instance is a
+`PaymentModule`, enabled or not, as `PaymentModuleListProvider` lists the
+columns, in the public `SomcpToolGetPaymentPreferences::modules($idShop)`.
+Each table is read on `id_module` and the `id_shop` of the token:
+
+| Key | On screen | Value |
+|---|---|---|
+| `name`, `display_name` | the column | technical and display name |
+| `active` | - | the module enabled in this shop (a row of `module_shop`) |
+| `currencies_mode` | - | `checkbox` or `radio` (one choice, and the rows **Customer currency** and **Shop default currency**) |
+| `currencies` | **Currency restrictions** | `module_currency`: `{id_currency, iso_code}`, the identifiers of `somcp_list_currencies`, a deleted currency left out; `-1` as `{"id_currency": -1, "iso_code": null, "name": "Customer currency"}`, `-2` as `"Shop default currency"` |
+| `groups` | **Group restrictions** | `module_group`: `{id_group, name}`, the identifiers of `somcp_list_customer_groups`, the name in `language` |
+| `countries` | **Country restrictions** | `module_country`: `{id_country, iso_code}`, the identifiers of `somcp_list_countries` |
+| `carriers` | **Carrier restrictions** | `module_carrier` stores the **reference**: `{id_carrier, name}`, the current version of each reference through `SomcpToolGetShippingPreferences::carrierOfReference()`, the identifier `somcp_list_carriers` gives; a reference whose carrier is deleted is left out |
+| `limited_countries` | - | the ISO codes the module restricts itself to (`Module::$limited_countries`), lowercase, or `null` |
+
+and `language`. No payment module: `payment_modules: []` and `warning` `No
+payment module installed`, the sentence of the page. A module with an empty
+list: `warning` `<display name> is offered to no <lists>: customers cannot pay
+with it.`, given as soon as one of the four lists is empty (the checkout
+offers a module only to a cart that matches a row of each), naming the empty
+lists joined with `, ` and ` or ` before the last one: `no carrier`, `no
+currency or group`, `no currency, group, country or carrier`.
+
+**Notes**
+- The demo shops: four payment modules (`ps_cashondelivery`, `ps_checkpayment`, `ps_checkout`, `ps_wirepayment`), each offered to the currencies of the shop, the groups 1 to 3 and the carrier references 1 to 4; `ps_checkout` to 200 countries, the three others to US only; every module in `checkbox` mode.
+
+**Differences between 8.0.1 and 9.0.0** - none in the restrictions; the
+display names differ in the demo data (**Wire payment** on 8.0.1, **Bank
+transfer** on 9.0.0).
+
+#### `somcp_update_payment_restrictions`
+**State**: written · [issue #396](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/396)
+**Nature**: `acts(EDIT, 'AdminPaymentPreferences')` · **Scope**: `mcp.orders.write`, as `somcp_update_shipping_preferences`
+
+**Does** - changes **Payment > Preferences** for one payment module, as the
+**Save** button of its cards **Currency restrictions**, **Group
+restrictions**, **Country restrictions** and **Carrier restrictions** does
+(#396, #397): each list given replaces the stored one, a list left out is
+kept. One module of the answer of `somcp_get_payment_preferences` can be
+given back as it is.
+
+**Do not use for** - installing, enabling or configuring a payment module (→
+`somcp_install_module`, `somcp_set_module_active`); the currencies and groups
+themselves (→ `somcp_update_currency`, `somcp_list_customer_groups`).
+
+**Parameters**
+
+`display_name`, `active`, `currencies_mode`, `limited_countries`, `language`
+and `warning` are worked out by the shop, ignored when given back as read
+(`language` when it is an active language of the shop, the names of the
+answer then read in it) and refused otherwise (`- <key>: worked out by the
+shop, so it is not written here`), as `SomcpToolUpdateShippingPreferences`
+does.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `name` | the module's column | string | required (`name: required`), the technical name of a payment module of `SomcpToolGetPaymentPreferences::modules()`, compared without case; otherwise `SomcpTool::notFound('name', 'payment module', <name>, 'somcp_get_payment_preferences', 'technical name')` |
+| `currencies` | **Currency restrictions** | array | the full list after the call. Each item an `id_currency` or the object the read gives (`{id_currency, ...}`, the other keys ignored); each a currency of `SomcpToolListCurrencies::currency()`, otherwise `SomcpTool::notFound('currencies', 'currency', <id>, 'somcp_list_currencies')`. A module in `checkbox` mode: any number, `[]` allowed; `-1` or `-2`: `currencies: -1 and -2 only for a module that takes one currency`. A module in `radio` mode: exactly one item, an `id_currency`, `-1` (**Customer currency**) or `-2` (**Shop default currency**), otherwise `currencies: <display name> takes one currency, or -1 (Customer currency) or -2 (Shop default currency)` |
+| `groups` | **Group restrictions** | array | the full list after the call, the same way: `id_group` or `{id_group, ...}`; each a group of `Group::getGroups($idLang, $idShop)`, otherwise `SomcpTool::notFound('groups', 'customer group', <id>, 'somcp_list_customer_groups')`; `[]` allowed |
+| `countries` | **Country restrictions** | array | the full list after the call, the same way: `id_country` or `{id_country, ...}`; each a country of `SomcpToolListCountries::country()`, otherwise `SomcpTool::notFound('countries', 'country', <id>, 'somcp_list_countries')`; a country outside the module's `limited_countries`: `countries: <display name> works only in <ISO codes>`; `[]` allowed |
+| `carriers` | **Carrier restrictions** | array | the full list after the call: `id_carrier` or `{id_carrier, ...}`, turned into its `id_reference` through `SomcpToolListCarriers::query()`, as the **Default carrier** of `somcp_update_shipping_preferences`; unknown: `SomcpTool::notFound('carriers', 'carrier', <id>, 'somcp_list_carriers')`; a deleted carrier or an older version: `carriers: the carrier <id> is not offered by the Carrier restrictions list, which leaves out deleted carriers and older versions - find the current one with somcp_list_carriers`; two versions of one carrier keep one row; `[]` allowed |
+| `language` | - | string | ISO code for the names of the answer, through `SomcpTool::readLanguage()`; the shop default when left out |
+
+A list that is not a list: `<list>: a list of <key>, [] for none`; an item
+that is not a whole number: `SomcpTool::notAnIdentifier(<list>)`. A list given
+twice the same identifier keeps it once. Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:` (`SomcpTool::refused('changed', $problems)`), every problem at once,
+before anything is written. A failed save stops the call and names the lists
+saved before it, with the hint to read `somcp_get_payment_preferences` before
+calling again, logged as `payment_restrictions_update_failed`.
+
+**Then** - `SomcpToolGetPaymentPreferences::preferences($idShop, $idLang,
+$name)` is read first; each list whose set of identifiers differs is written
+by the public `SomcpToolUpdatePaymentRestrictions::replace($type, $idModule,
+$idShop, $ids)`, shared with part 2, as the core's
+`PaymentRestrictionsConfigurator::configureRestrictions()` writes it, since
+the configurator lives in the back office's container: `Db::delete()` of the
+rows of `module_<type>` for the module and the shop of the token, then
+`Db::insert()` of one row per identifier, every value cast to `int`. `$type`
+is `currency`, `group`, `country` or `carrier`, a fixed map to the table and
+its column (`id_reference` for `carrier`), never built from the request.
+Nothing differs: `changed: false`, `reason` `The payment module already has
+every list given. Nothing was written.`, `preferences` as read. Logged as
+`payment_restrictions_updated` with the module and the lists saved (names and
+counts only).
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per list its `field`, `added` and `removed` identifiers, carriers
+by `id_carrier`), and `preferences`, the module read back through
+`preferences()`. Warnings, beside the answer:
+- a list left empty: `<display name> is now offered to no <lists>: customers cannot pay with it.`, the sentence of `somcp_get_payment_preferences` (`SomcpToolGetPaymentPreferences::offeredToNone()`), the empty lists joined with `, ` and ` or ` before the last one (`no customer group or carrier`);
+- the module disabled: `<display name> is disabled: these restrictions apply once it is enabled with somcp_set_module_active.`.
+
+**Notes** - the demo shops: every module in `checkbox` mode; `module_group`
+1, 2, 3 for each module on both; `module_currency` 1 and 2 on 8.0.1, 1 on
+9.0.0; `module_country` US only for `ps_cashondelivery`, `ps_checkpayment`
+and `ps_wirepayment`, 200 countries for `ps_checkout`; `module_carrier`
+references 1 to 4 for every module; no module limits its countries but
+`ps_checkout`.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same configurator and
+tables.
+
+#### `somcp_get_email_settings`
+**State**: written · [issue #398](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/398)
+**Nature**: `acts(VIEW, 'AdminEmails')` · **Scope**: `mcp.system.read`, as `somcp_get_cache_status`
+
+**Does** - reads the card **Email** of **Advanced Parameters > E-mail**: where
+customer messages go, how the shop sends its e-mails, the SMTP parameters,
+the subject prefix, the format, the e-mail log and the DKIM signing. Read
+only, replayable. The **SMTP password** and the **DKIM private key** are never
+read: the answer says only whether each one is set. The list of sent e-mails
+(→ `somcp_list_email_logs`) and **Send a test email** are not part of it.
+
+**Do not use for** - changing these settings (→
+`somcp_update_email_settings`); the e-mail of an order status (→
+`somcp_resend_order_status_email`); the layout of the e-mails (**Design >
+Email Theme**, not covered yet).
+
+**Parameters** - none. Unknown arguments through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
+and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetEmailSettings::settings($idShop)` for the update to answer with,
+each key read with `Configuration::get(<key>, null, $idShopGroup, $idShop)`
+for the shop of the token and its group, as `EmailDataConfigurator` reads
+them:
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `send_emails_to` | **Send emails to** | `PS_MAIL_EMAIL_MESSAGE` | the `id_contact` stored, `null` when no row exists (the list then shows its first contact) |
+| `send_emails_to_choices` | - | - | the contacts the list offers, `{id_contact, name}`, `Contact::getContacts()` in the shop's default language; each in full with `somcp_list_contacts` |
+| `mail_method` | the three choices under **Send emails to** | `PS_MAIL_METHOD` | `sendmail` (1), `smtp` (2) or `never` (3) |
+| `smtp_domain` | **Email domain name** | `PS_MAIL_DOMAIN` | text |
+| `smtp_server` | **SMTP server** | `PS_MAIL_SERVER` | text |
+| `smtp_username` | **SMTP username** | `PS_MAIL_USER` | text |
+| `smtp_password_set` | **SMTP password** | `PS_MAIL_PASSWD` | `true` when not empty; the value is never in the answer |
+| `smtp_encryption` | **Encryption** | `PS_MAIL_SMTP_ENCRYPTION` | `off`, `tls` or `ssl` (8.0.1 only) |
+| `smtp_port` | **Port** | `PS_MAIL_SMTP_PORT` | integer, `null` when empty |
+| `subject_prefix` | **Enable the store name as a prefix in the email's subject** | `PS_MAIL_SUBJECT_PREFIX` | boolean on 9.0.0, `null` on 8.0.1 where the setting does not exist |
+| `mail_type` | the three choices of the format | `PS_MAIL_TYPE` | `html` (1), `text` (2) or `both` (3) |
+| `log_emails` | **Log Emails** | `PS_LOG_EMAILS` | boolean; the e-mails kept are listed by `somcp_list_email_logs` |
+| `dkim_enabled` | **DKIM signing** | `PS_MAIL_DKIM_ENABLE` | boolean |
+| `dkim_domain`, `dkim_selector` | **DKIM domain**, **DKIM selector** | `PS_MAIL_DKIM_DOMAIN`, `PS_MAIL_DKIM_SELECTOR` | text |
+| `dkim_key_set` | **DKIM private key** | `PS_MAIL_DKIM_KEY` | `true` when not empty; the key is never in the answer |
+
+A `warning` when `mail_method` is `never`: `The shop sends no e-mail at all:
+customers get no order confirmation.`; when it is `smtp` with `smtp_server`
+empty: `SMTP is chosen but no SMTP server is set: e-mails cannot leave the
+shop.` Both sentences are built in the public
+`SomcpToolGetEmailSettings::warnings()`, which the update answers with too.
+
+**Notes**
+- The SMTP fields are shown by the page's script only with **Set my own SMTP parameters**; they are saved whatever the method.
+- The demo shops: sendmail, both formats, server `smtp.`, port 25, no encryption, the e-mail log on, DKIM off, no password nor key; no row for `PS_MAIL_EMAIL_MESSAGE` nor `PS_MAIL_DOMAIN`.
+
+**Differences between 8.0.1 and 9.0.0** - **Enable the store name as a
+prefix in the email's subject** on 9.0.0 only; **SSL** among the encryptions
+on 8.0.1 only.
+
+#### `somcp_update_email_settings`
+**State**: written · [issue #399](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/399)
+**Nature**: `acts(EDIT, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_clear_cache`
+
+**Does** - changes the card **Email** of **Advanced Parameters > E-mail**, as
+its **Save** button does, except the two secrets: the **SMTP password** and the
+**DKIM private key** are typed by the merchant on the page and never go
+through a tool, since what an assistant is given stays in its conversation.
+Replayable: the same call twice changes nothing the second time.
+
+**Do not use for** - sending a test e-mail (**Send a test email**, not
+covered); the e-mail of an order status (→ `somcp_resend_order_status_email`).
+
+**Parameters** - all optional; a key left out keeps its value. The keys are
+those of `somcp_get_email_settings`, whose answer can be given back whole:
+`send_emails_to_choices`, `smtp_password_set`, `dkim_key_set` and `warning`
+are worked out by the shop, ignored when given back as read and refused
+otherwise (`- <key>: worked out by the shop, so it is not written here`). A
+value equal to the one read is always taken, so a setting stored before the
+screen offered it does not refuse the read given back.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `send_emails_to` | **Send emails to** | integer | an `id_contact` of `send_emails_to_choices` or of `somcp_list_contacts`; otherwise `SomcpTool::notFound('send_emails_to', 'contact', <id>, 'somcp_get_email_settings')`, or `send_emails_to: a whole number above 0` |
+| `mail_method` | the three choices | string | `SomcpTool::oneOf()`: `mail_method: one of sendmail, smtp, never` |
+| `smtp_domain` | **Email domain name** | string | `Validate::isCleanHtml()`, otherwise `<field>: holds a script or an event attribute, which PrestaShop refuses`; empty allowed |
+| `smtp_server` | **SMTP server** | string | the same rule |
+| `smtp_username` | **SMTP username** | string | the same rule |
+| `smtp_encryption` | **Encryption** | string | `off` or `tls`, and `ssl` on 8.0.1: `smtp_encryption: one of off, tls` on 9.0.0 |
+| `smtp_port` | **Port** | integer | 1 to 65535, or `null` to empty it: `smtp_port: a port number from 1 to 65535` |
+| `subject_prefix` | **Enable the store name as a prefix in the email's subject** | boolean | 9.0.0 only; on 8.0.1 `true` or `false` answers `SomcpTool::notOnThisVersion()`, `null` (as read) is ignored |
+| `mail_type` | the format | string | `mail_type: one of html, text, both` |
+| `log_emails` | **Log Emails** | boolean | `log_emails: true or false` |
+| `dkim_enabled` | **DKIM signing** | boolean | the same rule |
+| `dkim_domain` | **DKIM domain** | string | `Validate::isCleanHtml()`; empty allowed |
+| `dkim_selector` | **DKIM selector** | string | the same rule |
+
+`smtp_password`, `dkim_key`, or any name holding `passw`, `dkim_key` or
+`private_key`: `- <key>: type it on the E-mail page of the back office; it
+never goes through a tool`, before anything is written. Booleans are booleans
+only (`"false"` is refused). Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:` (`SomcpTool::refused('changed', $problems)`), every problem at once,
+before anything is written. A failed save stops the call and names what was
+saved before it, with the hint to read `somcp_get_email_settings` before
+calling again, logged as `email_settings_update_failed`.
+
+**Then** - `SomcpToolGetEmailSettings::settings($idShop)` is read first; the
+keys whose value differs are saved in the order of the card with
+`Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for
+the shop of the token, as `EmailDataConfigurator::updateConfiguration()` saves
+them: `PS_MAIL_METHOD` and `PS_MAIL_TYPE` as their codes 1, 2, 3, booleans as
+`0` or `1`, an emptied port as an empty string. `PS_MAIL_PASSWD` and
+`PS_MAIL_DKIM_KEY` are never written. Nothing differs: `changed: false`,
+`reason` `The e-mail settings already hold every value given. Nothing was
+written.`, `settings` as read. Logged as `email_settings_updated` with the
+names of the fields saved, never their values.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names and words of
+the parameters), and `settings` read back through `settings()`. Warnings,
+beside the answer:
+- `mail_method` set to `never`: `The shop now sends no e-mail at all: customers get no order confirmation.`;
+- `mail_method` set to `smtp` with no password set and `smtp_username` not empty: `The SMTP password is not set: type it on the E-mail page of the back office.`;
+- `dkim_enabled` set to `true` with no key set: `DKIM is on but no private key is set: type it on the E-mail page of the back office.`;
+- the warnings of `SomcpToolGetEmailSettings::warnings()` on what was read back (its sentence for `never` replaced by the one above);
+- more than one shop: `The settings changed for this shop only, as the back office saves them in a shop context.`, the sentence of `somcp_update_tax_options`.
+
+**Notes** - the tests never change `mail_method`: the CI shops would stop
+sending the e-mails other tests read. Next step: `somcp_send_test_email` proves the shop
+can send with what was saved.
+
+**Differences between 8.0.1 and 9.0.0** - `subject_prefix` on 9.0.0 only;
+`ssl` on 8.0.1 only.
+
+#### `somcp_list_email_logs`
+**State**: written · [issue #423](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/423)
+**Nature**: `acts(VIEW, 'AdminEmails')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - lists the e-mails the shop sent, as the list **Email (<n>)** of
+**Advanced Parameters > E-mail** shows them: to whom, which template, in which
+language, with which subject, when. Read only, replayable. The scope is the
+customers' one because each line holds the address of a customer.
+
+**Do not use for** - the e-mail settings (→ `somcp_get_email_settings`); the
+messages customers wrote (Customer Service, not covered); sending a test (→
+`somcp_send_test_email`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `recipient` | string | **Recipient** contains this text, as the filter of the list |
+| `template` | string | **Template** contains this text, for example `order_conf` |
+| `subject` | string | **Subject** contains this text |
+| `language` | string | the ISO code of a language of the shop (**Language**); every language when left out; a code the shop does not have is refused with `SomcpTool::languageProblem()` |
+| `date_from` / `date_to` | string | **Sent**, `YYYY-MM-DD`, both days included (`date_to` up to 23:59:59), as `somcp_list_stock_movements` takes them; `date_to` before `date_from` refused (`date_to: a date not before date_from`) |
+| `limit` | integer | 20 by default, 100 at most (`limit: a whole number from 1 to 100`) |
+| `offset` | integer | 0 by default (`offset: a whole number, 0 at least`) |
+
+The three texts are trimmed and passed through `pSQL()` inside `LIKE
+'%<text>%'`, as the list does. Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Returns**
+- `emails`: one object per line, newest first (`id_mail` descending, as the
+  list opens): `id_mail` (**ID**), `recipient` (**Recipient**), `template`
+  (**Template**), `language` (the ISO code of **Language**, `null` for a
+  language deleted since), `subject` (**Subject**), `sent` (**Sent**,
+  `SomcpTool::isoDate()`);
+- `returned`, `total_count` (every line that matches the filters), `offset`,
+  as `somcp_list_stock_movements`;
+- `log_emails`: **Log Emails**, read through `SomcpToolGetEmailSettings::settings()`.
+
+`warning`, joined by a space when several apply:
+- **Log Emails** off: `Log Emails is off: e-mails sent from now on are not added to this list. Turn it on with somcp_update_email_settings (log_emails).` (the lines kept from before are still listed, unlike the page, which hides the list);
+- multistore on with more than one shop: `This list holds the e-mails of every shop: PrestaShop keeps one log for all of them.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`
+(`SomcpTool::refused('read', $problems)`), every problem in one answer: an
+unknown argument, a language the shop does not have, a date that is not
+`YYYY-MM-DD`, `date_to` before `date_from`, `limit` or `offset` out of range,
+a text filter that is not a string (`<field>: a text`).
+
+**Notes**
+- The table `mail` has no shop column: the log is one for every shop of the installation. A line is written by `Mail::send()` after each sent e-mail when **Log Emails** is on, one per recipient; the test e-mail of **Send a test email** is not logged.
+- The `id_mail` is the one `somcp_delete_email_log` takes.
+- The recipients of the test shops are real addresses: the scenario never names one.
+
+**Differences between 8.0.1 and 9.0.0** - only the column sizes of
+`recipient` and `subject`; the list, its filters and its query are the same.
+
+#### `somcp_delete_email_log`
+**State**: written · [issue #424](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/424)
+**Nature**: `acts(DELETE, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_clear_cache`
+
+**Does** - deletes one line of the list of sent e-mails of **Advanced
+Parameters > E-mail**, as its **delete** button does: for example the line of
+a customer who asked to be forgotten. One line per call: **Delete selected**
+is the same call repeated; **Erase all** is `somcp_erase_email_logs`.
+
+**Do not use for** - every line at once (→ `somcp_erase_email_logs`);
+stopping the log (→ `somcp_update_email_settings`, `log_emails`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_mail` | integer | required; the **ID** of the list, from `somcp_list_email_logs`; not a whole number above 0: `SomcpTool::notAnIdentifier('id_mail')`; unknown: `SomcpTool::notFound('id_mail', 'logged e-mail', <id>, 'somcp_list_email_logs')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the line is read first through
+`SomcpToolListEmailLogs::email()`, then `(new Mail($idMail))->delete()`, as
+`EmailLogEraser::erase()` does: no SQL of its own. A `false` or an exception:
+a tool error `The logged e-mail could not be deleted: <reason>. Read it with
+somcp_list_email_logs before calling again.`, logged as
+`email_log_delete_failed`. Logged as `email_log_deleted` with the `id_mail`
+and the template only, never the recipient or the subject.
+
+**Returns** - `deleted: true`, `id_mail`, and `email`: the line as it was, the
+same object as one item of `emails` of `somcp_list_email_logs`.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:` (`SomcpTool::refused('deleted', $problems)`): an unknown argument,
+`id_mail` missing or not an identifier, an unknown `id_mail`.
+
+**Notes**
+- Changes the shop: the assistant asks first. Not replayable: a second call answers the unknown `id_mail`. Nothing in the shop depends on a line of the log.
+- The shop test writes a line of its own through the `Mail` object, deletes it, then deletes it again to see the refusal: the recipients of the demo lines are real addresses.
+
+**Differences between 8.0.1 and 9.0.0** - none: `Mail::delete()` (the
+`ObjectModel` one) on both.
+
+#### `somcp_erase_email_logs`
+**State**: written · [issue #425](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/425)
+**Nature**: `acts(DELETE, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_clear_cache`
+
+**Does** - empties the list of sent e-mails of **Advanced Parameters >
+E-mail**, as its **Erase all** button does. The log is one table for the whole
+installation: on a multistore installation, this removes the lines of every
+shop, as the button does.
+
+**Do not use for** - one line (→ `somcp_delete_email_log`); stopping the log
+(→ `somcp_update_email_settings`, `log_emails`).
+
+**Parameters** - none, as `somcp_clear_cache`: the tool is marked
+`destructiveHint`, so the client asks the merchant before the call. Unknown
+arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the lines are counted (`SELECT COUNT(*) FROM mail`), then
+`Mail::eraseAllLogs()`, the call of `EmailLogEraser::eraseAll()`: no SQL write
+of its own. A list already empty is not erased again. `false` or an exception:
+a tool error `The list of sent e-mails could not be erased.`, logged as
+`email_logs_erase_failed`. Logged as `email_logs_erased` with the count only.
+
+**Returns** - `erased: true`, `deleted_count`: the number of lines there were
+(`0` for a list already empty). `warning`, joined by a space when several
+apply: multistore on with more than one shop (counted as
+`somcp_list_email_logs` counts them) `The lines of every shop were erased:
+PrestaShop keeps one log for all of them.`; **Log Emails** off `Log Emails is
+off: the list stays empty until it is turned on with
+somcp_update_email_settings (log_emails).`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:` (`SomcpTool::refused('deleted', $problems)`): an unknown argument.
+
+**Notes**
+- Changes the shop and cannot be undone: the assistant asks first. Replayable: a second call answers `deleted_count: 0`.
+- The JSON scenario only checks the refusal of an unknown argument: the other scenarios read the list. The shop test erases it after every scenario, erases it again to see `deleted_count: 0`, then reads `somcp_list_email_logs` to see `total_count: 0`.
+
+**Differences between 8.0.1 and 9.0.0** - none: `Mail::eraseAllLogs()` is the
+same `TRUNCATE` on both.
+
+#### `somcp_send_test_email`
+**State**: written · [issue #426](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/426)
+**Nature**: `acts(EDIT, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_update_email_settings`
+
+**Does** - sends the test e-mail of **Advanced Parameters > E-mail**, card
+**Test your email configuration**, with the settings the shop has saved: after
+`somcp_update_email_settings`, it proves the shop can send before the first
+order e-mail is due, and gives the server's own message when it cannot. The
+page lets any right on it send the test; the tool asks **edit**, as
+`somcp_update_email_settings`, since it sends an e-mail in the shop's name.
+
+**Do not use for** - changing the settings (→ `somcp_update_email_settings`);
+the list of what was sent (→ `somcp_list_email_logs`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `send_email_to` | string | **Send a test email to**; the shop's address (`PS_SHOP_EMAIL`) when left out, as the page fills it; checked with `Validate::isEmail()`: `send_email_to: an e-mail address` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the settings are read through `SomcpToolGetEmailSettings::settings()`,
+plus the two secrets it never answers (`PS_MAIL_PASSWD`, `PS_MAIL_DKIM_KEY`),
+read with `Configuration::get()` for the shop of the token and passed to the
+core only. **Never send emails** chosen: refused, nothing sent. Otherwise the
+core's `EmailConfigurationTester::testConfiguration()`, built without the
+Symfony container (`PrestaShop\PrestaShop\Adapter\Configuration` and the
+context's translator), calls `Mail::sendMailTest()` with the text, subject,
+escaping and failure sentence of the running version. The page sends the
+values of its form, saved or not; this tool sends the saved ones, which are
+what every e-mail of the shop uses. The test is never written to the list of
+sent e-mails. Logged as `email_test_sent` or `email_test_failed` with the
+sending method only, never the address or the transport's message.
+
+**Returns** - sent: `sent: true`, `send_email_to`, `mail_method` (as the read
+names it), and the `warning` `Check the inbox of <send_email_to>, spam folder
+included: the shop handed the e-mail over, which does not prove it arrived.`
+Not sent: a tool error with the core's sentence of the running version -
+**Error: Please check your configuration** on 8.0, **An error has occurred.
+Please check your configuration** from 8.1.0 on - then the transport's message when
+there is one, cut to 500 characters, then `Read the settings with
+somcp_get_email_settings.`
+
+**Errors** - in the envelope `Nothing was sent. Correct these and call again:`
+(`SomcpTool::refused('sent', $problems)`): an unknown argument, an address
+that is not one, **Never send emails** chosen (`mail_method: Never send emails
+is chosen, so the shop sends no e-mail - change it with
+somcp_update_email_settings first`).
+
+**Notes**
+- Sends an e-mail: the assistant asks first. Replayable: each call sends one more e-mail.
+- Neither secret ever appears in the answer, the log or an error: a transport message that quotes one is answered with `<hidden>` in its place.
+- The JSON scenario checks the refusals only; the shop test sends one test to the shop's own address and accepts either answer, `"sent": true` or the failure sentence of the version, with neither secret in the text.
+
+**Differences between 8.0.1 and 9.0.0** - the failure sentence and the
+escaping of the text (above), both taken from the core of the running
+version; the mail library underneath (SwiftMailer on 8.0.1, Symfony Mailer on
+9.0.0) is the core's business.
+
+#### `somcp_get_order_settings`
+**State**: written · [issue #400](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/400)
+**Nature**: `acts(VIEW, 'AdminOrderPreferences')` · **Scope**: `mcp.orders.read`, as `somcp_get_shipping_preferences`
+
+**Does** - reads **Shop Parameters > Order Settings**, tab **Order
+Settings**: the cards **General** and **Gift options**. Read only,
+replayable. The tab **Statuses** has its own tools.
+
+**Do not use for** - the order statuses (→ `somcp_list_order_statuses`);
+shipping costs and free shipping (→ `somcp_get_shipping_preferences`);
+changing these settings (→ `somcp_update_order_settings`).
+
+**Parameters** - none. Unknown arguments through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
+and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetOrderSettings::settings($idShop)` for the update to answer with,
+each key read with `Configuration::get(<key>, null, $idShopGroup, $idShop)`
+for the shop of the token and its group, as `GeneralConfiguration` and
+`GiftOptionsConfiguration` read them; a key with no row reads as the core's
+adapters default it (`false`, `0`):
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `final_summary` | **Enable final summary** | `PS_FINAL_SUMMARY_ENABLED` | boolean |
+| `guest_checkout` | **Enable guest checkout** | `PS_GUEST_CHECKOUT_ENABLED` | boolean |
+| `disable_reordering` | **Disable reordering option** | `PS_DISALLOW_HISTORY_REORDERING` | boolean |
+| `minimum_purchase_tax_excl` | **Minimum purchase total required in order to validate the order** | `PS_PURCHASE_MINIMUM` | float, `0` when off; `currency` the ISO code of the default currency it is in |
+| `recalculate_shipping` | **Recalculate shipping costs after editing the order** | `PS_ORDER_RECALCULATE_SHIPPING` | boolean |
+| `delayed_shipping` | **Delayed shipping** | `PS_SHIP_WHEN_AVAILABLE` | boolean |
+| `terms_of_service` | **Terms of service** | `PS_CONDITIONS` | boolean |
+| `terms_id_cms` | **Page for terms and conditions** | `PS_CONDITIONS_CMS_ID` | the `id_cms` of `somcp_list_cms_pages`, `0` for **None**; `terms_page_title` its title in the shop's default language, found through `SomcpToolUpdateCmsSeo::page()`, `null` for **None** or a page that no longer exists in the shop |
+| `backorder_status` | **Set backorder status** | `PS_ENABLE_BACKORDER_STATUS` | boolean on 9.0.0, `null` on 8.0.1 where the setting does not exist |
+| `gift_wrapping` | **Offer gift wrapping** | `PS_GIFT_WRAPPING` | boolean |
+| `gift_wrapping_price_tax_excl` | **Gift-wrapping price** | `PS_GIFT_WRAPPING_PRICE` | float |
+| `gift_wrapping_id_tax_rules_group` | **Gift-wrapping tax** | `PS_GIFT_WRAPPING_TAX_RULES_GROUP` | the `id_tax_rules_group` of `somcp_list_tax_rules`, `0` for **None**; `gift_wrapping_tax_name` its name through `SomcpToolGetTaxRule::existingRule()`, or `null` |
+| `recycled_packaging` | **Offer recycled packaging** | `PS_RECYCLABLE_PACK` | boolean |
+
+`PS_ALLOW_MULTISHIPPING`, which `GeneralConfiguration` of 8.0.1 also reads,
+is left out, as its form shows no such field.
+
+Warnings: a page chosen that no longer exists, `The page for terms and
+conditions no longer exists: choose another with
+somcp_update_order_settings.`;
+`terms_of_service` on with no page, `Terms of service are required but no page
+is chosen: customers are asked to accept a page that does not exist.`
+
+**Notes** - the demo shops, every row global: terms of service on with the
+page 3, guest checkout on, shipping recalculated, no minimum, no gift
+wrapping nor recycled packaging; no row for `PS_FINAL_SUMMARY_ENABLED`,
+`PS_SHIP_WHEN_AVAILABLE` and `PS_GIFT_WRAPPING_TAX_RULES_GROUP`.
+
+**Differences between 8.0.1 and 9.0.0** - **Set backorder status** on 9.0.0
+only; the help of **Offer gift wrapping** differs.
+
+#### `somcp_update_order_settings`
+**State**: written · [issue #401](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/401)
+**Nature**: `acts(EDIT, 'AdminOrderPreferences')` · **Scope**: `mcp.orders.write`, as `somcp_update_shipping_preferences`
+
+**Does** - changes **Shop Parameters > Order Settings**, tab **Order
+Settings**, as the **Save** buttons of its cards **General** and **Gift
+options** do: `GeneralConfiguration::updateConfiguration()` and
+`GiftOptionsConfiguration::updateConfiguration()` write each value for the
+shop of the context, with no other step.
+
+**Do not use for** - the order statuses (→ `somcp_update_order_status`);
+shipping costs and free shipping (→ `somcp_update_shipping_preferences`).
+
+**Parameters** - all optional; a key left out keeps its value. The read of
+`somcp_get_order_settings` given back whole writes nothing: `currency`,
+`terms_page_title`, `gift_wrapping_tax_name` and `warning` are computed keys,
+ignored when given back as read and refused otherwise (`- <key>: worked out
+by the shop, so it is not written here`).
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `final_summary` | **Enable final summary** | boolean | |
+| `guest_checkout` | **Enable guest checkout** | boolean | |
+| `disable_reordering` | **Disable reordering option** | boolean | |
+| `minimum_purchase_tax_excl` | **Minimum purchase total required in order to validate the order** | number | 0 or more, `Validate::isPrice()`: `minimum_purchase_tax_excl: an amount of 0 or more, tax excluded, in <currency>`; 0 turns it off |
+| `recalculate_shipping` | **Recalculate shipping costs after editing the order** | boolean | |
+| `delayed_shipping` | **Delayed shipping** | boolean | |
+| `terms_of_service` | **Terms of service** | boolean | |
+| `terms_id_cms` | **Page for terms and conditions** | integer | `0` (**None**) or the `id_cms` of a page of the shop, through `SomcpTool::id()` and `SomcpToolUpdateCmsSeo::page()`; otherwise `notFound('terms_id_cms', 'CMS page', <id>, 'somcp_list_cms_pages')` |
+| `backorder_status` | **Set backorder status** | boolean | 9.0.0 only; on 8.0.1, `true` or `false` answers `backorder_status: not on PrestaShop <version>, which has no Set backorder status; leave the field out` (`null`, as read, is ignored) |
+| `gift_wrapping` | **Offer gift wrapping** | boolean | |
+| `gift_wrapping_price_tax_excl` | **Gift-wrapping price** | number | 0 or more, `Validate::isPrice()` |
+| `gift_wrapping_id_tax_rules_group` | **Gift-wrapping tax** | integer | `0` (**None**) or an `id_tax_rules_group` of the shop, through `SomcpToolGetTaxRule::existingRule()`; otherwise `notFound('gift_wrapping_id_tax_rules_group', 'tax rule', <id>, 'somcp_list_tax_rules')` |
+| `recycled_packaging` | **Offer recycled packaging** | boolean | |
+
+Booleans are booleans only (`"false"` is refused: `<field>: true or false`).
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope of #169 under `Nothing was changed.`, before anything
+is written.
+
+**Then** - `SomcpToolGetOrderSettings::settings($idShop)` is read first; the
+keys whose value differs are saved in the order of the two cards with
+`Configuration::updateValue(<key>, <value>, false, $idShopGroup, $idShop)` for
+the shop of the token: booleans as `0` or `1`, amounts as floats, the page and
+the tax as integers. A failed save stops the call and names what was saved
+before it, as `somcp_update_tax_options` does. Nothing differs:
+`changed: false`, `reason` `The order settings already hold every value
+given. Nothing was written.`, `settings` as read. Logged as
+`order_settings_updated` with the names of the fields saved.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names of the
+parameters), and `settings` read back through `settings()`. Warnings, beside
+the answer:
+- `gift_wrapping` changed on 9.0.0: the help of the screen, `Remember to regenerate email templates in Design > Email theme after enabling or disabling this feature.`;
+- `terms_of_service` on with `terms_id_cms` 0 after the call: the warning of `somcp_get_order_settings`;
+- `guest_checkout` set to `false`: `Visitors must now create an account before they order.`;
+- more than one shop: `The settings changed for this shop only, as the back office saves them in a shop context.`, the sentence of `somcp_update_tax_options`.
+
+**Differences between 8.0.1 and 9.0.0** - `backorder_status` on 9.0.0 only.
+
+#### `somcp_get_product_settings`
+**State**: written · [issue #408](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/408)
+**Nature**: `acts(VIEW, 'AdminPPreferences')` · **Scope**: `mcp.catalog.read`, as `somcp_get_product`
+
+**Does** - reads **Shop Parameters > Product Settings**: the cards **General
+product settings**, **Product page**, **Products stock** and **Pagination**.
+Read only, replayable.
+
+**Do not use for** - the stock of one product (→ `somcp_get_stock`); the
+out-of-stock behavior or labels of one product (→ `somcp_get_product`); the
+customer groups that hide prices (Customer Settings > Groups, not covered);
+changing these settings (→ `somcp_update_product_settings`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `languages` | array | the ISO codes of the five texts, the rule of #149 through `SomcpToolCreateProduct::languages()`, as `somcp_get_maintenance_settings` takes it; left out, every active language |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetProductSettings::settings($idShop, $idLangs)` for the update to
+answer with, each key read with `Configuration::get(<key>, $idLang,
+$idShopGroup, $idShop)` for the shop of the token and its group, as
+`GeneralConfiguration`, `PageConfiguration`, `StockConfiguration` and
+`PaginationConfiguration` read them; a key with no row reads as the core's
+adapters read it (`false`, `0`, empty):
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `catalog_mode` | **Catalog mode** | `PS_CATALOG_MODE` | boolean |
+| `catalog_mode_show_prices` | **Show prices** | `PS_CATALOG_MODE_WITH_PRICES` | boolean; saved as false by the core whenever catalog mode is off |
+| `new_product_days` | **Number of days for which the product is considered 'new'** | `PS_NB_DAYS_NEW_PRODUCT` | integer |
+| `short_description_limit` | **Max size of short description** | `PS_PRODUCT_SHORT_DESC_LIMIT` | integer, in characters |
+| `quantity_discounts_based_on` | **Quantity discounts based on** | `PS_QTY_DISCOUNT_ON_COMBINATION` | `products` (0) or `combinations` (1) |
+| `force_friendly_url` | **Force update of friendly URL** | `PS_FORCE_FRIENDLY_PRODUCT` | boolean |
+| `breadcrumb_category` | **Category used in breadcrumbs** | `PS_PRODUCT_BREADCRUMB_CATEGORY` | `default` or `current`; `null` before 9.0.0 |
+| `activate_new_products` | **Activate new products by default** | `PS_PRODUCT_ACTIVATION_DEFAULT` | boolean |
+| `specific_price_priorities` | **Default order of priority for specific prices** | `PS_SPECIFIC_PRICE_PRIORITIES` | a list of four among `store`, `currency`, `country`, `group`, in the stored order; nothing stored: the core's default, `group`, `currency`, `country`, `store` |
+| `disabled_product_behavior` | **Default behavior for disabled products** | `PS_PRODUCT_REDIRECTION_DEFAULT` | the stored code, `404`, `410`, `200-displayed`, `404-displayed` or `410-displayed`; `null` before 8.1.0 |
+| `display_available_quantities` | **Display available quantities on the product page** | `PS_DISPLAY_QTIES` | boolean |
+| `add_to_cart_with_combinations` | **Display the "Add to cart" button when a product has combinations** | `PS_ATTRIBUTE_CATEGORY_DISPLAY` | boolean |
+| `combination_image_in_listings` | **Use combination image in listings** | `PS_USE_COMBINATION_IMAGE_IN_LISTING` | boolean; `null` before 9.0.0 |
+| `attribute_anchor_separator` | **Separator of attribute anchor on the product links** | `PS_ATTRIBUTE_ANCHOR_SEPARATOR` | `-` or `,` |
+| `display_discounted_unit_price` | **Display the discounted unit price** | `PS_DISPLAY_DISCOUNT_PRICE` | boolean |
+| `notify_product_in_cart` | **Display notifications if the product is already in the cart** | `PS_DISPLAY_AMOUNT_IN_CART` | boolean; `null` before 9.0.0 |
+| `feature_values_order` | **Order of feature values** | `PS_FEATURE_VALUES_ORDER` | `alphabetical` (`name`) or `position`; `null` before 9.0.0 |
+| `stock_management` | **Enable stock management** | `PS_STOCK_MANAGEMENT` | boolean |
+| `pack_stock_type` | **Default pack stock behavior** | `PS_PACK_STOCK_TYPE` | `pack`, `products` or `both`, the words of `somcp_get_product` (`SomcpToolGetProduct::PACK_STOCK_TYPES`) |
+| `display_unavailable_attributes` | **Display unavailable attributes on the product page** | `PS_DISP_UNAVAILABLE_ATTR` | boolean |
+| `remaining_quantities_below` | **Display remaining quantities when the quantity is lower than** | `PS_LAST_QTIES` | integer, `0` when off |
+| `allow_out_of_stock_ordering` | **Allow ordering of out-of-stock products** | `PS_ORDER_OUT_OF_STOCK` | boolean |
+| `label_in_stock` | **Label of in-stock products** | `PS_LABEL_IN_STOCK_PRODUCTS` | text per ISO code |
+| `label_backorders_allowed` | **Label of out-of-stock products with allowed backorders** | `PS_LABEL_OOS_PRODUCTS_BOA` | text per ISO code |
+| `label_backorders_denied` | **Label of out-of-stock products with denied backorders** | `PS_LABEL_OOS_PRODUCTS_BOD` | text per ISO code |
+| `delivery_time_in_stock` | **Delivery time of in-stock products** | `PS_LABEL_DELIVERY_TIME_AVAILABLE` | text per ISO code, empty when off |
+| `delivery_time_backorders` | **Delivery time of out-of-stock products with allowed backorders** | `PS_LABEL_DELIVERY_TIME_OOSBOA` | text per ISO code, empty when off |
+| `out_of_stock_label_in_listings` | **Display out-of-stock label on product listing pages** | `PS_SHOW_LABEL_OOS_LISTING_PAGES` | boolean |
+| `products_per_page` | **Products per page** | `PS_PRODUCTS_PER_PAGE` | integer |
+| `default_order_by` | **Default order by** | `PS_PRODUCTS_ORDER_BY` | `name`, `price`, `date_add`, `date_upd`, `position`, `brand`, `quantity`, `reference`, or `sales` on 9.0.0 |
+| `default_order_way` | **Default order method** | `PS_PRODUCTS_ORDER_WAY` | `asc` or `desc` |
+
+The five texts are objects keyed by ISO code, each language read from
+`configuration_lang` as the page shows it, the shape of `maintenance_text`;
+`languages`: the ISO codes read.
+
+Warnings: `catalog_mode` on, `Catalog mode is on: visitors can browse the
+products but cannot add them to the cart.`; `stock_management` off, `Stock
+management is off: quantities are not counted and every product can be
+ordered.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call
+again:` (`SomcpTool::refused('read', $problems)`): an unknown argument, a
+language of `languages` the shop does not have (the rule of #149).
+
+**Notes** - the demo shops, every row global: catalog mode off, 20 days new,
+5000 characters, priorities `group`, `currency`, `country`, `store`, stock
+management on, ordering out of stock denied, 3 remaining quantities, 12
+products per page by position ascending; no row for
+`PS_QTY_DISCOUNT_ON_COMBINATION`, `PS_FORCE_FRIENDLY_PRODUCT`,
+`PS_PRODUCT_ACTIVATION_DEFAULT`, `PS_DISPLAY_DISCOUNT_PRICE` and the two
+delivery times. **Default behavior for disabled products** came with 8.1.0,
+read in its `GeneralConfiguration`: `null` on 8.0, a code from 8.1.
+
+**Differences between 8.0.1 and 9.0.0** - **Category used in breadcrumbs**,
+**Default behavior for disabled products** (from 8.1.0), **Use combination
+image in listings**, **Display notifications if the product is already in the
+cart**, **Order of feature values** and the **Product sales** order on 9.0.0
+only; the wording of **Display the "Add to cart" button...** (8.0.1 **... has
+attributes**), of the pack stock field (8.0.1 **Default pack stock
+management**) and of the help of **Force update of friendly URL** differs.
+
+#### `somcp_update_product_settings`
+**State**: written · [issue #409](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/409), [#410](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/410)
+**Nature**: `acts(EDIT, 'AdminPPreferences')` · **Scope**: `mcp.catalog.write`, as `somcp_update_product`
+
+**Does** - changes **Shop Parameters > Product Settings**, as the **Save**
+buttons of its cards **General product settings**, **Product page**,
+**Products stock** and **Pagination** do. Only the fields given change.
+
+**Do not use for** - the stock of a product (→ `somcp_set_stock_quantity`);
+the priorities, status, stock labels or out-of-stock behavior of one product
+(→ `somcp_update_product`).
+
+**Parameters** - all optional, under the names and words of
+`somcp_get_product_settings`, whose read given back whole writes nothing. The
+fields, their keys and kinds are one constant map,
+`SomcpToolUpdateProductSettings::FIELDS`; the five texts are
+`SomcpToolGetProductSettings::LABELS`.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `catalog_mode` | **Catalog mode** | boolean | |
+| `catalog_mode_show_prices` | **Show prices** | boolean | `true` with `catalog_mode` off after the call: `catalog_mode_show_prices: only with catalog_mode on - the shop saves it off otherwise`; `catalog_mode` turned off saves it `false` too, as the core does, both lines in `changes` |
+| `new_product_days` | **Number of days for which the product is considered 'new'** | integer | 0 or more: `new_product_days: a number of days, 0 or more` |
+| `short_description_limit` | **Max size of short description** | integer | 1 or more: `short_description_limit: a number of characters, 1 or more` |
+| `quantity_discounts_based_on` | **Quantity discounts based on** | string | `products` or `combinations` |
+| `force_friendly_url` | **Force update of friendly URL** | boolean | |
+| `breadcrumb_category` | **Category used in breadcrumbs** | string | `default` or `current`; from 9.0.0 |
+| `activate_new_products` | **Activate new products by default** | boolean | |
+| `specific_price_priorities` | **Default order of priority for specific prices** | array | `store`, `currency`, `country`, `group`, each once, in the order wanted: a word twice, `specific_price_priorities: The selected condition must be different in each field to set an order of priority.` (the core's sentence); otherwise `specific_price_priorities: four of store, currency, country, group`; saved as `id_shop`, `id_currency`, `id_country`, `id_group` joined by `;` |
+| `disabled_product_behavior` | **Default behavior for disabled products** | string | `404`, `410`, `200-displayed`, `404-displayed`, `410-displayed`; from 8.1.0 |
+| `display_available_quantities` | **Display available quantities on the product page** | boolean | |
+| `add_to_cart_with_combinations` | **Display the "Add to cart" button when a product has combinations** | boolean | |
+| `combination_image_in_listings` | **Use combination image in listings** | boolean | from 9.0.0 |
+| `attribute_anchor_separator` | **Separator of attribute anchor on the product links** | string | `-` or `,` |
+| `display_discounted_unit_price` | **Display the discounted unit price** | boolean | |
+| `notify_product_in_cart` | **Display notifications if the product is already in the cart** | boolean | from 9.0.0 |
+| `feature_values_order` | **Order of feature values** | string | `alphabetical` or `position` (stored `name`, `position`); from 9.0.0 |
+| `stock_management` | **Enable stock management** | boolean | |
+| `pack_stock_type` | **Default pack stock behavior** (9.0.0), **Default pack stock management** (8.0.1) | string | `pack`, `products` or `both`, stored 0, 1, 2; `default` (a product's own word) is refused by `SomcpTool::oneOf()` |
+| `display_unavailable_attributes` | **Display unavailable attributes on the product page** | boolean | |
+| `remaining_quantities_below` | **Display remaining quantities when the quantity is lower than** | integer | 0 or more, 0 turns it off: `remaining_quantities_below: a quantity, 0 or more` |
+| `allow_out_of_stock_ordering` | **Allow ordering of out-of-stock products** | boolean | |
+| `label_in_stock` | **Label of in-stock products** | object keyed by ISO code | the rule of the product field `available_now` |
+| `label_backorders_allowed` | **Label of out-of-stock products with allowed backorders** | object keyed by ISO code | the rule of `available_later` |
+| `label_backorders_denied` | **Label of out-of-stock products with denied backorders** | object keyed by ISO code | the rule of `available_later` |
+| `delivery_time_in_stock` | **Delivery time of in-stock products** | object keyed by ISO code | the rule of `delivery_in_stock`; empty turns it off |
+| `delivery_time_backorders` | **Delivery time of out-of-stock products with allowed backorders** | object keyed by ISO code | the rule of `delivery_out_stock`; empty turns it off |
+| `out_of_stock_label_in_listings` | **Display out-of-stock label on product listing pages** | boolean | |
+| `languages` | - | array | the languages of the texts given, the rule of #149 (`SomcpToolCreateProduct::languages()`); every active language when left out; a language left out keeps its texts |
+| `products_per_page` | **Products per page** | integer | 1 or more: `products_per_page: a number of products, 1 or more` |
+| `default_order_by` | **Default order by** | string | `name`, `price`, `date_add`, `date_upd`, `position`, `brand`, `quantity`, `reference`, and `sales` from 9.0.0 (before it, the list without `sales`) |
+| `default_order_way` | **Default order method** | string | `asc` or `desc` |
+
+A field of a later version given a value: `SomcpTool::notOnThisVersion(<key>,
+<the words of the screen>)`; `null`, as read, is ignored. A choice outside its
+list: `SomcpTool::oneOf()`. Booleans are booleans only (`"false"` is refused).
+The five texts are read with `SomcpToolCreateProduct::texts()`, each language
+`trim()`med and checked with `(new Product())->validateField()` against the
+product field it stands in for, so the size and rule come from
+`Product::$definition`; a refusal is under `<key> (<iso>)`. An empty text is
+allowed (nothing is displayed). A text given back as read is no change, and
+so is any other field given exactly as the read has it, skipped before its
+check: a stored value the rules refuse (a key with no row reads as `""`) never
+blocks the read given back whole. `warning` is ignored. Unknown arguments through `SomcpTool::unknownFields()`; every problem
+in one answer, in the envelope of #169 under `Nothing was changed.`, before
+anything is written.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names and words of
+the parameters; a text one line per language, `{"field": "label_in_stock
+(fr)", "old": "", "new": "En stock"}`), and `settings` read back through
+`SomcpToolGetProductSettings::settings()`. Nothing differs: `changed: false`,
+`reason` `The product settings already hold every value given. Nothing was
+written.`, `settings` as read.
+
+Warnings: `catalog_mode` just turned on, `The shop is now in catalog mode:
+visitors can browse the products but cannot add them to the cart.`;
+`stock_management` just turned off, `Stock management is now off: quantities
+are no longer counted and every product can be ordered.`;
+`allow_out_of_stock_ordering` just turned on with stock management on,
+`Products out of stock can now be ordered, unless a product says otherwise.`;
+then the warnings of `somcp_get_product_settings` read back (its catalog mode
+and stock management sentences, each only when this call did not just turn it
+so); on an installation of several shops, `The settings changed for this shop
+only, as the back office saves them in a shop context.`
+
+**Errors** - those above; a save that fails stops the call and names what was
+saved before it (`The product settings could not be changed: <field> could not
+be saved, after <fields> had been saved. Read them with
+somcp_get_product_settings before calling again.`).
+
+**Notes**
+- Each key that differs saved with `Configuration::updateValue(<key>, <value>,
+  false, $idShopGroup, $idShop)` for the shop of the token, as
+  `GeneralConfiguration`, `PageConfiguration`, `StockConfiguration` and
+  `PaginationConfiguration` save them in a shop context: booleans as `0` or
+  `1`, numbers as integers, choices as their stored codes. The texts are saved
+  as `StockConfiguration` saves them, `Configuration::updateValue(<key>,
+  <texts by id_lang>, false, ...)`, with only the languages given, so the
+  others, inactive ones included, keep theirs. The priorities are written as
+  `SpecificPricePriorityUpdater::updateDefaultPriorities()` writes them.
+- Log line `product_settings_updated` with the names of the fields saved,
+  never the texts.
+- Show the merchant the change before the call; catalog mode stops every order.
+
+**Differences between 8.0.1 and 9.0.0** - `breadcrumb_category`,
+`combination_image_in_listings`, `notify_product_in_cart`,
+`feature_values_order` and the `sales` order on 9.0.0 only;
+`disabled_product_behavior` from 8.1.0.
+
+#### `somcp_get_customer_settings`
+**State**: written · [issue #411](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/411)
+**Nature**: `acts(VIEW, 'AdminCustomerPreferences')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - reads **Shop Parameters > Customer Settings**, tab **Customer
+Settings**, card **General**. Read only, replayable. The tabs **Groups** and
+**Titles** are other pages (`AdminGroups`, `AdminGenders`).
+`somcp_create_customer` and `somcp_search_customers` read B2B mode for their
+own fields; this tool is where the merchant's choice is read.
+
+**Do not use for** - the customer groups (→ `somcp_list_customer_groups`);
+one customer (→ `somcp_get_customer`); changing these settings (→
+`somcp_update_customer_settings`).
+
+**Parameters** - none. Unknown arguments through
+`SomcpTool::unknownFields()`, in the envelope `Nothing was read. Correct these
+and call again:`.
+
+**Returns** - one object, built in the public
+`SomcpToolGetCustomerSettings::settings($idShop)` for the update to answer
+with, each key read with `Configuration::get(<key>, null, $idShopGroup,
+$idShop)` for the shop of the token and its group, as `CustomerConfiguration`
+reads them; a key with no row reads as the core's adapter reads it (`false`,
+`0`):
+
+| Key | On screen | Configuration key | Value |
+|---|---|---|---|
+| `redisplay_cart_at_login` | **Re-display cart at login** | `PS_CART_FOLLOWING` | boolean |
+| `send_email_after_registration` | **Send an email after registration** | `PS_CUSTOMER_CREATION_EMAIL` | boolean |
+| `password_reset_delay_minutes` | **Password reset delay** (**minutes**) | `PS_PASSWD_TIME_FRONT` | integer, 0 or more |
+| `b2b_mode` | **Enable B2B mode** | `PS_B2B_ENABLE` | boolean |
+| `ask_for_birth_date` | **Ask for birth date** | `PS_CUSTOMER_BIRTHDATE` | boolean |
+| `partner_offers` | **Enable partner offers** | `PS_CUSTOMER_OPTIN` | boolean |
+
+No warning.
+
+**Errors** - an unknown argument, above.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 shows above the card **Make
+sure partner offers are not set as required in the Customers section of the
+back office before disabling them. Otherwise, new customers won't be able to
+create an account and proceed to checkout.**, 8.0.1 does not; 9.0.0 saves
+through the multistore form (a checkbox per field in a shop context), 8.0.1
+for the context.
+
+#### `somcp_update_customer_settings`
+**State**: written · [issue #412](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/412)
+**Nature**: `acts(EDIT, 'AdminCustomerPreferences')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes **Shop Parameters > Customer Settings**, card **General**,
+as its **Save** button does. Only the fields given change.
+
+**Do not use for** - the customer groups and their prices (Customer Settings >
+Groups, not covered); one customer (→ `somcp_update_customer`).
+
+**Parameters** - all optional, under the names of
+`somcp_get_customer_settings`, whose read given back whole writes nothing.
+
+| Name | On screen | Type | Rule |
+|---|---|---|---|
+| `redisplay_cart_at_login` | **Re-display cart at login** | boolean | |
+| `send_email_after_registration` | **Send an email after registration** | boolean | |
+| `password_reset_delay_minutes` | **Password reset delay** | integer | 0 or more: `password_reset_delay_minutes: a number of minutes, 0 or more` |
+| `b2b_mode` | **Enable B2B mode** | boolean | |
+| `ask_for_birth_date` | **Ask for birth date** | boolean | |
+| `partner_offers` | **Enable partner offers** | boolean | |
+
+Booleans are booleans only (`"false"` is refused: `<key>: true or false`).
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope of #169 under `Nothing was changed.`, before anything
+is written.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`changes` (per field its `field`, `old`, `new`, under the names of the
+parameters), and `settings` read back through
+`SomcpToolGetCustomerSettings::settings()`. Nothing differs: `changed: false`,
+`reason` `The customer settings already hold every value given. Nothing was
+written.`, `settings` as read.
+
+Warnings: `partner_offers` turned off on 9.0.0, the note of the screen, `Make
+sure partner offers are not set as required in the Customers section of the
+back office before disabling them. Otherwise, new customers won't be able to
+create an account and proceed to checkout.`; `send_email_after_registration`
+turned off, `New customers no longer get an e-mail with their account
+details.`; on an installation of several shops, `The settings changed for
+this shop only, as the back office saves them in a shop context.`
+
+**Errors** - those above; a save that fails stops the call and names what was
+saved before it (`The customer settings could not be changed: <field> could
+not be saved, after <fields> had been saved. Read them with
+somcp_get_customer_settings before calling again.`).
+
+**Notes**
+- Each key that differs saved with `Configuration::updateValue(<key>, <0 or 1,
+  or the integer>, false, $idShopGroup, $idShop)` for the shop of the token, as
+  `CustomerConfiguration::updateConfiguration()` saves them.
+- `b2b_mode` changed: the tab `AdminOutstanding` (the page of B2B outstanding
+  amounts) is set to the same state, as
+  `CustomerPreferencesFormHandler::handleB2bUpdate()` does, through the legacy
+  `Tab` object so it behaves the same on 8.0.1 and 9.0.0; a missing tab is
+  skipped, a failed update is named like a failed save.
+- Log line `customer_settings_updated` with the names of the fields saved.
+
+**Differences between 8.0.1 and 9.0.0** - the partner offers note on 9.0.0
+only; the rest the same.
+
+#### `somcp_list_titles`
+**State**: written · [issue #430](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/430)
+**Nature**: `acts(VIEW, 'AdminGenders')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - lists the social titles of **Shop Parameters > Customer Settings**,
+tab **Titles**: their name in each language, the gender they stand for and
+their image. Read only, replayable. The `id_gender` is the one
+`somcp_create_customer` and `somcp_update_customer` take.
+
+**Do not use for** - a customer's own title (→ `somcp_get_customer`); the
+customer settings (→ `somcp_get_customer_settings`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `language` | string | the ISO code of an active language for `name`, as `somcp_list_contacts` takes it (`SomcpTool::readLanguage()`); the shop default when left out; a code the shop does not have is refused with `SomcpTool::languageProblem()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns**
+- `titles`: one object per title, by `id_gender`: `id_gender` (**ID**),
+  `name` (**Social title**, in `language`), `names` (every active language,
+  keyed by ISO code), `gender` (**Gender**: `male`, `female` or `other`, from
+  `type` 0, 1, 2; the screen calls the third **Neutral** on 8.0.1 and
+  **Other** on 9.0.0, the tool says `other` on both), `image` (**Image**:
+  `SomcpDownload::offer('gender_image', <id_gender>, $idShop)`, `null`
+  without a file);
+- `count`; `language`.
+
+The names are read through `SomcpToolCreateCustomer::titles()`, the one query
+behind `SomcpToolCreateCustomer::genders()`, so the customer tools and the
+list never name a title differently. Each item is built by
+`SomcpToolListTitles::item()`, which `somcp_create_title` answers with too.
+
+**The image** - the kind `gender_image` of `SomcpDownload::KINDS`, reader
+`somcp_list_titles`, kept at `_PS_GENDERS_DIR_ . <id_gender> . '.jpg'` with no
+shop table, as `order_state_icon`: titles are shared by every shop.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`
+(`SomcpTool::refused('read', $problems)`): an unknown argument, a language the
+shop does not have.
+
+**Notes**
+- The object `Gender`: `type` (0 male, 1 female, 2 the third choice), per language `name` (20 characters at most); no shop table.
+- The demo shops: 1 **Mr.**, type 0; 2 **Mrs.**, type 1; no image file.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony
+on 9.0.0) and the word of the third gender (**Neutral** / **Other**); the
+table and the object are the same.
+
+#### `somcp_create_title`
+**State**: written · [issue #439](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/439)
+**Nature**: `acts(ADD, 'AdminGenders')` · **Scope**: `mcp.customers.write`, as `somcp_create_customer`
+
+**Does** - creates a social title of **Shop Parameters > Customer Settings**,
+tab **Titles**, as **Add new title** then **Save** do: its name in each
+language, the gender it stands for and its image. One title per call. Read
+`somcp_list_titles` first: two titles may share a name.
+
+**Do not use for** - changing a title (→ `somcp_update_title`); the title of a
+customer (→ `somcp_update_customer`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `name` | **Social title** (8.0.1) / **Title** (9.0.0) | object | required, one text per language keyed by ISO code, through `SomcpToolCreateProduct::languages()` and `texts()` as `somcp_create_contact` takes its `name` (#149); trimmed; never empty; 20 characters at most (`name (<iso>): 20 characters at most`); the `isCatalogName` rule of 9.0.0 on both versions (`name (<iso>): no <, >, ;, =, #, { or }`) |
+| `languages` | | array | as `somcp_create_contact` |
+| `gender` | **Gender** | string | required: `male`, `female` or `other`, the words `somcp_list_titles` answers (`SomcpToolListTitles::GENDERS`); anything else through `SomcpTool::oneOf('gender', ...)` |
+| `image` | **Image** | object | optional: `SomcpUpload::schema()`, read with `SomcpUpload::argument()` and fetched by `SomcpToolUpdateLanguage::fetch()` (`SomcpUpload::fetchImage()`), as the `flag` of `somcp_create_language`; `files: ['image' => SomcpUpload::images()]` |
+| `image_width` | **Image width** | integer | optional, 0 at least, 16 when left out as the form shows; only with `image` (`image_width: only with image`) |
+| `image_height` | **Image height** | integer | optional, 0 at least, 16 when left out; only with `image` |
+
+The picture is resized only when width and height are both above 0, otherwise
+kept at its own size, as 8.0.1 decides and as the help of both screens says.
+Unknown arguments through `SomcpTool::unknownFields()`; `id_gender` is refused
+as unknown: an item of `somcp_list_titles` given back is not a creation. The
+checks live in `SomcpToolCreateTitle::planTitle($arguments, $idShop, $errors,
+$required)`, which `somcp_update_title` calls with `$required = false`.
+
+**Then** - the image is fetched before anything is written; then `new
+Gender()`, its names (a language not filled takes the default one's, as the
+form fills it) and `type` 0, 1 or 2, `add()`. Then the image, through
+`SomcpToolCreateTitle::storeImage($idGender, $file, $width, $height)`:
+`Gender::deleteImage()`, `ImageManager::resize()` to
+`_PS_GENDERS_DIR_ . <id_gender> . '.jpg'`, forced to JPEG (the storefront and
+`SomcpDownload::stored()` ask for `.jpg`), then the cached thumbnails of both
+versions removed (`img/tmp/gender_mini_<id>_<id_shop>.jpg` for every shop,
+`img/tmp/genders_mini_<id>.jpg`). A refused image deletes the title just
+created, so a failed call leaves nothing: `The social title could not be
+created: the image <reason>.` Log line `title_created` with the `id_gender`
+only.
+
+**Returns** - `created: true` and the title as `somcp_list_titles` answers one
+item, built by the same `SomcpToolListTitles::item()`: `id_gender`, `name`
+(default language), `names` (every active language), `gender`, `image`
+(`SomcpDownload::offer('gender_image', ...)`, `null` without a file).
+`warning` when the shop runs several shops: `A social title is shared by every
+shop: it is offered on all of them.`
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`: an unknown argument, `name` missing, empty, too long or with a refused
+character, `gender` missing or unknown, an `image` that is not one picture,
+`image_width` or `image_height` not a whole number of 0 at least or given
+without `image`, an unknown language (#149).
+
+**Notes** - changes the shop: the assistant asks first. Not replayable: a
+second call creates a second title. A title has no shop table: it is shared by
+every shop.
+
+**Differences between 8.0.1 and 9.0.0** - the label of the name (**Social
+title** / **Title**); the validation of the name (`isString` on 8.0.1,
+`isCatalogName` on 9.0.0: the tool applies the stricter one on both, so a
+title created on 8.0.1 stays valid after an upgrade); the name of the cached
+thumbnail (both removed). The rest is the same.
+
+#### `somcp_update_title`
+**State**: written · [issue #440](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/440)
+**Nature**: `acts(EDIT, 'AdminGenders')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes a social title of **Shop Parameters > Customer Settings**,
+tab **Titles**, as its **Edit** action then **Save** do: its name in each
+language, its gender, its image. Only the fields given change. One title per
+call.
+
+**Do not use for** - creating a title (→ `somcp_create_title`); the title of
+one customer (→ `somcp_update_customer`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_gender` | | integer | required, from `somcp_list_titles`; `SomcpTool::notAnIdentifier('id_gender')`; unknown: `SomcpTool::notFound('id_gender', 'social title', <id>, 'somcp_list_titles')` |
+| `name`, `languages`, `gender`, `image`, `image_width`, `image_height` | | | optional: the rules of `somcp_create_title`, through `SomcpToolCreateTitle::planTitle($arguments, $idShop, $errors, false)`; `name` per language keyed by ISO code |
+| `names` | | object | read by `somcp_list_titles`: taken as `name` |
+
+- An item of `somcp_list_titles` given back whole changes nothing: a plain
+  `name` equal to the stored text of the default language, or of any language
+  (`SomcpToolCreateProduct::givenBackAsRead()`), is no change; `names` is
+  taken as `name`, for the languages being filled, only when one differs;
+  `image` given back as the `download_ref` the list answered is "unchanged"
+  through `SomcpUpload::same($given, 'gender_image', (string) $idGender)`.
+- `image: null`: refused, `image: a social title's image cannot be removed,
+  only replaced`, as neither screen removes one.
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - every check first, every mistake in one answer. Nothing to change:
+no write. Otherwise the new image is fetched before anything is written, then
+`Gender` loaded, the names and gender given set, `update()`; then
+`SomcpToolCreateTitle::storeImage()` when a new picture is given. A failure of
+either: `The social title could not be changed: <reason>. Read it with
+somcp_list_titles before calling again.`, with `the name and gender were
+saved, the image was not: <reason>` when the image fails after a saved name.
+Log line `title_updated` with the `id_gender` and the names of the fields
+changed.
+
+**Returns** - `changed` (`true` or `false`), `changes` (each field written,
+with its `old` and `new` value, as every update tool answers), `reason` when
+nothing changed, and `title`: the item of `SomcpToolListTitles::item()`, as
+the list and the creation answer it. `warning` when the shop runs several
+shops: `A social title is shared by every shop: it is offered on all of
+them.`, and when the gender changes on a title customers hold: `<n> customers
+of this shop have this title.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: the errors of `somcp_create_title` (except `name` and `gender`
+required), plus `id_gender` missing, not an identifier or unknown, and
+`image: null`.
+
+**Notes** - changes the shop: the assistant asks first. Replayable: a second
+identical call changes nothing.
+
+**Differences between 8.0.1 and 9.0.0** - those of `somcp_create_title`; none
+of its own.
+
+#### `somcp_delete_title`
+**State**: written · [issue #441](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/441)
+**Nature**: `acts(DELETE, 'AdminGenders')` · **Scope**: `mcp.customers.write`, as `somcp_delete_contact`
+
+**Does** - deletes a social title of **Shop Parameters > Customer Settings**,
+tab **Titles**, as its **Delete** action does. One title per call: **Delete
+selected** is the same call repeated.
+
+**Do not use for** - changing a title (→ `somcp_update_title`); removing the
+title of one customer (→ `somcp_update_customer` with `id_gender: 0`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_gender` | integer | yes | from `somcp_list_titles`; `SomcpTool::notAnIdentifier('id_gender')`; unknown: `SomcpTool::notFound('id_gender', 'social title', <id>, 'somcp_list_titles')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the title is read with `SomcpToolListTitles::item()` (through
+`SomcpToolCreateTitle::answer()`), the customers of the shop of the token who
+hold it are counted, then `Gender::delete()`, as both screens do
+(`AdminController::processDelete()` on 8.0.1, `DeleteTitleHandler` on 9.0.0):
+neither checks anything, so a title held by customers is deleted. A `false` or
+an exception: a tool error `The social title could not be deleted: <reason>.
+Read it with somcp_list_titles before calling again.`, logged as
+`title_delete_failed`. Then `deleteImage()` and the cached copies
+(`SomcpToolCreateTitle::dropCachedImages()`, the ones `storeImage()` removes):
+stricter than both screens on purpose, which leave `img/genders/<id>.jpg` on
+disk where nothing would ever remove it. Logged as `title_deleted` with the
+`id_gender` only.
+
+**Returns** - `deleted: true`, `id_gender`, and `title`: the title as it was
+(`id_gender`, `name`, `names` in every language, `gender`), the item of
+`somcp_list_titles` without its `image`, so the assistant can create it again
+with `somcp_create_title`. `warning` when customers of this shop held it:
+`<n> customers of this shop had this title: their accounts now show none.`; in
+multistore, also `A social title is shared by every shop: it is gone from all
+of them.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`: an unknown argument, `id_gender` missing, not an identifier or
+unknown, given in one answer.
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first,
+and says how many customers hold the title. Not replayable: a second call
+answers the unknown `id_gender`. The JSON scenario checks the refusals only, so
+the demo titles 1 and 2 are never deleted; the shop test deletes the title it
+created with `somcp_create_title`, then checks it is gone from the list and its
+file from `img/genders/`.
+
+**Differences between 8.0.1 and 9.0.0** - none: both call
+`ObjectModel::delete()`; only the name of the cached thumbnail differs (both
+removed).
+
+#### `somcp_list_contacts`
+**State**: written · [issue #413](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/413)
+**Nature**: `acts(VIEW, 'AdminContacts')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`
+
+**Does** - lists the contacts of **Shop Parameters > Contact**, tab
+**Contacts**: the addresses the contact form of the storefront offers, and
+those **Send emails to** of `somcp_get_email_settings` chooses from
+(`send_emails_to_choices`). Read only, replayable. The tab **Stores** is
+another page (`AdminStores`).
+
+**Do not use for** - the messages customers sent (Customer Service, not
+covered); the e-mail settings (→ `somcp_get_email_settings`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `language` | string | the ISO code of an active language for the translated texts, as `somcp_list_cms_pages` takes it (`SomcpTool::readLanguage()`); the shop default language when left out; a code the shop does not have is refused |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns**
+- `contacts`: one object per contact of the shop of the token, in the order of
+  `Contact::getContacts()` (by name): `id_contact`, `name` (**Title**),
+  `email` (**Email address**), `description` (**Description**),
+  `customer_service` (boolean, whether the messages sent to it are kept in
+  **Customer Service**), `used_for_customer_messages` (`true` for the contact
+  of **Send emails to**, `PS_MAIL_EMAIL_MESSAGE` read through
+  `SomcpToolGetEmailSettings::settings()`; `false` for all when no row is
+  stored);
+- `count`; `language`: the ISO code of the texts.
+
+`id_contact` and `name` are those of `send_emails_to_choices`: a contact read
+here is given to `somcp_update_email_settings` (`send_emails_to`) as it is.
+
+No contact: `contacts: []`, `count: 0`, and a `warning`: `The shop has no
+contact: the contact form of the storefront cannot send a message.`
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`
+(`SomcpTool::refused('read', $problems)`): an unknown argument, a language the
+shop does not have (`SomcpTool::languageProblem()`).
+
+**Notes** - the addresses are the shop's own, shown on the page; nothing else
+about the contacts is hidden.
+
+**Differences between 8.0.1 and 9.0.0** - none on the list.
+
+#### `somcp_create_contact`
+**State**: written · [issue #427](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/427)
+**Nature**: `acts(ADD, 'AdminContacts')` · **Scope**: `mcp.customers.write`, as `somcp_create_customer`
+
+**Does** - creates a contact of **Shop Parameters > Contact**, as **Add new
+contact** then **Save** do: a title per language, the address that receives
+the messages, whether they are kept in **Customer Service**, a description.
+The contact form of the storefront offers it, and **Send emails to** of
+`somcp_update_email_settings` chooses among the contacts.
+
+**Do not use for** - changing a contact (→ `somcp_update_contact`); the
+stores of the **Stores** tab (not covered).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `languages` | array | no | the languages being filled, #149 (`SomcpToolCreateProduct::languages()`) |
+| `name` | object | yes | **Title**, one text per language keyed by ISO code (`texts(..., true)`); each checked as `ContactType` does: `<`, `>`, `=`, `{`, `}` refused (`name (<iso>): no <, >, =, { or }`), 255 characters at most (`name (<iso>): 255 characters at most`) |
+| `email` | string | no | **Email address**, `Validate::isEmail()`, 255 at most (`email: an e-mail address`); empty when left out, as the form |
+| `customer_service` | boolean | no | **Save messages?**, `false` when left out, as the switch opens (`customer_service: true or false`) |
+| `description` | object | no | **Description**, one text per language keyed by ISO code; a text holding an HTML tag refused (`description (<iso>): no HTML tag`, the `NoTags` check `strip_tags($text) !== $text`) |
+| `id_contact` | integer | no | comes with an item of `somcp_list_contacts`: ignored by a creation, which gets an identifier of its own |
+| `used_for_customer_messages` | boolean | no | comes with an item of `somcp_list_contacts`: ignored by a creation; the receiver of the messages is chosen with `somcp_update_email_settings` (`send_emails_to`) |
+
+Both are declared in the schema of `define()`, not in `contactSchema()`, so a
+client that checks arguments against the schema accepts an item of the list
+given back whole. Unknown arguments through `SomcpTool::unknownFields()`; `id_contact` and
+`used_for_customer_messages`, which the list answers, are named as worked out
+by the shop. The form fills an empty language with the default language's
+text; the tool keeps the rule of #149 instead (every language being filled
+needs its text, `languages` choosing which), and the languages not being
+filled take the default one's text. The checks are
+`SomcpToolCreateContact::planContact()`, public so `somcp_update_contact`
+applies the same.
+
+**Then** - as `AddContactHandler::handle()` does, on the `Contact` object (the
+MCP endpoint has no command bus): `name`, `description`, `email`,
+`customer_service`, the shop of the token only (`id_shop_list = [$idShop]`),
+then `add()`. A `false` or an exception: a tool error `The contact could not
+be created: <reason>.`, logged as `contact_create_failed`. Logged as
+`contact_created` with the `id_contact` only.
+
+**Returns** - `created: true`, `id_contact`, `contact`: the contact as
+`somcp_list_contacts` gives one item (`id_contact`, `name`, `email`,
+`description`, `customer_service`, `used_for_customer_messages`, through
+`SomcpToolListContacts::item()`) in the shop's default language, plus `names`
+and `descriptions`: every language, keyed by ISO code. `warning` when
+multistore is on with more than one shop: `The contact was created for this
+shop only; the back office can share it with others (Shop association).`
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:` (`SomcpTool::refused('created', $problems)`), every problem in one
+answer: unknown arguments, `name` missing, the rules above, a language of
+#149.
+
+**Notes**
+- Changes the shop: the assistant asks first. Not replayable: each call creates one more contact (two contacts may share a title, as on the page). To make it the receiver of the messages: `somcp_update_email_settings` with `send_emails_to` = the `id_contact`.
+- The JSON scenario checks the refusals only; the shop test creates a contact with every field, reads it with `somcp_list_contacts`, then deletes it whatever happens.
+
+**Differences between 8.0.1 and 9.0.0** - the label of the shop field only
+(**Shop association** / **Store association**), not taken by the tool.
+
+#### `somcp_update_contact`
+**State**: written · [issue #428](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/428)
+**Nature**: `acts(EDIT, 'AdminContacts')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes a contact of **Shop Parameters > Contact**, as **Edit**
+then **Save** do. Only the fields given change.
+
+**Do not use for** - choosing which contact receives the messages (→
+`somcp_update_email_settings`, `send_emails_to`); creating one (→
+`somcp_create_contact`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_contact` | integer | yes | from `somcp_list_contacts`; `SomcpTool::notAnIdentifier('id_contact')`; unknown or not of this shop: `SomcpTool::notFound('id_contact', 'contact', <id>, 'somcp_list_contacts')` |
+| `languages`, `name`, `email`, `customer_service`, `description` | | no | the rules of `somcp_create_contact`, through the same function (`SomcpToolCreateContact::planContact()`); `name` and `description` per language keyed by ISO code, a language left out keeping its text; `email` given `""` empties the address, as the form allows |
+| `used_for_customer_messages` | boolean | no | read by `somcp_list_contacts`: taken only as the list gives it, so an item can be given back whole; the receiver of the messages is chosen with `somcp_update_email_settings` (`send_emails_to`) |
+
+A plain text of `name` or `description` equal to a stored text (one item of
+`somcp_list_contacts` given back, which answers them in one language) is no
+change, through `SomcpToolCreateProduct::givenBackAsRead()`, as
+`somcp_update_country` takes its name. `used_for_customer_messages` of the
+list is accepted when it equals the stored state and refused otherwise
+(`used_for_customer_messages: not set by this tool - change send_emails_to
+with somcp_update_email_settings`). Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Then** - as `EditContactHandler` does, on the `Contact` object: each field
+is compared with the stored contact; nothing differs: `changed: false`,
+nothing saved. Otherwise the fields that differ are set, the shop of the token
+kept as the shop list (its other shops untouched), then `update()`. A `false`
+or an exception: a tool error `The contact could not be changed: <reason>.`,
+logged as `contact_update_failed`. Logged as `contact_updated` with the
+`id_contact` and the names of the changed fields, never their values.
+
+**Returns** - the shape of every update tool (#356): `changed` (boolean),
+`changes` (per field its `field`, `old`, `new`; a text per language as `name
+(<iso>)`), `reason` when nothing changed, and `contact`: the contact as
+`somcp_list_contacts` gives one item (through `SomcpToolListContacts::item()`)
+in the shop's default language, plus `names` and `descriptions`: every
+language, keyed by ISO code, as `somcp_create_contact` answers it.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: unknown arguments, `id_contact` missing, not an identifier or
+unknown, the rules of `somcp_create_contact`, given in one answer.
+
+**Notes**
+- Changes the shop: the assistant asks first. Replayable: a second call answers `changed: false`.
+- The JSON scenario checks the refusals only, so the demo contacts 1 and 2 are never changed; the shop test changes the address and **Save messages?** of the contact it created, then gives its list item back whole (`changed: false`), before deleting it.
+
+**Differences between 8.0.1 and 9.0.0** - none for the fields the tool takes.
+
+#### `somcp_delete_contact`
+**State**: written · [issue #429](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/429)
+**Nature**: `acts(DELETE, 'AdminContacts')` · **Scope**: `mcp.customers.write`, as `somcp_create_customer`
+
+**Does** - deletes a contact of **Shop Parameters > Contact**, as its
+**Delete** action does. One contact per call: **Delete selected** is the same
+call repeated.
+
+**Do not use for** - changing a contact (→ `somcp_update_contact`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_contact` | integer | yes | from `somcp_list_contacts`; `SomcpTool::notAnIdentifier('id_contact')`; unknown or not of this shop: `SomcpTool::notFound('id_contact', 'contact', <id>, 'somcp_list_contacts')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the contact of **Send emails to** (`send_emails_to` of
+`SomcpToolGetEmailSettings::settings()`, when not `null`) is refused, nothing
+deleted: `id_contact: this contact receives the customers' messages (Send
+emails to) - choose another with somcp_update_email_settings first`. Stricter
+than the page on purpose: `ContactDeleter` checks nothing, and the order page
+would be left without a receiver. Otherwise the contact is read as
+`somcp_create_contact` answers it, then `Contact::delete()` on the shop of the
+token, as `ContactDeleter` does. A `false` or an exception: a tool error `The
+contact could not be deleted: <reason>. Read it with somcp_list_contacts
+before calling again.`, logged as `contact_delete_failed`. Logged as
+`contact_deleted` with the `id_contact` only.
+
+**Returns** - `deleted: true`, `id_contact`, and `contact`: the contact as it
+was, the answer of `somcp_create_contact` (`names` and `descriptions` in every
+language), so the assistant can create it again. `warning` when the shop has no
+contact left, the sentence of `somcp_list_contacts`
+(`SomcpToolListContacts::NO_CONTACT`): `The shop has no contact: the contact
+form of the storefront cannot send a message.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`: an unknown argument, `id_contact` missing, not an identifier, unknown,
+or the contact of **Send emails to**, given in one answer.
+
+**Notes**
+- Changes the shop and cannot be undone: the assistant asks first. Not replayable: a second call answers the unknown `id_contact`.
+- The messages already received keep their `id_contact` in **Customer Service**.
+- The JSON scenario checks the refusals only, so the demo contacts 1 and 2 are never deleted; the shop test deletes the contact it created with this tool, then reads the list to see it gone. The refusal for the contact of **Send emails to** is not run: the test shops have no stored row for it.
+
+**Differences between 8.0.1 and 9.0.0** - none: `ContactDeleter` and
+`Contact::delete()` are the same on both.
 
 #### `somcp_list_tax_rules`
 **State**: written
@@ -4043,7 +5450,7 @@ language (→ `somcp_create_currency`, `somcp_install_language_pack`).
 | Name | On screen | Type | Required | Rule |
 |---|---|---|---|---|
 | `country` | **Localization pack you want to import** | string | yes | two letters, lowercase or uppercase, stored lowercase, checked (`/^[a-z]{2}$/` and `Validate::isLanguageIsoCode()`) before any path is built; a file `_PS_ROOT_DIR_ . '/localization/<iso>.xml'` of the shop, so `default` is refused; otherwise `country: no localization pack for <value> in this shop - the packs are named by the ISO code of their country, for example fr`. The country must exist (`Country::getByIso()`), otherwise `SomcpTool::notFound('country', 'country', <iso>, 'somcp_list_countries', 'ISO code')` |
-| `content` | **Content to import** | array | yes | one or more of `states`, `taxes`, `currencies`, `languages`, `units`, `groups`, taken once each in the order of the card; empty: `content: at least one of states, taxes, currencies, languages, units, groups`; anything else: `content: <value> is not one of states, taxes, currencies, languages, units, groups`. `currencies` where no kernel container runs (the MCP endpoint; the built-in chat has one): the core creates a currency through the back office's command bus (`prestashop.core.command_bus`), so `content: currencies are created by the back office, which this connection does not run - add each currency with somcp_create_currency, then somcp_update_exchange_rates` |
+| `content` | **Content to import** | array | yes | one or more of `states`, `taxes`, `currencies`, `languages`, `units`, `groups`, taken once each in the order of the card; empty: `content: at least one of states, taxes, currencies, languages, units, groups`; anything else: `content: <value> is not one of states, taxes, currencies, languages, units, groups`. `currencies` is imported on every connection. Where no kernel container runs (the MCP endpoint; the built-in chat has one), the core's command bus (`prestashop.core.command_bus`) that creates a currency is missing, so the tool creates them itself (see **Then**); there, when the official currencies cannot be read (`SomcpBackOffice::cldrLocaleRepository()` null): `content: the currencies PrestaShop knows cannot be read here - add them on the Add new currency page`, the sentence of `somcp_create_currency` |
 
 Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
 answer, in the envelope `Nothing was changed. Correct these and call again:`,
@@ -4055,6 +5462,7 @@ would import everything and change the default language.
 - with `currencies` or `languages`: `@set_time_limit(120)` when `max_execution_time` is above 0 and below 120, as `somcp_install_language_pack` does;
 - read before, in the shop of the token (`Somcp::actAsShop()`): the identifiers of `state`, `zone`, `tax` and `tax_rules_group`, the five unit keys, `PRICE_DISPLAY_METHOD`, the **Price display method** of the groups of `PS_CUSTOMER_GROUP`, `PS_GUEST_GROUP` and `PS_UNIDENTIFIED_GROUP`, the `active` and `contains_states` of the country, the identifiers of `lang`, and the currencies through `SomcpToolUpdateExchangeRates::currencies()` (the rows of `somcp_list_currencies`);
 - one content at a time, in the order of the card, since the core skips every content after one that reports an error; a hard error stops the call. The core's importer, `SomcpBackOffice::coreService('prestashop.core.localization.pack.import.importer')`, with `new LocalizationPackImportConfig($iso, $content, false)`; where no kernel container runs (the MCP endpoint is a front controller), the same steps that importer takes with **Download pack data** off: a new `LocalizationPack` and `loadLocalisationPack($xml, $content, false, $iso)` on the local file. The core's code, never a copy of it;
+- with `currencies` where no command bus runs, before the core's import of the currencies: each `<currency>` of the pack whose `iso_code` `Currency::exists()` does not find is created by `SomcpToolCreateCurrency::create(<iso>, 1, true, <shop>, <repository>)`, the code of `somcp_create_currency` (the deleted row of the same code reused, the CLDR numeric code, decimals, names and symbols), then `Cache::clear()` and `PaymentModule::addCurrencyPermissions()`, what `_installCurrencies()` does in that order; the core's import then finds them all and only refreshes the rates. A currency the shop refuses is a hard error, `a currency of the pack could not be created: <iso> - <reason>`, answered with what had been created before it, the currencies by their ISO codes (`Before that, 2 currencies (EUR, GBP) had been created.`); the currencies created count in `created.currencies`;
 - read after, the same, and the difference is the answer;
 - `_installCurrencies()` creates each missing currency at rate 1, enabled, allowed for every payment module, then `Currency::refreshCurrencies()` asks for every rate (5 seconds); `_installLanguages()` downloads and installs each missing language with `Language::downloadAndInstallLanguagePack()`, the code of `somcp_install_language_pack`, then refreshes the names and symbols of every currency. The feed not answering (`Cannot parse feed.`) and a language pack not sent (`Language pack unavailable.`) are warnings: the rest stays imported; a currency the core's command refuses leaves a `null` in its errors, answered as `a currency of the pack could not be created`;
 - other errors returned by the core: the call answers them as a failure, with what had been created or changed before them, and asks to read the states and taxes before calling again;
@@ -4066,7 +5474,7 @@ pack brings for <contents>. Nothing was created.`
 
 **Returns**
 - `changed`;
-- `country`: `id_country`, `iso_code`, `name`, and `enabled` / `contains_states` (`true`) when the import turned them on;
+- `country`: `id_country`, `iso_code`, `name`, and `active` / `contains_states` (`true`) when the import turned them on;
 - `created`: `states` (the shape of `SomcpToolListStates::state()`), `zones` (`id_zone`, `name`), `taxes` (`id_tax`, `name`, `rate`), `tax_rules` (`id_tax_rules_group`, `name`), `currencies` (`id_currency`, `iso_code`, `name`, `conversion_rate`), `languages` (`id_lang`, `iso_code`, `name`), each only when not empty;
 - `changes`: per field its `field`, `old`, `new`: `weight_unit`, `volume_unit`, `dimension_unit`, `distance_unit` (the names of `somcp_get_localization_settings`), `base_distance_unit` (`PS_BASE_DISTANCE_UNIT`), and `price_display_method` (`tax_included` / `tax_excluded`), for the setting and, with `id_group`, for each of the three groups;
 - `rates`, with `currencies`: the currencies that existed and whose rate moved, the shape of `changes` of `somcp_update_exchange_rates` (`SomcpToolUpdateExchangeRates::rateChanges()`);
@@ -4268,7 +5676,7 @@ nothing; its `warning` is ignored.
 | Name | On screen | Type | Rule |
 |---|---|---|---|
 | `store_enabled` | **Enable store** | boolean | `true or false` |
-| `open_for_logged_in_employees` | **Enable store for logged-in employees** | boolean | `true or false`; on 8.0.1 any value other than `null` is refused: `open_for_logged_in_employees: this field exists on PrestaShop 9 only` |
+| `open_for_logged_in_employees` | **Enable store for logged-in employees** | boolean | `true or false`; on 8.0.1 any value other than `null` is refused: `open_for_logged_in_employees: not on PrestaShop <version>, which has no Enable store for logged-in employees; leave the field out` |
 | `languages` | - | array | the languages of `maintenance_text` given, the rule of #149 (`SomcpToolCreateProduct::languages()`); a language left out keeps its text |
 | `maintenance_text` | **Custom maintenance text** | string or object | an object keyed by ISO code, or one text when one language is filled, through `SomcpToolCreateProduct::texts()`; a text given back as stored is no change; otherwise cleaned and checked by `SomcpToolCreateProduct::html()` (`Tools::purifyHTML()` then `Validate::isCleanHtml()` with the shop's iframe setting), at most 21844 characters (`maintenance_text (<iso>): 21844 characters at most, <n> given`, the limit `FormattedTextareaType::LIMIT_TEXT_UTF8` of the screen); an empty text refused (`maintenance_text (<iso>): required, never empty`) |
 
@@ -4448,8 +5856,8 @@ with every language, `validateFields()` and `validateFieldsLang()`, then
 deleted row of the same ISO code was reused (its orders stay tied to it), and
 `currency`, the answer of `somcp_get_currency` read back (`alternative: true`
 for an alternative currency). A `warning` when:
-- a deleted row was reused: `<ISO code> was deleted before: the same currency is back, without the payment modules it had in Payment > Preferences.`;
-- no payment module accepts it (`module_currency`): `Payment > Preferences decides which payment modules accept <ISO code>; no module accepts it yet.`
+- a deleted row was reused: `<ISO code> was deleted before: the same currency is back, without the payment modules it had in Payment > Preferences (somcp_update_payment_restrictions).`;
+- no payment module accepts it (`module_currency`): `Payment > Preferences (somcp_update_payment_restrictions) decides which payment modules accept <ISO code>; no module accepts it yet.`
 
 **Errors** - in the envelope `Nothing was created. Correct these and call
 again:`, every problem at once; the shop refusing the save: `Nothing was
@@ -4521,7 +5929,7 @@ every value given. Nothing was written.`). In both cases `currency`, the
 answer of `somcp_get_currency` read back. When something was written, a
 `warning` when:
 - `conversion_rate` changed: `Prices in <ISO code> are now converted at <rate>; orders already placed keep the rate they were placed at.`;
-- `active` set to `false` while payment modules accept the currency in the shop (`module_currency`): `<n> payment modules accept <ISO code> in Payment > Preferences; they keep that setting but the currency is no longer offered.`;
+- `active` set to `false` while payment modules accept the currency in the shop (`module_currency`): `<n> payment modules accept <ISO code> in Payment > Preferences (somcp_update_payment_restrictions); they keep that setting but the currency is no longer offered.`;
 - `precision` or `active` changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `Decimals and Status are shared by every shop: this change reaches every shop of this installation (<n + 1>).`; the exchange rate stays the one of this shop;
 - a name or symbol given empty for an alternative currency, which CLDR does not know: `<ISO code> is an alternative currency: an empty <field> takes its ISO code.`
 
@@ -4563,7 +5971,7 @@ Unknown arguments through `SomcpTool::unknownFields()`. Refusals, all at once:
 
 **Returns** - `deleted: true`, `id_currency`, `warning` and `currency`, the
 answer of `somcp_get_currency` read before the deletion. The warning:
-- payment restrictions removed (`module_currency`, counted before): `<n> payment modules no longer accept <ISO code> in Payment > Preferences; adding the currency again does not bring that setting back.`;
+- payment restrictions removed (`module_currency`, counted before): `<n> payment modules no longer accept <ISO code> in Payment > Preferences (somcp_update_payment_restrictions); adding the currency again does not bring that setting back.`;
 - always: `Orders placed in <ISO code> keep it; PrestaShop keeps the currency hidden for them, and adding <ISO code> again brings the same currency back.`
 
 **Errors** - in the envelope `Nothing was deleted. Correct these and call
@@ -4894,11 +6302,141 @@ the shop does not have, with the ones it has.
   rather than the global context. `Group::getGroups()` takes the shop from the
   context.
 - **Category discount** (`group_reduction`) and **Authorized modules** are
-  settings of one group, shown only on its edit form: they belong to a future
+  settings of one group, shown only on its edit form: they belong to
   `somcp_get_customer_group`, not to the list.
 - Same legacy page, same columns, same options and same tables on PrestaShop
   8.0.1 and 9.0.0. The page is a tab of **Customer Settings**, not in the side
   menu, so the right asked is `view` on `AdminGroups` itself.
+
+#### `somcp_get_customer_group`
+**State**: written · [issue #442](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/442)
+**Nature**: `acts(VIEW, 'AdminGroups')` · **Scope**: `mcp.customers.read`, as `somcp_list_customer_groups`
+
+**Does** - reads one customer group of **Shop Parameters > Customer Settings >
+Groups** in full, as its **Edit** form shows it: what
+`somcp_list_customer_groups` answers, plus the name in every language, the
+**Category discount** rows and the **Authorized modules**. Read only,
+replayable.
+
+**Do not use for** - the list of groups (→ `somcp_list_customer_groups`); the
+customers of a group (→ `somcp_search_customers`); changing a group (→
+`somcp_update_customer_group`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_group` | integer | yes | from `somcp_list_customer_groups`; `SomcpTool::notAnIdentifier('id_group')`; a group this shop does not have (`group_shop`): `SomcpTool::notFound('id_group', 'customer group', <id>, 'somcp_list_customer_groups')` |
+| `language` | string | no | ISO code of an active language for `name` and the category names, through `SomcpTool::readLanguage()` and `languageProblem()`, as `somcp_list_customer_groups`; the shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - `group`, one object:
+- every field of one item of `somcp_list_customer_groups`, under the same
+  names and in the same formats (`id_group`, `name`, `reduction`,
+  `price_display_method`, `show_prices`, `members_count`, `date_add`,
+  `default_for`), read by `SomcpToolListCustomerGroups::groups()`, the query
+  the list itself calls;
+- `names`: every active language, keyed by ISO code, as `somcp_list_titles`
+  answers `names`;
+- `category_discounts`: one object per row of **Category discount**
+  (`GroupReduction::getGroupReductions()`, as the form reads it), sorted by
+  `id_category`: `id_category` (of `somcp_list_categories`), `category` (its
+  name in `language`, `null` when the category no longer exists, as the form
+  shows an empty path), `reduction` (**Discount (%)**, percent as shown:
+  `group_reduction.reduction * 100`, rounded to 2 decimals); `[]` when none;
+- `authorized_modules`: the technical `name` of every installed module
+  authorized for the group on the shop of the token
+  (`Module::getAuthorizedModules()`), sorted, the `name` of
+  `somcp_list_modules`; `unauthorized_modules`: the installed ones that are
+  not, so the two lists are the **Yes** / **No** of the screen.
+
+Plus `language`, and `customer_groups_enabled` as `somcp_list_customer_groups`
+answers it; when `false`, a `warning`: `Customer groups are disabled in
+Advanced Parameters > Performance: the discounts of this group do not apply.`
+(`SomcpToolGetCustomerGroup::GROUPS_DISABLED`, for the update tool too).
+
+**Errors** - in the envelope `Nothing was read. Correct these and call
+again:`: an unknown argument, `id_group` missing, not an identifier or not of
+this shop, a language the shop does not have, given in one answer.
+
+**Notes** - read only, replayable. The JSON scenario reads group 3
+(**Customer**) and checks it has no category discount and authorizes `somcp`.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form (only the label
+**Shop association** / **Store association**, multistore only); the installed
+modules differ between the shops.
+
+#### `somcp_update_customer_group`
+**State**: written · [issue #443](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/443)
+**Nature**: `acts(EDIT, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes a customer group of **Shop Parameters > Customer Settings >
+Groups**, as its **Edit** form then **Save** do: its name in each language,
+its **Discount**, its **Price display method** and **Show prices**. Only the
+fields given change. One group per call. **Category discount** (#444) and
+**Authorized modules** (#445) are left as they are.
+
+**Do not use for** - the category discounts and the modules, not changed yet;
+the groups of one customer (→ `somcp_update_customer`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_group` | | integer | required, from `somcp_list_customer_groups`; `SomcpTool::notAnIdentifier('id_group')`; not of this shop: `SomcpTool::notFound('id_group', 'customer group', <id>, 'somcp_list_customer_groups')` |
+| `name` | **Name** | object | per language keyed by ISO code, through `SomcpToolCreateProduct::languages()` and `texts()` as `somcp_update_contact` takes its `name`, a language left out keeping its text; trimmed, never empty; `name (<iso>): 32 characters at most`; `Validate::isGenericName()`: `name (<iso>): no <, >, =, { or }` |
+| `languages` | | array | as `somcp_update_contact` |
+| `reduction` | **Discount** | number | percent as shown, 0 to 100, at most 2 decimals, the rule of `validateDiscount()`: `reduction: a percentage from 0 to 100` |
+| `price_display_method` | **Price display method** | string | `tax_excluded` or `tax_included`, the words of `somcp_list_customer_groups`; anything else: `SomcpTool::oneOf()` |
+| `show_prices` | **Show prices** | boolean | `show_prices: true or false` |
+
+The read given back whole changes nothing: the other fields of the `group` of
+`somcp_get_customer_group` (`names`, `members_count`, `date_add`,
+`default_for`, `category_discounts`, `authorized_modules`,
+`unauthorized_modules`) are declared in the schema and accepted unchanged;
+given with another value they are refused (`members_count: read only`,
+`date_add: read only`, `default_for: chosen in Customer Settings > Groups,
+Default groups options`, `category_discounts: not changed by this tool yet`,
+the same for both module lists). `name` and `names` given back are read by
+`SomcpToolCreateProduct::nameGivenBack()`, as `somcp_update_title` reads them:
+a plain `name` equal to a stored text is no change. Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Then** - every check first, through
+`SomcpToolUpdateCustomerGroup::planGroup()` (public, for a creation tool), every
+mistake in one answer. Nothing to change: no write, `changed: false`. Otherwise
+the `Group` object with the fields given, `update()` on the shop of the token
+(`id_shop_list`). A `false` or an exception: a tool error `The customer group
+could not be changed: <reason>. Read it with somcp_get_customer_group before
+calling again.`, logged as `customer_group_update_failed`.
+`Tools::clearSmartyCache()` when `reduction`, `price_display_method` or
+`show_prices` changed, as the **Show prices** switch of the list does. Logged as
+`customer_group_updated` with the `id_group` and the names of the fields
+changed.
+
+**Returns** - `changed`, `changes` (`field`, `old`, `new`, as the other update
+tools), and `group`: `SomcpToolGetCustomerGroup::group()`, the answer of
+`somcp_get_customer_group`. `warning`, each when it applies: `show_prices` set
+to `false` while **Catalog mode** is off: `Customers of this group no longer
+see prices; to hide them for every group, turn on catalog mode in Product
+Settings instead.`; `reduction` above 0 while customer groups are still
+disabled after the save (`Group::update()` turns the global value on by
+itself): `SomcpToolGetCustomerGroup::GROUPS_DISABLED`; a default group
+(`default_for` not empty): `This group is used for <visitors, guests,
+customers>: the change reaches every one of them.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: an unknown argument; `id_group` missing, not an identifier or not of
+this shop; the rules above; a read only field given with another value.
+
+**Notes** - changes the shop: the assistant asks first. Replayable: a second
+identical call changes nothing. The shop test gives back the read of group 3,
+sets its Discount to 5 and back to 0, and Show prices off and back on, and
+restores the group whatever happens.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same legacy controller,
+the same `Group` definition.
 
 ### Diagnostics
 
@@ -6636,7 +8174,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 | `lastname` | **Last name** | string | yes | same rule |
 | `email` | **Email** | string | yes | refused when a registered account of this shop already uses it, with that account's `id_customer` |
 | `is_guest` | **Guest account** (9.0.0 only on screen) | boolean | no | `false` by default; a guest has no password and may share its email with other guests |
-| `id_gender` | **Social title** | integer | no | `id_gender` of the shop, a whole number or a string of digits as `somcp_search_customers` takes it; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `id_gender` | **Social title** | integer | no | `id_gender` of the shop, from `somcp_list_titles`, a whole number or a string of digits as `somcp_search_customers` takes it; an unknown one is refused with the list of the shop's social titles and their identifiers |
 | `birthday` | **Birthday** | string | no | `YYYY-MM-DD`, in the past |
 | `active` | **Enabled** | boolean | no | `true` by default |
 | `partner_offers` | **Partner offers** | boolean | no | `false` by default (`optin`) |
@@ -6685,7 +8223,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 | `firstname` | **First name** | string | no | letters, the dot and spaces only (`Validate::isCustomerName`) |
 | `lastname` | **Last name** | string | no | same rule |
 | `email` | **Email** | string | no | refused when another registered account of this shop uses it, with that account's `id_customer` |
-| `id_gender` | **Social title** | integer | no | `0` clears it; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `id_gender` | **Social title** | integer | no | from `somcp_list_titles`; `0` clears it; an unknown one is refused with the list of the shop's social titles and their identifiers |
 | `birthday` | **Birthday** | string or null | no | `YYYY-MM-DD`, in the past; `null` clears it |
 | `active` | **Enabled** | boolean | no | |
 | `partner_offers` | **Partner offers** | boolean | no | `optin` |
@@ -7011,7 +8549,7 @@ At least one of `active` and `active_on_mobile` is given; both may be given in o
 **Returns** - the fields of `somcp_get_module` read back after the change, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`; plus `changed`: each field written with `from` and `to` (`{"active": {"from": true, "to": false}}`).
 
 **Errors** - in the shared envelope, under "Nothing was changed. Correct these and call again:", the mistakes of the call all at once, then the state of the module once they are corrected:
-- a field the tool does not take (`<field>: not a field of this tool`), a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, neither given, or `active_on_mobile` on PrestaShop 9 ("not available on this version of PrestaShop"): each naming the field;
+- a field the tool does not take (`<field>: not a field of this tool`), a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, neither given, or `active_on_mobile` on PrestaShop 9 (`active_on_mobile: not on PrestaShop <version>, which has no mobile switch for modules; leave the field out`): each naming the field;
 - a `name` that is not a module of the shop: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`);
 - a module not installed: refused, naming `somcp_install_module`;
 - a call that would change nothing (the state read is already the one asked): refused and nothing called, since the core answers success and fires the hooks anyway;
@@ -7205,7 +8743,7 @@ How the shop runs: caching.
 | `caching.servers` | Memcache servers table | `id_memcached_server`, `ip`, `port`, `weight`; empty list when none |
 | `warnings` | - | `code` and `why`, as `somcp_get_seo_settings`: `debug_mode_on`, `debug_profiling_on`, `force_compilation`, `smarty_cache_off`, `overrides_disabled`, `ccc_css_off`, `ccc_js_off`, `cache_system_unavailable` (**Use cache** is on and the stored system's extension is not loaded) |
 
-**Errors** - an unknown argument (`<name>: not a field of this tool`). A setting the running version does not have is `null`, never an error.
+**Errors** - an unknown argument (`<name>: not a field of this tool`). A setting the running version does not have is `null`, never an error: `debug.debug_cookie` and `debug.debug_profiling` on PrestaShop 8.0. A switch never saved reads `false`, as the back office shows it.
 
 **Notes**
 - Each `PS_` key is read for the token's shop with the helper of `somcp_get_seo_settings`, not through the back office form handlers, which take the shop from the global context. The optional features are the keys `Combination`, `Feature` and `Group::isFeatureActive()` read.
@@ -7426,7 +8964,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `languages` | array | no | ISO codes being filled, among the shop's active languages, all of them by default; each text below is then given in each of them |
 | `meta_title` | object | no | per ISO code; the form's **Page title**; 128 characters at most (the column); past 70, a search result cuts it, said in `seo_warnings`; an empty text removes it |
 | `meta_description` | object | no | per ISO code; the form's **Meta description**; 255 characters at most (the column), a warning over 160 |
-| `meta_keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (refused on 9, which has no such field); 255 characters at most, an empty text removes them |
+| `meta_keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (on 9 a text is refused, `meta_keywords: not on PrestaShop <version>, which has no Meta keywords field; leave the field out`, and the `null` of the read is ignored); 255 characters at most, an empty text removes them |
 | `link_rewrite` | object | no | per ISO code; the form's **Rewritten URL**; checked as typed with `Validate::isLinkRewrite()` (which follows `PS_ALLOW_ACCENTED_CHARS_URL`), never rewritten; 254 characters at most (`varchar(254)` on PrestaShop 8); required in the shop default language, may be empty in the others; refused if another page of the shop already uses it in that language |
 
 **Returns** - `changed`, `id_meta`; when something changed, `changes` (each a `field` named with its language, `meta_title (fr)`, then the `old` and `new` value, as every update tool records them), `seo_warnings` (per ISO code) and `page` (`id_meta`, `page`, and per language changed its `meta_title`, `meta_description`, `meta_keywords` (`null` on PrestaShop 9) and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
@@ -7455,7 +8993,7 @@ None.
 **Returns** - `friendly_urls`, `accented_urls`, `default_language_url_prefix` (**Use prefix for default language**, `null` on PrestaShop 8, which has no such option), `canonical_redirect` (none, 302 or 301), `disable_apache_multiviews` and `disable_apache_mod_security` (the two Apache options of the Set up URLs card), `https` (whether the shop answers in HTTPS) and `https_everywhere` (the PrestaShop 8 setting serving every page in HTTPS, `null` on PrestaShop 9, which dropped it), `domains` (main first, each with `domain`, `domain_ssl`, `uri`, `main`, `active`), `routes` (`product`, `category`, `brand`, `supplier`, `cms`, `cms_category`, `module`, each with its `pattern` and `customized`), `product_attributes_in_title` (**Display attributes in the product meta title**), `robots_txt_present`, `sitemap_module` (`installed`, `active`), `languages` (`iso_code`, `name`, `active`, `default`, `url_prefix` - whether this language's addresses carry its ISO code), `warnings` (each a `code` and `why`).
 
 **Notes**
-- Settings read by their configuration keys in each version, for the shop of the token; a key a version does not have is `null`, never guessed.
+- Settings read by their configuration keys in each version, for the shop of the token. A switch never saved reads `false`, as the back office shows it; only a setting the version does not have is `null` (`default_language_url_prefix` on PrestaShop 8, `https_everywhere` on PrestaShop 9), decided by the version, never guessed from a missing row.
 - A route's default pattern is read from `Dispatcher::$default_routes` of the running version (PrestaShop 8 puts the category and the EAN-13 in the product address), and `PS_ROUTE_<route>` replaces it when not empty, as `Dispatcher::loadRoutes()` does.
 - `sitemap_module.active` is read from `module_shop` for the shop of the token, since `Module::isEnabled()` answers for the shop of the global context.
 - A language's `url_prefix` follows what the storefront does: the ISO code is in the addresses only when the shop serves more than one active language, and then every language carries it, except the default language on PrestaShop 9 when **Use prefix for default language** is off.
@@ -7966,7 +9504,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 **State**: written · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)
 **Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the cart rules of this shop - vouchers with a code and discounts applied on their own - newest first, as **Catalog > Discounts > Cart Rules**, with what each one gives in one line. Read only.
+**Does** - lists the cart rules of this shop - vouchers with a code and discounts applied on their own - newest first unless sorted otherwise, as **Catalog > Discounts > Cart Rules**, with what each one gives in one line. Read only.
 
 **Do not use for** - one rule with its conditions (→ `somcp_get_cart_rule`); catalogue price rules (→ `somcp_list_catalog_price_rules`); the vouchers of one order (→ `somcp_get_order`).
 
@@ -7979,10 +9517,14 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `code` | string | no | part of the **Code**, without case; an empty code is refused (use `has_code`) |
 | `has_code` | boolean | no | true: vouchers the customer types a code for; false: rules applied on their own, with no code |
 | `current` | boolean | no | only the rules valid now: **Valid** **From**/**To** holds the shop's current time and **Quantity** is above 0 |
+| `priority` | integer | no | the rules of exactly this **Priority**, 1 at least |
+| `quantity_min` / `quantity_max` | integer | no | **Quantity**, the uses left, both included, 0 at least, as `somcp_search_products` names its quantity range; `quantity_max: 0` lists the rules with no use left |
+| `expiration_date_from` / `expiration_date_to` | string | no | **Expiration date** (`date_to`), `YYYY-MM-DD` in the shop's time zone, both days included, as `somcp_search_orders` takes its period; named after the screen, since `date_to` is a field of each rule answered |
+| `sort` | string | no | `id_desc` (default), `id_asc`, `name_asc`, `name_desc`, `priority_asc`, `priority_desc`, `code_asc`, `code_desc`, `quantity_asc`, `quantity_desc`, `expiration_date_asc`, `expiration_date_desc`: the sortable columns of the list (**Status** is not); ties newest first, so pages never overlap |
 | `language` | string | no | ISO code of one of the shop's active languages for `name` (#149); shop default when left out; unknown code refused |
 | `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - `cart_rules`, in the list's order (`id_cart_rule` descending, newest first), each with:
+**Returns** - `cart_rules`, in the order of `sort` (by default the list's: `id_cart_rule` descending, newest first), each with:
 
 | Field | Notes |
 |---|---|
@@ -8004,9 +9546,10 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `times_used` | orders that used the rule (`order_cart_rule`, not deleted), the use the screen does not show |
 | `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; an empty `code`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `cart_rules: []`, `total_count: 0`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an empty `code`; a `priority` that is not a whole number of 1 at least, a quantity that is not a whole number of 0 at least, a `quantity_max` below `quantity_min`; an expiration date that is not `YYYY-MM-DD`, an `expiration_date_to` before `expiration_date_from`; a `sort` outside the list (the values named); `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `cart_rules: []`, `total_count: 0`.
 
 **Notes**
+- The filters combine with AND, `current` among them.
 - The back office list shows every shop's rules; the token's shop keeps the rules it can use (`shop_restriction = 0`, or a `cart_rule_shop` row for it).
 - `reduction`, `reduction_applies_to`, `gift` and `summary` are built by one shared method (`SomcpToolListCartRules::describe()`) that `somcp_get_cart_rule` (#106) calls, so a rule reads the same whichever tool reads it.
 - No minimum amount, restriction list or product selection here: they belong to `somcp_get_cart_rule`. Read only.
@@ -8068,9 +9611,9 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 **State**: written · [issue #107](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/107)
 **Nature**: `acts(ADD, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - creates one cart rule - a voucher the customer types, or a discount applied on its own - with the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Add new**, restrictions apart.
+**Does** - creates one cart rule - a voucher the customer types, or a discount applied on its own - with the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Add new**, and the **Restrictions** of the **Conditions** tab **Country selection**, **Carrier selection**, **Customer group selection** (#407), **Product selection** (#434) and **Compatibility with other cart rules** (#418).
 
-**Do not use for** - changing a rule (→ `somcp_update_cart_rule`), switching it on (→ `somcp_set_cart_rule_active`), a discount on products of the catalogue (→ `somcp_create_catalog_price_rule`), a discount on one order already placed (→ `somcp_add_order_discount`).
+**Do not use for** - changing a rule (→ `somcp_update_cart_rule`), switching it on (→ `somcp_set_cart_rule_active`), a discount on products of the catalogue (→ `somcp_create_catalog_price_rule`), a discount on one order already placed (→ `somcp_add_order_discount`), its shops (back office).
 
 **Parameters** - the names and shapes `somcp_get_cart_rule` returns, so a rule read there can be given back.
 
@@ -8093,17 +9636,19 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `reduction_applies_to` | **Apply a discount to** | string or object | no | `order` (default), `specific_product`, `cheapest_product` or `selected_products`, the string `somcp_get_cart_rule` returns; `{"type": "specific_product", "id_product": 12}` also accepted; the last two refused with an `amount` |
 | `reduction_exclude_special` | **Exclude discounted products** | boolean | no | false by default; only with a `percent` |
 | `gift` | **Send a free gift** | object or null | no | `{"id_product", "id_product_attribute"}` (`name`, as read, is ignored); the combination required when the product has some, refused when it has none |
+| `restrictions` | **Restrictions** | object | no | as `somcp_get_cart_rule` returns it: `country` **Country selection**, `carrier` **Carrier selection**, `group` **Customer group selection**, each a list of `{"id_country": 8}`, `{"id_reference": 2}` or `{"id_group": 3}` (a `name` given back is ignored) or `null` for none; `cart_rule` **Compatibility with other cart rules**, a list of `{"id_cart_rule": 2}` from `somcp_list_cart_rules` (the **Combinable cart rules**), `[]` to combine with none, `null` or left out to combine with every rule; `product` **Product selection**, a list of groups `{"quantity": 1, "rules": [{"type": "categories", "values": [{"id_category": 3}]}]}` as `somcp_update_cart_rule` takes it, `null` or left out for none, `[]` refused (a new rule has no read to give back); `shop` accepted `null` only |
 
-`id_cart_rule`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are refused as worked out by the shop; `restrictions` is refused unless every one of them is `null`.
+`id_cart_rule`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are refused as worked out by the shop.
 
-**Returns** - `created: true`, `id_cart_rule`, and `cart_rule` as `somcp_get_cart_rule` returns it, read back with its function (`SomcpToolGetCartRule::byId()`), names in the default language.
+**Returns** - `created: true`, `id_cart_rule`, a `warning` when **Compatibility with other cart rules** checked made the back office stop other rules combining with the new one (`<n> other cart rule(s) can no longer be combined with this one, as in the back office: <id>, <id>.`), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with its function (`SomcpToolGetCartRule::byId()`), names in the default language.
 
-**Errors** - in the shape of #169 (`Nothing was created. Correct these and call again:` then one line per problem), every problem found before anything is written: unknown arguments; the checks of `AdminCartRulesController::postProcess()` with the core's wording, under their field: **The voucher cannot end before it begins.** (`date_to`), **The minimum amount cannot be lower than zero.** (`minimum_amount.value`), **Reduction percentage must be between 0% and 100%** and **Reduction amount cannot be lower than zero.** (`reduction.value`), **This cart rule code is already used** (`code`), **An action is required for this cart rule.** (`reduction`), **Product with required customization fields cannot be used as a gift.** (`gift.id_product`); a customer or product identifier that is not a whole number above 0 (`<path>: a whole number above 0`; 0 stays the default for `gift.id_product_attribute`); an unknown customer, product or combination (`<path>: no <thing> of this shop has the identifier <n> - find it with <tool>`); an unknown or inactive currency; a language of #149.
+**Errors** - in the shape of #169 (`Nothing was created. Correct these and call again:` then one line per problem), every problem found before anything is written: unknown arguments; the checks of `AdminCartRulesController::postProcess()` with the core's wording, under their field: **The voucher cannot end before it begins.** (`date_to`), **The minimum amount cannot be lower than zero.** (`minimum_amount.value`), **Reduction percentage must be between 0% and 100%** and **Reduction amount cannot be lower than zero.** (`reduction.value`), **This cart rule code is already used** (`code`), **An action is required for this cart rule.** (`reduction`), **Product with required customization fields cannot be used as a gift.** (`gift.id_product`); a customer or product identifier that is not a whole number above 0 (`<path>: a whole number above 0`; 0 stays the default for `gift.id_product_attribute`); an unknown customer, product or combination (`<path>: no <thing> of this shop has the identifier <n> - find it with <tool>`); an unknown or inactive currency; a language of #149. For the restrictions, the six sentences of `somcp_update_cart_rule`: a value that is not a list (`restrictions.<key>: a list of {"<item key>": ...}, or null for no restriction`, the key of an item being `id_country`, `id_reference` for a carrier and `id_group`); an item that is not an identifier (`restrictions.<key>: a whole number above 0`, once for the list); an empty list (`restrictions.<key>: at least one, or null for no restriction`); a country or a group that does not exist (`restrictions.country: no country of this shop has the identifier <n> - find it with somcp_list_countries`, the same with `group` and `somcp_list_customer_groups`); a carrier reference with no carrier not deleted (`restrictions.carrier: no carrier of this shop has the reference <n> - find it with somcp_list_carriers`); for `cart_rule`, a value that is not a list (`restrictions.cart_rule: a list of {"id_cart_rule": ...}, or null for no restriction`), an item that is not an identifier and a rule this shop does not have (`restrictions.cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`); for `product`, the refusals of `somcp_update_cart_rule` with the same wording; and `shop` not `null` (`restrictions.<key>: not set by this tool - the merchant sets it on the Conditions tab of the rule in the back office`), another key (`restrictions.<key>: not a field of this tool`), `restrictions` that is not an object (`restrictions: not set by this tool - ...`).
 
 **Notes**
 - Written through `CartRule::add()`, so `actionObjectCartRuleAddAfter` fires, as in the back office. The checks live in one protected function, `SomcpToolCreateCartRule::planRule()`, that `somcp_update_cart_rule` extends.
-- Then the rows `AdminCartRulesController::afterAdd()` writes and `CartRule::add()` does not, with `Db::insert` as the controller (these tables have no ObjectModel), only once `add()` succeeded: for **Specific product**, that product in **Product selection** (one group, quantity 1, type `products`) and `product_restriction = 1`, so the rule only applies to carts that hold it; on a multistore, a `cart_rule_shop` row for the token's shop and `shop_restriction = 1`; and the new rule on the white list of every rule with `cart_rule_restriction = 1`, as the form does on every save. If one of them fails, the rule is deleted again and nothing is kept.
-- **Restrictions** (**Country selection**, **Carrier selection**, **Customer group selection**, **Compatibility with other cart rules**, **Product selection** beyond the automatic one, **Store selection**) are not set by this tool: the description points to the back office.
+- Then the rows `AdminCartRulesController::afterAdd()` writes and `CartRule::add()` does not, with `Db::insert` as the controller (these tables have no ObjectModel), only once `add()` succeeded: for **Specific product**, that product in **Product selection** (one group, quantity 1, type `products`) and `product_restriction = 1`, so the rule only applies to carts that hold it; with `restrictions.product` given, its groups through `SomcpToolCreateCartRule::writeProductSelection()`, the code of `somcp_update_cart_rule`, and the group of a **Specific product** added beside them only when no `products` rule holds that product, as `postProcess()` adds it, with a `warning` (`Product <id> was added to Product selection, as the back office adds it: the discount applies to that product.`); on a multistore, a `cart_rule_shop` row for the token's shop and `shop_restriction = 1`. If one of them fails, the rule is deleted again and nothing is kept.
+- Last, **Compatibility with other cart rules**, by `writeCompatibility()`, the code of `somcp_update_cart_rule`, for every rule created: with the box unchecked, the new rule on the list of every rule with `cart_rule_restriction = 1`, as the form does on every save; with it checked (`cart_rule_restriction` set before `add()`), one pair of `cart_rule_combination` per rule listed, then every other rule whose box is unchecked gets it checked and keeps every other active rule, so it stops combining with the new one only. Those boxes are not undone if the creation fails afterwards, so nothing is written after them.
+- The countries, carriers and groups given are checked and written by `planRestrictions()` and `writeRestrictions()`, the code of `somcp_update_cart_rule`: `country_restriction`, `carrier_restriction` and `group_restriction` set on the rule before `CartRule::add()`, then one row per item (`cart_rule_carrier.id_carrier` holding the `id_reference`) right after it, before the rows of `afterAdd()`. If they fail, the rule is deleted, and `CartRule::delete()` takes these rows with it. **Store selection** stays in the back office.
 - Not to be retried blindly: if the answer is lost, look for the rule with `somcp_list_cart_rules` (`code`, or `name`) before calling again.
 
 **Differences between 8.0.1 and 9.0.0**
@@ -8114,9 +9659,9 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 **State**: written · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)
 **Nature**: `acts(EDIT, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - changes one cart rule with everything `somcp_create_cart_rule` can write: the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Edit**, restrictions apart. Only what is given changes.
+**Does** - changes one cart rule with everything `somcp_create_cart_rule` can write: the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Edit**, and of the **Restrictions** of the **Conditions** tab **Country selection**, **Carrier selection**, **Customer group selection** (#406), **Product selection** (#433) and **Compatibility with other cart rules** (#417). Only what is given changes.
 
-**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`), creating one (→ `somcp_create_cart_rule`), its restrictions (back office).
+**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`), creating one (→ `somcp_create_cart_rule`), its shops (back office).
 
 **Parameters** - the names and shapes of `somcp_create_cart_rule`, so a rule read with `somcp_get_cart_rule` can be given back as is.
 
@@ -8126,17 +9671,21 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `languages` | | array | no | ISO codes of the languages `name` is given in (#149), all active ones by default |
 | `name` | **Name** | object | no | per ISO code; changes in the languages given and keeps the others; never empty once given |
 | every other field of `somcp_create_cart_rule` but `active` | as there | as there | no | same names, same shapes, same checks; left out: unchanged |
+| `restrictions` | **Conditions** > **Restrictions** | object | no | the shape `somcp_get_cart_rule` answers; `country` (**Country selection**, a list of `{"id_country": 8}` from `somcp_list_countries`), `carrier` (**Carrier selection**, a list of `{"id_reference": 2}` from `somcp_list_carriers`) and `group` (**Customer group selection**, a list of `{"id_group": 3}` from `somcp_list_customer_groups`) are written, `null` for no restriction, a `name` given back ignored; `cart_rule` (**Compatibility with other cart rules**, the **Combinable cart rules**) is a list of `{"id_cart_rule": 2}` from `somcp_list_cart_rules`, `[]` for the box checked with no rule (combines with none), `null` for the box unchecked (combines with every rule); `product` (**Product selection**) is a list of groups `{"quantity": 2, "rules": [{"type": "categories", "values": [{"id_category": 3}]}]}`, `null` for the box unchecked: `quantity` **Number of products required in the cart to enjoy the discount** (a whole number, 1 at least, 1 when left out), `type` one of `products`, `attributes`, `categories`, `manufacturers`, `suppliers` (**Products**, **Attributes**, **Categories**, **Brands**, **Suppliers** of **Add a rule concerning**), `values` the items in the keys `somcp_get_cart_rule` gives (`id_product` from `somcp_search_products`, `id_attribute` from `somcp_list_attributes`, `id_category` from `somcp_list_categories`, `id_manufacturer` from `somcp_list_manufacturers`, `id_supplier` from `somcp_list_suppliers`), a bare identifier taken too, each item once in the order of the identifiers; the groups given replace the stored ones, and `[]` given back from a rule whose box is checked with no group changes nothing; a list equal to the read, in any order, changes nothing; a key left out keeps its value |
 
-`active`, `restrictions`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` points to `somcp_set_cart_rule_active`, `restrictions` to the back office, the others are worked out by the shop.
+`active`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` points to `somcp_set_cart_rule_active`, the others are worked out by the shop. In `restrictions`, `shop` is accepted the same way, and refused when they differ: `restrictions.<key>: not set by this tool - the merchant sets it on the Conditions tab of the rule in the back office`.
 
-**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, `name (<iso>)` for a translated name), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
+**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, `name (<iso>)` for a translated name, `restrictions.<key>` with the identifiers only, `null` for no restriction: `{"field": "restrictions.country", "old": [8], "new": [8, 21]}`; `restrictions.product` with the groups as read, the names left out), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to and **Product selection** still holds it, `product_selection` says so: `... until it is removed from restrictions.product.` When the tool adds the group of a **Specific product**, as the back office does, `warning` says it: `Product <id> was added to Product selection, as the back office adds it: the discount applies to that product.` When **Compatibility with other cart rules** checked, the back office checks the box of every other rule that combined with all and stops it combining with this one: `warning` names them (`<n> other cart rule(s) can no longer be combined with this one, as in the back office: <id>, <id>.`). A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
-**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`), given with the fields of the call the tool does not take, in one answer.
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`), given with the fields of the call the tool does not take, in one answer. For the restrictions: a value that is not a list (`restrictions.<key>: a list of {"<item key>": ...}, or null for no restriction`, the key of an item being `id_country`, `id_reference` for a carrier and `id_group`); an item that is not an identifier (`restrictions.<key>: a whole number above 0`, once for the list); an empty list (`restrictions.<key>: at least one, or null for no restriction`, since a checked box with nothing selected matches no cart); a country or a group that does not exist (`restrictions.country: no country of this shop has the identifier <n> - find it with somcp_list_countries`, the same with `group` and `somcp_list_customer_groups`); a carrier reference with no carrier not deleted (`restrictions.carrier: no carrier of this shop has the reference <n> - find it with somcp_list_carriers`). For `cart_rule`: not a list and not `null` (`restrictions.cart_rule: a list of {"id_cart_rule": ...}, or null for no restriction`); an item that is not an identifier (`restrictions.cart_rule: a whole number above 0`); a rule this shop does not have (`restrictions.cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`); the rule itself (`restrictions.cart_rule: a cart rule cannot list itself`). For `product`, `<g>` and `<r>` the places in the lists starting at 0: not a list and not `null` (`restrictions.product: a list of {"quantity": ..., "rules": [...]}, or null for no restriction`); `[]` other than given back as read (`restrictions.product: at least one group, or null for no restriction`); a group that is not an object of `quantity` and `rules` (`restrictions.product[<g>]: an object of quantity and rules`); a `quantity` below 1 (`restrictions.product[<g>].quantity: a whole number, 1 at least`); no rule (`restrictions.product[<g>].rules: at least one rule`); another `type` (`restrictions.product[<g>].rules[<r>].type: one of products, attributes, categories, manufacturers, suppliers`); no value (`restrictions.product[<g>].rules[<r>].values: at least one, a list of {"<item key>": ...}`); an item that is not an identifier (`SomcpTool::notAnIdentifier()`, once for the list); an item the form would not offer (`SomcpTool::notFound()`: a product of the shop (`product_shop`), an attribute value, a category of the shop other than the root (`category_shop`), a brand, a supplier, each with its list tool).
 
 **Notes**
-- Written with `CartRule::update()` only. The back office's `afterUpdate()` deletes every restriction row of the rule (`cart_rule_country`, `_carrier`, `_group`, `_product_rule_group`, `_shop`, `cart_rule_combination`) and writes back what the form posted; this tool posts no restriction, so it leaves those tables alone.
+- Written with `CartRule::update()` only. The back office's `afterUpdate()` deletes every restriction row of the rule (`cart_rule_country`, `_carrier`, `_group`, `_product_rule_group`, `_shop`, `cart_rule_combination`) and writes back what the form posted; going that way would wipe what the call does not give. The countries, carriers and groups given are written instead as `afterUpdate()` and `afterAdd()` write them, only for the keys that change: the rows of the rule deleted, then one row per item (`cart_rule_carrier.id_carrier` holding the `id_reference`), and `country_restriction`, `carrier_restriction`, `group_restriction` set on the rule, in one transaction with `CartRule::update()`. The checks and the writing are `SomcpToolCreateCartRule::planRestrictions()` and `writeRestrictions()`, for `somcp_create_cart_rule` to share; the table names are fixed in the code.
+- **Product selection** is written as `afterUpdate()` clears it and `afterAdd()` writes it back, in the same transaction and only when it changes (`SomcpToolCreateCartRule::planProductSelection()` and `writeProductSelection()`): the groups of the rule deleted, then the rules and values left without them; then per group one row of `cart_rule_product_rule_group`, per rule one of `cart_rule_product_rule`, per item one of `cart_rule_product_rule_value`, with `Db::insert()` as the controller (these tables have no ObjectModel), and `product_restriction` set on the rule.
+- A **Product selection** given back as read - same groups and rules in the same order, the items of a rule in any order - is compared with the stored one before any check (`SomcpToolCreateCartRule::productSelectionShape()`) and never checked again, so a group of quantity 0 or an item since removed from the shop, as the form can save them, does not stop the rule from being updated from its own read.
+- **Compatibility with other cart rules** is written as the back office writes it, in the same transaction and only when it changes (`SomcpToolCreateCartRule::writeCompatibility()`, shared with `somcp_create_cart_rule`): every pair of `cart_rule_combination` naming the rule deleted; with the box checked, one pair per rule listed; with it unchecked, the rule added to the list of every rule whose own box is checked; with it checked, every other rule whose box is unchecked and that is not listed gets its box checked and keeps every other active rule, so it only stops combining with this one.
 - Only the columns of the fields given are compared and written. The currency and tax switch of an amount that is zero, or of a percent, are not compared, so giving back what was read changes nothing.
-- A `reduction` given without `id_product` on a **Specific product** discount keeps that product. Switching **Apply a discount to** to **Specific product** adds that product to **Product selection** (one group, quantity 1, type `products`) and sets `product_restriction`, with the rows `somcp_create_cart_rule` writes (`SomcpToolCreateCartRule::productSelection()`). Switching away keeps the product restriction, as the form keeps it.
+- A `reduction` given without `id_product` on a **Specific product** discount keeps that product. Switching **Apply a discount to** to **Specific product** adds that product to **Product selection** (one group, quantity 1, type `products`) and sets `product_restriction`, with the rows `somcp_create_cart_rule` writes (`SomcpToolCreateCartRule::productSelection()`), unless a `products` rule already holds it, as `AdminCartRulesController::postProcess()` checks. With `restrictions.product` given, the same check runs on the groups given, also after `null`, while the rule applies to a **Specific product**: the group is added once, in the same write. Switching away keeps the product restriction, as the form keeps it.
 - **Total available** (`quantity`) is what is left: every order using the rule has lowered it. A rule already used keeps its history: orders hold their own copy (`order_cart_rule`).
 - Not to be retried blindly: if the answer is lost, read the rule with `somcp_get_cart_rule` and compare before calling again.
 

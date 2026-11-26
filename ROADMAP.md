@@ -26,15 +26,17 @@ merchant does it:
   tax rules and the tax options are done.
 - **Shipping and payment preferences**: a carrier is read, changed and
   deleted today, and the delivery zones are listed; creating a carrier and
-  managing the zones come next, with the preferences of
-  **Payment > Preferences**. The payment modules themselves,
+  managing the zones come next. **Payment > Preferences** is read and
+  changed, module by module. The payment modules themselves,
   their accounts and keys, stay with the merchant.
 - **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
   never the parent theme or its templates, and the native modules of the
   storefront those themes show - the slider, the home texts, the footer links,
   the newsletter block and the like.
-- **E-mails and preferences**: the shop's e-mails and the order, customer and
-  product preferences.
+- **E-mails and preferences**: the e-mail settings are read and changed, the
+  SMTP password and the DKIM key staying with the merchant; the order
+  settings are read; changing them, the shop's e-mails, and the customer and
+  product preferences come next.
 
 The simplest tools, mostly reads, are labelled
 [`good first issue`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).

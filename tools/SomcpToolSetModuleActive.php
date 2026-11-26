@@ -107,7 +107,7 @@ class SomcpToolSetModuleActive
         // PrestaShop 9 deprecated the mobile switch and made it do nothing:
         // accepting it there would claim a change that never happens.
         if ($mobile !== null && version_compare(_PS_VERSION_, '9.0.0', '>=')) {
-            $errors[] = 'active_on_mobile: not available on this version of PrestaShop, which has no mobile switch for modules';
+            $errors[] = SomcpTool::notOnThisVersion('active_on_mobile', 'mobile switch for modules');
         }
         if ($errors !== [] || !is_string($name) || ($active !== null && !is_bool($active))
             || ($mobile !== null && !is_bool($mobile))) {

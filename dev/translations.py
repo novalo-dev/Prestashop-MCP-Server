@@ -866,6 +866,14 @@ T = {
  "Lister les groupes de clients",
  "Listar los grupos de clientes",
  "Kundengruppen auflisten"),
+"Get a customer group": (
+ "Afficher un groupe de clients",
+ "Ver un grupo de clientes",
+ "Eine Kundengruppe anzeigen"),
+"Change a customer group": (
+ "Modifier un groupe de clients",
+ "Modificar un grupo de clientes",
+ "Eine Kundengruppe ändern"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",
@@ -1150,6 +1158,98 @@ T = {
  "Lire les préférences de livraison",
  "Leer las preferencias de envío",
  "Die Versandeinstellungen lesen"),
+"Change the shipping preferences": (
+ "Modifier les préférences de livraison",
+ "Cambiar las preferencias de envío",
+ "Die Versandeinstellungen ändern"),
+"Read the payment preferences": (
+ "Lire les préférences de paiement",
+ "Leer las preferencias de pago",
+ "Die Zahlungseinstellungen lesen"),
+"Change the payment restrictions": (
+ "Modifier les restrictions de paiement",
+ "Cambiar las restricciones de pago",
+ "Die Zahlungsbeschränkungen ändern"),
+"Read the e-mail settings": (
+ "Lire les paramètres des e-mails",
+ "Leer los parámetros de correo electrónico",
+ "Die E-Mail-Einstellungen lesen"),
+"Change the e-mail settings": (
+ "Modifier les paramètres des e-mails",
+ "Cambiar los parámetros de correo electrónico",
+ "Die E-Mail-Einstellungen ändern"),
+"List the sent e-mails": (
+ "Lister les e-mails envoyés",
+ "Listar los correos electrónicos enviados",
+ "Die gesendeten E-Mails auflisten"),
+"List the social titles": (
+ "Lister les titres de civilité",
+ "Listar los tratamientos",
+ "Die Anreden auflisten"),
+"Create a social title": (
+ "Créer un titre de civilité",
+ "Crear un tratamiento",
+ "Eine Anrede anlegen"),
+"Change a social title": (
+ "Modifier un titre de civilité",
+ "Modificar un tratamiento",
+ "Eine Anrede ändern"),
+"Delete a social title": (
+ "Supprimer un titre de civilité",
+ "Eliminar un tratamiento",
+ "Eine Anrede löschen"),
+"Delete a sent e-mail from the list": (
+ "Supprimer un e-mail envoyé de la liste",
+ "Eliminar un correo electrónico enviado de la lista",
+ "Eine gesendete E-Mail aus der Liste löschen"),
+"Erase the list of sent e-mails": (
+ "Effacer la liste des e-mails envoyés",
+ "Borrar la lista de correos electrónicos enviados",
+ "Die Liste der gesendeten E-Mails leeren"),
+"Send a test e-mail": (
+ "Envoyer un e-mail de test",
+ "Enviar un correo electrónico de prueba",
+ "Eine Test-E-Mail senden"),
+"Read the order settings": (
+ "Lire les paramètres des commandes",
+ "Leer los parámetros de pedidos",
+ "Die Bestellungseinstellungen lesen"),
+"Read the product settings": (
+ "Lire les paramètres des produits",
+ "Leer los parámetros de productos",
+ "Die Produkteinstellungen lesen"),
+"Change the product settings": (
+ "Modifier les paramètres des produits",
+ "Cambiar los parámetros de productos",
+ "Die Produkteinstellungen ändern"),
+"Read the customer settings": (
+ "Lire les paramètres clients",
+ "Leer los parámetros de clientes",
+ "Die Kundeneinstellungen lesen"),
+"Change the customer settings": (
+ "Modifier les paramètres clients",
+ "Cambiar los parámetros de clientes",
+ "Die Kundeneinstellungen ändern"),
+"List the contacts": (
+ "Lister les contacts",
+ "Listar los contactos",
+ "Die Kontakte auflisten"),
+"Create a contact": (
+ "Créer un contact",
+ "Crear un contacto",
+ "Einen Kontakt anlegen"),
+"Change a contact": (
+ "Modifier un contact",
+ "Modificar un contacto",
+ "Einen Kontakt ändern"),
+"Delete a contact": (
+ "Supprimer un contact",
+ "Eliminar un contacto",
+ "Einen Kontakt löschen"),
+"Change the order settings": (
+ "Modifier les paramètres des commandes",
+ "Cambiar los parámetros de pedidos",
+ "Die Bestellungseinstellungen ändern"),
 "Import a localization pack": (
  "Importer un pack de localisation",
  "Importar un paquete de localización",

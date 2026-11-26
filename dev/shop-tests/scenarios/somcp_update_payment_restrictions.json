@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "a currency and a group the shop does not have, refused together", "arguments": {"name": "ps_checkpayment", "currencies": [999999], "groups": [999999]}, "expect": "error", "contains": ["Nothing was changed.", "- currencies: no currency of this shop has the identifier 999999 - find it with somcp_list_currencies", "- groups: no customer group of this shop has the identifier 999999 - find it with somcp_list_customer_groups"]},
+    {"why": "a module that takes no payment", "arguments": {"name": "somcp"}, "expect": "error", "contains": ["Nothing was changed.", "- name: no payment module of this shop has the technical name somcp - find it with somcp_get_payment_preferences"]},
+    {"why": "the customer currency for a module that takes several", "arguments": {"name": "ps_checkpayment", "currencies": [-1]}, "expect": "error", "contains": ["- currencies: -1 and -2 only for a module that takes one currency"]},
+    {"why": "a country and a carrier the shop does not have, refused together", "arguments": {"name": "ps_checkpayment", "countries": [999999], "carriers": [999999]}, "expect": "error", "contains": ["- countries: no country of this shop has the identifier 999999 - find it with somcp_list_countries", "- carriers: no carrier of this shop has the identifier 999999 - find it with somcp_list_carriers"]},
+    {"why": "an unknown field", "arguments": {"name": "ps_checkpayment", "tone": 1}, "expect": "error", "contains": ["- tone: not a field of this tool"]},
+    {"why": "no module named", "arguments": {"groups": [1]}, "expect": "error", "contains": ["- name: required"]}
+  ]
+}

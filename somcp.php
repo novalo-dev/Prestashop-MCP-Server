@@ -109,7 +109,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '2.0.5';
+        $this->version = '2.0.6';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -549,24 +549,45 @@ class Somcp extends Module
             ],
         ];
 
-        $base = $this->_path . 'views/';
-        // The file's own date rides along with the module version: builds of
-        // one version share its number, and a CDN in front of the shop kept
-        // serving the script of the previous build under the same address.
-        $stamp = function (string $file): string {
-            $path = _PS_MODULE_DIR_ . $this->name . '/views/' . $file;
-
-            return urlencode($this->version) . '-' . (is_file($path) ? (int) filemtime($path) : 0);
-        };
-
         $this->context->smarty->assign([
             // Encoded here, escaped by the template into an attribute.
             'somcp_assistant_config' => (string) json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
-            'somcp_assistant_css' => $base . 'css/assistant.css?v=' . $stamp('css/assistant.css'),
-            'somcp_assistant_js' => $base . 'js/assistant.js?v=' . $stamp('js/assistant.js'),
+            'somcp_assistant_css' => $this->viewUrl('css/assistant.css'),
+            'somcp_assistant_js' => $this->viewUrl('js/assistant.js'),
         ]);
 
         return $this->context->smarty->fetch(_PS_MODULE_DIR_ . 'somcp/views/templates/hook/assistant_head.tpl');
+    }
+
+    /**
+     * What _style.tpl links: the charte shared by the Novalo modules and the
+     * script that places its tips. Every page that includes that template
+     * assigns these, the page having no addCSS() on PrestaShop 9.
+     *
+     * @return array<string, string>
+     */
+    public function styleAssets(): array
+    {
+        return [
+            'somcp_charte_css' => $this->viewUrl('css/charte.css'),
+            'somcp_tip_js' => $this->viewUrl('js/admin-tip.js'),
+        ];
+    }
+
+    /**
+     * The address of a file of views/, with what tells one copy from the next.
+     *
+     * The file's own date rides along with the module version: builds of one
+     * version share its number, and a CDN in front of the shop kept serving
+     * the script of the previous build under the same address.
+     *
+     * @param string $file path inside views/, e.g. css/charte.css
+     */
+    private function viewUrl(string $file): string
+    {
+        $path = _PS_MODULE_DIR_ . $this->name . '/views/' . $file;
+
+        return $this->_path . 'views/' . $file . '?v=' . urlencode($this->version) . '-' . (is_file($path) ? (int) filemtime($path) : 0);
     }
 
     /**
@@ -866,6 +887,7 @@ class Somcp extends Module
         $tools = $this->toolList();
         $prompts = $this->promptList();
 
+        $this->context->smarty->assign($this->styleAssets());
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
             'somcp_pane' => $this->settingsPane,
@@ -1117,6 +1139,8 @@ class Somcp extends Module
             'somcp_endpoints' => $mayGrant ? SomcpConfig::contextEndpoints() : [],
             'somcp_multistore' => Shop::isFeatureActive(),
         ]);
+
+        $this->context->smarty->assign($this->styleAssets());
 
         return $this->context->smarty->fetch(
             _PS_MODULE_DIR_ . 'somcp/views/templates/admin/somcp/restricted.tpl'

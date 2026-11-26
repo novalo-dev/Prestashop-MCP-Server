@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the order settings of the shop", "arguments": {}, "expect": "ok", "contains": ["\"guest_checkout\":", "\"terms_id_cms\":", "\"gift_wrapping\":", "\"backorder_status\":"]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]}
+  ]
+}

@@ -1348,6 +1348,8 @@ class SomcpUpload
     {
         $idUpload = (int) $invitation['id_upload'];
 
+        // A first answer without waiting. The count that decides is the one
+        // taken further down, once this deposit is held.
         if (count(self::deposited($idUpload)) >= (int) $invitation['max_files']) {
             return 'too_many';
         }
@@ -1372,22 +1374,53 @@ class SomcpUpload
             return 'no_store';
         }
 
-        // The name on disk is ours, not the uploader's: a file name is
-        // attacker-controlled text and has no business reaching a filesystem.
-        $storedAs = SomcpRandom::token(16) . '.' . $extension;
-        $moved = $uploaded ? @move_uploaded_file($path, $directory . $storedAs) : @rename($path, $directory . $storedAs);
-        if (!$moved) {
+        // Files sent at the same moment all read the same count before any of
+        // them was recorded, and a deposit opened for one file kept several.
+        // The row of the invitation is held from the count to the insert, so
+        // the files of one deposit are counted one after the other.
+        $db = Db::getInstance();
+        if (!$db->execute('START TRANSACTION')) {
             return 'no_store';
         }
-        @chmod($directory . $storedAs, 0640);
+        $storedAs = '';
+        $problem = 'no_store';
+        try {
+            // Read without the query cache, and by executeS(): getValue() and
+            // getRow() add a LIMIT after FOR UPDATE, which is not SQL.
+            $db->executeS('SELECT `id_upload` FROM `' . _DB_PREFIX_ . 'somcp_upload` WHERE `id_upload` = ' . $idUpload . ' FOR UPDATE', true, false);
+            $kept = $db->executeS('SELECT COUNT(*) AS `kept` FROM `' . _DB_PREFIX_ . 'somcp_upload_file` WHERE `id_upload` = ' . $idUpload, true, false);
+            if (!is_array($kept) || (int) ($kept[0]['kept'] ?? PHP_INT_MAX) >= (int) $invitation['max_files']) {
+                $problem = is_array($kept) ? 'too_many' : 'no_store';
+            } else {
+                // The name on disk is ours, not the uploader's: a file name is
+                // attacker-controlled text and has no business reaching a filesystem.
+                $onDisk = SomcpRandom::token(16) . '.' . $extension;
+                $moved = $uploaded ? @move_uploaded_file($path, $directory . $onDisk) : @rename($path, $directory . $onDisk);
+                if ($moved) {
+                    $storedAs = $onDisk;
+                    @chmod($directory . $storedAs, 0640);
+                    $problem = $db->insert('somcp_upload_file', [
+                        'id_upload' => $idUpload,
+                        'file_name' => pSQL(Tools::substr($name, 0, 255)),
+                        'mime_type' => pSQL(self::ACCEPTED[$extension]['mime']),
+                        'stored_as' => pSQL($storedAs),
+                        'file_size' => $size,
+                    ]) ? '' : 'no_store';
+                }
+            }
+        } catch (Throwable $e) {
+            $problem = 'no_store';
+        }
+        $db->execute($problem === '' ? 'COMMIT' : 'ROLLBACK');
+        if ($problem !== '') {
+            // A file moved for a row that was not written would stay in the
+            // store with nothing naming it.
+            if ($storedAs !== '') {
+                @unlink($directory . $storedAs);
+            }
 
-        Db::getInstance()->insert('somcp_upload_file', [
-            'id_upload' => $idUpload,
-            'file_name' => pSQL(Tools::substr($name, 0, 255)),
-            'mime_type' => pSQL(self::ACCEPTED[$extension]['mime']),
-            'stored_as' => pSQL($storedAs),
-            'file_size' => $size,
-        ]);
+            return $problem;
+        }
 
         SomcpLogger::log(
             'upload_received',

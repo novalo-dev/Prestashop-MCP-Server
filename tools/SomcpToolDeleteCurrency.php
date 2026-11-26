@@ -172,7 +172,7 @@ class SomcpToolDeleteCurrency
         $iso = (string) $stored['iso_code'];
         $warnings = [];
         if ($modules > 0) {
-            $warnings[] = $modules . ' payment modules no longer accept ' . $iso . ' in Payment > Preferences; adding '
+            $warnings[] = $modules . ' payment modules no longer accept ' . $iso . ' in Payment > Preferences (somcp_update_payment_restrictions); adding '
                 . 'the currency again does not bring that setting back.';
         }
         // The add page reuses the deleted row of the same ISO code.

@@ -17,7 +17,7 @@
 
 {include file='./_style.tpl'}
 
-<div class="somcp">
+<div class="somcp nv">
 
     {foreach from=$somcp_confirmations item=confirmation}
         <div class="alert alert-success">{$confirmation|escape:'html':'UTF-8'}</div>
@@ -40,7 +40,7 @@
             <div class="panel-heading"><i class="icon-power-off"></i> {l s='MCP server' d='Modules.Somcp.Admin'}</div>
             <div class="form-horizontal">
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Enable the MCP server' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Enable the MCP server' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Turning this off closes the endpoint immediately. Tokens already issued stop working.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_ENABLED' form='somcp-settings'}
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -50,7 +50,6 @@
                             <label for="SOMCP_ENABLED_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Turning this off closes the endpoint immediately. Tokens already issued stop working.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
             </div>
@@ -61,14 +60,14 @@
             <p>{l s='Paste this address into Claude, ChatGPT, Le Chat or any other MCP-compatible assistant. It will ask you to sign in to this shop and to approve the connection.' d='Modules.Somcp.Admin'}</p>
         {include file='./_endpoints.tpl'}
 
-        <p class="somcp-note">
+        <p class="nv-note">
             {if $somcp_multistore}
                 {l s='Each shop has its own address and its own connections. An assistant connected to one shop reaches that shop only.' d='Modules.Somcp.Admin'}
             {else}
                 {l s='Authorization server:' d='Modules.Somcp.Admin'} <code>{$somcp_issuer|escape:'html':'UTF-8'}</code>
             {/if}
         </p>
-            <p class="somcp-note">{l s='OAuth 2.1: every connection is approved by an employee, and an assistant never gets more rights than that employee.' d='Modules.Somcp.Admin'}</p>
+            <p class="nv-note">{l s='OAuth 2.1: every connection is approved by an employee, and an assistant never gets more rights than that employee.' d='Modules.Somcp.Admin'}</p>
         </div>
 
         <div class="panel">
@@ -80,7 +79,7 @@
                 <tbody>
                 {foreach from=$somcp_diagnostic item=check}
                     <tr>
-                        <td class="somcp-status somcp-status-{$check.status|escape:'html':'UTF-8'}">
+                        <td class="nv-status nv-status-{$check.status|escape:'html':'UTF-8'}">
                             {if $check.status === 'ok'}<i class="icon-check"></i>
                             {elseif $check.status === 'warning'}<i class="icon-warning"></i>
                             {elseif $check.status === 'skipped'}<i class="icon-minus"></i>
@@ -124,9 +123,8 @@
            switches of both lists with the rest. *}
         <div class="somcp-pane" id="somcp-pane-tools" data-somcp-pane="tools" role="tabpanel"{if $somcp_pane !== 'tools'} hidden{/if}>
             <div class="panel">
-                <div class="panel-heading"><i class="icon-wrench"></i> {l s='Available tools' d='Modules.Somcp.Admin'} <span class="badge">{$somcp_tools_count|intval}</span></div>
+                <div class="panel-heading"><i class="icon-wrench"></i> {l s='Available tools' d='Modules.Somcp.Admin'} <span class="badge">{$somcp_tools_count|intval}</span> <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='What an assistant may ask this shop to do, grouped by the permission an assistant is given for it. Choose, for a whole group or for each tool, whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A group switched off holds back every tool in it, including those an update adds later, and switching it back on gives each tool its own switch again. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.' d='Modules.Somcp.Admin'}</span></span></div>
                 {include file='./_inherit.tpl' field='SOMCP_TOOLS_OFF'}
-                <p class="help-block">{l s='What an assistant may ask this shop to do, grouped by the permission an assistant is given for it. Choose, for a whole group or for each tool, whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A group switched off holds back every tool in it, including those an update adds later, and switching it back on gives each tool its own switch again. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.' d='Modules.Somcp.Admin'}</p>
                 {if $somcp_tools}
                     {* No name: the search only filters the rows on screen and is
                        never posted with the settings. *}
@@ -160,22 +158,22 @@
                         </thead>
                         {foreach from=$somcp_tools item=group}
                             <tbody class="somcp-group{if !$group.on} somcp-off-on{/if}{if !$group.chat} somcp-off-chat{/if}" data-somcp-group="{$group.scope|escape:'html':'UTF-8'}">
-                            <tr class="somcp-group-row">
+                            <tr class="nv-group-row">
                                 <td colspan="2">
                                     <button type="button" class="somcp-group-caret" data-somcp-expand aria-expanded="true"
                                             aria-label="{l s='Show or hide the tools of this group' d='Modules.Somcp.Admin'}"><i class="material-icons">expand_more</i></button>
                                     <strong>{$group.label|escape:'html':'UTF-8'}</strong>
                                     <span class="badge">{$group.items|count}</span>
-                                    <code>{$group.scope|escape:'html':'UTF-8'}</code>
+                                    <code class="nv-ml-s">{$group.scope|escape:'html':'UTF-8'}</code>
                                 </td>
                                 {if $group.switchable}
                                     <td class="somcp-tool-on">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_scope_on[{$group.scope|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_scope_on[{$group.scope|escape:'html':'UTF-8'}]"
                                                value="1" data-somcp-scope="on" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $group.on} checked{/if}>
                                         <span class="somcp-group-count" data-somcp-counted="on"></span>
                                     </td>
                                     <td class="somcp-tool-on">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_scope_chat[{$group.scope|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_scope_chat[{$group.scope|escape:'html':'UTF-8'}]"
                                                value="1" data-somcp-scope="chat" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $group.chat} checked{/if}>
                                         <span class="somcp-group-count" data-somcp-counted="chat"></span>
                                     </td>
@@ -211,11 +209,11 @@
                                         <td class="somcp-tool-on"><span class="text-muted">-</span></td>
                                     {else}
                                         <td class="somcp-tool-on" data-somcp-column="on">
-                                            <input type="checkbox" class="somcp-toggle" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
+                                            <input type="checkbox" class="nv-toggle" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
                                                    value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $tool.on} checked{/if}>
                                         </td>
                                         <td class="somcp-tool-on" data-somcp-column="chat">
-                                            <input type="checkbox" class="somcp-toggle" name="somcp_tool_chat[{$tool.name|escape:'html':'UTF-8'}]"
+                                            <input type="checkbox" class="nv-toggle" name="somcp_tool_chat[{$tool.name|escape:'html':'UTF-8'}]"
                                                    value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $tool.chat} checked{/if}>
                                         </td>
                                     {/if}
@@ -246,9 +244,8 @@
             </div>
 
             <div class="panel">
-                <div class="panel-heading"><i class="icon-comments"></i> {l s='Available prompts' d='Modules.Somcp.Admin'} <span class="badge">{$somcp_prompts_count|intval}</span></div>
+                <div class="panel-heading"><i class="icon-comments"></i> {l s='Available prompts' d='Modules.Somcp.Admin'} <span class="badge">{$somcp_prompts_count|intval}</span> <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here. A prompt is also held back where a group of the tools it guides is switched off.' d='Modules.Somcp.Admin'}</span></span></div>
                 {include file='./_inherit.tpl' field='SOMCP_PROMPTS_OFF'}
-                <p class="help-block">{l s='A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here. A prompt is also held back where a group of the tools it guides is switched off.' d='Modules.Somcp.Admin'}</p>
                 {if $somcp_prompts}
                     <input type="search" class="form-control somcp-tools-search" data-somcp-search
                            placeholder="{l s='Search a prompt' d='Modules.Somcp.Admin'}"
@@ -276,7 +273,7 @@
                         </thead>
                         {foreach from=$somcp_prompts item=group}
                             <tbody class="somcp-group" data-somcp-group="{$group.scope|escape:'html':'UTF-8'}">
-                            <tr class="somcp-group-row">
+                            <tr class="nv-group-row">
                                 <td colspan="2">
                                     <button type="button" class="somcp-group-caret" data-somcp-expand aria-expanded="true"
                                             aria-label="{l s='Show or hide the prompts of this group' d='Modules.Somcp.Admin'}"><i class="material-icons">expand_more</i></button>
@@ -287,12 +284,12 @@
                                    and are never posted. The group itself is
                                    switched in the tools list. *}
                                 <td class="somcp-tool-on">
-                                    <input type="checkbox" class="somcp-toggle" data-somcp-all="on"
+                                    <input type="checkbox" class="nv-toggle" data-somcp-all="on"
                                            aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}">
                                     <span class="somcp-group-count" data-somcp-counted="on"></span>
                                 </td>
                                 <td class="somcp-tool-on">
-                                    <input type="checkbox" class="somcp-toggle" data-somcp-all="chat"
+                                    <input type="checkbox" class="nv-toggle" data-somcp-all="chat"
                                            aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}">
                                     <span class="somcp-group-count" data-somcp-counted="chat"></span>
                                 </td>
@@ -309,12 +306,12 @@
                                         {else}{l s='This module' d='Modules.Somcp.Admin'}{/if}
                                     </td>
                                     <td class="somcp-tool-on{if $prompt.held} somcp-is-held{/if}" data-somcp-column="on">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_prompt_on[{$prompt.name|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_prompt_on[{$prompt.name|escape:'html':'UTF-8'}]"
                                                value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $prompt.on} checked{/if}>
                                         <span class="somcp-held"{if !$prompt.held} hidden{/if}>{l s='group switched off' d='Modules.Somcp.Admin'}</span>
                                     </td>
                                     <td class="somcp-tool-on{if $prompt.held_chat} somcp-is-held{/if}" data-somcp-column="chat">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_prompt_chat[{$prompt.name|escape:'html':'UTF-8'}]"
+                                        <input type="checkbox" class="nv-toggle" name="somcp_prompt_chat[{$prompt.name|escape:'html':'UTF-8'}]"
                                                value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $prompt.chat} checked{/if}>
                                         <span class="somcp-held"{if !$prompt.held_chat} hidden{/if}>{l s='group switched off' d='Modules.Somcp.Admin'}</span>
                                     </td>
@@ -347,17 +344,16 @@
             <div class="panel">
                 <div class="panel-heading"><i class="icon-cogs"></i> {l s='Settings' d='Modules.Somcp.Admin'}</div>
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='How long an assistant keeps the list of tools' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='How long an assistant keeps the list of tools' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_TOOLS_TTL'}
                         <input type="number" min="10" max="3600" name="SOMCP_TOOLS_TTL" class="form-control fixed-width-xl"
                                value="{$somcp_settings.SOMCP_TOOLS_TTL|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Compact list of tools' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Compact list of tools' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_TOOLS_COMPACT'}
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -367,7 +363,6 @@
                             <label for="SOMCP_TOOLS_COMPACT_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
@@ -383,7 +378,7 @@
             <div class="panel">
                 <div class="panel-heading"><i class="icon-lock"></i> {l s='Access and security' d='Modules.Somcp.Admin'}</div>
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Employees allowed to connect an assistant' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Employees allowed to connect an assistant' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='An assistant never gets more rights than the employee who connected it.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_REQUIRED_PROFILE'}
                         <select name="SOMCP_REQUIRED_PROFILE" class="form-control fixed-width-xl">
@@ -396,14 +391,13 @@
                                 </option>
                             {/foreach}
                         </select>
-                        <p class="help-block">{l s='An assistant never gets more rights than the employee who connected it.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
                 <hr>
                 <h4>{l s='OAuth 2.1' d='Modules.Somcp.Admin'}</h4>
                 <div class="form-group" id="somcp-consent-page">
-                    <label class="control-label col-lg-4">{l s='Consent page' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Consent page' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_CONSENT_PAGE'}
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -413,7 +407,6 @@
                             <label for="SOMCP_CONSENT_PAGE_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
@@ -426,16 +419,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Refresh token lifetime (seconds)' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Refresh token lifetime (seconds)' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='How long an assistant can keep reconnecting on its own before the merchant has to approve it again.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_REFRESH_TTL'}
                         <input type="number" min="600" name="SOMCP_REFRESH_TTL" class="form-control fixed-width-xl" value="{$somcp_settings.SOMCP_REFRESH_TTL|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='How long an assistant can keep reconnecting on its own before the merchant has to approve it again.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Replace the refresh token on every use' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Replace the refresh token on every use' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Recommended. A token that is used twice then reveals a theft, and the shop cuts the whole connection.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_REFRESH_ROTATION'}
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -445,14 +437,13 @@
                             <label for="SOMCP_REFRESH_ROTATION_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Recommended. A token that is used twice then reveals a theft, and the shop cuts the whole connection.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
                 <hr>
                 <h4>{l s='Security' d='Modules.Somcp.Admin'}</h4>
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Let applications identify themselves by address' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Let applications identify themselves by address' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='This is how the Claude assistants connect. Turning it off will stop them from working.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_CIMD_ENABLED'}
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -462,12 +453,11 @@
                             <label for="SOMCP_CIMD_ENABLED_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='This is how the Claude assistants connect. Turning it off will stop them from working.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Let applications register themselves' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Let applications register themselves' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Older way of connecting, kept for assistants that know nothing else. Registering costs nothing on its own: an application still has to be approved by an employee before it can do anything.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_DCR_ENABLED'}
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -477,12 +467,11 @@
                             <label for="SOMCP_DCR_ENABLED_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Older way of connecting, kept for assistants that know nothing else. Registering costs nothing on its own: an application still has to be approved by an employee before it can do anything.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Only allow these return addresses' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Only allow these return addresses' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_REDIRECT_HOSTS'}
                         {* A plain field the script turns into tags, like the tags of a
@@ -497,12 +486,11 @@
                                 <button type="button" class="somcp-tag-suggest" data-somcp-host="{$somcp_host|escape:'html':'UTF-8'}">+ {$somcp_host|escape:'html':'UTF-8'} <span class="text-muted">{$somcp_client|escape:'html':'UTF-8'}</span></button>
                             {/foreach}
                         </p>
-                        <p class="help-block">{l s='Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Keep a security log' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Keep a security log' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Connections, approvals and refusals, kept for thirty days. Never contains a token.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_LOG_ENABLED'}
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -512,7 +500,6 @@
                             <label for="SOMCP_LOG_ENABLED_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Connections, approvals and refusals, kept for thirty days. Never contains a token.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
@@ -645,7 +632,7 @@
                    another field never loses it. No key yet, no list - the hint
                    says to save a working key first. *}
                 <div class="form-group" data-somcp-custom-model{if $somcp_assistant_edit.level === 'image'} style="display:none"{/if}>
-                    <label class="control-label col-lg-3">{l s='Default model' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Default model' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         {if $somcp_assistant_models || $somcp_edit_model}
                             <select name="somcp_assistant_model" class="form-control">
@@ -656,7 +643,6 @@
                                     <option value="{$model|escape:'html':'UTF-8'}"{if $model === $somcp_edit_model} selected{/if}>{$model|escape:'html':'UTF-8'}</option>
                                 {/foreach}
                             </select>
-                            <p class="help-block">{l s='Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.' d='Modules.Somcp.Admin'}</p>
                         {else}
                             <input type="hidden" name="somcp_assistant_model" value="">
                             <p class="help-block">{l s='Save this assistant with a working key first, then edit it to choose a model here.' d='Modules.Somcp.Admin'}</p>
@@ -664,20 +650,18 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Role' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Role' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         <input type="text" name="somcp_assistant_role" class="form-control" maxlength="255" value="{$somcp_assistant_edit.role|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Monthly cap for this assistant' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Monthly cap for this assistant' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         <div class="input-group fixed-width-xl">
                             <input type="number" min="0" step="1000" name="somcp_assistant_token_cap" class="form-control" value="{$somcp_assistant_edit.token_cap|intval}">
                             <span class="input-group-addon">{l s='tokens' d='Modules.Somcp.Admin'}</span>
                         </div>
-                        <p class="help-block">{l s='Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 <div class="form-group">
@@ -785,7 +769,7 @@
                 {/if}
                 {if $somcp_local.step === 'edit' || $somcp_local.stage === 'ready'}
                 <div class="form-group">
-                    <label class="control-label col-lg-3 required">{l s='Model' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3 required">{l s='Model' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         {if $somcp_local.models}
                         <select name="somcp_assistant_model" class="form-control" required>
@@ -796,27 +780,24 @@
                         {else}
                         <input type="hidden" name="somcp_assistant_model" value="">
                         {/if}
-                        <p class="help-block">{l s='Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.' d='Modules.Somcp.Admin'}</p>
                         {if $somcp_local.assistant.model && !in_array($somcp_local.assistant.model, $somcp_local.models)}
                             <p class="help-block text-danger">{l s='The model %model% no longer passes the relay tool test: pick another one.' sprintf=['%model%' => ($somcp_local.assistant.model|escape:'html':'UTF-8')] d='Modules.Somcp.Admin'}</p>
                         {/if}
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Role' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Role' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         <input type="text" name="somcp_assistant_role" class="form-control" maxlength="255" value="{$somcp_local.assistant.role|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Monthly cap for this assistant' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Monthly cap for this assistant' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         <div class="input-group fixed-width-xl">
                             <input type="number" min="0" step="1000" name="somcp_assistant_token_cap" class="form-control" value="{$somcp_local.assistant.token_cap|intval}">
                             <span class="input-group-addon">{l s='tokens' d='Modules.Somcp.Admin'}</span>
                         </div>
-                        <p class="help-block">{l s='Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 <div class="form-group">
@@ -844,8 +825,7 @@
     {/if}
 
         <div class="panel">
-            <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'} <span class="somcp-foot text-muted">- {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a></span></div>
-            <p class="help-block">{l s='The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.' d='Modules.Somcp.Admin'}</p>
+            <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'} <span class="somcp-foot text-muted">- {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a></span> <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.' d='Modules.Somcp.Admin'}</span></span></div>
         {* A group or a shop uses the assistants of the level above until it is
            given its own: checking the box copies them here, keys included;
            unchecking it removes this level's and goes back to those above. *}
@@ -964,7 +944,7 @@
             <div class="panel">
                 <div class="panel-heading"><i class="icon-cogs"></i> {l s='Settings' d='Modules.Somcp.Admin'}</div>
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Employees allowed to use the built-in assistant' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Employees allowed to use the built-in assistant' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='The chat acts with the rights of the employee using it, never more. Administrators always have it.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_PROFILE'}
                         <select name="SOMCP_ASSISTANT_PROFILE" class="form-control fixed-width-xl">
@@ -973,7 +953,6 @@
                                 <option value="{$profile.id_profile|intval}"{if $somcp_assistant_profile == $profile.id_profile} selected{/if}>{$profile.name|escape:'html':'UTF-8'}</option>
                             {/foreach}
                         </select>
-                        <p class="help-block">{l s='The chat acts with the rights of the employee using it, never more. Administrators always have it.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 <div class="form-group">
@@ -992,11 +971,10 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Instructions for the shop' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Instructions for the shop' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_INSTRUCTIONS'}
                         <textarea name="SOMCP_ASSISTANT_INSTRUCTIONS" class="form-control" rows="4" maxlength="4000">{$somcp_assistant_instructions|escape:'html':'UTF-8'}</textarea>
-                        <p class="help-block">{l s='Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 {* Web search for the assistants that cannot run one beside the
@@ -1004,7 +982,7 @@
                    Greyed while there is nobody to lend or nobody to lend to;
                    the PHP side ignores it then too. *}
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Web search' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Web search' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_SEARCH'}
                         <select name="SOMCP_ASSISTANT_SEARCH" class="form-control"{if !$somcp_search_useful} disabled data-somcp-locked{/if}>
@@ -1013,7 +991,6 @@
                                 <option value="{$id|escape:'html':'UTF-8'}"{if $id === $somcp_search_provider} selected{/if}>{$label|escape:'html':'UTF-8'}</option>
                             {/foreach}
                         </select>
-                        <p class="help-block">{l s='Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens.' d='Modules.Somcp.Admin'}</p>
                         {if !$somcp_search_useful}
                             <p class="help-block">{l s='Available once a Claude or Gemini assistant and an assistant of another provider are both set up.' d='Modules.Somcp.Admin'}</p>
                         {/if}
@@ -1027,7 +1004,7 @@
                    levels, so one box governs the three groups. *}
                 <div data-somcp-setting>
                 <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Memory' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-3">{l s='Memory' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-6">
                         {include file='./_inherit.tpl' field='SOMCP_EMB_ON'}
                         <span class="switch prestashop-switch fixed-width-lg" data-somcp-memory-switch>
@@ -1037,7 +1014,6 @@
                             <label for="somcp_emb_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.' d='Modules.Somcp.Admin'}</p>
                         {if $somcp_memory_on && !$somcp_memory_works}
                             <p class="help-block text-danger">{l s='The memory is switched on but does not work: its embeddings provider has no key any more. Choose a provider below and save.' d='Modules.Somcp.Admin'}</p>
                         {/if}
@@ -1140,7 +1116,7 @@
                 </div>
             {/if}
                 <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Check for new versions' d='Modules.Somcp.Admin'}</label>
+                    <label class="control-label col-lg-4">{l s='Check for new versions' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.' d='Modules.Somcp.Admin'}</span></span></label>
                     <div class="col-lg-8">
                         <span class="switch prestashop-switch fixed-width-lg">
                             <input type="radio" data-somcp-autosave="submitSomcpUpdateSwitch" name="SOMCP_UPDATE_CHECK" id="SOMCP_UPDATE_CHECK_on" value="1"{if $somcp_update.enabled} checked{/if}>
@@ -1149,7 +1125,6 @@
                             <label for="SOMCP_UPDATE_CHECK_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
             {if $somcp_update.enabled}
@@ -1220,8 +1195,7 @@
            seven people the last slot links to GitHub's full list. *}
         {assign var=somcp_people value=$somcp_contributors|@count}
         <div class="panel">
-            <div class="panel-heading"><i class="icon-group"></i> {l s='Meet our contributors' d='Modules.Somcp.Admin'}</div>
-            <p class="help-block">{l s='Everyone who helped build this module, as GitHub counts the commits of the published code.' d='Modules.Somcp.Admin'}</p>
+            <div class="panel-heading"><i class="icon-group"></i> {l s='Meet our contributors' d='Modules.Somcp.Admin'} <span class="nv-tip" tabindex="0"><i class="icon-question-circle" aria-hidden="true"></i><span class="nv-tip-text" role="tooltip">{l s='Everyone who helped build this module, as GitHub counts the commits of the published code.' d='Modules.Somcp.Admin'}</span></span></div>
             <div class="somcp-contributors">
             {foreach from=$somcp_contributors item=person name=people}
                 <div class="somcp-contributor{if $smarty.foreach.people.first} somcp-contributor-top{/if}"{if !$smarty.foreach.people.first} data-somcp-paged{/if}>

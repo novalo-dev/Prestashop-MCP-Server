@@ -32,7 +32,8 @@ declare(strict_types=1);
  * "expect" is ok, error (the tool answers with isError), input (the tool asks
  * the client for something before finishing) or any (only the absence of a
  * crash is checked - for a write whose outcome depends on the demo data).
- * "contains" lists strings the text of the answer must hold.
+ * "contains" lists strings the text of the answer must hold, "lacks" strings
+ * it must not: a scenario can then prove that a key stays out of an answer.
  *
  * A call fails when the tool throws, returns something that is not a tool
  * result, answers differently from "expect", or makes PHP raise a notice,
@@ -193,6 +194,13 @@ foreach (array_keys($shipped) as $name) {
         foreach ((array) ($call['contains'] ?? []) as $needle) {
             if (strpos($text, (string) $needle) === false) {
                 $failures[] = "$label: answer does not contain \"$needle\" - " . excerpt($result);
+            }
+        }
+        // "contains" alone cannot prove that a stored secret never comes back:
+        // a later change returning it would still hold every expected string.
+        foreach ((array) ($call['lacks'] ?? []) as $needle) {
+            if (strpos($text, (string) $needle) !== false) {
+                $failures[] = "$label: answer contains \"$needle\" - " . excerpt($result);
             }
         }
 
@@ -403,6 +411,274 @@ if ($createStatus !== null && $deleteStatus !== null) {
         } catch (Throwable $e) {
             $failures[] = 'somcp_delete_order_status (a status the merchant created): ' . get_class($e) . ' - ' . $e->getMessage();
         }
+    }
+}
+
+// A social title created with an image (#439), then found in the list with
+// that image as a download_ref. The demo titles 1 and 2 are never touched;
+// the title made here is deleted with somcp_delete_title, and by the cleanup
+// with its image whatever happens.
+$createTitle = $registry->get('somcp_create_title');
+$listTitles = $registry->get('somcp_list_titles');
+if ($createTitle !== null && $listTitles !== null) {
+    $calls += 2;
+    $titleCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $titleText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idTitle = 0;
+    try {
+        // The smallest valid GIF: one transparent pixel.
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $createTitle, 'image');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+        $entered = $invitation === null
+            ? 'no deposit could be opened'
+            : SomcpUpload::enter($invitation, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'title.gif');
+        if ($entered !== '') {
+            $failures[] = 'somcp_create_title (a GIF image): the GIF was not deposited - ' . $entered;
+        } else {
+            $result = $titleCall($createTitle, [
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp Dr.'],
+                'gender' => 'other',
+                'image' => ['upload_ref' => $reference],
+            ]);
+            $created = json_decode(trim($titleText($result)), true);
+            $idTitle = is_array($created) ? (int) ($created['id_gender'] ?? 0) : 0;
+            if (!empty($result['isError']) || $idTitle <= 0 || empty($created['created'])
+                || ($created['gender'] ?? '') !== 'other' || empty($created['image'])) {
+                $failures[] = 'somcp_create_title (a title with a GIF image): expected it created with its image - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_title (a title with a GIF image)');
+                $listed = json_decode(trim($titleText($titleCall($listTitles, []))), true);
+                $found = null;
+                foreach ((array) ($listed['titles'] ?? []) as $title) {
+                    if ((int) ($title['id_gender'] ?? 0) === $idTitle) {
+                        $found = $title;
+                    }
+                }
+                if (!is_array($found) || ($found['names']['en'] ?? '') !== 'Somcp Dr.' || empty($found['image'])) {
+                    $failures[] = 'somcp_list_titles (the title just created): expected it listed with its image';
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_list_titles (the title just created, with its image)');
+                    $updateTitle = $registry->get('somcp_update_title');
+                    if ($updateTitle !== null) {
+                        $calls += 3;
+                        // The item of the list given back whole, image included,
+                        // is no change.
+                        $same = json_decode(trim($titleText($titleCall($updateTitle, $found))), true);
+                        if (!is_array($same) || ($same['changed'] ?? null) !== false) {
+                            $failures[] = 'somcp_update_title (the listed item given back): expected no change';
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_update_title (the listed item given back, no change)');
+                        }
+                        $changed = json_decode(trim($titleText($titleCall($updateTitle, [
+                            'id_gender' => $idTitle,
+                            'languages' => ['en'],
+                            'name' => ['en' => 'Somcp Prof.'],
+                            'gender' => 'female',
+                        ]))), true);
+                        if (!is_array($changed) || empty($changed['changed'])
+                            || ($changed['title']['names']['en'] ?? '') !== 'Somcp Prof.'
+                            || ($changed['title']['gender'] ?? '') !== 'female') {
+                            $failures[] = 'somcp_update_title (a new name and gender): expected both changed';
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_update_title (a new name and gender)');
+                        }
+                        $again = SomcpUpload::inviteFor((int) $employee->id, $updateTitle, 'image');
+                        $deposit = $again === '' ? null : SomcpUpload::find($again, (int) $employee->id);
+                        $sent = $deposit === null
+                            ? 'no deposit could be opened'
+                            : SomcpUpload::enter($deposit, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'title2.gif');
+                        $replaced = $sent !== '' ? null : json_decode(trim($titleText($titleCall($updateTitle, [
+                            'id_gender' => $idTitle,
+                            'image' => ['upload_ref' => $again],
+                        ]))), true);
+                        if (!is_array($replaced) || empty($replaced['changed'])
+                            || !in_array('image', array_column((array) ($replaced['changes'] ?? []), 'field'), true)
+                            || empty($replaced['title']['image'])) {
+                            $failures[] = 'somcp_update_title (a new image): expected it replaced - ' . $sent;
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_update_title (a new image)');
+                        }
+                    }
+                    // Deleted with somcp_delete_title (#441): answered as it
+                    // was, then gone from the list, its image file with it.
+                    $deleteTitle = $registry->get('somcp_delete_title');
+                    if ($deleteTitle !== null) {
+                        $deleted = json_decode(trim($titleText($titleCall($deleteTitle, ['id_gender' => $idTitle]))), true);
+                        $relisted = json_decode(trim($titleText($titleCall($listTitles, []))), true);
+                        $still = in_array($idTitle, array_map('intval', array_column((array) ($relisted['titles'] ?? []), 'id_gender')), true);
+                        if (!is_array($deleted) || empty($deleted['deleted'])
+                            || (int) ($deleted['title']['id_gender'] ?? 0) !== $idTitle
+                            || array_key_exists('image', (array) ($deleted['title'] ?? []))
+                            || $still || is_file(_PS_GENDERS_DIR_ . $idTitle . '.jpg')) {
+                            $failures[] = 'somcp_delete_title (the title just created): expected it deleted, unlisted and its image removed';
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_delete_title (the title just created, with its image)');
+                            $idTitle = 0;
+                        }
+                    }
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_title (a title with a GIF image): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever failed above, the title made here does not stay.
+        if ($idTitle > 0) {
+            $left = new Gender($idTitle);
+            if (Validate::isLoadedObject($left)) {
+                $left->deleteImage();
+                $left->delete();
+            }
+        }
+    }
+}
+
+// A customer group changed and put back (#443): the read of group 3 given
+// back whole changes nothing, then Discount and Show prices are changed and
+// restored, in a finally so the demo group is left as it was.
+$getGroup = $registry->get('somcp_get_customer_group');
+$updateGroup = $registry->get('somcp_update_customer_group');
+if ($getGroup !== null && $updateGroup !== null) {
+    $calls += 4;
+    $groupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $stored = new Group(3);
+    $storedReduction = (float) $stored->reduction;
+    $storedShowPrices = (bool) $stored->show_prices;
+    try {
+        $read = $groupCall($getGroup, ['id_group' => 3]);
+        $same = isset($read['group']) ? $groupCall($updateGroup, $read['group']) : [];
+        if (($same['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_customer_group (the read given back whole): expected no change - ' . json_encode($same);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (the read given back whole, no change)');
+        }
+        $discount = $groupCall($updateGroup, ['id_group' => 3, 'reduction' => 5]);
+        $back = $groupCall($updateGroup, ['id_group' => 3, 'reduction' => 0]);
+        if (empty($discount['changed']) || (float) ($discount['group']['reduction'] ?? -1) !== 5.0
+            || empty($back['changed']) || (float) ($back['group']['reduction'] ?? -1) !== 0.0) {
+            $failures[] = 'somcp_update_customer_group (a Discount of 5 then 0): expected both written';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (a Discount of 5 then 0)');
+        }
+        $hidden = $groupCall($updateGroup, ['id_group' => 3, 'show_prices' => false]);
+        $shown = $groupCall($updateGroup, ['id_group' => 3, 'show_prices' => true]);
+        if (empty($hidden['changed']) || ($hidden['group']['show_prices'] ?? null) !== false
+            || empty($shown['changed']) || ($shown['group']['show_prices'] ?? null) !== true) {
+            $failures[] = 'somcp_update_customer_group (Show prices off then on): expected both written';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (Show prices off then on)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = new Group(3);
+        if ((float) $left->reduction !== $storedReduction || (bool) $left->show_prices !== $storedShowPrices) {
+            $left->reduction = $storedReduction;
+            $left->show_prices = $storedShowPrices;
+            $left->update();
+        }
+    }
+}
+
+// A logged e-mail deleted twice (#424): the recipients of the demo lines are
+// real addresses and the test e-mail is not logged, so the line is written
+// here through the Mail object, as Mail::send() writes it. Deleting it must
+// answer it as it was, and deleting it again must be refused rather than
+// read as a success.
+$deleteEmailLog = $registry->get('somcp_delete_email_log');
+if ($deleteEmailLog !== null) {
+    $logCall = static function (array $arguments) use ($deleteEmailLog, $context, $employee): array {
+        return $deleteEmailLog->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $deleteEmailLog->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $logText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 2;
+    try {
+        $line = new Mail();
+        $line->recipient = 'somcp-test@example.com';
+        $line->template = 'somcp_test';
+        $line->subject = 'Somcp deleted twice';
+        $line->id_lang = (int) $context->language->id;
+        if (!$line->add() || (int) $line->id === 0) {
+            $failures[] = 'somcp_delete_email_log (a line just logged): the line could not be written';
+        } else {
+            $idMail = (int) $line->id;
+            $result = $logCall(['id_mail' => $idMail]);
+            $text = $logText($result);
+            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false
+                || strpos($text, '"template": "somcp_test"') === false) {
+                $failures[] = 'somcp_delete_email_log (a line just logged): expected it deleted - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_email_log (a line just logged)');
+            }
+
+            $result = $logCall(['id_mail' => $idMail]);
+            $text = $logText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was deleted') === false
+                || strpos($text, 'no logged e-mail of this shop has the identifier ' . $idMail) === false) {
+                $failures[] = 'somcp_delete_email_log (the same line again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_email_log (the same line again, refused)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_email_log (a line just logged): ' . get_class($e) . ' - ' . $e->getMessage();
     }
 }
 
@@ -1972,6 +2248,417 @@ if ($updateCountry !== null && $idAfghanistan > 0) {
     }
 }
 
+// The filters and sorts of the list on Priority, Quantity and Expiration date
+// (#437), on two rules created here for that alone and deleted whatever
+// happens: the demo data holds no rule they could be read from. The name
+// keeps the rules of the shop out of the counts.
+$listRules = $registry->get('somcp_list_cart_rules');
+if ($listRules !== null) {
+    $calls += 8;
+    $listContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $listRules->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $listed = [];
+    try {
+        foreach ([
+            'A' => [3, 0, '2031-03-15 23:59:59'],
+            'B' => [4, 7, '2032-06-20 23:59:59'],
+        ] as $letter => [$priority, $quantity, $dateTo]) {
+            $rule = new CartRule();
+            foreach (Language::getIDs(false) as $idLanguage) {
+                $rule->name[(int) $idLanguage] = 'Somcp list filter ' . $letter;
+            }
+            $rule->priority = $priority;
+            $rule->quantity = $quantity;
+            $rule->quantity_per_user = 1;
+            $rule->date_from = '2026-01-01 00:00:00';
+            $rule->date_to = $dateTo;
+            $rule->free_shipping = true;
+            $rule->active = true;
+            if (!$rule->add()) {
+                throw new RuntimeException('rule ' . $letter . ' could not be created');
+            }
+            $listed[$letter] = (int) $rule->id;
+        }
+        $first = static function (string $text): int {
+            return preg_match('/"id_cart_rule": (\d+)/', $text, $m) ? (int) $m[1] : 0;
+        };
+        foreach ([
+            'priority' => [['priority' => 3], 1, $listed['A']],
+            'no use left' => [['quantity_max' => 0], 1, $listed['A']],
+            'uses left from 5' => [['quantity_min' => 5], 1, $listed['B']],
+            'expiring from a day' => [['expiration_date_from' => '2032-01-01'], 1, $listed['B']],
+            'expiring up to the day itself' => [['expiration_date_to' => '2031-03-15'], 1, $listed['A']],
+            'priority_asc' => [['sort' => 'priority_asc'], 2, $listed['A']],
+            'priority_desc' => [['sort' => 'priority_desc'], 2, $listed['B']],
+            'expiration_date_asc' => [['sort' => 'expiration_date_asc'], 2, $listed['A']],
+        ] as $label => [$filters, $count, $idFirst]) {
+            $result = $listRules->call(['name' => 'Somcp list filter'] + $filters, $listContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '');
+            }
+            if (!empty($result['isError']) || strpos($text, '"total_count": ' . $count) === false || $first($text) !== $idFirst) {
+                $failures[] = 'somcp_list_cart_rules (' . $label . '): expected ' . $count . ' rule(s), ' . $idFirst
+                    . ' first - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_cart_rules (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_list_cart_rules (filters): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        foreach ($listed as $idListed) {
+            $left = new CartRule($idListed);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
+// A customer group restriction set on a cart rule, read back, then lifted
+// (#406), and the same for Product selection (#433): the JSON scenario only
+// covers the refusals, since a restriction left on a demo rule would change
+// what the tools after it read. The rule is created here for that alone and
+// deleted whatever happens. The category 2 is Home on every demo shop.
+$createRule = $registry->get('somcp_create_cart_rule');
+$updateRule = $registry->get('somcp_update_cart_rule');
+$getRule = $registry->get('somcp_get_cart_rule');
+if ($createRule !== null && $updateRule !== null && $getRule !== null) {
+    $calls += 10;
+    $ruleContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge(
+            $createRule->getRequiredScopes(),
+            $updateRule->getRequiredScopes(),
+            $getRule->getRequiredScopes()
+        ))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $idRule = 0;
+    $answer = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    try {
+        $created = $createRule->call([
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp group restriction'],
+            'code' => 'SOMCPGROUP',
+            'free_shipping' => true,
+        ], $ruleContext);
+        $decoded = json_decode(trim($answer($created)), true);
+        $idRule = (int) ($decoded['id_cart_rule'] ?? 0);
+        if (!empty($created['isError']) || $idRule <= 0) {
+            $failures[] = 'somcp_update_cart_rule (restrictions): the rule could not be created - ' . excerpt($created);
+        } else {
+            foreach ([
+                'group set' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['group' => [['id_group' => 3]]]], ['"changed": true', '"field": "restrictions.group"', '"new": [']],
+                'group read back' => [$getRule, ['id_cart_rule' => $idRule], ['"group": [', '"id_group": 3']],
+                'group lifted' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['group' => null]], ['"changed": true', '"field": "restrictions.group"', '"new": null']],
+                'nothing left' => [$getRule, ['id_cart_rule' => $idRule], ['"group": null']],
+                'product selection set' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['product' => [['quantity' => 2, 'rules' => [['type' => 'categories', 'values' => [['id_category' => 2]]]]]]]], ['"changed": true', '"field": "restrictions.product"']],
+                'product selection read back' => [$getRule, ['id_cart_rule' => $idRule], ['"product": [', '"quantity": 2', '"type": "categories"', '"id_category": 2']],
+                'product selection given back' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['product' => [['quantity' => 2, 'rules' => [['type' => 'categories', 'values' => [['id_category' => 2, 'name' => 'Home']]]]]]]], ['"changed": false']],
+                'product selection lifted' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['product' => null]], ['"changed": true', '"field": "restrictions.product"', '"new": null']],
+                'no product selection left' => [$getRule, ['id_cart_rule' => $idRule], ['"product": null']],
+            ] as $label => [$tool, $arguments, $needles]) {
+                $result = $tool->call($arguments, $ruleContext);
+                $text = $answer($result);
+                $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                }));
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_cart_rule (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
+                }
+            }
+            // Lifted as afterUpdate() clears it: no row of the three tables
+            // is left behind for the rule.
+            $rows = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_group` g
+                 LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule` r ON r.`id_product_rule_group` = g.`id_product_rule_group`
+                 WHERE g.`id_cart_rule` = ' . $idRule
+            ) + (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule` r
+                 LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule_group` g ON g.`id_product_rule_group` = r.`id_product_rule_group`
+                 WHERE g.`id_product_rule_group` IS NULL'
+            ) + (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_value` v
+                 LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule` r ON r.`id_product_rule` = v.`id_product_rule`
+                 WHERE r.`id_product_rule` IS NULL'
+            );
+            if ($rows !== 0) {
+                $failures[] = 'somcp_update_cart_rule (product selection lifted): ' . $rows . ' row(s) left in the product rule tables';
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (product selection lifted, no row left)');
+            }
+
+            // A group of quantity 0, as the form saves it with no check
+            // (#436): given back as read it changes nothing, given with 1 it
+            // is written. Inserted as afterAdd() inserts a group.
+            $calls += 2;
+            $db = Db::getInstance();
+            $db->insert('cart_rule_product_rule_group', ['id_cart_rule' => $idRule, 'quantity' => 0]);
+            $idZeroGroup = (int) $db->Insert_ID();
+            $db->insert('cart_rule_product_rule', ['id_product_rule_group' => $idZeroGroup, 'type' => 'categories']);
+            $db->insert('cart_rule_product_rule_value', ['id_product_rule' => (int) $db->Insert_ID(), 'id_item' => 2]);
+            $db->update('cart_rule', ['product_restriction' => 1], '`id_cart_rule` = ' . $idRule);
+            // The rule was loaded by the calls above, and the core keeps that
+            // copy for the rest of the process with the box still unchecked. A
+            // real call runs in a request of its own, so the copy is dropped
+            // here for the tool to read the rule as stored.
+            Cache::clean('objectmodel_CartRule_' . $idRule . '_*');
+            // somcp_get_cart_rule answers the rule under cart_rule.
+            $read = json_decode(trim($answer($getRule->call(['id_cart_rule' => $idRule], $ruleContext))), true);
+            $readSelection = $read['cart_rule']['restrictions']['product'] ?? null;
+            $raised = is_array($readSelection) ? $readSelection : [];
+            foreach ($raised as $g => $group) {
+                $raised[$g]['quantity'] = 1;
+            }
+            foreach ([
+                'quantity 0 given back' => [['product' => $readSelection], ['"changed": false']],
+                'quantity 0 raised to 1' => [['product' => $raised], ['"changed": true', '"field": "restrictions.product"']],
+            ] as $label => [$restrictions, $needles]) {
+                $result = $updateRule->call(['id_cart_rule' => $idRule, 'restrictions' => $restrictions], $ruleContext);
+                $text = $answer($result);
+                $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                }));
+                if (!is_array($readSelection) || !empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_cart_rule (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
+                }
+            }
+            $stored = (int) $db->getValue('SELECT MIN(`quantity`) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_group` WHERE `id_cart_rule` = ' . $idRule);
+            if ($stored !== 1) {
+                $failures[] = 'somcp_update_cart_rule (quantity 0 raised to 1): the group holds ' . $stored;
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_cart_rule (restrictions): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idRule > 0) {
+            // The group written straight above goes with its rows, whatever
+            // the update left of it.
+            $db = Db::getInstance();
+            $db->delete('cart_rule_product_rule_group', '`id_cart_rule` = ' . $idRule);
+            $db->delete('cart_rule_product_rule', '`id_product_rule_group` NOT IN '
+                . '(SELECT `id_product_rule_group` FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_group`)');
+            $db->delete('cart_rule_product_rule_value', '`id_product_rule` NOT IN '
+                . '(SELECT `id_product_rule` FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule`)');
+            $left = new CartRule($idRule);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+
+    // Compatibility with other cart rules (#417, #418), on rules created here:
+    // checking the box restricts every other rule left unrestricted, as the
+    // back office does, so the flags and pairs of the rules already in the
+    // shop are put back whatever happens.
+    $calls += 5;
+    $db = Db::getInstance();
+    $flags = $db->executeS('SELECT `id_cart_rule`, `cart_rule_restriction` FROM `' . _DB_PREFIX_ . 'cart_rule`') ?: [];
+    $pairs = $db->executeS('SELECT `id_cart_rule_1`, `id_cart_rule_2` FROM `' . _DB_PREFIX_ . 'cart_rule_combination`') ?: [];
+    $made = [];
+    try {
+        foreach (['SOMCPMIXA', 'SOMCPMIXB'] as $code) {
+            $created = $createRule->call([
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp ' . $code],
+                'code' => $code,
+                'free_shipping' => true,
+            ], $ruleContext);
+            $decoded = json_decode(trim($answer($created)), true);
+            if (!empty($created['isError']) || (int) ($decoded['id_cart_rule'] ?? 0) <= 0) {
+                throw new RuntimeException('the rule ' . $code . ' could not be created - ' . excerpt($created));
+            }
+            $made[] = (int) $decoded['id_cart_rule'];
+        }
+        [$idA, $idB] = $made;
+        foreach ([
+            'combinable rule set' => [$updateRule, ['id_cart_rule' => $idA, 'restrictions' => ['cart_rule' => [['id_cart_rule' => $idB]]]], ['"changed": true', '"field": "restrictions.cart_rule"']],
+            'combinable rule read back' => [$getRule, ['id_cart_rule' => $idA], ['"cart_rule": [', '"id_cart_rule": ' . $idB]],
+            'combines with none' => [$updateRule, ['id_cart_rule' => $idA, 'restrictions' => ['cart_rule' => []]], ['"changed": true', 'can no longer be combined with this one', (string) $idB]],
+            'combines with all' => [$updateRule, ['id_cart_rule' => $idA, 'restrictions' => ['cart_rule' => null]], ['"changed": true', '"new": null']],
+            'back on the list of the other' => [$getRule, ['id_cart_rule' => $idB], ['"id_cart_rule": ' . $idA]],
+        ] as $label => [$tool, $arguments, $needles]) {
+            $result = $tool->call($arguments, $ruleContext);
+            $text = $answer($result);
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_update_cart_rule (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
+            }
+        }
+
+        // The same box given to the creation (#418): C combines with none,
+        // which restricts A, left unrestricted above; D, created without the
+        // box, joins the list of C, as a rule saved on screen would.
+        $calls += 3;
+        $ids = [];
+        foreach ([
+            'C' => [['cart_rule' => []], ['"created": true', 'can no longer be combined with this one', (string) $idA]],
+            'D' => [[], ['"created": true']],
+        ] as $letter => [$restrictions, $needles]) {
+            $arguments = ['languages' => ['en'], 'name' => ['en' => 'Somcp mix ' . $letter], 'code' => 'SOMCPMIX' . $letter, 'free_shipping' => true];
+            if ($restrictions !== []) {
+                $arguments['restrictions'] = $restrictions;
+            }
+            $result = $createRule->call($arguments, $ruleContext);
+            $text = $answer($result);
+            $decoded = json_decode(trim($text), true);
+            if ((int) ($decoded['id_cart_rule'] ?? 0) > 0) {
+                $made[] = $ids[$letter] = (int) $decoded['id_cart_rule'];
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_create_cart_rule (compatibility ' . $letter . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (compatibility ' . $letter . ')');
+            }
+        }
+        if (isset($ids['C'], $ids['D'])) {
+            $result = $getRule->call(['id_cart_rule' => $ids['C']], $ruleContext);
+            if (!empty($result['isError']) || strpos($answer($result), '"id_cart_rule": ' . $ids['D']) === false) {
+                $failures[] = 'somcp_create_cart_rule (new rule on the list of C): expected ' . $ids['D'] . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (new rule on the list of C)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_cart_rule (compatibility): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        foreach ($made as $idMade) {
+            $left = new CartRule($idMade);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+        $db->delete('cart_rule_combination');
+        if ($pairs !== []) {
+            $db->insert('cart_rule_combination', $pairs);
+        }
+        foreach ($flags as $flag) {
+            $db->update('cart_rule', ['cart_rule_restriction' => (int) $flag['cart_rule_restriction']], '`id_cart_rule` = ' . (int) $flag['id_cart_rule']);
+        }
+    }
+
+    // The same restriction given to the creation (#407): written with the
+    // rule, read back, and the rule deleted whatever happens.
+    $calls += 2;
+    $idRule = 0;
+    try {
+        $created = $createRule->call([
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp group at creation'],
+            'code' => 'SOMCPGROUPNEW',
+            'free_shipping' => true,
+            'restrictions' => ['group' => [['id_group' => 3]]],
+        ], $ruleContext);
+        $text = $answer($created);
+        $decoded = json_decode(trim($text), true);
+        $idRule = (int) ($decoded['id_cart_rule'] ?? 0);
+        if (!empty($created['isError']) || $idRule <= 0 || strpos($text, '"id_group": 3') === false) {
+            $failures[] = 'somcp_create_cart_rule (restrictions): expected the rule with group 3 - ' . excerpt($created);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (restrictions)');
+            $result = $getRule->call(['id_cart_rule' => $idRule], $ruleContext);
+            $text = $answer($result);
+            if (!empty($result['isError']) || strpos($text, '"group": [') === false || strpos($text, '"id_group": 3') === false) {
+                $failures[] = 'somcp_create_cart_rule (restrictions read back): expected group 3 - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (restrictions read back)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_cart_rule (restrictions): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idRule > 0) {
+            $left = new CartRule($idRule);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+
+    // Product selection given to the creation (#434): one rule kept to the
+    // category Home (2 on every demo shop), then a 10% discount on the demo
+    // mug (6) with the same group, which the tool completes with the group of
+    // the mug as the back office does. Both deleted whatever happens.
+    $home = [['quantity' => 1, 'rules' => [['type' => 'categories', 'values' => [['id_category' => 2]]]]]];
+    foreach ([
+        'product selection' => [
+            ['languages' => ['en'], 'name' => ['en' => 'Somcp home only'], 'free_shipping' => true, 'restrictions' => ['product' => $home]],
+            ['"created": true', '"product": [', '"id_category": 2'],
+            ['"id_product": 6'],
+        ],
+        'product selection and a specific product' => [
+            ['languages' => ['en'], 'name' => ['en' => 'Somcp home mug'], 'reduction' => ['type' => 'percent', 'value' => 10, 'id_product' => 6], 'reduction_applies_to' => 'specific_product', 'restrictions' => ['product' => $home]],
+            ['"created": true', '"id_category": 2', '"type": "products"', '"id_product": 6', 'Product 6 was added to Product selection'],
+            [],
+        ],
+    ] as $label => [$arguments, $needles, $absent]) {
+        ++$calls;
+        $idRule = 0;
+        try {
+            $created = $createRule->call($arguments, $ruleContext);
+            $text = $answer($created);
+            $decoded = json_decode(trim($text), true);
+            $idRule = (int) ($decoded['id_cart_rule'] ?? 0);
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            $extra = array_values(array_filter($absent, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) !== false;
+            }));
+            if (!empty($created['isError']) || $idRule <= 0 || $missing !== [] || $extra !== []) {
+                $failures[] = 'somcp_create_cart_rule (' . $label . '): expected ' . implode(', ', $missing)
+                    . ($extra !== [] ? ', without ' . implode(', ', $extra) : '') . ' - ' . excerpt($created);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (' . $label . ')');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_cart_rule (' . $label . '): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idRule > 0) {
+                $left = new CartRule($idRule);
+                if (Validate::isLoadedObject($left)) {
+                    $left->delete();
+                }
+            }
+        }
+    }
+}
+
 // A carrier read, given back, changed and put back (#320): the JSON scenario
 // cannot give a read back nor compare two reads. Demo carrier 3 is used by no
 // order, so it is changed in place and keeps its identifier; no call is made
@@ -2535,6 +3222,412 @@ if ($getLocalization !== null && $updateLocalization !== null) {
     }
 }
 
+// The shipping preferences (#392): the read given back whole writes
+// nothing, then Order by is turned to the other value and put back. A JSON
+// scenario cannot give back what the read answered, nor put the setting back
+// whatever happens, and the carrier tools after this one list in that order.
+$getShipping = $registry->get('somcp_get_shipping_preferences');
+$updateShipping = $registry->get('somcp_update_shipping_preferences');
+if ($getShipping !== null && $updateShipping !== null) {
+    $idShopShipping = (int) $context->shop->id;
+    $idGroupShipping = (int) Shop::getGroupFromShop($idShopShipping);
+    $orderWas = Configuration::get('PS_CARRIER_DEFAULT_ORDER', null, $idGroupShipping, $idShopShipping);
+    $shippingContext = static function (SomcpTool $tool, array $arguments) use ($idShopShipping, $employee, $context): array {
+        return [
+            'id_shop' => $idShopShipping,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getShipping->call([], $shippingContext($getShipping, []));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($decoded) || !isset($decoded['carrier_order'])) {
+            $failures[] = 'somcp_update_shipping_preferences (the preferences read first): expected them read - ' . excerpt($read);
+        } else {
+            $other = $decoded['carrier_order'] === 'ascending' ? 'descending' : 'ascending';
+            $steps = [
+                ['the read given back whole, nothing written', $decoded, ['"changed": false', 'Nothing was written.']],
+                ['Order by turned to the other value', ['carrier_order' => $other], ['"changed": true', '"field": "carrier_order"', '"new": "' . $other . '"']],
+                ['Order by put back', ['carrier_order' => $decoded['carrier_order']], ['"changed": true', '"field": "carrier_order"']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateShipping->call($arguments, $shippingContext($updateShipping, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_shipping_preferences (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_shipping_preferences (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_shipping_preferences: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the order of a
+        // fresh shop; a key it never had stays unwritten.
+        if ($orderWas !== false) {
+            Configuration::updateValue('PS_CARRIER_DEFAULT_ORDER', $orderWas, false, $idGroupShipping, $idShopShipping);
+        }
+    }
+}
+
+// The payment restrictions (#396, #397): the read of ps_checkpayment given
+// back whole writes nothing, then its groups are set to 1 and 2 and France is
+// added to its countries, or taken out where the installer already gave it
+// France (a fresh shop gives a payment module its active countries), read
+// back, and put back to what was read. A JSON scenario cannot give back what the read
+// answered, nor put the rows back whatever happens, and the checkout of the
+// order tools after this one offers the module by these rows.
+$getPayment = $registry->get('somcp_get_payment_preferences');
+$updatePayment = $registry->get('somcp_update_payment_restrictions');
+if ($getPayment !== null && $updatePayment !== null) {
+    $idShopPayment = (int) $context->shop->id;
+    $idModulePayment = (int) Module::getModuleIdByName('ps_checkpayment');
+    $paymentRowsWere = [];
+    foreach (['group' => 'id_group', 'country' => 'id_country'] as $paymentType => $paymentColumn) {
+        $paymentRowsWere[$paymentType] = array_map('intval', array_column(Db::getInstance()->executeS(
+            'SELECT `' . $paymentColumn . '` FROM `' . _DB_PREFIX_ . 'module_' . $paymentType . '` WHERE `id_module` = '
+            . $idModulePayment . ' AND `id_shop` = ' . $idShopPayment
+        ) ?: [], $paymentColumn));
+    }
+    // Found by its ISO code rather than written as 8, as a fresh shop numbers it.
+    $idFrance = (int) Country::getByIso('FR');
+    $paymentContext = static function (SomcpTool $tool, array $arguments) use ($idShopPayment, $employee, $context): array {
+        return [
+            'id_shop' => $idShopPayment,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getPayment->call(['name' => 'ps_checkpayment'], $paymentContext($getPayment, ['name' => 'ps_checkpayment']));
+        $decoded = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        $module = is_array($decoded) ? ($decoded['payment_modules'][0] ?? null) : null;
+        if (!empty($read['isError']) || !is_array($module) || $idModulePayment === 0) {
+            $failures[] = 'somcp_update_payment_restrictions (the module read first): expected it read - ' . excerpt($read);
+        } else {
+            $steps = [
+                ['the read given back whole, nothing written', $module, ['"changed": false', 'Nothing was written.']],
+                ['the groups set to 1 and 2', ['name' => 'ps_checkpayment', 'groups' => [1, 2]], ['"changed": true', '"field": "groups"', '"id_group": 2']],
+                in_array($idFrance, $paymentRowsWere['country'], true)
+                    ? ['France taken out of the countries', ['name' => 'ps_checkpayment', 'countries' => array_values(array_diff($paymentRowsWere['country'], [$idFrance]))], ['"changed": true', '"field": "countries"']]
+                    : ['France added to the countries', ['name' => 'ps_checkpayment', 'countries' => array_merge($paymentRowsWere['country'], [$idFrance])], ['"changed": true', '"field": "countries"', '"iso_code": "FR"']],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updatePayment->call($arguments, $paymentContext($updatePayment, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_payment_restrictions (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_payment_restrictions (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_payment_restrictions: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the groups of a
+        // fresh shop.
+        if ($idModulePayment > 0) {
+            foreach ($paymentRowsWere as $paymentType => $paymentIds) {
+                SomcpToolUpdatePaymentRestrictions::replace($paymentType, $idModulePayment, $idShopPayment, $paymentIds);
+            }
+        }
+    }
+}
+
+// The e-mail settings (#398, #399): the read given back whole writes
+// nothing, then Log Emails is turned to the other value, read back, and put
+// back whatever happens. A JSON scenario cannot give back what the read
+// answered. The method is never changed: the CI shops would stop sending the
+// e-mails other tests read.
+$getEmail = $registry->get('somcp_get_email_settings');
+$updateEmail = $registry->get('somcp_update_email_settings');
+if ($getEmail !== null && $updateEmail !== null) {
+    $idShopEmail = (int) $context->shop->id;
+    $idShopGroupEmail = (int) Shop::getGroupFromShop($idShopEmail);
+    $logEmailsWas = Configuration::get('PS_LOG_EMAILS', null, $idShopGroupEmail, $idShopEmail);
+    $emailContext = static function (SomcpTool $tool, array $arguments) use ($idShopEmail, $employee, $context): array {
+        return [
+            'id_shop' => $idShopEmail,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 3;
+    try {
+        $read = $getEmail->call([], $emailContext($getEmail, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('log_emails', $settings)) {
+            $failures[] = 'somcp_update_email_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $toggled = !$settings['log_emails'];
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Log Emails turned to the other value', ['log_emails' => $toggled], ['"changed": true', '"field": "log_emails"', '"log_emails": ' . ($toggled ? 'true' : 'false')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateEmail->call($arguments, $emailContext($updateEmail, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_email_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_email_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_email_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the e-mail log as
+        // the shop had it.
+        Configuration::updateValue('PS_LOG_EMAILS', $logEmailsWas, false, $idShopGroupEmail, $idShopEmail);
+    }
+}
+
+// The order settings (#400, #401): the read given back whole writes nothing,
+// then Offer recycled packaging is turned to the other value, read back, and
+// put back whatever happens. A JSON scenario cannot give back what the read
+// answered, and the checkout of the order tools after this one reads it.
+$getOrderSettings = $registry->get('somcp_get_order_settings');
+$updateOrderSettings = $registry->get('somcp_update_order_settings');
+if ($getOrderSettings !== null && $updateOrderSettings !== null) {
+    $idShopOrderSettings = (int) $context->shop->id;
+    $idShopGroupOrderSettings = (int) Shop::getGroupFromShop($idShopOrderSettings);
+    $recycledWas = Configuration::get('PS_RECYCLABLE_PACK', null, $idShopGroupOrderSettings, $idShopOrderSettings);
+    $orderSettingsContext = static function (SomcpTool $tool, array $arguments) use ($idShopOrderSettings, $employee, $context): array {
+        return [
+            'id_shop' => $idShopOrderSettings,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 4;
+    try {
+        $read = $getOrderSettings->call([], $orderSettingsContext($getOrderSettings, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('recycled_packaging', $settings)) {
+            $failures[] = 'somcp_update_order_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $toggled = !$settings['recycled_packaging'];
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Offer recycled packaging turned to the other value', ['recycled_packaging' => $toggled], ['"changed": true', '"field": "recycled_packaging"', '"recycled_packaging": ' . ($toggled ? 'true' : 'false')]],
+                ['Offer recycled packaging put back', ['recycled_packaging' => !$toggled], ['"changed": true', '"field": "recycled_packaging"', '"recycled_packaging": ' . ($toggled ? 'false' : 'true')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateOrderSettings->call($arguments, $orderSettingsContext($updateOrderSettings, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_order_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_order_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_order_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the recycled
+        // packaging as the shop had it; a key it never had stays unwritten.
+        if ($recycledWas !== false) {
+            Configuration::updateValue('PS_RECYCLABLE_PACK', $recycledWas, false, $idShopGroupOrderSettings, $idShopOrderSettings);
+        }
+    }
+}
+
+// The product settings (#408, #409, #410): the read given back whole writes
+// nothing, then Products per page is set to 13 and the English label of
+// out-of-stock products with denied backorders to "Somcp out", each read back
+// and put back whatever happens. Catalog mode is never turned on, and stock
+// management and out-of-stock ordering never change: the order and stock
+// tools after this one rely on them.
+$getProductSettings = $registry->get('somcp_get_product_settings');
+$updateProductSettings = $registry->get('somcp_update_product_settings');
+if ($getProductSettings !== null && $updateProductSettings !== null) {
+    $idShopProductSettings = (int) $context->shop->id;
+    $idShopGroupProductSettings = (int) Shop::getGroupFromShop($idShopProductSettings);
+    $perPageWas = Configuration::get('PS_PRODUCTS_PER_PAGE', null, $idShopGroupProductSettings, $idShopProductSettings);
+    $idLangEnProductSettings = (int) Language::getIdByIso('en');
+    $deniedWas = $idLangEnProductSettings > 0
+        ? Configuration::get('PS_LABEL_OOS_PRODUCTS_BOD', $idLangEnProductSettings, $idShopGroupProductSettings, $idShopProductSettings)
+        : false;
+    $productSettingsContext = static function (SomcpTool $tool, array $arguments) use ($idShopProductSettings, $employee, $context): array {
+        return [
+            'id_shop' => $idShopProductSettings,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += $deniedWas !== false ? 4 : 3;
+    try {
+        $read = $getProductSettings->call([], $productSettingsContext($getProductSettings, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('products_per_page', $settings)) {
+            $failures[] = 'somcp_update_product_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $perPage = (int) $settings['products_per_page'] === 13 ? 14 : 13;
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Products per page changed', ['products_per_page' => $perPage], ['"changed": true', '"field": "products_per_page"', '"products_per_page": ' . $perPage]],
+            ];
+            if ($deniedWas !== false) {
+                $denied = (string) $deniedWas === 'Somcp out' ? 'Somcp out again' : 'Somcp out';
+                $steps[] = [
+                    'a stock label changed in one language',
+                    ['languages' => ['en'], 'label_backorders_denied' => ['en' => $denied]],
+                    ['"changed": true', '"field": "label_backorders_denied (en)"', '"new": "' . $denied . '"', '"en": "' . $denied . '"'],
+                ];
+            }
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateProductSettings->call($arguments, $productSettingsContext($updateProductSettings, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_product_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_product_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_product_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the lists as the
+        // shop had them.
+        if ($perPageWas !== false) {
+            Configuration::updateValue('PS_PRODUCTS_PER_PAGE', $perPageWas, false, $idShopGroupProductSettings, $idShopProductSettings);
+        }
+        if ($deniedWas !== false) {
+            Configuration::updateValue('PS_LABEL_OOS_PRODUCTS_BOD', [$idLangEnProductSettings => (string) $deniedWas], false, $idShopGroupProductSettings, $idShopProductSettings);
+        }
+    }
+}
+
+// The customer settings (#411, #412): the read given back whole writes
+// nothing, then Re-display cart at login is turned to the other value, read
+// back, and put back whatever happens. B2B mode is never changed: the
+// customer tools after this one read it.
+$getCustomerSettings = $registry->get('somcp_get_customer_settings');
+$updateCustomerSettings = $registry->get('somcp_update_customer_settings');
+if ($getCustomerSettings !== null && $updateCustomerSettings !== null) {
+    $idShopCustomerSettings = (int) $context->shop->id;
+    $idShopGroupCustomerSettings = (int) Shop::getGroupFromShop($idShopCustomerSettings);
+    // No row on a fresh shop reads false; putting it back as 0 is read the
+    // same way by the core and by the tools after this one.
+    $cartFollowingWas = Configuration::get('PS_CART_FOLLOWING', null, $idShopGroupCustomerSettings, $idShopCustomerSettings);
+    $customerSettingsContext = static function (SomcpTool $tool, array $arguments) use ($idShopCustomerSettings, $employee, $context): array {
+        return [
+            'id_shop' => $idShopCustomerSettings,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ];
+    };
+    $calls += 3;
+    try {
+        $read = $getCustomerSettings->call([], $customerSettingsContext($getCustomerSettings, []));
+        $settings = json_decode((string) ($read['content'][0]['text'] ?? ''), true);
+        if (!empty($read['isError']) || !is_array($settings) || !array_key_exists('redisplay_cart_at_login', $settings)) {
+            $failures[] = 'somcp_update_customer_settings (the settings read first): expected them read - ' . excerpt($read);
+        } else {
+            $cartFollowing = !$settings['redisplay_cart_at_login'];
+            $steps = [
+                ['the read given back whole, nothing written', $settings, ['"changed": false', 'Nothing was written.']],
+                ['Re-display cart at login changed', ['redisplay_cart_at_login' => $cartFollowing], ['"changed": true', '"field": "redisplay_cart_at_login"', '"redisplay_cart_at_login": ' . ($cartFollowing ? 'true' : 'false')]],
+            ];
+            foreach ($steps as [$why, $arguments, $needles]) {
+                $result = $updateCustomerSettings->call($arguments, $customerSettingsContext($updateCustomerSettings, $arguments));
+                $text = '';
+                foreach ($result['content'] ?? [] as $block) {
+                    $text .= (string) ($block['text'] ?? '') . "\n";
+                }
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_customer_settings (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_customer_settings (' . $why . ')');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_customer_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the cart setting
+        // as the shop had it.
+        Configuration::updateValue('PS_CART_FOLLOWING', (int) $cartFollowingWas, false, $idShopGroupCustomerSettings, $idShopCustomerSettings);
+    }
+}
+
 // The localization pack (#389): the units of the pack of the default country
 // are imported, then the units read before are put back. A JSON scenario
 // cannot put them back whatever happens, and an import of states or taxes
@@ -2886,6 +3979,266 @@ if ($deleteCategory !== null) {
         } catch (Throwable $e) {
             $failures[] = "$label: " . get_class($e) . ' - ' . $e->getMessage();
         }
+    }
+}
+
+// A test e-mail to the shop's own address (#426). Whether the CI shop can
+// deliver is not known in advance, so either answer passes: sent, or the
+// failure sentence of the running version. Neither secret may be in the text.
+// The runner keeps Never send emails (set at the top of this file), which the
+// tool refuses before trying: that refusal is checked first, then sendmail is
+// chosen for this one call only and Never is put back whatever happens, so no
+// later write e-mails anyone.
+$sendTestEmail = $registry->get('somcp_send_test_email');
+if ($sendTestEmail !== null) {
+    $sendTestContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $sendTestEmail->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    ++$calls;
+    try {
+        $result = $sendTestEmail->call([], $sendTestContext);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        if (empty($result['isError']) || strpos($text, '- mail_method: Never send emails is chosen') === false) {
+            $failures[] = 'somcp_send_test_email (Never send emails): expected the refusal - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_send_test_email (Never send emails)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_send_test_email (Never send emails): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+
+    ++$calls;
+    Configuration::updateValue('PS_MAIL_METHOD', 1);
+    try {
+        $result = $sendTestEmail->call([], $sendTestContext);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        // The core's sentence changed in 8.1.0, not in 9.0.0.
+        $failed = version_compare(_PS_VERSION_, '8.1.0', '>=')
+            ? 'An error has occurred. Please check your configuration'
+            : 'Error: Please check your configuration';
+        $answered = empty($result['isError'])
+            ? strpos($text, '"sent": true') !== false
+            : strpos($text, $failed) !== false;
+        $leaked = false;
+        foreach (['PS_MAIL_PASSWD', 'PS_MAIL_DKIM_KEY'] as $secretKey) {
+            $secret = (string) Configuration::get($secretKey);
+            if ($secret !== '' && strpos($text, $secret) !== false) {
+                $leaked = true;
+            }
+        }
+        if (!$answered || $leaked) {
+            $failures[] = 'somcp_send_test_email (to the shop): expected sent or the failure sentence, with no secret - '
+                . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_send_test_email (to the shop)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_send_test_email (to the shop): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        Configuration::updateValue('PS_MAIL_METHOD', 3);
+    }
+}
+
+// A contact created with every field (#427), read back with the list, then
+// deleted whatever happens: the JSON scenario only checks refusals, and the
+// demo contacts must stay as they are for the other tools.
+$createContact = $registry->get('somcp_create_contact');
+$listContacts = $registry->get('somcp_list_contacts');
+if ($createContact !== null && $listContacts !== null) {
+    $contactCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): string {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = !empty($result['isError']) ? "ERROR\n" : '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $names = [];
+    $descriptions = [];
+    foreach (Language::getLanguages(true, (int) $context->shop->id) as $row) {
+        $names[(string) $row['iso_code']] = 'Somcp test contact';
+        $descriptions[(string) $row['iso_code']] = 'Somcp test description';
+    }
+    $idTestContact = 0;
+    $calls += 2;
+    try {
+        $text = $contactCall($createContact, [
+            'name' => $names,
+            'email' => 'somcp-contact@example.com',
+            'customer_service' => true,
+            'description' => $descriptions,
+        ]);
+        if (preg_match('/"id_contact": (\d+)/', $text, $match)) {
+            $idTestContact = (int) $match[1];
+        }
+        if (strpos($text, 'ERROR') === 0 || $idTestContact === 0 || strpos($text, '"customer_service": true') === false) {
+            $failures[] = 'somcp_create_contact (every field): expected it created - ' . substr($text, 0, 300);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_contact (every field)');
+        }
+
+        $text = $contactCall($listContacts, []);
+        if (strpos($text, '"id_contact": ' . $idTestContact . ',') === false || strpos($text, 'somcp-contact@example.com') === false) {
+            $failures[] = 'somcp_list_contacts (after the create): expected the new contact - ' . substr($text, 0, 300);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_contacts (after the create, listed)');
+        }
+
+        // The update of the same contact (#428): two fields changed, then its
+        // list item given back whole, which must change nothing.
+        $updateContact = $registry->get('somcp_update_contact');
+        if ($updateContact !== null && $idTestContact > 0) {
+            $calls += 2;
+            $text = $contactCall($updateContact, ['id_contact' => $idTestContact, 'email' => 'somcp-other@example.com', 'customer_service' => false]);
+            if (strpos($text, '"changed": true') === false || strpos($text, 'somcp-other@example.com') === false) {
+                $failures[] = 'somcp_update_contact (two fields): expected them changed - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact (two fields)');
+            }
+
+            $item = null;
+            $listed = json_decode(trim(preg_replace('/^ERROR\n/', '', $contactCall($listContacts, []))), true);
+            foreach (is_array($listed) ? ($listed['contacts'] ?? []) : [] as $row) {
+                if ((int) ($row['id_contact'] ?? 0) === $idTestContact) {
+                    $item = $row;
+                }
+            }
+            $text = $item !== null ? $contactCall($updateContact, $item) : 'no list item';
+            if (strpos($text, '"changed": false') === false) {
+                $failures[] = 'somcp_update_contact (its list item given back): expected no change - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact (its list item given back, no change)');
+            }
+
+            // Every key of the list item is a property of both schemas (#435),
+            // so a field added to the list later cannot make a client that
+            // checks arguments against the schema refuse the item given back.
+            ++$calls;
+            $undeclared = [];
+            foreach (['somcp_update_contact' => $updateContact, 'somcp_create_contact' => $createContact] as $toolName => $tool) {
+                $properties = $tool->describe()['inputSchema']['properties'] ?? [];
+                foreach (array_keys($item ?? []) as $key) {
+                    if (!array_key_exists($key, $properties)) {
+                        $undeclared[] = $toolName . ': ' . $key;
+                    }
+                }
+            }
+            if ($item === null || $undeclared !== []) {
+                $failures[] = 'somcp_list_contacts (its item against the schemas): expected every key declared - '
+                    . ($item === null ? 'no list item' : implode(', ', $undeclared));
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_contacts (its item against the schemas)');
+            }
+        }
+
+        // The delete of the same contact (#429): it answers the contact as it
+        // was, then the list no longer has it.
+        $deleteContact = $registry->get('somcp_delete_contact');
+        if ($deleteContact !== null && $idTestContact > 0) {
+            $calls += 2;
+            $text = $contactCall($deleteContact, ['id_contact' => $idTestContact]);
+            if (strpos($text, '"deleted": true') === false || strpos($text, '"names":') === false) {
+                $failures[] = 'somcp_delete_contact (the contact created): expected it deleted - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_contact (the contact created)');
+            }
+
+            $text = $contactCall($listContacts, []);
+            if (strpos($text, '"id_contact": ' . $idTestContact . ',') !== false) {
+                $failures[] = 'somcp_list_contacts (after the delete): expected the contact gone - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_contacts (after the delete, gone)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_contact (every field): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Removed whatever happened above, so a failed delete leaves no
+        // contact for the scenarios that follow.
+        if ($idTestContact > 0 && Validate::isLoadedObject($left = new Contact($idTestContact))) {
+            $left->delete();
+        }
+    }
+}
+
+// The list of sent e-mails erased (#425), last of all the calls: the
+// scenarios read that list, and the JSON one cannot run after them. Erasing it
+// must answer erased, a second time must find nothing left, and the list must
+// then be empty.
+$eraseEmailLogs = $registry->get('somcp_erase_email_logs');
+$listEmailLogs = $registry->get('somcp_list_email_logs');
+if ($eraseEmailLogs !== null && $listEmailLogs !== null) {
+    $eraseCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $eraseText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 3;
+    try {
+        $result = $eraseCall($eraseEmailLogs, []);
+        if (!empty($result['isError']) || strpos($eraseText($result), '"erased": true') === false) {
+            $failures[] = 'somcp_erase_email_logs (the list erased): expected it erased - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_erase_email_logs (the list erased)');
+        }
+
+        $result = $eraseCall($eraseEmailLogs, []);
+        if (!empty($result['isError']) || strpos($eraseText($result), '"deleted_count": 0') === false) {
+            $failures[] = 'somcp_erase_email_logs (erased again): expected nothing left - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_erase_email_logs (erased again, nothing left)');
+        }
+
+        $result = $eraseCall($listEmailLogs, []);
+        if (!empty($result['isError']) || strpos($eraseText($result), '"total_count": 0') === false) {
+            $failures[] = 'somcp_list_email_logs (after the erase): expected an empty list - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_email_logs (after the erase, empty)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_erase_email_logs (the list erased): ' . get_class($e) . ' - ' . $e->getMessage();
     }
 }
 

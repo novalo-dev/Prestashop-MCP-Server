@@ -59,9 +59,34 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_country_rule`
 - `somcp_delete_country_rule`
 - `somcp_list_customer_groups`
+- `somcp_get_customer_group`
+- `somcp_update_customer_group`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
+- `somcp_update_shipping_preferences`
+- `somcp_get_payment_preferences`
+- `somcp_update_payment_restrictions`
+- `somcp_list_contacts`
+- `somcp_create_contact`
+- `somcp_update_contact`
+- `somcp_delete_contact`
+- `somcp_get_email_settings`
+- `somcp_update_email_settings`
+- `somcp_list_email_logs`
+- `somcp_delete_email_log`
+- `somcp_erase_email_logs`
+- `somcp_send_test_email`
+- `somcp_get_order_settings`
+- `somcp_update_order_settings`
+- `somcp_get_product_settings`
+- `somcp_update_product_settings`
+- `somcp_get_customer_settings`
+- `somcp_update_customer_settings`
+- `somcp_list_titles`
+- `somcp_create_title`
+- `somcp_update_title`
+- `somcp_delete_title`
 - `somcp_list_zones`
 - `somcp_create_zone`
 - `somcp_update_zone`
@@ -243,6 +268,88 @@ serves before tying it, read it with `somcp_get_carrier`.
 `somcp_get_shipping_preferences` gives the handling charges, the price and
 weight from which shipping is free and the default carrier: read it before
 telling a customer what an order pays for shipping.
+`somcp_update_shipping_preferences` changes them: only the fields given, and
+the default carrier by the `id_carrier` of `somcp_list_carriers`. Free
+shipping from a price or a weight applies to every carrier, whatever its
+ranges: say so to the merchant before setting it.
+`somcp_get_payment_preferences` gives, for each payment module, the
+currencies, customer groups, countries and carriers it is offered to: read it
+before telling the merchant the shop can take payments in a new country or
+currency, since a module offered to none of them is not shown at the checkout.
+`somcp_update_payment_restrictions` changes the currencies, customer groups,
+countries and carriers one payment module is offered to: each list given replaces the stored one, so
+read the module first and give back its whole list with the change. A module
+left with an empty list is shown to nobody: say so to the merchant
+before emptying a list.
+`somcp_list_contacts` lists the contacts of the storefront contact form, with
+their address and which one receives the customers' messages: read it before
+changing Send emails to, and give its id_contact as it is.
+`somcp_create_contact` adds a contact to that form, with a title in every
+language being filled: ask the merchant for the title and the address, never
+invent them, and read the list first, since two contacts may share a title.
+`somcp_update_contact` changes a contact: give only what changes, or its list
+item back with the change. Which contact receives the customers' messages is
+chosen with `somcp_update_email_settings`, not here.
+`somcp_delete_contact` deletes a contact for good: ask the merchant first, and
+keep its answer, which holds what it takes to create it again. The contact that
+receives the customers' messages is refused: choose another receiver first.
+`somcp_get_email_settings` says how the shop sends its e-mails (sendmail, SMTP
+or never) and where customer messages go: read it before telling a merchant
+why a customer got no order confirmation. It says whether the SMTP password
+and the DKIM key are set, never their value: never ask the merchant for them.
+`somcp_update_email_settings` changes those settings; give back the read with
+the change. It never takes the SMTP password nor the DKIM key: when one is
+missing, ask the merchant to type it on the E-mail page of the back office.
+Never set the method to never without the merchant's clear say-so: customers
+would then get no order confirmation.
+`somcp_list_email_logs` lists the e-mails the shop sent, newest first: read it
+to check that the order and account e-mails really go out. It only grows while
+Log Emails is on; each line holds a customer's address, so quote only what the
+merchant needs.
+`somcp_delete_email_log` deletes one line of that list, for example the line
+of a customer who asked to be forgotten: ask the merchant first, it cannot be
+undone, and the e-mail itself stays sent.
+`somcp_erase_email_logs` empties the whole list, as its Erase all button: on a
+multistore installation the lines of every shop go. Ask the merchant first, it
+cannot be undone; for one customer use `somcp_delete_email_log` instead.
+`somcp_send_test_email` sends the test e-mail of Advanced Parameters > E-mail
+with the saved settings, to the shop's own address unless another is given:
+call it after changing those settings, ask the merchant first, and give the
+server's message as it comes when it fails. A success only means the shop
+handed the e-mail over: tell the merchant to check the inbox, spam included.
+`somcp_get_order_settings` gives the checkout rules of Order Settings: guest
+checkout, the minimum purchase total, the terms of service and their page,
+gift wrapping and recycled packaging. Read it before telling a merchant why a
+customer could not place an order.
+`somcp_update_order_settings` changes those settings; give back the read with
+the change. Before turning guest checkout off, tell the merchant that visitors
+will have to create an account to order.
+`somcp_get_product_settings` gives Product Settings: catalog mode, stock
+management and ordering out of stock with the labels customers read, the
+product page options and products per page. Read it before telling a merchant
+why visitors cannot add a product to the cart.
+`somcp_update_product_settings` changes the four cards, the default stock
+labels and delivery times included; give back the read with the change. Never
+turn catalog mode on, or stock management off, without the merchant's clear
+say-so: visitors could no longer order, or could order what is not there.
+`somcp_get_customer_settings` gives Customer Settings: the cart shown again at
+login, the e-mail after registration, the password reset delay, B2B mode, the
+birth date field and partner offers. Read it to know whether the shop is B2B
+before explaining the fields of an account.
+`somcp_update_customer_settings` changes them; give back the read with the
+change. Before turning partner offers off, check that no customer field makes
+them required, or new customers could not sign up.
+`somcp_list_titles` lists the social titles (Mr., Mrs.) with their gender and
+name in each language: take the id_gender a customer tool needs from it.
+`somcp_create_title` adds a title the shop lacks, with its gender and an
+optional image; check the list first, since two titles may share a name, and
+call it once: a second call makes a second title. `somcp_update_title`
+renames a title in one language or more, changes its gender or replaces its
+image (an image cannot be removed); give it back the item of the list with
+only the fields to change. `somcp_delete_title` deletes a title for good, its
+image with it: ask first, and say how many customers hold it, since their
+accounts then show no title; the answer gives it back as it was, for
+`somcp_create_title`.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. A zone the merchant needs and the shop
 lacks is created with `somcp_create_zone`, after checking the list: it starts
@@ -446,6 +553,13 @@ A customer group - for a specific price, or for the groups that see a
 category - comes from `somcp_list_customer_groups`: take the `id_group` from
 there, never a guessed one. When `customer_groups_enabled` is false the shop
 ignores groups for prices: say so before writing a price for one group.
+`somcp_get_customer_group` reads one group in full: its name in every
+language, its discounts by category (a percent that replaces the group
+discount for the products whose default category it is) and the modules its
+members may use. `somcp_update_customer_group` changes its name, Discount (a
+percent, 5 for 5 %), Price display method and Show prices: give back the read
+with only the fields to change, and say when the group is a default one, since
+the change then reaches every visitor, guest or customer.
 
 ## Changing products
 

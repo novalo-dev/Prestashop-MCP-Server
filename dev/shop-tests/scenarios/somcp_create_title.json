@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "no name, and nothing created", "arguments": {"gender": "male"}, "expect": "error", "contains": ["Nothing was created.", "- name: required"]},
+    {"why": "a gender the form does not offer", "arguments": {"languages": ["en"], "name": {"en": "Dr."}, "gender": "x"}, "expect": "error", "contains": ["- gender: one of male, female, other"]},
+    {"why": "a size without an image", "arguments": {"languages": ["en"], "name": {"en": "Dr."}, "gender": "other", "image_width": 16}, "expect": "error", "contains": ["- image_width: only with image"]},
+    {"why": "a name longer than the column", "arguments": {"languages": ["en"], "name": {"en": "A title far too long for it"}, "gender": "other"}, "expect": "error", "contains": ["- name (en): 20 characters at most"]},
+    {"why": "a character the 9.0 form refuses", "arguments": {"languages": ["en"], "name": {"en": "Dr;"}, "gender": "other"}, "expect": "error", "contains": ["- name (en): no <, >, ;, =, #, { or }"]},
+    {"why": "an unknown field, and nothing created", "arguments": {"x": 1, "languages": ["en"], "name": {"en": "Dr."}, "gender": "other"}, "expect": "error", "contains": ["Nothing was created.", "- x: not a field of this tool"]}
+  ]
+}

@@ -193,6 +193,7 @@ class AdminSomcpUploadController extends ModuleAdminController
         Somcp::bootClasses();
 
         $this->context->smarty->assign($this->templateVariables());
+        $this->context->smarty->assign($this->module->styleAssets());
         $this->content = $this->context->smarty->fetch(
             _PS_MODULE_DIR_ . 'somcp/views/templates/admin/somcp/upload.tpl'
         );

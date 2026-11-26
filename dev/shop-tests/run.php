@@ -478,6 +478,47 @@ if ($createTitle !== null && $listTitles !== null) {
                     $failures[] = 'somcp_list_titles (the title just created): expected it listed with its image';
                 } else {
                     printf("  %-6s %s\n", 'ok', 'somcp_list_titles (the title just created, with its image)');
+                    $updateTitle = $registry->get('somcp_update_title');
+                    if ($updateTitle !== null) {
+                        $calls += 3;
+                        // The item of the list given back whole, image included,
+                        // is no change.
+                        $same = json_decode(trim($titleText($titleCall($updateTitle, $found))), true);
+                        if (!is_array($same) || ($same['changed'] ?? null) !== false) {
+                            $failures[] = 'somcp_update_title (the listed item given back): expected no change';
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_update_title (the listed item given back, no change)');
+                        }
+                        $changed = json_decode(trim($titleText($titleCall($updateTitle, [
+                            'id_gender' => $idTitle,
+                            'languages' => ['en'],
+                            'name' => ['en' => 'Somcp Prof.'],
+                            'gender' => 'female',
+                        ]))), true);
+                        if (!is_array($changed) || empty($changed['changed'])
+                            || ($changed['title']['names']['en'] ?? '') !== 'Somcp Prof.'
+                            || ($changed['title']['gender'] ?? '') !== 'female') {
+                            $failures[] = 'somcp_update_title (a new name and gender): expected both changed';
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_update_title (a new name and gender)');
+                        }
+                        $again = SomcpUpload::inviteFor((int) $employee->id, $updateTitle, 'image');
+                        $deposit = $again === '' ? null : SomcpUpload::find($again, (int) $employee->id);
+                        $sent = $deposit === null
+                            ? 'no deposit could be opened'
+                            : SomcpUpload::enter($deposit, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'title2.gif');
+                        $replaced = $sent !== '' ? null : json_decode(trim($titleText($titleCall($updateTitle, [
+                            'id_gender' => $idTitle,
+                            'image' => ['upload_ref' => $again],
+                        ]))), true);
+                        if (!is_array($replaced) || empty($replaced['changed'])
+                            || !in_array('image', array_column((array) ($replaced['changes'] ?? []), 'field'), true)
+                            || empty($replaced['title']['image'])) {
+                            $failures[] = 'somcp_update_title (a new image): expected it replaced - ' . $sent;
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_update_title (a new image)');
+                        }
+                    }
                 }
             }
         }

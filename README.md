@@ -350,6 +350,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_customer_settings` | ✎ Change the customer settings | Customer settings › edit |
 | `somcp_list_titles` | ● List the social titles | Titles › view |
 | `somcp_create_title` | ✎ Create a social title | Titles › add |
+| `somcp_update_title` | ✎ Change a social title | Titles › edit |
 | `somcp_list_contacts` | ● List the contacts | Contacts › view |
 | `somcp_create_contact` | ✎ Create a contact | Contacts › add |
 | `somcp_update_contact` | ✎ Change a contact | Contacts › edit |

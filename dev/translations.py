@@ -1182,6 +1182,10 @@ T = {
  "Créer un titre de civilité",
  "Crear un tratamiento",
  "Eine Anrede anlegen"),
+"Change a social title": (
+ "Modifier un titre de civilité",
+ "Modificar un tratamiento",
+ "Eine Anrede ändern"),
 "Delete a sent e-mail from the list": (
  "Supprimer un e-mail envoyé de la liste",
  "Eliminar un correo electrónico enviado de la lista",

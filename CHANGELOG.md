@@ -168,6 +168,13 @@ name in each language, the gender it stands for and an optional image, resized
 as the form resizes it. A title whose image the shop cannot read is not kept,
 so a failed call leaves nothing behind.
 
+**Change a social title.** The new tool somcp_update_title changes a title of
+Shop Parameters > Customer Settings, tab Titles, as Edit then Save do: its
+name in one language or more, the gender it stands for or its image, which can
+be replaced but not removed. Only what is given changes, and a title read from
+the list and given back as it is stays untouched. When the gender changes, the
+answer says how many customers of the shop hold the title.
+
 ### Changed
 
 **Find the vouchers that run out.** The list of cart rules can be filtered by

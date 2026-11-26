@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "a title the shop does not have", "arguments": {"id_gender": 999999}, "expect": "error", "contains": ["Nothing was changed.", "- id_gender: no social title of this shop has the identifier 999999 - find it with somcp_list_titles"]},
+    {"why": "an identifier that is not one", "arguments": {"id_gender": 0}, "expect": "error", "contains": ["- id_gender: a whole number above 0"]},
+    {"why": "no identifier", "arguments": {"gender": "male"}, "expect": "error", "contains": ["- id_gender: required - find it with somcp_list_titles"]},
+    {"why": "an image removed, which neither screen does", "arguments": {"id_gender": 1, "image": null}, "expect": "error", "contains": ["- image: a social title's image cannot be removed, only replaced"]},
+    {"why": "a gender the form does not offer, and nothing changed", "arguments": {"id_gender": 1, "gender": "x"}, "expect": "error", "contains": ["Nothing was changed.", "- gender: one of male, female, other"]},
+    {"why": "a size without an image", "arguments": {"id_gender": 1, "image_width": 16}, "expect": "error", "contains": ["- image_width: only with image"]},
+    {"why": "an unknown field, and nothing changed", "arguments": {"x": 1, "id_gender": 999999}, "expect": "error", "contains": ["Nothing was changed.", "- x: not a field of this tool"]}
+  ]
+}

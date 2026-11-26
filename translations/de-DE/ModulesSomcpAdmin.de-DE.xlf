@@ -1487,6 +1487,11 @@
       <source>Create a social title</source>
       <target>Eine Anrede anlegen</target>
     </trans-unit>
+    <!-- Change a social title -->
+    <trans-unit id="ceba748b9c8ee0b53ac66a07f29d6f69" resname="Change a social title">
+      <source>Change a social title</source>
+      <target>Eine Anrede ändern</target>
+    </trans-unit>
     <!-- Delete a sent e-mail from the list -->
     <trans-unit id="620c29d47445cb2d11a2cbe21293ab0b" resname="Delete a sent e-mail from the list">
       <source>Delete a sent e-mail from the list</source>

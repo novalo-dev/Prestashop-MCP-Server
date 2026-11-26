@@ -4211,6 +4211,66 @@ title** / **Title**); the validation of the name (`isString` on 8.0.1,
 title created on 8.0.1 stays valid after an upgrade); the name of the cached
 thumbnail (both removed). The rest is the same.
 
+#### `somcp_update_title`
+**State**: written · [issue #440](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/440)
+**Nature**: `acts(EDIT, 'AdminGenders')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes a social title of **Shop Parameters > Customer Settings**,
+tab **Titles**, as its **Edit** action then **Save** do: its name in each
+language, its gender, its image. Only the fields given change. One title per
+call.
+
+**Do not use for** - creating a title (→ `somcp_create_title`); the title of
+one customer (→ `somcp_update_customer`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_gender` | | integer | required, from `somcp_list_titles`; `SomcpTool::notAnIdentifier('id_gender')`; unknown: `SomcpTool::notFound('id_gender', 'social title', <id>, 'somcp_list_titles')` |
+| `name`, `languages`, `gender`, `image`, `image_width`, `image_height` | | | optional: the rules of `somcp_create_title`, through `SomcpToolCreateTitle::planTitle($arguments, $idShop, $errors, false)`; `name` per language keyed by ISO code |
+| `names` | | object | read by `somcp_list_titles`: taken as `name` |
+
+- An item of `somcp_list_titles` given back whole changes nothing: a plain
+  `name` equal to the stored text of the default language, or of any language
+  (`SomcpToolCreateProduct::givenBackAsRead()`), is no change; `names` is
+  taken as `name`, for the languages being filled, only when one differs;
+  `image` given back as the `download_ref` the list answered is "unchanged"
+  through `SomcpUpload::same($given, 'gender_image', (string) $idGender)`.
+- `image: null`: refused, `image: a social title's image cannot be removed,
+  only replaced`, as neither screen removes one.
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - every check first, every mistake in one answer. Nothing to change:
+no write. Otherwise the new image is fetched before anything is written, then
+`Gender` loaded, the names and gender given set, `update()`; then
+`SomcpToolCreateTitle::storeImage()` when a new picture is given. A failure of
+either: `The social title could not be changed: <reason>. Read it with
+somcp_list_titles before calling again.`, with `the name and gender were
+saved, the image was not: <reason>` when the image fails after a saved name.
+Log line `title_updated` with the `id_gender` and the names of the fields
+changed.
+
+**Returns** - `changed` (`true` or `false`), `changes` (each field written,
+with its `old` and `new` value, as every update tool answers), `reason` when
+nothing changed, and `title`: the item of `SomcpToolListTitles::item()`, as
+the list and the creation answer it. `warning` when the shop runs several
+shops: `A social title is shared by every shop: it is offered on all of
+them.`, and when the gender changes on a title customers hold: `<n> customers
+of this shop have this title.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: the errors of `somcp_create_title` (except `name` and `gender`
+required), plus `id_gender` missing, not an identifier or unknown, and
+`image: null`.
+
+**Notes** - changes the shop: the assistant asks first. Replayable: a second
+identical call changes nothing.
+
+**Differences between 8.0.1 and 9.0.0** - those of `somcp_create_title`; none
+of its own.
+
 #### `somcp_list_contacts`
 **State**: written · [issue #413](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/413)
 **Nature**: `acts(VIEW, 'AdminContacts')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`

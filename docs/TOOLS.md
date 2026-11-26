@@ -4900,6 +4900,52 @@ the shop does not have, with the ones it has.
   8.0.1 and 9.0.0. The page is a tab of **Customer Settings**, not in the side
   menu, so the right asked is `view` on `AdminGroups` itself.
 
+#### `somcp_list_titles`
+**State**: written · [issue #430](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/430)
+**Nature**: `acts(VIEW, 'AdminGenders')` · **Scope**: `mcp.customers.read`
+
+**Does** - lists the social titles of **Shop Parameters > Customer Settings > Titles**:
+their name in each of the shop's languages, the gender each stands for and the
+picture the shop keeps for it. It is the source of the `id_gender` that
+`somcp_create_customer` and `somcp_update_customer` take and
+`somcp_search_customers` filters by. Read only. The titles belong to the whole
+installation: every shop of it lists the same ones.
+
+**Do not use for** - the customers of a title (→ `somcp_search_customers` with
+its `id_gender`); one customer's title (→ `somcp_get_customer`).
+
+**Parameters**
+
+None. A handful of rows, most shops two; everything the list shows comes with
+every one of them.
+
+**Returns** - `titles`, per title:
+
+| Field | On screen | Notes |
+|---|---|---|
+| `id_gender` | **ID** | the identifier the customer tools take as `id_gender` |
+| `names` | **Social title** | the name in each of the shop's languages: `{language, name}` |
+| `gender` | **Gender** | `male`, `female` or `other` |
+| `image` | **Image** | `{download_ref}` for `somcp_download_file` when `img/genders/<ID>.jpg` exists, `null` otherwise: without a file the shop shows the theme's Unknown picture |
+
+Plus `count`.
+
+**Errors** - a field the tool does not take, under "Nothing was read. Correct
+these and call again:".
+
+**Notes**
+- Read with two queries on `gender` and `gender_lang`, for the languages of
+  the token's shop. The names come in every language the shop has, not just
+  the default: a merchant asking about a title in another language needs no
+  second call, and no language of the answer is a guess.
+- `gender` is the `type` column of the core, as the back office words the
+  **Gender** column: 0 male, 1 female, 2 other.
+- The titles are not per shop: there is no `gender_shop` table, and the page
+  is not a tab of one shop's settings. The image is the file the core's
+  `Gender` keeps in `img/genders`; without one the shop shows the theme's
+  Unknown picture, answered as `null` rather than a download_ref that would
+  fail.
+
 ### Diagnostics
 
 Tools that describe the connection itself, and the two that carry files in and out of the shop for the other tools.

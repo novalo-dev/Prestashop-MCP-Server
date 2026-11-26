@@ -77,6 +77,7 @@ class SomcpDownload
         'carrier_logo' => ['reader' => 'somcp_list_carriers'],
         'language_flag' => ['reader' => 'somcp_list_languages'],
         'category_image' => ['reader' => 'somcp_get_category'],
+        'gender_image' => ['reader' => 'somcp_list_titles'],
         'category_thumbnail' => ['reader' => 'somcp_get_category'],
         'category_thumbnail_image' => ['reader' => 'somcp_get_category'],
         'shop_logo' => ['reader' => 'somcp_get_theme'],
@@ -625,6 +626,10 @@ class SomcpDownload
                 $path = _PS_CAT_IMG_DIR_ . $number . '.jpg';
                 $shopTable = 'category_shop';
                 $shopKey = 'id_category';
+                break;
+            case 'gender_image':
+                // Social titles belong to every shop, as their screen lists them.
+                $path = _PS_GENDERS_DIR_ . $number . '.jpg';
                 break;
             case 'category_thumbnail':
                 // The category and the slot of the menu thumbnail, 12-0.

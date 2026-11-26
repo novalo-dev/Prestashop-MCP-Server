@@ -1,0 +1,57 @@
+{
+  "calls": [
+    {
+      "why": "lists the two titles a fresh shop starts with, each with its name in the shop's language, the gender it stands for and the image field",
+      "arguments": {},
+      "expect": "ok",
+      "contains": [
+        "\"titles\"",
+        "\"id_gender\": 1",
+        "\"id_gender\": 2",
+        "\"names\"",
+        "\"language\": \"en\"",
+        "\"name\": \"Mr.\"",
+        "\"name\": \"Mrs.\"",
+        "\"gender\": \"male\"",
+        "\"gender\": \"female\"",
+        "\"image\":",
+        "\"count\": 2"
+      ]
+    },
+    {
+      "why": "the titles have no language parameter to misspell: an unknown field is refused",
+      "arguments": {
+        "language": "en"
+      },
+      "expect": "error",
+      "contains": [
+        "Nothing was read.",
+        "- language: not a field of this tool"
+      ]
+    },
+    {
+      "why": "another misspelt field is named the same way",
+      "arguments": {
+        "gender": "male"
+      },
+      "expect": "error",
+      "contains": [
+        "Nothing was read.",
+        "- gender: not a field of this tool"
+      ]
+    },
+    {
+      "why": "every mistake of one answer is reported together, not one per call",
+      "arguments": {
+        "language": "en",
+        "gnder": "other"
+      },
+      "expect": "error",
+      "contains": [
+        "Nothing was read.",
+        "- language: not a field of this tool",
+        "- gnder: not a field of this tool"
+      ]
+    }
+  ]
+}

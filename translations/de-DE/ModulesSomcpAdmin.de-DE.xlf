@@ -1097,6 +1097,11 @@
       <source>List return statuses</source>
       <target>Rückgabestatus auflisten</target>
     </trans-unit>
+    <!-- List social titles -->
+    <trans-unit id="a0bf71d461b6683b007d698c11f3d619" resname="List social titles">
+      <source>List social titles</source>
+      <target>Anreden auflisten</target>
+    </trans-unit>
     <!-- List carriers -->
     <trans-unit id="6e594164605afd39214487871c057711" resname="List carriers">
       <source>List carriers</source>

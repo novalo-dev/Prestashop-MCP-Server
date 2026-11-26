@@ -16,6 +16,12 @@ are:
 
 ## Unreleased
 
+### Added
+
+- `somcp_list_titles`, the social titles of the shop with their names in every
+  language, the gender each stands for and their picture, closing the gap of
+  the `id_gender` the customer tools take ([#430](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/430)).
+
 ## 2.0.5 - 2026-11-25
 
 ### Added

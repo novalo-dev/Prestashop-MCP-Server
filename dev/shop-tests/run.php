@@ -553,6 +553,64 @@ if ($createTitle !== null && $listTitles !== null) {
     }
 }
 
+// The members of a group (#446): customer 1, whose default group is 3, is
+// added to group 2 too. id_group finds the members, as the View page of the
+// group, while id_default_group still finds only the default ones; the row
+// is removed in a finally so the demo data is left as it was.
+$searchCustomers = $registry->get('somcp_search_customers');
+if ($searchCustomers !== null) {
+    $calls += 2;
+    $searchCall = static function (array $arguments) use ($searchCustomers, $context, $employee): array {
+        $result = $searchCustomers->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $searchCustomers->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $ids = static function (array $answer): array {
+        $found = array_map('intval', array_column($answer['customers'] ?? [], 'id_customer'));
+        sort($found);
+
+        return $found;
+    };
+    try {
+        (new Customer(1))->addGroups([2]);
+        $members = $searchCall(['id_group' => 2, 'limit' => 100]);
+        $defaults = $searchCall(['id_default_group' => 2, 'limit' => 100]);
+        // The demo shop has customers 3 and 4 in Guest; another test may have
+        // added some, so the members are compared to the default ones plus 1.
+        $expected = array_values(array_unique(array_merge($ids($defaults), [1])));
+        sort($expected);
+        if ($ids($members) !== $expected || (int) ($members['total_count'] ?? 0) !== count($expected)) {
+            $failures[] = 'somcp_search_customers (the members of group 2): expected ' . json_encode($expected) . ' - ' . json_encode($ids($members));
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_search_customers (the members of group 2)');
+        }
+        if (in_array(1, $ids($defaults), true) || !in_array(3, $ids($defaults), true)) {
+            $failures[] = 'somcp_search_customers (the default group 2): expected customer 3 and not customer 1 - ' . json_encode($ids($defaults));
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_search_customers (the default group 2, not its other members)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_search_customers (members of a group): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'customer_group` WHERE `id_customer` = 1 AND `id_group` = 2');
+    }
+}
+
 // A customer group changed and put back (#443, #444): the read of group 3
 // given back whole changes nothing, then Discount, Show prices and the
 // category discounts are changed and restored, in a finally so the demo

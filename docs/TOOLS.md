@@ -6260,7 +6260,8 @@ customers (**Default groups options**). It is the source of the `id_group`
 that `somcp_create_customer`, `somcp_update_customer`, the category tools and
 the specific prices of the product tools take. Read only.
 
-**Do not use for** - the customers of a group (→ `somcp_search_customers`);
+**Do not use for** - the members of a group (→ `somcp_search_customers` with
+`id_group`);
 one customer's groups (→ `somcp_get_customer`).
 
 **Parameters**
@@ -6319,7 +6320,8 @@ Groups** in full, as its **Edit** form shows it: what
 replayable.
 
 **Do not use for** - the list of groups (→ `somcp_list_customer_groups`); the
-customers of a group (→ `somcp_search_customers`); changing a group (→
+members of a group (→ `somcp_search_customers` with `id_group`); changing a
+group (→
 `somcp_update_customer_group`).
 
 **Parameters**
@@ -8117,6 +8119,7 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 | `query` | string | no | words matched against first name, last name, email, and company when B2B mode is on, each word in at least one of them, as the header search **Customers by name**: "doe pub@" finds John DOE |
 | `email` | string | no | exact email address |
 | `id_default_group` | integer | no | default group (**Group** filter) |
+| `id_group` | integer | no | the **members** of a group (`customer_group`), whatever their default group, as the **View** page of **Shop Parameters > Customer Settings > Groups** lists them (`INNER JOIN customer_group`); with `id_default_group`, both apply. In a multistore that shares customers, `members_count` of `somcp_list_customer_groups` also counts the customers of the shops that share them, as the **Members** column does |
 | `id_gender` | integer | no | social title (**Social title** filter) |
 | `active` / `newsletter` / `partner_offers` | boolean | no | each left out = All, as the list |
 | `is_guest` | boolean | no | `false` registered accounts only, `true` guests only; both when left out |
@@ -8134,8 +8137,8 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 - Shop: the customers of the token's shop (`c.id_shop`), as the grid, even in a multistore with **Share customers** on.
 - `sales_tax_incl` sums `total_paid_tax_incl / conversion_rate` of the customer's valid orders in this shop, `0` when none (the grid shows "--"). PrestaShop 8.0 sums `total_paid_real` on its **Sales** column instead, so the figure can differ from the 8.0 screen for an order not fully paid; 9.0 sums the same total as the tool.
 - `last_visit` is the latest `connections.date_add` of a visitor tied to the customer, as the **Last visit** column.
-- A field the tool does not take, a `sort` or `order` outside its list, a yes/no filter that is not true or false, a date that is not YYYY-MM-DD, or an `id_default_group` or `id_gender` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
-- An `id_default_group` the shop does not have is refused in the same answer, `id_default_group: no customer group of this shop has the identifier <n> - find it with somcp_list_customer_groups`; an `id_gender` it does not have with the list of its social titles, worded as `somcp_create_customer` words it (`id_gender: not a social title of this shop, which has 1 Mr., 2 Mrs.`), named in the language asked. Neither is answered with an empty list.
+- A field the tool does not take, a `sort` or `order` outside its list, a yes/no filter that is not true or false, a date that is not YYYY-MM-DD, or an `id_default_group`, `id_group` or `id_gender` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
+- An `id_default_group` or an `id_group` the shop does not have is refused in the same answer (`SomcpToolListCatalogPriceRules::groupOfShop()`), `id_default_group: no customer group of this shop has the identifier <n> - find it with somcp_list_customer_groups`; an `id_gender` it does not have with the list of its social titles, worded as `somcp_create_customer` words it (`id_gender: not a social title of this shop, which has 1 Mr., 2 Mrs.`), named in the language asked. Neither is answered with an empty list.
 - A read: nothing written, nothing to retry.
 
 #### `somcp_get_customer`

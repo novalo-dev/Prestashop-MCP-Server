@@ -27,6 +27,14 @@ answer warns that such a discount replaces the group Discount for the products
 of that category. The list read with somcp_get_customer_group and given back as
 it is changes nothing.
 
+### Changed
+
+**The members of a customer group.** The search of customers can list the
+members of a group, as the View page of Customer Settings > Groups, and not
+only the customers whose default group it is: a customer who belongs to the
+group with another default group is now found, and the list agrees with the
+Members count of the groups.
+
 ## 2.0.6 - 2026-11-26
 
 ### Added

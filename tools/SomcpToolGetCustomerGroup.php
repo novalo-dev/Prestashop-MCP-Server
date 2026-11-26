@@ -49,8 +49,8 @@ class SomcpToolGetCustomerGroup
             'Reads one customer group of Shop Parameters > Customer Settings > Groups, as its Edit form: the '
                 . 'fields of somcp_list_customer_groups, plus the name in every language, the Category discount '
                 . 'rows (category and percent) and the Authorized modules, by technical name. Read only. For the '
-                . 'list of groups use somcp_list_customer_groups, for the customers of a group '
-                . 'somcp_search_customers, to change a group somcp_update_customer_group.',
+                . 'list of groups use somcp_list_customer_groups, for the members of a group '
+                . 'somcp_search_customers with id_group, to change a group somcp_update_customer_group.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -81,6 +81,11 @@ class SomcpToolSearchCustomers
                         'description' => 'Default group of the customer, as the Group filter of the list '
                             . '(id_default_group of an earlier answer).',
                     ],
+                    'id_group' => [
+                        'type' => 'integer',
+                        'description' => 'Members of a group (somcp_list_customer_groups), any default group, as '
+                            . 'its View page. Its members_count also counts the shops sharing customers.',
+                    ],
                     'id_gender' => [
                         'type' => 'integer',
                         'description' => 'Social title, as the Social title filter of the list.',
@@ -171,9 +176,11 @@ class SomcpToolSearchCustomers
         }
         // A group or a title the shop does not have used to answer an empty
         // list, which the assistant read as "no such customer".
-        $idGroup = SomcpTool::id($arguments, 'id_default_group');
-        if ($idGroup > 0 && !SomcpToolListCatalogPriceRules::groupOfShop($idGroup, $idShop)) {
-            $errors[] = SomcpTool::notFound('id_default_group', 'customer group', $idGroup, 'somcp_list_customer_groups');
+        foreach (['id_default_group', 'id_group'] as $key) {
+            $idGroup = SomcpTool::id($arguments, $key);
+            if ($idGroup > 0 && !SomcpToolListCatalogPriceRules::groupOfShop($idGroup, $idShop)) {
+                $errors[] = SomcpTool::notFound($key, 'customer group', $idGroup, 'somcp_list_customer_groups');
+            }
         }
         $idGender = SomcpTool::id($arguments, 'id_gender');
         if ($idGender > 0) {
@@ -294,6 +301,13 @@ class SomcpToolSearchCustomers
                 $query->where('c.`' . $key . '` = ' . SomcpTool::id($arguments, $key));
             }
         }
+        // A member of a group is a row of customer_group, as the View page of
+        // the group lists them: a customer may belong to groups other than its
+        // default one. One row per customer and group, so no duplicate.
+        if (SomcpTool::id($arguments, 'id_group') > 0) {
+            $query->innerJoin('customer_group', 'cg', 'cg.`id_customer` = c.`id_customer` AND cg.`id_group` = '
+                . SomcpTool::id($arguments, 'id_group'));
+        }
         // Each flag left out means "All", as on the list; the column is fixed
         // here, never taken from the caller.
         foreach (['active' => 'active', 'newsletter' => 'newsletter', 'partner_offers' => 'optin', 'is_guest' => 'is_guest'] as $key => $column) {
@@ -355,10 +369,10 @@ class SomcpToolSearchCustomers
     private static function problems(array $arguments): array
     {
         $errors = SomcpTool::unknownFields($arguments, array_merge(
-            ['query', 'email', 'id_default_group', 'id_gender', 'date_from', 'date_to', 'sort', 'order', 'language', 'limit', 'offset'],
+            ['query', 'email', 'id_default_group', 'id_group', 'id_gender', 'date_from', 'date_to', 'sort', 'order', 'language', 'limit', 'offset'],
             self::FLAGS
         ));
-        foreach (['id_default_group', 'id_gender'] as $key) {
+        foreach (['id_default_group', 'id_group', 'id_gender'] as $key) {
             if (array_key_exists($key, $arguments) && SomcpTool::id($arguments, $key) === 0) {
                 $errors[] = SomcpTool::notAnIdentifier($key);
             }

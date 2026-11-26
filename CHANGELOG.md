@@ -170,6 +170,9 @@ setting, or beside the title of a panel, with the mouse or the keyboard. What
 tells a state stays on the page: a missing key, a model that no longer passes,
 this month's usage.
 
+**The built-in assistant runs on Neuron AI 4.1.28.** Nothing changes in how
+you use it.
+
 ## 2.0.5 - 2026-11-25
 
 ### Added

@@ -3653,21 +3653,43 @@ if ($deleteCategory !== null) {
 // A test e-mail to the shop's own address (#426). Whether the CI shop can
 // deliver is not known in advance, so either answer passes: sent, or the
 // failure sentence of the running version. Neither secret may be in the text.
+// The runner keeps Never send emails (set at the top of this file), which the
+// tool refuses before trying: that refusal is checked first, then sendmail is
+// chosen for this one call only and Never is put back whatever happens, so no
+// later write e-mails anyone.
 $sendTestEmail = $registry->get('somcp_send_test_email');
 if ($sendTestEmail !== null) {
+    $sendTestContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $sendTestEmail->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
     ++$calls;
     try {
-        $result = $sendTestEmail->call([], [
-            'id_shop' => (int) $context->shop->id,
-            'id_employee' => (int) $employee->id,
-            'id_lang' => (int) $context->language->id,
-            'id_client' => 0,
-            'scopes' => implode(' ', $sendTestEmail->getRequiredScopes()),
-            'responses' => [],
-            'resumed' => [],
-            'capabilities' => [],
-            'arguments' => [],
-        ]);
+        $result = $sendTestEmail->call([], $sendTestContext);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        if (empty($result['isError']) || strpos($text, '- mail_method: Never send emails is chosen') === false) {
+            $failures[] = 'somcp_send_test_email (Never send emails): expected the refusal - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_send_test_email (Never send emails)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_send_test_email (Never send emails): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+
+    ++$calls;
+    Configuration::updateValue('PS_MAIL_METHOD', 1);
+    try {
+        $result = $sendTestEmail->call([], $sendTestContext);
         $text = '';
         foreach ($result['content'] ?? [] as $block) {
             $text .= (string) ($block['text'] ?? '') . "\n";
@@ -3693,6 +3715,8 @@ if ($sendTestEmail !== null) {
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_send_test_email (to the shop): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        Configuration::updateValue('PS_MAIL_METHOD', 3);
     }
 }
 

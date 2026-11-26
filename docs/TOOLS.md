@@ -3647,8 +3647,8 @@ sending method only, never the address or the transport's message.
 names it), and the `warning` `Check the inbox of <send_email_to>, spam folder
 included: the shop handed the e-mail over, which does not prove it arrived.`
 Not sent: a tool error with the core's sentence of the running version -
-**Error: Please check your configuration** on 8.0.1, **An error has occurred.
-Please check your configuration** on 9.0.0 - then the transport's message when
+**Error: Please check your configuration** on 8.0, **An error has occurred.
+Please check your configuration** from 8.1.0 on - then the transport's message when
 there is one, cut to 500 characters, then `Read the settings with
 somcp_get_email_settings.`
 

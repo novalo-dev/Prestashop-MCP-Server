@@ -3694,7 +3694,8 @@ if ($sendTestEmail !== null) {
         foreach ($result['content'] ?? [] as $block) {
             $text .= (string) ($block['text'] ?? '') . "\n";
         }
-        $failed = version_compare(_PS_VERSION_, '9.0.0', '>=')
+        // The core's sentence changed in 8.1.0, not in 9.0.0.
+        $failed = version_compare(_PS_VERSION_, '8.1.0', '>=')
             ? 'An error has occurred. Please check your configuration'
             : 'Error: Please check your configuration';
         $answered = empty($result['isError'])

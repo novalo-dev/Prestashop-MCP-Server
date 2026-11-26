@@ -4302,6 +4302,55 @@ unknown, the rules of `somcp_create_contact`, given in one answer.
 
 **Differences between 8.0.1 and 9.0.0** - none for the fields the tool takes.
 
+#### `somcp_delete_contact`
+**State**: written · [issue #429](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/429)
+**Nature**: `acts(DELETE, 'AdminContacts')` · **Scope**: `mcp.customers.write`, as `somcp_create_customer`
+
+**Does** - deletes a contact of **Shop Parameters > Contact**, as its
+**Delete** action does. One contact per call: **Delete selected** is the same
+call repeated.
+
+**Do not use for** - changing a contact (→ `somcp_update_contact`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_contact` | integer | yes | from `somcp_list_contacts`; `SomcpTool::notAnIdentifier('id_contact')`; unknown or not of this shop: `SomcpTool::notFound('id_contact', 'contact', <id>, 'somcp_list_contacts')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the contact of **Send emails to** (`send_emails_to` of
+`SomcpToolGetEmailSettings::settings()`, when not `null`) is refused, nothing
+deleted: `id_contact: this contact receives the customers' messages (Send
+emails to) - choose another with somcp_update_email_settings first`. Stricter
+than the page on purpose: `ContactDeleter` checks nothing, and the order page
+would be left without a receiver. Otherwise the contact is read as
+`somcp_create_contact` answers it, then `Contact::delete()` on the shop of the
+token, as `ContactDeleter` does. A `false` or an exception: a tool error `The
+contact could not be deleted: <reason>. Read it with somcp_list_contacts
+before calling again.`, logged as `contact_delete_failed`. Logged as
+`contact_deleted` with the `id_contact` only.
+
+**Returns** - `deleted: true`, `id_contact`, and `contact`: the contact as it
+was, the answer of `somcp_create_contact` (`names` and `descriptions` in every
+language), so the assistant can create it again. `warning` when the shop has no
+contact left, the sentence of `somcp_list_contacts`
+(`SomcpToolListContacts::NO_CONTACT`): `The shop has no contact: the contact
+form of the storefront cannot send a message.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`: an unknown argument, `id_contact` missing, not an identifier, unknown,
+or the contact of **Send emails to**, given in one answer.
+
+**Notes**
+- Changes the shop and cannot be undone: the assistant asks first. Not replayable: a second call answers the unknown `id_contact`.
+- The messages already received keep their `id_contact` in **Customer Service**.
+- The JSON scenario checks the refusals only, so the demo contacts 1 and 2 are never deleted; the shop test deletes the contact it created with this tool, then reads the list to see it gone. The refusal for the contact of **Send emails to** is not run: the test shops have no stored row for it.
+
+**Differences between 8.0.1 and 9.0.0** - none: `ContactDeleter` and
+`Contact::delete()` are the same on both.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

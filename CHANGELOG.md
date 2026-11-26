@@ -149,6 +149,12 @@ Save of a contact do, with the same checks as the creation. Only the fields
 given change, a language left out keeps its text, and a contact of the list
 given back as it is changes nothing.
 
+**Delete a contact.** The new tool somcp_delete_contact does what Delete does
+on a contact of Shop Parameters > Contact. It answers the contact as it was, in
+every language, so it can be created again, and warns when the shop has no
+contact left. The contact that receives the customers' messages is kept: the
+back office would delete it and leave those messages without a receiver.
+
 **List the social titles.** The new tool somcp_list_titles lists the titles of
 Shop Parameters > Customer Settings, tab Titles: their name in each language,
 the gender they stand for and their image. The assistant now finds the title

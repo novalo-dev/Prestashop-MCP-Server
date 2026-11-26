@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "an unknown contact, and nothing deleted", "arguments": {"id_contact": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "id_contact", "somcp_list_contacts"]},
+    {"why": "not an identifier, and nothing deleted", "arguments": {"id_contact": 0}, "expect": "error", "contains": ["Nothing was deleted.", "- id_contact: a whole number above 0"]},
+    {"why": "an unknown field, and nothing deleted", "arguments": {"x": 1, "id_contact": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "- x: not a field of this tool"]},
+    {"why": "the identifier left out, and nothing deleted", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted.", "- id_contact: required - find it with somcp_list_contacts"]}
+  ]
+}

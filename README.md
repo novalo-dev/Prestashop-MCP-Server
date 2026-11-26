@@ -352,6 +352,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_contacts` | ● List the contacts | Contacts › view |
 | `somcp_create_contact` | ✎ Create a contact | Contacts › add |
 | `somcp_update_contact` | ✎ Change a contact | Contacts › edit |
+| `somcp_delete_contact` | ✎ Delete a contact | Contacts › delete |
 | `somcp_list_zones` | ● List zones | Zones › view |
 | `somcp_create_zone` | ✎ Create a zone | Zones › add |
 | `somcp_update_zone` | ✎ Change a zone | Zones › edit |

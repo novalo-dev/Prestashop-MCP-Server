@@ -31,6 +31,9 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpToolListContacts
 {
+    /** Said by the list and by somcp_delete_contact when the shop is left without one. */
+    public const NO_CONTACT = 'The shop has no contact: the contact form of the storefront cannot send a message.';
+
     /**
      * @return SomcpTool
      */
@@ -98,7 +101,7 @@ class SomcpToolListContacts
             'language' => $iso,
         ];
         if ($contacts === []) {
-            $result['warning'] = 'The shop has no contact: the contact form of the storefront cannot send a message.';
+            $result['warning'] = self::NO_CONTACT;
         }
 
         return SomcpTool::json($result);

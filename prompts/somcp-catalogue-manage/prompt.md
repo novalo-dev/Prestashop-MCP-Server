@@ -68,6 +68,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_contacts`
 - `somcp_create_contact`
 - `somcp_update_contact`
+- `somcp_delete_contact`
 - `somcp_get_email_settings`
 - `somcp_update_email_settings`
 - `somcp_list_email_logs`
@@ -284,6 +285,9 @@ invent them, and read the list first, since two contacts may share a title.
 `somcp_update_contact` changes a contact: give only what changes, or its list
 item back with the change. Which contact receives the customers' messages is
 chosen with `somcp_update_email_settings`, not here.
+`somcp_delete_contact` deletes a contact for good: ask the merchant first, and
+keep its answer, which holds what it takes to create it again. The contact that
+receives the customers' messages is refused: choose another receiver first.
 `somcp_get_email_settings` says how the shop sends its e-mails (sendmail, SMTP
 or never) and where customer messages go: read it before telling a merchant
 why a customer got no order confirmation. It says whether the SMTP password

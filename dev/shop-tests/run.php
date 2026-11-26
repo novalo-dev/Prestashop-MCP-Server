@@ -3802,11 +3802,33 @@ if ($createContact !== null && $listContacts !== null) {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_contact (its list item given back, no change)');
             }
         }
+
+        // The delete of the same contact (#429): it answers the contact as it
+        // was, then the list no longer has it.
+        $deleteContact = $registry->get('somcp_delete_contact');
+        if ($deleteContact !== null && $idTestContact > 0) {
+            $calls += 2;
+            $text = $contactCall($deleteContact, ['id_contact' => $idTestContact]);
+            if (strpos($text, '"deleted": true') === false || strpos($text, '"names":') === false) {
+                $failures[] = 'somcp_delete_contact (the contact created): expected it deleted - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_contact (the contact created)');
+            }
+
+            $text = $contactCall($listContacts, []);
+            if (strpos($text, '"id_contact": ' . $idTestContact . ',') !== false) {
+                $failures[] = 'somcp_list_contacts (after the delete): expected the contact gone - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_contacts (after the delete, gone)');
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_contact (every field): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
-        if ($idTestContact > 0) {
-            (new Contact($idTestContact))->delete();
+        // Removed whatever happened above, so a failed delete leaves no
+        // contact for the scenarios that follow.
+        if ($idTestContact > 0 && Validate::isLoadedObject($left = new Contact($idTestContact))) {
+            $left->delete();
         }
     }
 }

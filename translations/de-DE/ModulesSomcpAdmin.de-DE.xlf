@@ -1537,6 +1537,11 @@
       <source>Change a contact</source>
       <target>Einen Kontakt ändern</target>
     </trans-unit>
+    <!-- Delete a contact -->
+    <trans-unit id="c7036704f2acc3e5330cff4d3a5228f9" resname="Delete a contact">
+      <source>Delete a contact</source>
+      <target>Einen Kontakt löschen</target>
+    </trans-unit>
     <!-- Change the order settings -->
     <trans-unit id="3a474448782c3d5b952512199ad9c9b1" resname="Change the order settings">
       <source>Change the order settings</source>

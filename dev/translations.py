@@ -1222,6 +1222,10 @@ T = {
  "Modifier un contact",
  "Modificar un contacto",
  "Einen Kontakt ändern"),
+"Delete a contact": (
+ "Supprimer un contact",
+ "Eliminar un contacto",
+ "Einen Kontakt löschen"),
 "Change the order settings": (
  "Modifier les paramètres des commandes",
  "Cambiar los parámetros de pedidos",

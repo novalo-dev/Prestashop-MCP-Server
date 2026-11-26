@@ -194,34 +194,7 @@ class SomcpToolUpdateTitle
         if ($languages === null) {
             return $given;
         }
-        $idDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
-        // The list answers name in one language: given back as read, it is
-        // no change rather than an ambiguous text.
-        if (array_key_exists('name', $given) && is_string($given['name'])
-            && ($given['name'] === ($stored['names'][$idDefault] ?? null)
-                || SomcpToolCreateProduct::givenBackAsRead($given['name'], $stored['names'], $languages))) {
-            unset($given['name']);
-        }
-        // names holds every active language; only those being filled are
-        // taken, and only when one of them differs from what is stored.
-        if (!array_key_exists('name', $given) && is_array($arguments['names'] ?? null)) {
-            $byIso = array_flip($languages['filled']);
-            $differs = false;
-            $names = [];
-            foreach ($arguments['names'] as $iso => $name) {
-                $iso = Tools::strtolower((string) $iso);
-                if (!isset($byIso[$iso])) {
-                    continue;
-                }
-                $names[$iso] = $name;
-                $differs = $differs || $name !== ($stored['names'][$byIso[$iso]] ?? '');
-            }
-            if ($differs) {
-                $given['name'] = $names;
-            }
-        } elseif (array_key_exists('names', $arguments) && !is_array($arguments['names'])) {
-            $errors[] = 'names: an object keyed by ISO code, as somcp_list_titles answers it';
-        }
+        $given = SomcpToolCreateProduct::nameGivenBack($arguments, $given, $stored['names'], $languages, $idShop, 'somcp_list_titles', $errors);
 
         return $given;
     }

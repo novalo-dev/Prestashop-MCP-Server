@@ -187,6 +187,14 @@ shows it: what the list of groups gives, plus its name in every language, its
 discounts by category, in percent as on screen, and the modules its members
 may use, authorized or not.
 
+**Change a customer group.** The new tool somcp_update_customer_group changes
+a group of Shop Parameters > Customer Settings > Groups as Edit then Save do:
+its name in one language or more, its Discount, its Price display method and
+whether its members see prices. Only what is given changes, and a group read
+and given back as it is stays untouched. The storefront shows the new prices
+at once, and the answer warns when the group is the one of every visitor,
+guest or customer.
+
 ### Changed
 
 **Find the vouchers that run out.** The list of cart rules can be filtered by

@@ -50,7 +50,7 @@ class SomcpToolGetCustomerGroup
                 . 'fields of somcp_list_customer_groups, plus the name in every language, the Category discount '
                 . 'rows (category and percent) and the Authorized modules, by technical name. Read only. For the '
                 . 'list of groups use somcp_list_customer_groups, for the customers of a group '
-                . 'somcp_search_customers.',
+                . 'somcp_search_customers, to change a group somcp_update_customer_group.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -107,12 +107,7 @@ class SomcpToolGetCustomerGroup
         }
         [$idLang, $iso] = $language;
 
-        $listed = SomcpToolListCustomerGroups::groups($idShop, $idShopGroup, (int) $idLang, ['id_group' => $idGroup]);
-        $group = ($listed[0] ?? []) + [
-            'names' => self::names($idGroup, $idShop),
-            'category_discounts' => self::categoryDiscounts($idGroup, (int) $idLang),
-        ] + self::modules($idGroup, $idShop);
-
+        $group = self::group($idGroup, $idShop, $idShopGroup, (int) $idLang);
         $enabled = (bool) Configuration::get('PS_GROUP_FEATURE_ACTIVE', null, $idShopGroup, $idShop);
         $result = [
             'group' => $group,
@@ -124,6 +119,28 @@ class SomcpToolGetCustomerGroup
         }
 
         return SomcpTool::json($result);
+    }
+
+    /**
+     * One group as this tool answers it.
+     *
+     * Public so the update of a group answers what the read answers.
+     *
+     * @param int $idGroup a group of the shop
+     * @param int $idShop
+     * @param int $idShopGroup
+     * @param int $idLang the language of name and the category names
+     *
+     * @return array<string, mixed>
+     */
+    public static function group(int $idGroup, int $idShop, int $idShopGroup, int $idLang): array
+    {
+        $listed = SomcpToolListCustomerGroups::groups($idShop, $idShopGroup, $idLang, ['id_group' => $idGroup]);
+
+        return ($listed[0] ?? []) + [
+            'names' => self::names($idGroup, $idShop),
+            'category_discounts' => self::categoryDiscounts($idGroup, $idLang),
+        ] + self::modules($idGroup, $idShop);
     }
 
     /**
@@ -148,12 +165,14 @@ class SomcpToolGetCustomerGroup
     /**
      * The Name field in every active language, keyed by ISO code.
      *
+     * Public so the update compares a name given back with the stored ones.
+     *
      * @param int $idGroup
      * @param int $idShop
      *
      * @return array<string, string>
      */
-    private static function names(int $idGroup, int $idShop): array
+    public static function names(int $idGroup, int $idShop): array
     {
         $stored = [];
         foreach (Db::getInstance()->executeS(

@@ -870,6 +870,10 @@ T = {
  "Afficher un groupe de clients",
  "Ver un grupo de clientes",
  "Eine Kundengruppe anzeigen"),
+"Change a customer group": (
+ "Modifier un groupe de clients",
+ "Modificar un grupo de clientes",
+ "Eine Kundengruppe ändern"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",

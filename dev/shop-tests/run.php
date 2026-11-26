@@ -553,6 +553,72 @@ if ($createTitle !== null && $listTitles !== null) {
     }
 }
 
+// A customer group changed and put back (#443): the read of group 3 given
+// back whole changes nothing, then Discount and Show prices are changed and
+// restored, in a finally so the demo group is left as it was.
+$getGroup = $registry->get('somcp_get_customer_group');
+$updateGroup = $registry->get('somcp_update_customer_group');
+if ($getGroup !== null && $updateGroup !== null) {
+    $calls += 4;
+    $groupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $stored = new Group(3);
+    $storedReduction = (float) $stored->reduction;
+    $storedShowPrices = (bool) $stored->show_prices;
+    try {
+        $read = $groupCall($getGroup, ['id_group' => 3]);
+        $same = isset($read['group']) ? $groupCall($updateGroup, $read['group']) : [];
+        if (($same['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_customer_group (the read given back whole): expected no change - ' . json_encode($same);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (the read given back whole, no change)');
+        }
+        $discount = $groupCall($updateGroup, ['id_group' => 3, 'reduction' => 5]);
+        $back = $groupCall($updateGroup, ['id_group' => 3, 'reduction' => 0]);
+        if (empty($discount['changed']) || (float) ($discount['group']['reduction'] ?? -1) !== 5.0
+            || empty($back['changed']) || (float) ($back['group']['reduction'] ?? -1) !== 0.0) {
+            $failures[] = 'somcp_update_customer_group (a Discount of 5 then 0): expected both written';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (a Discount of 5 then 0)');
+        }
+        $hidden = $groupCall($updateGroup, ['id_group' => 3, 'show_prices' => false]);
+        $shown = $groupCall($updateGroup, ['id_group' => 3, 'show_prices' => true]);
+        if (empty($hidden['changed']) || ($hidden['group']['show_prices'] ?? null) !== false
+            || empty($shown['changed']) || ($shown['group']['show_prices'] ?? null) !== true) {
+            $failures[] = 'somcp_update_customer_group (Show prices off then on): expected both written';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (Show prices off then on)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = new Group(3);
+        if ((float) $left->reduction !== $storedReduction || (bool) $left->show_prices !== $storedShowPrices) {
+            $left->reduction = $storedReduction;
+            $left->show_prices = $storedShowPrices;
+            $left->update();
+        }
+    }
+}
+
 // A logged e-mail deleted twice (#424): the recipients of the demo lines are
 // real addresses and the test e-mail is not logged, so the line is written
 // here through the Mail object, as Mail::send() writes it. Deleting it must

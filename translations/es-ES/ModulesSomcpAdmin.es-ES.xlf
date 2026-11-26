@@ -1097,6 +1097,11 @@
       <source>Get a customer group</source>
       <target>Ver un grupo de clientes</target>
     </trans-unit>
+    <!-- Change a customer group -->
+    <trans-unit id="f42fee241532dcb608e59caf256b519c" resname="Change a customer group">
+      <source>Change a customer group</source>
+      <target>Modificar un grupo de clientes</target>
+    </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
       <source>List return statuses</source>

@@ -60,6 +60,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_delete_country_rule`
 - `somcp_list_customer_groups`
 - `somcp_get_customer_group`
+- `somcp_update_customer_group`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
@@ -555,7 +556,10 @@ ignores groups for prices: say so before writing a price for one group.
 `somcp_get_customer_group` reads one group in full: its name in every
 language, its discounts by category (a percent that replaces the group
 discount for the products whose default category it is) and the modules its
-members may use.
+members may use. `somcp_update_customer_group` changes its name, Discount (a
+percent, 5 for 5 %), Price display method and Show prices: give back the read
+with only the fields to change, and say when the group is a default one, since
+the change then reaches every visitor, guest or customer.
 
 ## Changing products
 

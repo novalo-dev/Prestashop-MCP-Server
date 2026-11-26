@@ -3495,6 +3495,57 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * The name of a read given back, as an update takes it.
+     *
+     * A read answers name in one language and names in every one. Shared by
+     * the updates of titles and customer groups, so both read the same item
+     * given back whole the same way: name equal to the stored text of the
+     * default language, or to one stored text on a shop with several, is no
+     * change; names is taken for the languages being filled, and only when
+     * one of them differs from what is stored.
+     *
+     * @param array<string, mixed> $arguments the call as given
+     * @param array<string, mixed> $given the arguments the update goes on with
+     * @param array<int, string> $stored the stored names, by language identifier
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param int $idShop
+     * @param string $readTool the tool whose answer names follows, for the refusal
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed> $given with name set or removed
+     */
+    public static function nameGivenBack(array $arguments, array $given, array $stored, array $languages, int $idShop, string $readTool, array &$errors): array
+    {
+        unset($given['names']);
+        $idDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
+        if (array_key_exists('name', $given) && is_string($given['name'])
+            && ($given['name'] === ($stored[$idDefault] ?? null)
+                || self::givenBackAsRead($given['name'], $stored, $languages))) {
+            unset($given['name']);
+        }
+        if (!array_key_exists('name', $given) && is_array($arguments['names'] ?? null)) {
+            $byIso = array_flip($languages['filled']);
+            $differs = false;
+            $names = [];
+            foreach ($arguments['names'] as $iso => $name) {
+                $iso = Tools::strtolower((string) $iso);
+                if (!isset($byIso[$iso])) {
+                    continue;
+                }
+                $names[$iso] = $name;
+                $differs = $differs || $name !== ($stored[$byIso[$iso]] ?? '');
+            }
+            if ($differs) {
+                $given['name'] = $names;
+            }
+        } elseif (array_key_exists('names', $arguments) && !is_array($arguments['names'])) {
+            $errors[] = 'names: an object keyed by ISO code, as ' . $readTool . ' answers it';
+        }
+
+        return $given;
+    }
+
+    /**
      * A product label - stock or delivery - checked against the product's own rules.
      *
      * @param array<string, mixed> $group

@@ -6367,6 +6367,77 @@ this shop, a language the shop does not have, given in one answer.
 **Shop association** / **Store association**, multistore only); the installed
 modules differ between the shops.
 
+#### `somcp_update_customer_group`
+**State**: written · [issue #443](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/443)
+**Nature**: `acts(EDIT, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes a customer group of **Shop Parameters > Customer Settings >
+Groups**, as its **Edit** form then **Save** do: its name in each language,
+its **Discount**, its **Price display method** and **Show prices**. Only the
+fields given change. One group per call. **Category discount** (#444) and
+**Authorized modules** (#445) are left as they are.
+
+**Do not use for** - the category discounts and the modules, not changed yet;
+the groups of one customer (→ `somcp_update_customer`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_group` | | integer | required, from `somcp_list_customer_groups`; `SomcpTool::notAnIdentifier('id_group')`; not of this shop: `SomcpTool::notFound('id_group', 'customer group', <id>, 'somcp_list_customer_groups')` |
+| `name` | **Name** | object | per language keyed by ISO code, through `SomcpToolCreateProduct::languages()` and `texts()` as `somcp_update_contact` takes its `name`, a language left out keeping its text; trimmed, never empty; `name (<iso>): 32 characters at most`; `Validate::isGenericName()`: `name (<iso>): no <, >, =, { or }` |
+| `languages` | | array | as `somcp_update_contact` |
+| `reduction` | **Discount** | number | percent as shown, 0 to 100, at most 2 decimals, the rule of `validateDiscount()`: `reduction: a percentage from 0 to 100` |
+| `price_display_method` | **Price display method** | string | `tax_excluded` or `tax_included`, the words of `somcp_list_customer_groups`; anything else: `SomcpTool::oneOf()` |
+| `show_prices` | **Show prices** | boolean | `show_prices: true or false` |
+
+The read given back whole changes nothing: the other fields of the `group` of
+`somcp_get_customer_group` (`names`, `members_count`, `date_add`,
+`default_for`, `category_discounts`, `authorized_modules`,
+`unauthorized_modules`) are declared in the schema and accepted unchanged;
+given with another value they are refused (`members_count: read only`,
+`date_add: read only`, `default_for: chosen in Customer Settings > Groups,
+Default groups options`, `category_discounts: not changed by this tool yet`,
+the same for both module lists). `name` and `names` given back are read by
+`SomcpToolCreateProduct::nameGivenBack()`, as `somcp_update_title` reads them:
+a plain `name` equal to a stored text is no change. Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Then** - every check first, through
+`SomcpToolUpdateCustomerGroup::planGroup()` (public, for a creation tool), every
+mistake in one answer. Nothing to change: no write, `changed: false`. Otherwise
+the `Group` object with the fields given, `update()` on the shop of the token
+(`id_shop_list`). A `false` or an exception: a tool error `The customer group
+could not be changed: <reason>. Read it with somcp_get_customer_group before
+calling again.`, logged as `customer_group_update_failed`.
+`Tools::clearSmartyCache()` when `reduction`, `price_display_method` or
+`show_prices` changed, as the **Show prices** switch of the list does. Logged as
+`customer_group_updated` with the `id_group` and the names of the fields
+changed.
+
+**Returns** - `changed`, `changes` (`field`, `old`, `new`, as the other update
+tools), and `group`: `SomcpToolGetCustomerGroup::group()`, the answer of
+`somcp_get_customer_group`. `warning`, each when it applies: `show_prices` set
+to `false` while **Catalog mode** is off: `Customers of this group no longer
+see prices; to hide them for every group, turn on catalog mode in Product
+Settings instead.`; `reduction` above 0 while customer groups are still
+disabled after the save (`Group::update()` turns the global value on by
+itself): `SomcpToolGetCustomerGroup::GROUPS_DISABLED`; a default group
+(`default_for` not empty): `This group is used for <visitors, guests,
+customers>: the change reaches every one of them.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: an unknown argument; `id_group` missing, not an identifier or not of
+this shop; the rules above; a read only field given with another value.
+
+**Notes** - changes the shop: the assistant asks first. Replayable: a second
+identical call changes nothing. The shop test gives back the read of group 3,
+sets its Discount to 5 and back to 0, and Show prices off and back on, and
+restores the group whatever happens.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same legacy controller,
+the same `Group` definition.
+
 ### Diagnostics
 
 Tools that describe the connection itself, and the two that carry files in and out of the shop for the other tools.

@@ -341,19 +341,32 @@ class SomcpToolCreateTitle extends SomcpToolCreateProduct
             if (!ImageManager::resize($file, _PS_GENDERS_DIR_ . $idGender . '.jpg', $width, $height, 'jpg', true)) {
                 return 'could not be read as a picture by the shop';
             }
-            $cached = [_PS_TMP_IMG_DIR_ . 'genders_mini_' . $idGender . '.jpg'];
-            foreach (Shop::getShops(false, null, true) as $idShop) {
-                $cached[] = _PS_TMP_IMG_DIR_ . 'gender_mini_' . $idGender . '_' . (int) $idShop . '.jpg';
-            }
-            foreach ($cached as $path) {
-                if (is_file($path)) {
-                    @unlink($path);
-                }
-            }
+            self::dropCachedImages($idGender);
 
             return '';
         } catch (Throwable $e) {
             return 'could not be saved by the shop';
+        }
+    }
+
+    /**
+     * Removes the cached thumbnails of a title's image: the one of 8.0 per
+     * shop and the one of 9.0.
+     *
+     * Public so the deletion of a title removes the very same files.
+     *
+     * @param int $idGender
+     */
+    public static function dropCachedImages(int $idGender): void
+    {
+        $cached = [_PS_TMP_IMG_DIR_ . 'genders_mini_' . $idGender . '.jpg'];
+        foreach (Shop::getShops(false, null, true) as $idShop) {
+            $cached[] = _PS_TMP_IMG_DIR_ . 'gender_mini_' . $idGender . '_' . (int) $idShop . '.jpg';
+        }
+        foreach ($cached as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
         }
     }
 

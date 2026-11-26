@@ -416,8 +416,8 @@ if ($createStatus !== null && $deleteStatus !== null) {
 
 // A social title created with an image (#439), then found in the list with
 // that image as a download_ref. The demo titles 1 and 2 are never touched;
-// the title made here is deleted in the cleanup, with its image, whatever
-// happens, until somcp_delete_title exists.
+// the title made here is deleted with somcp_delete_title, and by the cleanup
+// with its image whatever happens.
 $createTitle = $registry->get('somcp_create_title');
 $listTitles = $registry->get('somcp_list_titles');
 if ($createTitle !== null && $listTitles !== null) {
@@ -519,12 +519,30 @@ if ($createTitle !== null && $listTitles !== null) {
                             printf("  %-6s %s\n", 'ok', 'somcp_update_title (a new image)');
                         }
                     }
+                    // Deleted with somcp_delete_title (#441): answered as it
+                    // was, then gone from the list, its image file with it.
+                    $deleteTitle = $registry->get('somcp_delete_title');
+                    if ($deleteTitle !== null) {
+                        $deleted = json_decode(trim($titleText($titleCall($deleteTitle, ['id_gender' => $idTitle]))), true);
+                        $relisted = json_decode(trim($titleText($titleCall($listTitles, []))), true);
+                        $still = in_array($idTitle, array_map('intval', array_column((array) ($relisted['titles'] ?? []), 'id_gender')), true);
+                        if (!is_array($deleted) || empty($deleted['deleted'])
+                            || (int) ($deleted['title']['id_gender'] ?? 0) !== $idTitle
+                            || array_key_exists('image', (array) ($deleted['title'] ?? []))
+                            || $still || is_file(_PS_GENDERS_DIR_ . $idTitle . '.jpg')) {
+                            $failures[] = 'somcp_delete_title (the title just created): expected it deleted, unlisted and its image removed';
+                        } else {
+                            printf("  %-6s %s\n", 'ok', 'somcp_delete_title (the title just created, with its image)');
+                            $idTitle = 0;
+                        }
+                    }
                 }
             }
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_title (a title with a GIF image): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
+        // Whatever failed above, the title made here does not stay.
         if ($idTitle > 0) {
             $left = new Gender($idTitle);
             if (Validate::isLoadedObject($left)) {

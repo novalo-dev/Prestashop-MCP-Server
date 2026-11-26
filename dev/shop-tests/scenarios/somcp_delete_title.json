@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "an unknown title, and nothing deleted", "arguments": {"id_gender": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "id_gender", "somcp_list_titles"]},
+    {"why": "not an identifier, and nothing deleted", "arguments": {"id_gender": 0}, "expect": "error", "contains": ["Nothing was deleted.", "- id_gender: a whole number above 0"]},
+    {"why": "an unknown field, and nothing deleted", "arguments": {"x": 1, "id_gender": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "- x: not a field of this tool"]},
+    {"why": "the identifier left out, and nothing deleted", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted.", "- id_gender: required - find it with somcp_list_titles"]}
+  ]
+}

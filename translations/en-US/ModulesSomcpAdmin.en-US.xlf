@@ -1492,6 +1492,11 @@
       <source>Change a social title</source>
       <target>Change a social title</target>
     </trans-unit>
+    <!-- Delete a social title -->
+    <trans-unit id="c0db0ff588357a275649e3db53088764" resname="Delete a social title">
+      <source>Delete a social title</source>
+      <target>Delete a social title</target>
+    </trans-unit>
     <!-- Delete a sent e-mail from the list -->
     <trans-unit id="620c29d47445cb2d11a2cbe21293ab0b" resname="Delete a sent e-mail from the list">
       <source>Delete a sent e-mail from the list</source>

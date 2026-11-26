@@ -175,6 +175,12 @@ be replaced but not removed. Only what is given changes, and a title read from
 the list and given back as it is stays untouched. When the gender changes, the
 answer says how many customers of the shop hold the title.
 
+**Delete a social title.** The new tool somcp_delete_title deletes a title of
+Shop Parameters > Customer Settings, tab Titles, as its Delete action does,
+and its image with it, which the back office leaves on the server. The answer
+gives the title as it was, so it can be created again, and says how many
+customers of the shop held it: their accounts then show no title.
+
 ### Changed
 
 **Find the vouchers that run out.** The list of cart rules can be filtered by

@@ -85,6 +85,7 @@
     "somcp_list_titles",
     "somcp_create_title",
     "somcp_update_title",
+    "somcp_delete_title",
     "somcp_list_zones",
     "somcp_create_zone",
     "somcp_update_zone",

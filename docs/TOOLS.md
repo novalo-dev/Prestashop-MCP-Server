@@ -4271,6 +4271,61 @@ identical call changes nothing.
 **Differences between 8.0.1 and 9.0.0** - those of `somcp_create_title`; none
 of its own.
 
+#### `somcp_delete_title`
+**State**: written · [issue #441](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/441)
+**Nature**: `acts(DELETE, 'AdminGenders')` · **Scope**: `mcp.customers.write`, as `somcp_delete_contact`
+
+**Does** - deletes a social title of **Shop Parameters > Customer Settings**,
+tab **Titles**, as its **Delete** action does. One title per call: **Delete
+selected** is the same call repeated.
+
+**Do not use for** - changing a title (→ `somcp_update_title`); removing the
+title of one customer (→ `somcp_update_customer` with `id_gender: 0`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_gender` | integer | yes | from `somcp_list_titles`; `SomcpTool::notAnIdentifier('id_gender')`; unknown: `SomcpTool::notFound('id_gender', 'social title', <id>, 'somcp_list_titles')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the title is read with `SomcpToolListTitles::item()` (through
+`SomcpToolCreateTitle::answer()`), the customers of the shop of the token who
+hold it are counted, then `Gender::delete()`, as both screens do
+(`AdminController::processDelete()` on 8.0.1, `DeleteTitleHandler` on 9.0.0):
+neither checks anything, so a title held by customers is deleted. A `false` or
+an exception: a tool error `The social title could not be deleted: <reason>.
+Read it with somcp_list_titles before calling again.`, logged as
+`title_delete_failed`. Then `deleteImage()` and the cached copies
+(`SomcpToolCreateTitle::dropCachedImages()`, the ones `storeImage()` removes):
+stricter than both screens on purpose, which leave `img/genders/<id>.jpg` on
+disk where nothing would ever remove it. Logged as `title_deleted` with the
+`id_gender` only.
+
+**Returns** - `deleted: true`, `id_gender`, and `title`: the title as it was
+(`id_gender`, `name`, `names` in every language, `gender`), the item of
+`somcp_list_titles` without its `image`, so the assistant can create it again
+with `somcp_create_title`. `warning` when customers of this shop held it:
+`<n> customers of this shop had this title: their accounts now show none.`; in
+multistore, also `A social title is shared by every shop: it is gone from all
+of them.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`: an unknown argument, `id_gender` missing, not an identifier or
+unknown, given in one answer.
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first,
+and says how many customers hold the title. Not replayable: a second call
+answers the unknown `id_gender`. The JSON scenario checks the refusals only, so
+the demo titles 1 and 2 are never deleted; the shop test deletes the title it
+created with `somcp_create_title`, then checks it is gone from the list and its
+file from `img/genders/`.
+
+**Differences between 8.0.1 and 9.0.0** - none: both call
+`ObjectModel::delete()`; only the name of the cached thumbnail differs (both
+removed).
+
 #### `somcp_list_contacts`
 **State**: written · [issue #413](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/413)
 **Nature**: `acts(VIEW, 'AdminContacts')` · **Scope**: `mcp.customers.read`, as `somcp_search_customers`

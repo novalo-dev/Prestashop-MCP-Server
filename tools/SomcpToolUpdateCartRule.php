@@ -250,8 +250,9 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
      * country, carrier and group go through planRestrictions(), cart_rule
      * through planCompatibility(), product through planProductSelection(),
      * the checks the creation shares; one that holds what is stored already
-     * is left out, so a rule read and given back whole writes nothing. shop is
-     * still the merchant's on the Conditions tab: accepted only as read.
+     * is left out (product before its checks), so a rule read and given back
+     * whole writes nothing. shop is still the merchant's on the Conditions
+     * tab: accepted only as read.
      *
      * @param mixed $restrictions as given
      * @param array<string, mixed> $current as somcp_get_cart_rule returns them
@@ -299,10 +300,17 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             $stored = self::readProductGroups($current['product'] ?? null);
             // [] given back from a rule whose box is checked with no group, as
             // the form can leave it, is what was read: nothing to write.
+            // A selection equal to the read is compared before it is checked:
+            // the form lets the merchant save what the checks refuse (a group
+            // of 0, an item since removed from the shop), and the rule must
+            // still be updatable from its own read.
             if (!($restrictions['product'] === [] && $stored === [])) {
-                $groups = self::planProductSelection($restrictions['product'], $idShop, $errors);
-                if ($groups !== false && $groups !== $stored) {
-                    $rows['product'] = $groups;
+                $shape = self::productSelectionShape($restrictions['product'], $errors);
+                if ($shape !== false && $shape !== $stored) {
+                    $groups = self::planProductSelection($restrictions['product'], $idShop, $errors);
+                    if ($groups !== false) {
+                        $rows['product'] = $groups;
+                    }
                 }
             }
         }

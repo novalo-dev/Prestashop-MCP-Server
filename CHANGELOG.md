@@ -169,7 +169,9 @@ somcp_update_cart_rule now write Product selection: a voucher can be kept to
 products, categories, brands, suppliers or attribute values, with the number
 of such products the cart must hold, as on the Conditions tab of the rule, and
 is created that way in one go. "10% on the shoes" no longer needs the back
-office.
+office. A selection given back as read changes nothing and is not
+checked again, so a rule saved in the back office with a group of quantity 0
+or a product since removed can still be updated from its own read.
 
 **Limit a cart rule to countries, carriers and customer groups.**
 somcp_update_cart_rule refused every restriction of the Conditions tab, so a

@@ -2131,11 +2131,55 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (product selection lifted, no row left)');
             }
+
+            // A group of quantity 0, as the form saves it with no check
+            // (#436): given back as read it changes nothing, given with 1 it
+            // is written. Inserted as afterAdd() inserts a group.
+            $calls += 2;
+            $db = Db::getInstance();
+            $db->insert('cart_rule_product_rule_group', ['id_cart_rule' => $idRule, 'quantity' => 0]);
+            $idZeroGroup = (int) $db->Insert_ID();
+            $db->insert('cart_rule_product_rule', ['id_product_rule_group' => $idZeroGroup, 'type' => 'categories']);
+            $db->insert('cart_rule_product_rule_value', ['id_product_rule' => (int) $db->Insert_ID(), 'id_item' => 2]);
+            $db->update('cart_rule', ['product_restriction' => 1], '`id_cart_rule` = ' . $idRule);
+            $read = json_decode(trim($answer($getRule->call(['id_cart_rule' => $idRule], $ruleContext))), true);
+            $readSelection = $read['restrictions']['product'] ?? null;
+            $raised = is_array($readSelection) ? $readSelection : [];
+            foreach ($raised as $g => $group) {
+                $raised[$g]['quantity'] = 1;
+            }
+            foreach ([
+                'quantity 0 given back' => [['product' => $readSelection], ['"changed": false']],
+                'quantity 0 raised to 1' => [['product' => $raised], ['"changed": true', '"field": "restrictions.product"']],
+            ] as $label => [$restrictions, $needles]) {
+                $result = $updateRule->call(['id_cart_rule' => $idRule, 'restrictions' => $restrictions], $ruleContext);
+                $text = $answer($result);
+                $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                }));
+                if (!is_array($readSelection) || !empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_cart_rule (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
+                }
+            }
+            $stored = (int) $db->getValue('SELECT MIN(`quantity`) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_group` WHERE `id_cart_rule` = ' . $idRule);
+            if ($stored !== 1) {
+                $failures[] = 'somcp_update_cart_rule (quantity 0 raised to 1): the group holds ' . $stored;
+            }
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_cart_rule (restrictions): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
         if ($idRule > 0) {
+            // The group written straight above goes with its rows, whatever
+            // the update left of it.
+            $db = Db::getInstance();
+            $db->delete('cart_rule_product_rule_group', '`id_cart_rule` = ' . $idRule);
+            $db->delete('cart_rule_product_rule', '`id_product_rule_group` NOT IN '
+                . '(SELECT `id_product_rule_group` FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_group`)');
+            $db->delete('cart_rule_product_rule_value', '`id_product_rule` NOT IN '
+                . '(SELECT `id_product_rule` FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule`)');
             $left = new CartRule($idRule);
             if (Validate::isLoadedObject($left)) {
                 $left->delete();

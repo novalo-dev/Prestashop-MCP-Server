@@ -986,9 +986,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
     /**
      * Product selection as given, checked as the Conditions tab offers it.
      *
-     * The shape somcp_get_cart_rule reads: groups of a quantity and rules,
-     * each rule a type and the items of that type. Each item once, in the
-     * order of the identifiers; a name given back is ignored.
+     * The shape is read by productSelectionShape(), then each group needs 1
+     * at least and each item must be one the form offers for the token's shop.
      *
      * @param mixed $value restrictions.product as given
      * @param int $idShop
@@ -998,6 +997,51 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      *                                                                                                                   the groups, null for no restriction, false when refused
      */
     protected static function planProductSelection($value, int $idShop, array &$errors)
+    {
+        $groups = self::productSelectionShape($value, $errors);
+        if (!is_array($groups)) {
+            return $groups;
+        }
+
+        $refused = false;
+        foreach ($groups as $g => $group) {
+            $groupPath = 'restrictions.product[' . $g . ']';
+            if ($group['quantity'] < 1) {
+                // A group of 0 would let every cart through, as no group does.
+                $errors[] = $groupPath . '.quantity: a whole number, 1 at least';
+                $refused = true;
+            }
+            foreach ($group['rules'] as $r => $rule) {
+                [$thing, $tool] = self::PRODUCT_RULE_TYPES[$rule['type']];
+                foreach (array_diff($rule['ids'], self::offeredItems($rule['type'], $rule['ids'], $idShop)) as $missing) {
+                    $errors[] = SomcpTool::notFound($groupPath . '.rules[' . $r . '].values', $thing, (int) $missing, $tool);
+                    $refused = true;
+                }
+            }
+        }
+
+        return $refused ? false : $groups;
+    }
+
+    /**
+     * The shape of a Product selection as given, before any check of the shop.
+     *
+     * The shape somcp_get_cart_rule reads: groups of a quantity and rules,
+     * each rule a type and the items of that type. Each item once, in the
+     * order of the identifiers; a name given back is ignored. The update
+     * compares this with readProductGroups() before checking anything, so a
+     * selection given back as read is never refused for what the form let
+     * the merchant save (a group of 0, an item since removed from the shop);
+     * planProductSelection() reads through it too, so the two never read a
+     * list differently.
+     *
+     * @param mixed $value restrictions.product as given
+     * @param array<int, string> $errors
+     *
+     * @return array<int, array{quantity: int, rules: array<int, array{type: string, ids: array<int, int>}>}>|false|null
+     *                                                                                                                   the groups, null for no restriction, false when malformed
+     */
+    public static function productSelectionShape($value, array &$errors)
     {
         $path = 'restrictions.product';
         if ($value === null) {
@@ -1030,8 +1074,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             if (is_string($quantity) && ctype_digit($quantity)) {
                 $quantity = (int) $quantity;
             }
-            if (!is_int($quantity) || $quantity < 1) {
-                // A group of 0 would let every cart through, as no group does.
+            if (!is_int($quantity) || $quantity < 0) {
                 $errors[] = $groupPath . '.quantity: a whole number, 1 at least';
                 $refused = true;
                 $quantity = 1;
@@ -1074,13 +1117,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                     $ids[$id] = $id;
                 }
                 ksort($ids);
-                $ids = array_values($ids);
-                [$thing, $tool] = self::PRODUCT_RULE_TYPES[$type];
-                foreach (array_diff($ids, self::offeredItems($type, $ids, $idShop)) as $missing) {
-                    $errors[] = SomcpTool::notFound($rulePath . '.values', $thing, (int) $missing, $tool);
-                    $refused = true;
-                }
-                $planned[] = ['type' => $type, 'ids' => $ids];
+                $planned[] = ['type' => $type, 'ids' => array_values($ids)];
             }
             $groups[] = ['quantity' => $quantity, 'rules' => $planned];
         }

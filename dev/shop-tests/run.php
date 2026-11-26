@@ -2054,6 +2054,66 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
         }
     }
 
+    // Compatibility with other cart rules (#417), on two rules created here:
+    // checking the box restricts every other rule left unrestricted, as the
+    // back office does, so the flags and pairs of the rules already in the
+    // shop are put back whatever happens.
+    $calls += 5;
+    $db = Db::getInstance();
+    $flags = $db->executeS('SELECT `id_cart_rule`, `cart_rule_restriction` FROM `' . _DB_PREFIX_ . 'cart_rule`') ?: [];
+    $pairs = $db->executeS('SELECT `id_cart_rule_1`, `id_cart_rule_2` FROM `' . _DB_PREFIX_ . 'cart_rule_combination`') ?: [];
+    $made = [];
+    try {
+        foreach (['SOMCPMIXA', 'SOMCPMIXB'] as $code) {
+            $created = $createRule->call([
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp ' . $code],
+                'code' => $code,
+                'free_shipping' => true,
+            ], $ruleContext);
+            $decoded = json_decode(trim($answer($created)), true);
+            if (!empty($created['isError']) || (int) ($decoded['id_cart_rule'] ?? 0) <= 0) {
+                throw new RuntimeException('the rule ' . $code . ' could not be created - ' . excerpt($created));
+            }
+            $made[] = (int) $decoded['id_cart_rule'];
+        }
+        [$idA, $idB] = $made;
+        foreach ([
+            'combinable rule set' => [$updateRule, ['id_cart_rule' => $idA, 'restrictions' => ['cart_rule' => [['id_cart_rule' => $idB]]]], ['"changed": true', '"field": "restrictions.cart_rule"']],
+            'combinable rule read back' => [$getRule, ['id_cart_rule' => $idA], ['"cart_rule": [', '"id_cart_rule": ' . $idB]],
+            'combines with none' => [$updateRule, ['id_cart_rule' => $idA, 'restrictions' => ['cart_rule' => []]], ['"changed": true', 'can no longer be combined with this one', (string) $idB]],
+            'combines with all' => [$updateRule, ['id_cart_rule' => $idA, 'restrictions' => ['cart_rule' => null]], ['"changed": true', '"new": null']],
+            'back on the list of the other' => [$getRule, ['id_cart_rule' => $idB], ['"id_cart_rule": ' . $idA]],
+        ] as $label => [$tool, $arguments, $needles]) {
+            $result = $tool->call($arguments, $ruleContext);
+            $text = $answer($result);
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_update_cart_rule (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_cart_rule (compatibility): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        foreach ($made as $idMade) {
+            $left = new CartRule($idMade);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+        $db->delete('cart_rule_combination');
+        if ($pairs !== []) {
+            $db->insert('cart_rule_combination', $pairs);
+        }
+        foreach ($flags as $flag) {
+            $db->update('cart_rule', ['cart_rule_restriction' => (int) $flag['cart_rule_restriction']], '`id_cart_rule` = ' . (int) $flag['id_cart_rule']);
+        }
+    }
+
     // The same restriction given to the creation (#407): written with the
     // rule, read back, and the rule deleted whatever happens.
     $calls += 2;

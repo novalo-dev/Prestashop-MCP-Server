@@ -152,8 +152,12 @@ dates you used.
    shape `somcp_get_cart_rule` reads them: `country` from
    `somcp_list_countries`, `carrier` by `id_reference` from
    `somcp_list_carriers`, `group` from `somcp_list_customer_groups`, `null`
-   to lift one. The other rules it combines with, the product selection and
-   the shops stay with the merchant in the back office. A call that changes nothing
+   to lift one. `cart_rule` lists the rules it combines with, by
+   `id_cart_rule` from `somcp_list_cart_rules`: `[]` for none, `null` for
+   all. Checking it stops the rules that combined with all from combining
+   with this one, as the back office does: tell the merchant the rules the
+   `warning` names. The product selection and the shops stay with the
+   merchant in the back office. A call that changes nothing
    answers `changed: false`. If an answer is lost, read the rule again with
    `somcp_get_cart_rule` before calling again.
 

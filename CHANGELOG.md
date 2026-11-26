@@ -140,6 +140,13 @@ their rates, from every assistant as from the built-in chat. When one currency
 cannot be created, the answer names by their codes the currencies created
 before it, so the merchant knows which ones now exist.
 
+**Choose which cart rules a voucher combines with.** somcp_update_cart_rule
+refused Compatibility with other cart rules, so stopping two vouchers from
+adding up still meant opening the Conditions tab. It now sets the box and the
+list of Combinable cart rules as the back office does, or clears them, and
+says which other rules the back office stopped combining with this one when
+the box is checked.
+
 **A setting the shop's version does not have is refused in the same words.**
 The maintenance, order settings, module and page SEO tools each refused a
 setting of another PrestaShop version in their own sentence, and some did not

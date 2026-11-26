@@ -973,12 +973,158 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
     }
 
     /**
+     * The rules a rule combines with, checked as the Combinable cart rules list offers them.
+     *
+     * Unlike the other restrictions, an empty list is a choice of its own:
+     * the box checked with nothing selected, which the form saves without an
+     * error, is a rule that combines with no other.
+     *
+     * @param mixed $value restrictions.cart_rule as given
+     * @param int $idShop
+     * @param int $idSelf the rule being changed, 0 for a new one
+     * @param array<int, string> $errors
+     *
+     * @return array<int, int>|false|null the identifiers, null for no restriction, false when refused
+     */
+    protected static function planCompatibility($value, int $idShop, int $idSelf, array &$errors)
+    {
+        $path = 'restrictions.cart_rule';
+        if ($value === null) {
+            return null;
+        }
+        if (!is_array($value) || !array_is_list($value)) {
+            $errors[] = $path . ': a list of {"id_cart_rule": ...}, or null for no restriction';
+
+            return false;
+        }
+        $ids = [];
+        foreach ($value as $item) {
+            $id = is_array($item) ? ($item['id_cart_rule'] ?? null) : $item;
+            if (is_string($id) && ctype_digit($id)) {
+                $id = (int) $id;
+            }
+            if (!is_int($id) || $id <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path);
+
+                return false;
+            }
+            $ids[$id] = $id;
+        }
+        ksort($ids);
+        $ids = array_values($ids);
+        if ($idSelf > 0 && in_array($idSelf, $ids, true)) {
+            $errors[] = $path . ': a cart rule cannot list itself';
+
+            return false;
+        }
+        if ($ids === []) {
+            return [];
+        }
+        // The rules this shop can use, as the list and the get read them, so
+        // an identifier refused here is never one those tools give.
+        $found = array_map('intval', array_column(Db::getInstance()->executeS(
+            'SELECT cr.`id_cart_rule` FROM `' . _DB_PREFIX_ . 'cart_rule` cr
+             WHERE cr.`id_cart_rule` IN (' . implode(',', $ids) . ') AND ' . SomcpToolListCartRules::inShop($idShop)
+        ) ?: [], 'id_cart_rule'));
+        $missing = array_diff($ids, $found);
+        foreach ($missing as $id) {
+            $errors[] = SomcpTool::notFound($path, 'cart rule', $id, 'somcp_list_cart_rules');
+        }
+
+        return $missing === [] ? $ids : false;
+    }
+
+    /**
+     * Writes Compatibility with other cart rules as AdminCartRulesController saves it.
+     *
+     * The same four steps as the back office's afterUpdate() and afterAdd(),
+     * in their order, through Db since cart_rule_combination has no object:
+     * every pair of the rule removed; with the box checked, one pair per
+     * combinable rule; with it unchecked, the rule added to the list of every
+     * rule whose own box is checked; and with it checked, every rule left
+     * unrestricted that does not list this one gets its box checked and keeps
+     * every other active rule, so it stops combining with this one only.
+     * The switch of the rule is set on the object, saved by the caller.
+     *
+     * @param CartRule $rule saved already, so it has its identifier
+     * @param array<int, int>|null $ids from planCompatibility(), null for the box unchecked
+     *
+     * @return array<int, int>|null the other rules whose box was checked, null when a write failed
+     */
+    protected static function writeCompatibility(CartRule $rule, ?array $ids): ?array
+    {
+        $idCartRule = (int) $rule->id;
+        $table = _DB_PREFIX_ . 'cart_rule';
+        $db = Db::getInstance();
+        if (!$db->delete('cart_rule_combination', '`id_cart_rule_1` = ' . $idCartRule . ' OR `id_cart_rule_2` = ' . $idCartRule)) {
+            return null;
+        }
+        $rule->cart_rule_restriction = $ids !== null;
+        if ($ids === null) {
+            // The rule's own switch may still be stored on: it is saved after
+            // this, so the rule is left out by its identifier.
+            return $db->execute(
+                'INSERT INTO `' . _DB_PREFIX_ . 'cart_rule_combination` (`id_cart_rule_1`, `id_cart_rule_2`)
+                 SELECT `id_cart_rule`, ' . $idCartRule . ' FROM `' . $table . '`
+                 WHERE `cart_rule_restriction` = 1 AND `id_cart_rule` != ' . $idCartRule
+            ) ? [] : null;
+        }
+
+        $insert = [];
+        foreach ($ids as $id) {
+            $insert[] = ['id_cart_rule_1' => $idCartRule, 'id_cart_rule_2' => (int) $id];
+        }
+        if ($insert !== [] && !$db->insert('cart_rule_combination', $insert)) {
+            return null;
+        }
+
+        $others = array_map('intval', array_column($db->executeS(
+            'SELECT cr.`id_cart_rule` FROM `' . $table . '` cr
+             WHERE cr.`id_cart_rule` != ' . $idCartRule . ' AND cr.`cart_rule_restriction` = 0
+             AND NOT EXISTS (SELECT 1 FROM `' . _DB_PREFIX_ . 'cart_rule_combination` crc
+                 WHERE (crc.`id_cart_rule_1` = ' . $idCartRule . ' AND crc.`id_cart_rule_2` = cr.`id_cart_rule`)
+                    OR (crc.`id_cart_rule_2` = ' . $idCartRule . ' AND crc.`id_cart_rule_1` = cr.`id_cart_rule`))
+             ORDER BY cr.`id_cart_rule`'
+        ) ?: [], 'id_cart_rule'));
+        foreach ($others as $idOther) {
+            if (!$db->update('cart_rule', ['cart_rule_restriction' => 1], '`id_cart_rule` = ' . $idOther, 1)
+                || !$db->execute(
+                    'INSERT IGNORE INTO `' . _DB_PREFIX_ . 'cart_rule_combination` (`id_cart_rule_1`, `id_cart_rule_2`)
+                     SELECT `id_cart_rule`, ' . $idOther . ' FROM `' . $table . '`
+                     WHERE `active` = 1 AND `id_cart_rule` != ' . $idCartRule . ' AND `id_cart_rule` != ' . $idOther
+                )) {
+                return null;
+            }
+        }
+
+        return $others;
+    }
+
+    /**
+     * The line that names the rules Compatibility with other cart rules restricted on its own.
+     *
+     * @param array<int, int> $others from writeCompatibility()
+     *
+     * @return string empty when there are none
+     */
+    protected static function compatibilityWarning(array $others): string
+    {
+        if ($others === []) {
+            return '';
+        }
+
+        return count($others) . ' other cart rule(s) can no longer be combined with this one, as in the back office: '
+            . implode(', ', $others) . '.';
+    }
+
+    /**
      * Writes the rows of planRestrictions() and sets the matching switches of the rule.
      *
      * The same rows AdminCartRulesController::afterAdd() inserts, through Db
      * since these tables have no object, but only for the restrictions given:
-     * the back office's afterUpdate() would also wipe the product selection
-     * and the compatibility, which this tool does not write.
+     * the back office's afterUpdate() would also wipe the product selection,
+     * which this tool does not write. The compatibility with other rules has
+     * its own steps, in writeCompatibility().
      *
      * somcp_create_cart_rule sets the switches before add() and calls this
      * right after it, with no transaction: a write that fails removes the

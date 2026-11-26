@@ -18,6 +18,8 @@
     {"why": "a restriction given to a rule that does not exist", "arguments": {"id_cart_rule": 999999, "restrictions": {"group": [{"id_group": 3}]}}, "expect": "error", "contains": ["id_cart_rule: no cart rule of this shop has the identifier 999999 - find it with somcp_list_cart_rules"]},
     {"why": "an empty country selection would match no cart", "arguments": {"id_cart_rule": 1, "restrictions": {"country": []}}, "expect": "error", "contains": ["Nothing was changed", "restrictions.country: at least one, or null for no restriction"]},
     {"why": "a carrier reference no carrier has", "arguments": {"id_cart_rule": 1, "restrictions": {"carrier": [{"id_reference": 999999}]}}, "expect": "error", "contains": ["restrictions.carrier: no carrier of this shop has the reference 999999 - find it with somcp_list_carriers"]},
+    {"why": "a combinable cart rule the shop does not have", "arguments": {"id_cart_rule": 1, "restrictions": {"cart_rule": [{"id_cart_rule": 999999}]}}, "expect": "error", "contains": ["Nothing was changed", "restrictions.cart_rule: no cart rule of this shop has the identifier 999999 - find it with somcp_list_cart_rules"]},
+    {"why": "a rule listed among the rules it combines with", "arguments": {"id_cart_rule": 1, "restrictions": {"cart_rule": [{"id_cart_rule": 1}]}}, "expect": "error", "contains": ["restrictions.cart_rule: a cart rule cannot list itself"]},
     {"why": "an unknown rule and a misspelt field come back in one answer", "arguments": {"id_cart_rule": 999999, "nmae": {"en": "Somcp"}, "date_add": "2026-01-01"}, "expect": "error", "contains": ["Nothing was changed", "id_cart_rule: no cart rule of this shop has the identifier 999999", "nmae: not a field of this tool"]}
   ]
 }

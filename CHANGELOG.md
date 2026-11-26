@@ -147,6 +147,14 @@ list of Combinable cart rules as the back office does, or clears them, and
 says which other rules the back office stopped combining with this one when
 the box is checked.
 
+**A voucher created by an assistant combines as one created on screen.**
+somcp_create_cart_rule refused Compatibility with other cart rules, so a
+voucher that must not add up with the others needed a second step in the back
+office. It now takes the list of Combinable cart rules, or none at all, and
+names the rules the back office then stops combining with it. A voucher
+created without the box is also added, as on screen, to the rules that list
+the vouchers they combine with.
+
 **A setting the shop's version does not have is refused in the same words.**
 The maintenance, order settings, module and page SEO tools each refused a
 setting of another PrestaShop version in their own sentence, and some did not

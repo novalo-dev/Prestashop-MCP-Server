@@ -20,8 +20,9 @@ declare(strict_types=1);
 /*
  * somcp_create_cart_rule - one cart rule, with the fields of the Information,
  * Conditions and Actions tabs of Catalog > Discounts > Cart Rules > Add new.
- * Of the restrictions, countries, carriers and groups are written; the
- * compatibility, the product selection and the shops stay in the back office.
+ * Of the restrictions, countries, carriers, groups and the compatibility
+ * with other rules are written; the product selection and the shops stay in
+ * the back office.
  *
  * Every field takes the name and the shape somcp_get_cart_rule returns, so a
  * rule read there can be given back. The checks are the ones
@@ -80,8 +81,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             Somcp::t('Create a cart rule'),
             'Creates one cart rule, a voucher with a code or a discount applied on its own, as Catalog > Discounts > '
                 . 'Cart Rules > Add new. Fields have the names and shapes of somcp_get_cart_rule. Created off unless '
-                . 'active is true: confirm with the merchant first. restrictions: countries, carriers and groups; other '
-                . 'rules, products and shops stay in the back office. Not for changing a rule, nor for catalogue '
+                . 'active is true: confirm with the merchant first. restrictions: countries, carriers, groups and other '
+                . 'rules it combines with; products and shops stay in the back office. Not for changing a rule, nor for catalogue '
                 . 'price rules. Not to be retried: if the answer is lost, look for the rule with somcp_list_cart_rules '
                 . 'first.',
             self::inputSchema(),
@@ -94,7 +95,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
     /**
      * @var array<int, string> the restrictions somcp_get_cart_rule reads that only the back office sets
      */
-    private const BACK_OFFICE_RESTRICTIONS = ['cart_rule', 'product', 'shop'];
+    private const BACK_OFFICE_RESTRICTIONS = ['product', 'shop'];
 
     /**
      * @var array<string, array{0: string, 1: string, 2: string}> the restrictions of the Conditions tab this tool
@@ -177,8 +178,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                 ],
                 'restrictions' => [
                     'type' => 'object',
-                    'description' => 'As somcp_get_cart_rule returns it. country, carrier, group: a list of {"id_country"}, '
-                        . '{"id_reference"}, {"id_group"}, or null for none. cart_rule, product, shop: null only.',
+                    'description' => 'As somcp_get_cart_rule returns it. country, carrier, group, cart_rule: lists of {"id_country"}, '
+                        . '{"id_reference"}, {"id_group"}, {"id_cart_rule"}, null for none ([] for cart_rule: combines with none).',
                 ],
             ],
             'required' => ['name'],
@@ -224,7 +225,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
     protected static function planRule(array $arguments, int $idShop, array &$errors, int $idSelf = 0): ?array
     {
         $restrictions = array_key_exists('restrictions', $arguments)
-            ? self::newRestrictions($arguments['restrictions'], $errors)
+            ? self::newRestrictions($arguments['restrictions'], $idShop, $errors)
             : [];
         $errors = array_merge($errors, SomcpTool::unknownFields(
             array_diff_key($arguments, ['restrictions' => true]),
@@ -702,17 +703,19 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
     /**
      * The restrictions a new rule starts with, as rows to write after it.
      *
-     * Country, carrier and group are checked by planRestrictions(), as the
-     * update checks them. The others are only accepted off, so a rule read
-     * with somcp_get_cart_rule can be given back: the compatibility, the
-     * product selection and the shops stay on the Conditions tab.
+     * Country, carrier and group are checked by planRestrictions(), the
+     * compatibility with other rules by planCompatibility(), as the update
+     * checks them. The others are only accepted off, so a rule read with
+     * somcp_get_cart_rule can be given back: the product selection and the
+     * shops stay on the Conditions tab.
      *
      * @param mixed $restrictions as given
+     * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return array<string, array<int, int>> the keys switched on only
      */
-    private static function newRestrictions($restrictions, array &$errors): array
+    private static function newRestrictions($restrictions, int $idShop, array &$errors): array
     {
         if (!is_array($restrictions) || ($restrictions !== [] && array_is_list($restrictions))) {
             $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
@@ -720,7 +723,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             return [];
         }
         foreach ($restrictions as $key => $value) {
-            if (isset(self::RESTRICTION_TABLES[$key])) {
+            if (isset(self::RESTRICTION_TABLES[$key]) || $key === 'cart_rule') {
                 continue;
             }
             if (!in_array($key, self::BACK_OFFICE_RESTRICTIONS, true)) {
@@ -731,8 +734,17 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             }
         }
 
-        // A key given null asks for no restriction, which a new rule already has.
-        return array_filter(self::planRestrictions($restrictions, $errors), static function ($ids): bool {
+        $rows = self::planRestrictions($restrictions, $errors);
+        if (array_key_exists('cart_rule', $restrictions)) {
+            $ids = self::planCompatibility($restrictions['cart_rule'], $idShop, 0, $errors);
+            if ($ids !== false) {
+                $rows['cart_rule'] = $ids;
+            }
+        }
+
+        // A key given null asks for no restriction, which a new rule already
+        // has; an empty cart_rule is kept, the box checked with no rule.
+        return array_filter($rows, static function ($ids): bool {
             return $ids !== null;
         });
     }
@@ -757,6 +769,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         $cartRule = self::newRule($plan);
 
         $failure = '';
+        $restricted = [];
         try {
             $done = (bool) $cartRule->add();
             if (!$done) {
@@ -768,6 +781,14 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                 $failure = 'the restrictions could not be saved';
             } else {
                 $failure = self::afterAdd((int) $cartRule->id, $idShop, (int) $plan['specific_product'], $multistore);
+                // Always, and last: with the box unchecked the new rule joins
+                // the lists of the rules that keep one; with it checked, the
+                // boxes it checks on other rules are not undone by delete(),
+                // so nothing may fail after it.
+                if ($failure === ''
+                    && ($restricted = self::writeCompatibility($cartRule, $plan['restrictions']['cart_rule'] ?? null)) === null) {
+                    $failure = 'the compatibility with the other cart rules could not be saved';
+                }
                 $done = $failure === '';
             }
         } catch (Throwable $e) {
@@ -808,17 +829,24 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
 
         // Read back rather than echoed from the arguments: what the assistant
         // shows the merchant is what the shop stored.
-        return SomcpTool::json([
+        $result = [
             'created' => true,
             'id_cart_rule' => $idCartRule,
-            'cart_rule' => SomcpToolGetCartRule::byId($idCartRule, (int) $plan['languages']['fallback'], $idShop),
-        ]);
+        ];
+        $warning = self::compatibilityWarning($restricted ?? []);
+        if ($warning !== '') {
+            $result['warning'] = $warning;
+        }
+        $result['cart_rule'] = SomcpToolGetCartRule::byId($idCartRule, (int) $plan['languages']['fallback'], $idShop);
+
+        return SomcpTool::json($result);
     }
 
     /**
      * The rows AdminCartRulesController::afterAdd() writes for a new rule that
      * CartRule::add() does not. These tables have no ObjectModel, so they are
-     * written as the back office writes them.
+     * written as the back office writes them. The compatibility with other
+     * rules comes after, from writeCompatibility().
      *
      * @param int $idCartRule
      * @param int $idShop
@@ -837,18 +865,6 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
 
         if ($idProduct > 0 && ($failure = self::productSelection($idCartRule, $idProduct)) !== '') {
             return $failure;
-        }
-
-        // The new rule restricts nothing, so every rule that restricts its
-        // compatibility takes it on its white list, as the back office does on
-        // every save: otherwise a voucher made here could never be combined
-        // with them, while the same voucher made on screen can.
-        if (!$db->execute(
-            'INSERT INTO `' . _DB_PREFIX_ . 'cart_rule_combination` (`id_cart_rule_1`, `id_cart_rule_2`)
-             SELECT `id_cart_rule`, ' . $idCartRule . ' FROM `' . _DB_PREFIX_ . 'cart_rule`
-             WHERE `cart_rule_restriction` = 1 AND `id_cart_rule` != ' . $idCartRule
-        )) {
-            return 'the compatibility with the other cart rules could not be saved';
         }
 
         return '';

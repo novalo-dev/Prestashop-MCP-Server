@@ -2054,7 +2054,7 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
         }
     }
 
-    // Compatibility with other cart rules (#417), on two rules created here:
+    // Compatibility with other cart rules (#417, #418), on rules created here:
     // checking the box restricts every other rule left unrestricted, as the
     // back office does, so the flags and pairs of the rules already in the
     // shop are put back whatever happens.
@@ -2094,6 +2094,43 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
                 $failures[] = 'somcp_update_cart_rule (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
+            }
+        }
+
+        // The same box given to the creation (#418): C combines with none,
+        // which restricts A, left unrestricted above; D, created without the
+        // box, joins the list of C, as a rule saved on screen would.
+        $calls += 3;
+        $ids = [];
+        foreach ([
+            'C' => [['cart_rule' => []], ['"created": true', 'can no longer be combined with this one', (string) $idA]],
+            'D' => [[], ['"created": true']],
+        ] as $letter => [$restrictions, $needles]) {
+            $arguments = ['languages' => ['en'], 'name' => ['en' => 'Somcp mix ' . $letter], 'code' => 'SOMCPMIX' . $letter, 'free_shipping' => true];
+            if ($restrictions !== []) {
+                $arguments['restrictions'] = $restrictions;
+            }
+            $result = $createRule->call($arguments, $ruleContext);
+            $text = $answer($result);
+            $decoded = json_decode(trim($text), true);
+            if ((int) ($decoded['id_cart_rule'] ?? 0) > 0) {
+                $made[] = $ids[$letter] = (int) $decoded['id_cart_rule'];
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_create_cart_rule (compatibility ' . $letter . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (compatibility ' . $letter . ')');
+            }
+        }
+        if (isset($ids['C'], $ids['D'])) {
+            $result = $getRule->call(['id_cart_rule' => $ids['C']], $ruleContext);
+            if (!empty($result['isError']) || strpos($answer($result), '"id_cart_rule": ' . $ids['D']) === false) {
+                $failures[] = 'somcp_create_cart_rule (new rule on the list of C): expected ' . $ids['D'] . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (new rule on the list of C)');
             }
         }
     } catch (Throwable $e) {

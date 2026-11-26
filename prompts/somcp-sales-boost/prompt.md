@@ -129,13 +129,13 @@ dates you used.
    `somcp_get_cart_rule` returns. A rule must give something: a `reduction`,
    `free_shipping` or a `gift`. `id_customer` comes from
    `somcp_search_customers`, a product from `somcp_search_products`, a gift's
-   combination from `somcp_get_product`. Countries, carriers and customer
-   groups go in `restrictions`, as for a change below. The answer names every
+   combination from `somcp_get_product`. Countries, carriers, customer
+   groups and the rules it combines with go in `restrictions`, as for a
+   change below. The answer names every
    problem at once: correct them all and call again.
 3. **It is created off** unless `active` is true: say so, and switch it on
-   with `somcp_set_cart_rule_active` only once the merchant asks. The other
-   rules it combines with, the product selection and the shops are set on the
-   rule's **Conditions** tab in the back office. If an answer is lost, look for the rule with
+   with `somcp_set_cart_rule_active` only once the merchant asks. The
+   product selection and the shops are set on the rule's **Conditions** tab in the back office. If an answer is lost, look for the rule with
    `somcp_list_cart_rules` before calling again.
 
 ## Changing a voucher or a discount

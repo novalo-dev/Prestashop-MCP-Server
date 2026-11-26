@@ -177,6 +177,10 @@ No, and the performance warnings missed it: on PrestaShop 8, Smart cache for
 CSS and Smart cache for JavaScript left off were not named. Such a switch is
 now read as off, and only a setting the version truly lacks stays empty.
 
+**Compact mode finds a tool asked for without accents.** A request typed
+without its accents, as on a phone, now finds the tool whose words carry
+them. The tools and the checks on every call are unchanged.
+
 **The built-in assistant runs on Neuron AI 4.1.28.** Nothing changes in how
 you use it.
 

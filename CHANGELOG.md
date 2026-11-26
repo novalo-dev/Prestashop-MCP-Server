@@ -162,6 +162,12 @@ the gender they stand for and their image. The assistant now finds the title
 to give a customer it creates or changes in this list, instead of learning it
 from a refusal.
 
+**Create a social title.** The new tool somcp_create_title adds a title to
+Shop Parameters > Customer Settings, tab Titles, as Add new title does: its
+name in each language, the gender it stands for and an optional image, resized
+as the form resizes it. A title whose image the shop cannot read is not kept,
+so a failed call leaves nothing behind.
+
 ### Changed
 
 **Find the vouchers that run out.** The list of cart rules can be filtered by

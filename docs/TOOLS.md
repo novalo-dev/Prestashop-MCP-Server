@@ -4126,7 +4126,8 @@ Unknown arguments through `SomcpTool::unknownFields()`.
 
 The names are read through `SomcpToolCreateCustomer::titles()`, the one query
 behind `SomcpToolCreateCustomer::genders()`, so the customer tools and the
-list never name a title differently.
+list never name a title differently. Each item is built by
+`SomcpToolListTitles::item()`, which `somcp_create_title` answers with too.
 
 **The image** - the kind `gender_image` of `SomcpDownload::KINDS`, reader
 `somcp_list_titles`, kept at `_PS_GENDERS_DIR_ . <id_gender> . '.jpg'` with no
@@ -4143,6 +4144,72 @@ shop does not have.
 **Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony
 on 9.0.0) and the word of the third gender (**Neutral** / **Other**); the
 table and the object are the same.
+
+#### `somcp_create_title`
+**State**: written · [issue #439](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/439)
+**Nature**: `acts(ADD, 'AdminGenders')` · **Scope**: `mcp.customers.write`, as `somcp_create_customer`
+
+**Does** - creates a social title of **Shop Parameters > Customer Settings**,
+tab **Titles**, as **Add new title** then **Save** do: its name in each
+language, the gender it stands for and its image. One title per call. Read
+`somcp_list_titles` first: two titles may share a name.
+
+**Do not use for** - changing a title (→ `somcp_update_title`); the title of a
+customer (→ `somcp_update_customer`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `name` | **Social title** (8.0.1) / **Title** (9.0.0) | object | required, one text per language keyed by ISO code, through `SomcpToolCreateProduct::languages()` and `texts()` as `somcp_create_contact` takes its `name` (#149); trimmed; never empty; 20 characters at most (`name (<iso>): 20 characters at most`); the `isCatalogName` rule of 9.0.0 on both versions (`name (<iso>): no <, >, ;, =, #, { or }`) |
+| `languages` | | array | as `somcp_create_contact` |
+| `gender` | **Gender** | string | required: `male`, `female` or `other`, the words `somcp_list_titles` answers (`SomcpToolListTitles::GENDERS`); anything else through `SomcpTool::oneOf('gender', ...)` |
+| `image` | **Image** | object | optional: `SomcpUpload::schema()`, read with `SomcpUpload::argument()` and fetched by `SomcpToolUpdateLanguage::fetch()` (`SomcpUpload::fetchImage()`), as the `flag` of `somcp_create_language`; `files: ['image' => SomcpUpload::images()]` |
+| `image_width` | **Image width** | integer | optional, 0 at least, 16 when left out as the form shows; only with `image` (`image_width: only with image`) |
+| `image_height` | **Image height** | integer | optional, 0 at least, 16 when left out; only with `image` |
+
+The picture is resized only when width and height are both above 0, otherwise
+kept at its own size, as 8.0.1 decides and as the help of both screens says.
+Unknown arguments through `SomcpTool::unknownFields()`; `id_gender` is refused
+as unknown: an item of `somcp_list_titles` given back is not a creation. The
+checks live in `SomcpToolCreateTitle::planTitle($arguments, $idShop, $errors,
+$required)`, which `somcp_update_title` calls with `$required = false`.
+
+**Then** - the image is fetched before anything is written; then `new
+Gender()`, its names (a language not filled takes the default one's, as the
+form fills it) and `type` 0, 1 or 2, `add()`. Then the image, through
+`SomcpToolCreateTitle::storeImage($idGender, $file, $width, $height)`:
+`Gender::deleteImage()`, `ImageManager::resize()` to
+`_PS_GENDERS_DIR_ . <id_gender> . '.jpg'`, forced to JPEG (the storefront and
+`SomcpDownload::stored()` ask for `.jpg`), then the cached thumbnails of both
+versions removed (`img/tmp/gender_mini_<id>_<id_shop>.jpg` for every shop,
+`img/tmp/genders_mini_<id>.jpg`). A refused image deletes the title just
+created, so a failed call leaves nothing: `The social title could not be
+created: the image <reason>.` Log line `title_created` with the `id_gender`
+only.
+
+**Returns** - `created: true` and the title as `somcp_list_titles` answers one
+item, built by the same `SomcpToolListTitles::item()`: `id_gender`, `name`
+(default language), `names` (every active language), `gender`, `image`
+(`SomcpDownload::offer('gender_image', ...)`, `null` without a file).
+`warning` when the shop runs several shops: `A social title is shared by every
+shop: it is offered on all of them.`
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`: an unknown argument, `name` missing, empty, too long or with a refused
+character, `gender` missing or unknown, an `image` that is not one picture,
+`image_width` or `image_height` not a whole number of 0 at least or given
+without `image`, an unknown language (#149).
+
+**Notes** - changes the shop: the assistant asks first. Not replayable: a
+second call creates a second title. A title has no shop table: it is shared by
+every shop.
+
+**Differences between 8.0.1 and 9.0.0** - the label of the name (**Social
+title** / **Title**); the validation of the name (`isString` on 8.0.1,
+`isCatalogName` on 9.0.0: the tool applies the stricter one on both, so a
+title created on 8.0.1 stays valid after an upgrade); the name of the cached
+thumbnail (both removed). The rest is the same.
 
 #### `somcp_list_contacts`
 **State**: written · [issue #413](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/413)

@@ -414,6 +414,86 @@ if ($createStatus !== null && $deleteStatus !== null) {
     }
 }
 
+// A social title created with an image (#439), then found in the list with
+// that image as a download_ref. The demo titles 1 and 2 are never touched;
+// the title made here is deleted in the cleanup, with its image, whatever
+// happens, until somcp_delete_title exists.
+$createTitle = $registry->get('somcp_create_title');
+$listTitles = $registry->get('somcp_list_titles');
+if ($createTitle !== null && $listTitles !== null) {
+    $calls += 2;
+    $titleCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $titleText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idTitle = 0;
+    try {
+        // The smallest valid GIF: one transparent pixel.
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $createTitle, 'image');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+        $entered = $invitation === null
+            ? 'no deposit could be opened'
+            : SomcpUpload::enter($invitation, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'title.gif');
+        if ($entered !== '') {
+            $failures[] = 'somcp_create_title (a GIF image): the GIF was not deposited - ' . $entered;
+        } else {
+            $result = $titleCall($createTitle, [
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp Dr.'],
+                'gender' => 'other',
+                'image' => ['upload_ref' => $reference],
+            ]);
+            $created = json_decode(trim($titleText($result)), true);
+            $idTitle = is_array($created) ? (int) ($created['id_gender'] ?? 0) : 0;
+            if (!empty($result['isError']) || $idTitle <= 0 || empty($created['created'])
+                || ($created['gender'] ?? '') !== 'other' || empty($created['image'])) {
+                $failures[] = 'somcp_create_title (a title with a GIF image): expected it created with its image - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_title (a title with a GIF image)');
+                $listed = json_decode(trim($titleText($titleCall($listTitles, []))), true);
+                $found = null;
+                foreach ((array) ($listed['titles'] ?? []) as $title) {
+                    if ((int) ($title['id_gender'] ?? 0) === $idTitle) {
+                        $found = $title;
+                    }
+                }
+                if (!is_array($found) || ($found['names']['en'] ?? '') !== 'Somcp Dr.' || empty($found['image'])) {
+                    $failures[] = 'somcp_list_titles (the title just created): expected it listed with its image';
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_list_titles (the title just created, with its image)');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_title (a title with a GIF image): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idTitle > 0) {
+            $left = new Gender($idTitle);
+            if (Validate::isLoadedObject($left)) {
+                $left->deleteImage();
+                $left->delete();
+            }
+        }
+    }
+}
+
 // A logged e-mail deleted twice (#424): the recipients of the demo lines are
 // real addresses and the test e-mail is not logged, so the line is written
 // here through the Mail object, as Mail::send() writes it. Deleting it must

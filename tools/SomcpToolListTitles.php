@@ -40,7 +40,7 @@ class SomcpToolListTitles
      * The screen calls the third one Neutral on 8.0 and Other on 9.0; the tool
      * says other on both, so an answer does not change with the version.
      */
-    private const GENDERS = [0 => 'male', 1 => 'female', 2 => 'other'];
+    public const GENDERS = [0 => 'male', 1 => 'female', 2 => 'other'];
 
     /**
      * @return SomcpTool
@@ -95,23 +95,9 @@ class SomcpToolListTitles
         }
         [$idLang, $iso] = $language;
 
-        $languages = SomcpTool::activeLanguages($idShop);
-
         $titles = [];
         foreach (SomcpToolCreateCustomer::titles() as $idGender => $title) {
-            $names = [];
-            foreach ($languages as $idLanguage => $code) {
-                $names[$code] = $title['names'][$idLanguage] ?? '';
-            }
-            $titles[] = [
-                'id_gender' => $idGender,
-                'name' => $title['names'][$idLang] ?? '',
-                'names' => $names,
-                'gender' => self::GENDERS[$title['type']] ?? 'other',
-                // Null when the title has no image file, as the Image column
-                // then shows none.
-                'image' => SomcpDownload::offer('gender_image', $idGender, $idShop),
-            ];
+            $titles[] = self::item($idGender, $title, $idLang, $idShop);
         }
 
         return SomcpTool::json([
@@ -119,5 +105,36 @@ class SomcpToolListTitles
             'count' => count($titles),
             'language' => $iso,
         ]);
+    }
+
+    /**
+     * One title as the list answers it.
+     *
+     * Public so somcp_create_title answers the title it wrote in this very
+     * shape, rather than a second one that could drift.
+     *
+     * @param int $idGender
+     * @param array{type: int, names: array<int, string>} $title as SomcpToolCreateCustomer::titles() reads it
+     * @param int $idLang the language of name
+     * @param int $idShop
+     *
+     * @return array<string, mixed>
+     */
+    public static function item(int $idGender, array $title, int $idLang, int $idShop): array
+    {
+        $names = [];
+        foreach (SomcpTool::activeLanguages($idShop) as $idLanguage => $code) {
+            $names[$code] = $title['names'][$idLanguage] ?? '';
+        }
+
+        return [
+            'id_gender' => $idGender,
+            'name' => $title['names'][$idLang] ?? '',
+            'names' => $names,
+            'gender' => self::GENDERS[$title['type']] ?? 'other',
+            // Null when the title has no image file, as the Image column
+            // then shows none.
+            'image' => SomcpDownload::offer('gender_image', $idGender, $idShop),
+        ];
     }
 }

@@ -1218,6 +1218,10 @@ T = {
  "Créer un contact",
  "Crear un contacto",
  "Einen Kontakt anlegen"),
+"Change a contact": (
+ "Modifier un contact",
+ "Modificar un contacto",
+ "Einen Kontakt ändern"),
 "Change the order settings": (
  "Modifier les paramètres des commandes",
  "Cambiar los parámetros de pedidos",

@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a contact that does not exist, and nothing changed", "arguments": {"id_contact": 999999, "customer_service": true}, "expect": "error", "contains": ["Nothing was changed.", "somcp_list_contacts"]},
+    {"why": "not an address, and the demo contact left as it is", "arguments": {"id_contact": 1, "email": "nope"}, "expect": "error", "contains": ["- email: an e-mail address"]},
+    {"why": "an unknown field", "arguments": {"id_contact": 1, "x": 1}, "expect": "error", "contains": ["Nothing was changed.", "- x: not a field of this tool"]}
+  ]
+}

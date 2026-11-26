@@ -3751,6 +3751,33 @@ if ($createContact !== null && $listContacts !== null) {
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_list_contacts (after the create, listed)');
         }
+
+        // The update of the same contact (#428): two fields changed, then its
+        // list item given back whole, which must change nothing.
+        $updateContact = $registry->get('somcp_update_contact');
+        if ($updateContact !== null && $idTestContact > 0) {
+            $calls += 2;
+            $text = $contactCall($updateContact, ['id_contact' => $idTestContact, 'email' => 'somcp-other@example.com', 'customer_service' => false]);
+            if (strpos($text, '"changed": true') === false || strpos($text, 'somcp-other@example.com') === false) {
+                $failures[] = 'somcp_update_contact (two fields): expected them changed - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact (two fields)');
+            }
+
+            $item = null;
+            $listed = json_decode(trim(preg_replace('/^ERROR\n/', '', $contactCall($listContacts, []))), true);
+            foreach (is_array($listed) ? ($listed['contacts'] ?? []) : [] as $row) {
+                if ((int) ($row['id_contact'] ?? 0) === $idTestContact) {
+                    $item = $row;
+                }
+            }
+            $text = $item !== null ? $contactCall($updateContact, $item) : 'no list item';
+            if (strpos($text, '"changed": false') === false) {
+                $failures[] = 'somcp_update_contact (its list item given back): expected no change - ' . substr($text, 0, 300);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact (its list item given back, no change)');
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_contact (every field): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {

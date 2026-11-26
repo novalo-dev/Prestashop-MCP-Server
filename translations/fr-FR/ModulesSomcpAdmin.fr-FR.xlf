@@ -1532,6 +1532,11 @@
       <source>Create a contact</source>
       <target>Créer un contact</target>
     </trans-unit>
+    <!-- Change a contact -->
+    <trans-unit id="4ece9bfa7cb2c80fd19a5b9722393d93" resname="Change a contact">
+      <source>Change a contact</source>
+      <target>Modifier un contact</target>
+    </trans-unit>
     <!-- Change the order settings -->
     <trans-unit id="3a474448782c3d5b952512199ad9c9b1" resname="Change the order settings">
       <source>Change the order settings</source>

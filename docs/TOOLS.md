@@ -4250,6 +4250,58 @@ answer: unknown arguments, `name` missing, the rules above, a language of
 **Differences between 8.0.1 and 9.0.0** - the label of the shop field only
 (**Shop association** / **Store association**), not taken by the tool.
 
+#### `somcp_update_contact`
+**State**: written · [issue #428](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/428)
+**Nature**: `acts(EDIT, 'AdminContacts')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer`
+
+**Does** - changes a contact of **Shop Parameters > Contact**, as **Edit**
+then **Save** do. Only the fields given change.
+
+**Do not use for** - choosing which contact receives the messages (→
+`somcp_update_email_settings`, `send_emails_to`); creating one (→
+`somcp_create_contact`).
+
+**Parameters**
+
+| Name | Type | Required | Rule |
+|---|---|---|---|
+| `id_contact` | integer | yes | from `somcp_list_contacts`; `SomcpTool::notAnIdentifier('id_contact')`; unknown or not of this shop: `SomcpTool::notFound('id_contact', 'contact', <id>, 'somcp_list_contacts')` |
+| `languages`, `name`, `email`, `customer_service`, `description` | | no | the rules of `somcp_create_contact`, through the same function (`SomcpToolCreateContact::planContact()`); `name` and `description` per language keyed by ISO code, a language left out keeping its text; `email` given `""` empties the address, as the form allows |
+
+A plain text of `name` or `description` equal to a stored text (one item of
+`somcp_list_contacts` given back, which answers them in one language) is no
+change, through `SomcpToolCreateProduct::givenBackAsRead()`, as
+`somcp_update_country` takes its name. `used_for_customer_messages` of the
+list is accepted when it equals the stored state and refused otherwise
+(`used_for_customer_messages: not set by this tool - change send_emails_to
+with somcp_update_email_settings`). Unknown arguments through
+`SomcpTool::unknownFields()`.
+
+**Then** - as `EditContactHandler` does, on the `Contact` object: each field
+is compared with the stored contact; nothing differs: `changed: false`,
+nothing saved. Otherwise the fields that differ are set, the shop of the token
+kept as the shop list (its other shops untouched), then `update()`. A `false`
+or an exception: a tool error `The contact could not be changed: <reason>.`,
+logged as `contact_update_failed`. Logged as `contact_updated` with the
+`id_contact` and the names of the changed fields, never their values.
+
+**Returns** - the shape of every update tool (#356): `changed` (boolean),
+`changes` (per field its `field`, `old`, `new`; a text per language as `name
+(<iso>)`), `reason` when nothing changed, and `contact`: the contact as
+`somcp_list_contacts` gives one item (through `SomcpToolListContacts::item()`)
+in the shop's default language, plus `names` and `descriptions`: every
+language, keyed by ISO code, as `somcp_create_contact` answers it.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: unknown arguments, `id_contact` missing, not an identifier or
+unknown, the rules of `somcp_create_contact`, given in one answer.
+
+**Notes**
+- Changes the shop: the assistant asks first. Replayable: a second call answers `changed: false`.
+- The JSON scenario checks the refusals only, so the demo contacts 1 and 2 are never changed; the shop test changes the address and **Save messages?** of the contact it created, then gives its list item back whole (`changed: false`), before deleting it.
+
+**Differences between 8.0.1 and 9.0.0** - none for the fields the tool takes.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

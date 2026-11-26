@@ -23,7 +23,7 @@ declare(strict_types=1);
  * object what the core's AddContactHandler does: the title of every language
  * being filled, the address, Save messages? and the description, checked
  * with the rules of the back office form (ContactType), then add() for the
- * shop of the token. The checks are public so the update of a contact applies
+ * shop of the token. The checks are public so somcp_update_contact applies
  * the very same ones.
  */
 
@@ -57,7 +57,7 @@ class SomcpToolCreateContact extends SomcpToolCreateProduct
                 . 'that receives its messages, whether they are kept in Customer Service, a description. The contact '
                 . 'form of the storefront offers it, and somcp_update_email_settings can make it the receiver of '
                 . 'the messages (send_emails_to). Read somcp_list_contacts first: two contacts may share a title. One '
-                . 'contact per call, not to be retried.',
+                . 'contact per call, not to be retried. To change one use somcp_update_contact.',
             self::contactSchema(['name']),
             [SomcpScope::CUSTOMERS_WRITE],
             [self::class, 'handle'],
@@ -175,7 +175,7 @@ class SomcpToolCreateContact extends SomcpToolCreateProduct
     /**
      * The fields given, checked with the rules of the back office form.
      *
-     * Public so the update of a contact checks with the same rules. Every
+     * Public so somcp_update_contact checks with the same rules. Every
      * problem is added to $errors, so a call is corrected in one go. The
      * texts are keyed by language identifier, for the languages being filled
      * only; a field left out is absent from the plan.

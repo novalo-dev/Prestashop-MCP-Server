@@ -144,6 +144,11 @@ and a description, checked with the rules of the back office form. The answer
 gives the contact as the list shows it, ready for Send emails to of
 somcp_update_email_settings.
 
+**Change a contact.** The new tool somcp_update_contact does what Edit then
+Save of a contact do, with the same checks as the creation. Only the fields
+given change, a language left out keeps its text, and a contact of the list
+given back as it is changes nothing.
+
 **List the social titles.** The new tool somcp_list_titles lists the titles of
 Shop Parameters > Customer Settings, tab Titles: their name in each language,
 the gender they stand for and their image. The assistant now finds the title

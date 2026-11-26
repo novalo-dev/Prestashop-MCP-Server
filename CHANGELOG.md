@@ -16,6 +16,8 @@ are:
 
 ## Unreleased
 
+## 2.0.6 - 2026-11-26
+
 ### Added
 
 **Change the shipping preferences.** The new tool

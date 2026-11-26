@@ -35,6 +35,11 @@ only the customers whose default group it is: a customer who belongs to the
 group with another default group is now found, and the list agrees with the
 Members count of the groups.
 
+**Customer groups by discount, members and date.** The list of customer
+groups can be filtered by discount, number of members and creation date, and
+sorted as the back office list: the groups that give a discount, or those
+nobody is in, no longer need the back office.
+
 ## 2.0.6 - 2026-11-26
 
 ### Added

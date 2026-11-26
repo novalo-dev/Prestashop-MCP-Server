@@ -33,8 +33,17 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+// The checks of a range and of a period, worded as the list of cart rules words them.
+require_once __DIR__ . '/SomcpToolListCartRules.php';
+
 class SomcpToolListCustomerGroups
 {
+    /** @var array<int, string> The orders of the list, as its sortable columns; Show prices has none. */
+    public const SORTS = [
+        'id_asc', 'id_desc', 'name_asc', 'name_desc', 'reduction_asc', 'reduction_desc',
+        'members_asc', 'members_desc', 'date_add_asc', 'date_add_desc',
+    ];
+
     /**
      * @return SomcpTool
      */
@@ -66,6 +75,37 @@ class SomcpToolListCustomerGroups
                         'type' => 'boolean',
                         'description' => 'true for the groups that show prices, false for those that hide them '
                             . '(Show prices). Left out, every group.',
+                    ],
+                    'reduction_min' => [
+                        'type' => 'number',
+                        'description' => 'Lowest Discount (%), included, 0 to 100: 0.01 lists the groups that give a '
+                            . 'discount.',
+                    ],
+                    'reduction_max' => [
+                        'type' => 'number',
+                        'description' => 'Highest Discount (%), included, 0 to 100, not below reduction_min.',
+                    ],
+                    'members_min' => [
+                        'type' => 'integer',
+                        'description' => 'Fewest Members, included, as members_count counts them.',
+                    ],
+                    'members_max' => [
+                        'type' => 'integer',
+                        'description' => 'Most Members, included, not below members_min: 0 lists the empty groups.',
+                    ],
+                    'date_from' => [
+                        'type' => 'string',
+                        'description' => 'Earliest Creation date, YYYY-MM-DD, included.',
+                    ],
+                    'date_to' => [
+                        'type' => 'string',
+                        'description' => 'Latest Creation date, YYYY-MM-DD, included, not before date_from.',
+                    ],
+                    'sort' => [
+                        'type' => 'string',
+                        'enum' => self::SORTS,
+                        'description' => 'Order of the list, as its columns sort it; ties by id_group. id_asc by '
+                            . 'default.',
                     ],
                     'language' => [
                         'type' => 'string',
@@ -100,7 +140,10 @@ class SomcpToolListCustomerGroups
         // A misspelt or wrongly typed filter would otherwise be ignored and
         // every group answered as if nothing narrowed the list: each mistake
         // is named, all in one answer, so the call is corrected in one go.
-        $errors = SomcpTool::unknownFields($arguments, ['id_group', 'name', 'show_prices', 'language']);
+        $errors = SomcpTool::unknownFields($arguments, [
+            'id_group', 'name', 'show_prices', 'reduction_min', 'reduction_max', 'members_min', 'members_max',
+            'date_from', 'date_to', 'sort', 'language',
+        ]);
         if ($language === null) {
             $errors[] = SomcpTool::languageProblem($idShop);
         }
@@ -127,6 +170,28 @@ class SomcpToolListCustomerGroups
                 $errors[] = 'show_prices: true or false';
             }
         }
+        // The Discount (%) column holds a percent: a number from 0 to 100.
+        foreach (['reduction_min', 'reduction_max'] as $field) {
+            if (array_key_exists($field, $arguments) && $arguments[$field] !== null
+                && ((!is_int($arguments[$field]) && !is_float($arguments[$field])) || $arguments[$field] < 0 || $arguments[$field] > 100)) {
+                $errors[] = $field . ': a number from 0 to 100';
+            }
+        }
+        if (is_numeric($arguments['reduction_min'] ?? null) && is_numeric($arguments['reduction_max'] ?? null)
+            && !is_string($arguments['reduction_min']) && !is_string($arguments['reduction_max'])
+            && $arguments['reduction_max'] < $arguments['reduction_min']) {
+            $errors[] = 'reduction_max: a number not below reduction_min';
+        }
+        SomcpToolListCartRules::checkWholeRange($arguments, 'members_min', 'members_max', 0, $errors);
+        SomcpToolListCartRules::checkPeriod($arguments, 'date_from', 'date_to', $errors);
+        $sort = 'id_asc';
+        if (array_key_exists('sort', $arguments) && $arguments['sort'] !== null) {
+            if (!is_string($arguments['sort']) || !in_array($arguments['sort'], self::SORTS, true)) {
+                $errors[] = SomcpTool::oneOf('sort', self::SORTS);
+            } else {
+                $sort = $arguments['sort'];
+            }
+        }
         if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
@@ -136,7 +201,18 @@ class SomcpToolListCustomerGroups
             'id_group' => $idGroupFilter,
             'name' => $name,
             'show_prices' => $showPrices,
+            'reduction_min' => isset($arguments['reduction_min']) ? (float) $arguments['reduction_min'] : null,
+            'reduction_max' => isset($arguments['reduction_max']) ? (float) $arguments['reduction_max'] : null,
+            'date_from' => SomcpTool::day($arguments['date_from'] ?? null),
+            'date_to' => SomcpTool::day($arguments['date_to'] ?? null),
         ]);
+        // Members is a count, the havingFilter of the list: filtered on the
+        // members_count answered, so the filter and the answer never disagree.
+        $groups = array_values(array_filter($groups, static function (array $group) use ($arguments): bool {
+            return (!isset($arguments['members_min']) || $group['members_count'] >= (int) $arguments['members_min'])
+                && (!isset($arguments['members_max']) || $group['members_count'] <= (int) $arguments['members_max']);
+        }));
+        $groups = self::sorted($groups, $sort);
 
         return SomcpTool::json([
             'groups' => $groups,
@@ -155,7 +231,7 @@ class SomcpToolListCustomerGroups
      * @param int $idShop
      * @param int $idShopGroup
      * @param int $idLang the language of name
-     * @param array{id_group?: int, name?: string, show_prices?: bool|null} $filters
+     * @param array{id_group?: int, name?: string, show_prices?: bool|null, reduction_min?: float|null, reduction_max?: float|null, date_from?: string|null, date_to?: string|null} $filters
      *
      * @return array<int, array<string, mixed>>
      */
@@ -188,6 +264,19 @@ class SomcpToolListCustomerGroups
         if (isset($filters['show_prices'])) {
             $query->where('g.`show_prices` = ' . ($filters['show_prices'] ? 1 : 0));
         }
+        if (isset($filters['reduction_min'])) {
+            $query->where('g.`reduction` >= ' . (float) $filters['reduction_min']);
+        }
+        if (isset($filters['reduction_max'])) {
+            $query->where('g.`reduction` <= ' . (float) $filters['reduction_max']);
+        }
+        // Whole days, as the From / To pair of the Creation date column.
+        if (isset($filters['date_from'])) {
+            $query->where("g.`date_add` >= '" . pSQL($filters['date_from']) . " 00:00:00'");
+        }
+        if (isset($filters['date_to'])) {
+            $query->where("g.`date_add` <= '" . pSQL($filters['date_to']) . " 23:59:59'");
+        }
         $query->orderBy('g.`id_group` ASC');
 
         $members = self::membersCount($idShop);
@@ -213,6 +302,33 @@ class SomcpToolListCustomerGroups
                 'default_for' => $defaultFor,
             ];
         }
+
+        return $groups;
+    }
+
+    /**
+     * The groups in the order asked, ties by id_group ascending.
+     *
+     * Sorted here rather than in SQL: Members is a count read apart, and the
+     * list answers every group in one page.
+     *
+     * @param array<int, array<string, mixed>> $groups
+     * @param string $sort one of SORTS
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function sorted(array $groups, string $sort): array
+    {
+        $way = substr($sort, -4) === 'desc' ? -1 : 1;
+        $column = ['id' => 'id_group', 'name' => 'name', 'reduction' => 'reduction', 'members' => 'members_count',
+            'date_add' => 'date_add'][substr($sort, 0, strrpos($sort, '_') ?: 0)] ?? 'id_group';
+        usort($groups, static function (array $a, array $b) use ($column, $way): int {
+            $order = $column === 'name'
+                ? strcmp(Tools::strtolower((string) $a['name']), Tools::strtolower((string) $b['name']))
+                : $a[$column] <=> $b[$column];
+
+            return $order !== 0 ? $way * $order : $a['id_group'] <=> $b['id_group'];
+        });
 
         return $groups;
     }

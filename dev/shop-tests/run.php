@@ -553,6 +553,76 @@ if ($createTitle !== null && $listTitles !== null) {
     }
 }
 
+// The filters and orders of the list of groups (#447): a Discount of 5 on
+// group 2, read back by reduction_min; group 1, Visitor, has no member in the
+// demo data; the Discount is set back in a finally.
+$listGroups = $registry->get('somcp_list_customer_groups');
+if ($listGroups !== null) {
+    $calls += 3;
+    $listCall = static function (array $arguments) use ($listGroups, $context, $employee): array {
+        $result = $listGroups->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $listGroups->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $guest = new Group(2);
+    $guestReduction = (float) $guest->reduction;
+    try {
+        $guest->reduction = 5;
+        $guest->update();
+        // Compared with the whole list rather than fixed numbers: another test
+        // may have left a customer in a group, or a group of its own.
+        $all = $listCall([])['groups'] ?? [];
+        $ids = static function (array $groups): array {
+            return array_map('intval', array_column($groups, 'id_group'));
+        };
+        $expectDiscounted = $ids(array_filter($all, static function (array $g): bool { return (float) $g['reduction'] >= 0.01; }));
+        $expectEmpty = $ids(array_filter($all, static function (array $g): bool { return (int) $g['members_count'] === 0; }));
+        $discounted = $ids($listCall(['reduction_min' => 0.01])['groups'] ?? []);
+        $empty = $ids($listCall(['members_max' => 0])['groups'] ?? []);
+        $byMembers = array_map('intval', array_column($listCall(['sort' => 'members_desc'])['groups'] ?? [], 'members_count'));
+        $descending = $byMembers;
+        rsort($descending);
+        if (!in_array(2, $discounted, true) || $discounted !== $expectDiscounted) {
+            $failures[] = 'somcp_list_customer_groups (reduction_min 0.01): expected ' . json_encode($expectDiscounted) . ', group 2 among them - ' . json_encode($discounted);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_customer_groups (the groups that give a discount)');
+        }
+        if ($empty !== $expectEmpty) {
+            $failures[] = 'somcp_list_customer_groups (members_max 0): expected ' . json_encode($expectEmpty) . ' - ' . json_encode($empty);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_customer_groups (the groups nobody is in)');
+        }
+        if ($byMembers === [] || $byMembers !== $descending || count($byMembers) !== count($all)) {
+            $failures[] = 'somcp_list_customer_groups (members_desc): expected the most members first - ' . json_encode($byMembers);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_customer_groups (sorted by members, most first)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_list_customer_groups (filters): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $guest = new Group(2);
+        if ((float) $guest->reduction !== $guestReduction) {
+            $guest->reduction = $guestReduction;
+            $guest->update();
+        }
+    }
+}
+
 // The members of a group (#446): customer 1, whose default group is 3, is
 // added to group 2 too. id_group finds the members, as the View page of the
 // group, while id_default_group still finds only the default ones; the row

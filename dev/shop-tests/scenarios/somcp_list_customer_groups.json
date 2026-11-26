@@ -9,6 +9,15 @@
     {"why": "a group the shop does not have narrows the list to nothing, as the filter on screen", "arguments": {"id_group": 999999}, "expect": "ok", "contains": ["\"groups\": []", "\"count\": 0"]},
     {"why": "the groups that show prices, the Show prices filter set to Yes", "arguments": {"show_prices": true}, "expect": "ok", "contains": ["\"groups\"", "\"show_prices\": true"]},
     {"why": "a misspelt field, an unknown language, a Show prices and an identifier of the wrong kind, reported together", "arguments": {"nmae": "Guest", "language": "zz", "show_prices": "yes", "id_group": "x"}, "expect": "error", "contains": ["Nothing was read.", "- nmae: not a field of this tool", "- language: not one of the shop's languages, which are ", "- show_prices: true or false", "- id_group: a whole number above 0"]},
-    {"why": "a name that is not a text is refused, not ignored into every group", "arguments": {"name": ["Guest"]}, "expect": "error", "contains": ["- name: a text"]}
+    {"why": "a name that is not a text is refused, not ignored into every group", "arguments": {"name": ["Guest"]}, "expect": "error", "contains": ["- name: a text"]},
+    {"why": "the groups created in a period that covers the demo data", "arguments": {"date_from": "2000-01-01", "date_to": "2999-12-31", "sort": "name_asc"}, "expect": "ok", "contains": ["\"groups\"", "\"name\": \"Customer\""]},
+    {"why": "a period in the future lists no group", "arguments": {"date_from": "2999-01-01"}, "expect": "ok", "contains": ["\"groups\": []", "\"count\": 0"]},
+    {"why": "a Discount outside 0 to 100 and a min above its max, refused together", "arguments": {"reduction_min": 150, "reduction_max": "a"}, "expect": "error", "contains": ["Nothing was read.", "- reduction_min: a number from 0 to 100", "- reduction_max: a number from 0 to 100"]},
+    {"why": "a highest Discount below the lowest", "arguments": {"reduction_min": 10, "reduction_max": 5}, "expect": "error", "contains": ["- reduction_max: a number not below reduction_min"]},
+    {"why": "Members below 0 and a max below its min", "arguments": {"members_min": -1}, "expect": "error", "contains": ["- members_min: a whole number, 0 at least"]},
+    {"why": "a most Members below the fewest", "arguments": {"members_min": 3, "members_max": 1}, "expect": "error", "contains": ["- members_max: a whole number not below members_min"]},
+    {"why": "a date that is not a day and a To before its From", "arguments": {"date_from": "yesterday"}, "expect": "error", "contains": ["- date_from: a date, YYYY-MM-DD"]},
+    {"why": "a creation period that ends before it starts", "arguments": {"date_from": "2026-02-01", "date_to": "2026-01-01"}, "expect": "error", "contains": ["- date_to: a date not before date_from"]},
+    {"why": "an order the list does not offer, Show prices having none", "arguments": {"sort": "show_prices_asc"}, "expect": "error", "contains": ["- sort: one of id_asc, id_desc, name_asc, name_desc, reduction_asc, reduction_desc, members_asc, members_desc, date_add_asc, date_add_desc"]}
   ]
 }

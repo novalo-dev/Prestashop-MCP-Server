@@ -210,28 +210,12 @@ class SomcpToolListCartRules
             }
         }
 
-        $minimums = ['priority' => 1, 'quantity_min' => 0, 'quantity_max' => 0];
-        foreach ($minimums as $field => $minimum) {
-            if (array_key_exists($field, $arguments) && $arguments[$field] !== null
-                && (!is_int($arguments[$field]) || $arguments[$field] < $minimum)) {
-                $problems[] = $field . ': a whole number, ' . $minimum . ' at least';
-            }
+        if (array_key_exists('priority', $arguments) && $arguments['priority'] !== null
+            && (!is_int($arguments['priority']) || $arguments['priority'] < 1)) {
+            $problems[] = 'priority: a whole number, 1 at least';
         }
-        if (is_int($arguments['quantity_min'] ?? null) && is_int($arguments['quantity_max'] ?? null)
-            && $arguments['quantity_max'] < $arguments['quantity_min']) {
-            $problems[] = 'quantity_max: a whole number not below quantity_min';
-        }
-        // Read as a day only, as the other tools that take a period do.
-        foreach (['expiration_date_from', 'expiration_date_to'] as $field) {
-            if (array_key_exists($field, $arguments) && $arguments[$field] !== null && SomcpTool::day($arguments[$field]) === null) {
-                $problems[] = $field . ': a date, YYYY-MM-DD';
-            }
-        }
-        $expiresFrom = SomcpTool::day($arguments['expiration_date_from'] ?? null);
-        $expiresTo = SomcpTool::day($arguments['expiration_date_to'] ?? null);
-        if ($expiresFrom !== null && $expiresTo !== null && $expiresTo < $expiresFrom) {
-            $problems[] = 'expiration_date_to: a date not before expiration_date_from';
-        }
+        self::checkWholeRange($arguments, 'quantity_min', 'quantity_max', 0, $problems);
+        self::checkPeriod($arguments, 'expiration_date_from', 'expiration_date_to', $problems);
         // An order outside the list is named rather than dropped for the
         // default one, which would answer a different question.
         $sort = 'id_desc';
@@ -382,6 +366,59 @@ class SomcpToolListCartRules
         }
 
         return implode(' AND ', $conditions);
+    }
+
+    /**
+     * The check of a min / max pair of whole numbers, both included.
+     *
+     * Public so the other lists word their ranges as this one does.
+     *
+     * @param array<string, mixed> $arguments
+     * @param string $min
+     * @param string $max
+     * @param int $minimum the lowest value either may take
+     * @param array<int, string> $problems
+     *
+     * @return void
+     */
+    public static function checkWholeRange(array $arguments, string $min, string $max, int $minimum, array &$problems): void
+    {
+        foreach ([$min, $max] as $field) {
+            if (array_key_exists($field, $arguments) && $arguments[$field] !== null
+                && (!is_int($arguments[$field]) || $arguments[$field] < $minimum)) {
+                $problems[] = $field . ': a whole number, ' . $minimum . ' at least';
+            }
+        }
+        if (is_int($arguments[$min] ?? null) && is_int($arguments[$max] ?? null) && $arguments[$max] < $arguments[$min]) {
+            $problems[] = $max . ': a whole number not below ' . $min;
+        }
+    }
+
+    /**
+     * The check of a From / To pair of days, both included.
+     *
+     * Read as a day only, as the other tools that take a period do. Public
+     * so the other lists word a period the same way.
+     *
+     * @param array<string, mixed> $arguments
+     * @param string $from
+     * @param string $to
+     * @param array<int, string> $problems
+     *
+     * @return void
+     */
+    public static function checkPeriod(array $arguments, string $from, string $to, array &$problems): void
+    {
+        foreach ([$from, $to] as $field) {
+            if (array_key_exists($field, $arguments) && $arguments[$field] !== null && SomcpTool::day($arguments[$field]) === null) {
+                $problems[] = $field . ': a date, YYYY-MM-DD';
+            }
+        }
+        $first = SomcpTool::day($arguments[$from] ?? null);
+        $last = SomcpTool::day($arguments[$to] ?? null);
+        if ($first !== null && $last !== null && $last < $first) {
+            $problems[] = $to . ': a date not before ' . $from;
+        }
     }
 
     /**

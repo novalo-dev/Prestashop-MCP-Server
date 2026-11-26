@@ -6261,8 +6261,7 @@ that `somcp_create_customer`, `somcp_update_customer`, the category tools and
 the specific prices of the product tools take. Read only.
 
 **Do not use for** - the members of a group (→ `somcp_search_customers` with
-`id_group`);
-one customer's groups (→ `somcp_get_customer`).
+`id_group`); one customer's groups (→ `somcp_get_customer`).
 
 **Parameters**
 
@@ -6271,7 +6270,13 @@ one customer's groups (→ `somcp_get_customer`).
 | `id_group` | integer | no | **ID**: keeps the group with this identifier; a group this shop does not have gives an empty list, as the filter on screen |
 | `name` | string | no | part of **Group name**, case-insensitive; the same parameter as `somcp_list_suppliers`, `somcp_list_manufacturers` and `somcp_list_attachments` |
 | `show_prices` | boolean | no | **Show prices** (**Yes** / **No**): `true` for the groups that show prices, `false` for those that hide them; every group when left out |
+| `reduction_min` / `reduction_max` | number | no | **Discount (%)**, the `reduction` answered, 0 to 100, both included: `reduction_min: 0.01` lists the groups that give a discount |
+| `members_min` / `members_max` | integer | no | **Members**, the `members_count` answered, 0 at least, both included, applied after the count so the filter and the answer never disagree: `members_max: 0` lists the empty groups |
+| `date_from` / `date_to` | string | no | **Creation date** (`date_add`), YYYY-MM-DD, both days included, read with `SomcpTool::day()` |
+| `sort` | string | no | `id_asc` (default), `id_desc`, `name_asc`, `name_desc`, `reduction_asc`, `reduction_desc`, `members_asc`, `members_desc`, `date_add_asc`, `date_add_desc` (`SomcpToolListCustomerGroups::SORTS`, the `<column>_<way>` of `somcp_list_cart_rules`); no **Show prices** sort, as on screen; ties by `id_group` ascending |
 | `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
+
+All filters combine with AND.
 
 **Returns** - `groups`, per group:
 
@@ -6289,12 +6294,19 @@ one customer's groups (→ `somcp_get_customer`).
 Plus `count`, `customer_groups_enabled` (**Customer groups** of
 **Performance**: when false the shop ignores groups for prices) and
 `language`. Groups of the token's shop only (`group_shop`), sorted by
-**ID** as the list.
+**ID** as the list unless `sort` says otherwise.
 
 **Errors** - every problem at once, nothing read, each under "Nothing was read.
 Correct these and call again:": a field the tool does not take; `id_group: a
-whole number above 0`; `name: a text`; `show_prices: true or false`; a language
-the shop does not have, with the ones it has.
+whole number above 0`; `name: a text`; `show_prices: true or false`;
+`reduction_min: a number from 0 to 100` (the same for `reduction_max`),
+`reduction_max: a number not below reduction_min`; `members_min: a whole
+number, 0 at least`, `members_max: a whole number not below members_min`
+(`SomcpToolListCartRules::checkWholeRange()`); `date_from: a date,
+YYYY-MM-DD`, `date_to: a date not before date_from`
+(`SomcpToolListCartRules::checkPeriod()`); `sort: one of ...`
+(`SomcpTool::oneOf()`); a language the shop does not have, with the ones it
+has.
 
 **Notes**
 - Read with one query on `group`, `group_lang` and `group_shop` for the

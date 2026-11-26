@@ -138,11 +138,12 @@ from a refusal.
 
 ### Changed
 
-**Keep a voucher to some products when changing it.** somcp_update_cart_rule
-now writes Product selection: a voucher can be kept to products, categories,
-brands, suppliers or attribute values, with the number of such products the
-cart must hold, as on the Conditions tab of the rule. "10% on the shoes" no
-longer needs the back office.
+**Keep a voucher to some products.** somcp_create_cart_rule and
+somcp_update_cart_rule now write Product selection: a voucher can be kept to
+products, categories, brands, suppliers or attribute values, with the number
+of such products the cart must hold, as on the Conditions tab of the rule, and
+is created that way in one go. "10% on the shoes" no longer needs the back
+office.
 
 **Limit a cart rule to countries, carriers and customer groups.**
 somcp_update_cart_rule refused every restriction of the Conditions tab, so a

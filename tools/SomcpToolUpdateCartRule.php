@@ -683,8 +683,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             $warnings[] = $warning;
         }
         if ($added > 0) {
-            $warnings[] = 'Product ' . $added . ' was added to Product selection, as the back office adds it: the '
-                . 'discount applies to that product.';
+            $warnings[] = self::productAddedWarning($added);
         }
         if ($warnings !== []) {
             $result['warning'] = implode(' ', $warnings);

@@ -2277,6 +2277,54 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
             }
         }
     }
+
+    // Product selection given to the creation (#434): one rule kept to the
+    // category Home (2 on every demo shop), then a 10% discount on the demo
+    // mug (6) with the same group, which the tool completes with the group of
+    // the mug as the back office does. Both deleted whatever happens.
+    $home = [['quantity' => 1, 'rules' => [['type' => 'categories', 'values' => [['id_category' => 2]]]]]];
+    foreach ([
+        'product selection' => [
+            ['languages' => ['en'], 'name' => ['en' => 'Somcp home only'], 'free_shipping' => true, 'restrictions' => ['product' => $home]],
+            ['"created": true', '"product": [', '"id_category": 2'],
+            ['"id_product": 6'],
+        ],
+        'product selection and a specific product' => [
+            ['languages' => ['en'], 'name' => ['en' => 'Somcp home mug'], 'reduction' => ['type' => 'percent', 'value' => 10, 'id_product' => 6], 'reduction_applies_to' => 'specific_product', 'restrictions' => ['product' => $home]],
+            ['"created": true', '"id_category": 2', '"type": "products"', '"id_product": 6', 'Product 6 was added to Product selection'],
+            [],
+        ],
+    ] as $label => [$arguments, $needles, $absent]) {
+        ++$calls;
+        $idRule = 0;
+        try {
+            $created = $createRule->call($arguments, $ruleContext);
+            $text = $answer($created);
+            $decoded = json_decode(trim($text), true);
+            $idRule = (int) ($decoded['id_cart_rule'] ?? 0);
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            $extra = array_values(array_filter($absent, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) !== false;
+            }));
+            if (!empty($created['isError']) || $idRule <= 0 || $missing !== [] || $extra !== []) {
+                $failures[] = 'somcp_create_cart_rule (' . $label . '): expected ' . implode(', ', $missing)
+                    . ($extra !== [] ? ', without ' . implode(', ', $extra) : '') . ' - ' . excerpt($created);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cart_rule (' . $label . ')');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_cart_rule (' . $label . '): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idRule > 0) {
+                $left = new CartRule($idRule);
+                if (Validate::isLoadedObject($left)) {
+                    $left->delete();
+                }
+            }
+        }
+    }
 }
 
 // A carrier read, given back, changed and put back (#320): the JSON scenario

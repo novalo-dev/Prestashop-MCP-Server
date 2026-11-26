@@ -291,8 +291,10 @@ class SomcpToolCreateTitle extends SomcpToolCreateProduct
         }
         $sizes = [];
         foreach (['image_width', 'image_height'] as $field) {
+            // Set before the checks so a refused size still leaves one to
+            // read below: the plan is built whole and the errors decide.
+            $sizes[$field] = self::DEFAULT_IMAGE_SIZE;
             if (!array_key_exists($field, $arguments) || $arguments[$field] === null) {
-                $sizes[$field] = self::DEFAULT_IMAGE_SIZE;
                 continue;
             }
             $value = $arguments[$field];

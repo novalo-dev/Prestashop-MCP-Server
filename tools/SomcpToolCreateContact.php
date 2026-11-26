@@ -50,6 +50,22 @@ class SomcpToolCreateContact extends SomcpToolCreateProduct
      */
     public static function define(): SomcpTool
     {
+        // The two fields an item of the list carries are declared here, not
+        // in contactSchema(), since the update declares its own id_contact: a
+        // client that checks arguments against the schema then accepts an
+        // item given back whole.
+        $schema = self::contactSchema(['name']);
+        $schema['properties']['id_contact'] = [
+            'type' => 'integer',
+            'description' => 'Comes with an item of somcp_list_contacts: ignored by a creation, which gets an '
+                . 'identifier of its own.',
+        ];
+        $schema['properties']['used_for_customer_messages'] = [
+            'type' => 'boolean',
+            'description' => 'Comes with an item of somcp_list_contacts: ignored by a creation. To choose the '
+                . 'contact that receives the customers\' messages use somcp_update_email_settings (send_emails_to).',
+        ];
+
         return new SomcpTool(
             'somcp_create_contact',
             Somcp::t('Create a contact'),
@@ -58,7 +74,7 @@ class SomcpToolCreateContact extends SomcpToolCreateProduct
                 . 'form of the storefront offers it, and somcp_update_email_settings can make it the receiver of '
                 . 'the messages (send_emails_to). Read somcp_list_contacts first: two contacts may share a title. One '
                 . 'contact per call, not to be retried. To change one use somcp_update_contact.',
-            self::contactSchema(['name']),
+            $schema,
             [SomcpScope::CUSTOMERS_WRITE],
             [self::class, 'handle'],
             SomcpTool::acts(SomcpPermission::ADD, 'AdminContacts')

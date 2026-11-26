@@ -147,7 +147,8 @@ somcp_update_email_settings.
 **Change a contact.** The new tool somcp_update_contact does what Edit then
 Save of a contact do, with the same checks as the creation. Only the fields
 given change, a language left out keeps its text, and a contact of the list
-given back as it is changes nothing.
+given back as it is changes nothing. A contact of the list given back whole is
+accepted by every assistant, to the creation as to the change.
 
 **Delete a contact.** The new tool somcp_delete_contact does what Delete does
 on a contact of Shop Parameters > Contact. It answers the contact as it was, in

@@ -4213,8 +4213,12 @@ stores of the **Stores** tab (not covered).
 | `email` | string | no | **Email address**, `Validate::isEmail()`, 255 at most (`email: an e-mail address`); empty when left out, as the form |
 | `customer_service` | boolean | no | **Save messages?**, `false` when left out, as the switch opens (`customer_service: true or false`) |
 | `description` | object | no | **Description**, one text per language keyed by ISO code; a text holding an HTML tag refused (`description (<iso>): no HTML tag`, the `NoTags` check `strip_tags($text) !== $text`) |
+| `id_contact` | integer | no | comes with an item of `somcp_list_contacts`: ignored by a creation, which gets an identifier of its own |
+| `used_for_customer_messages` | boolean | no | comes with an item of `somcp_list_contacts`: ignored by a creation; the receiver of the messages is chosen with `somcp_update_email_settings` (`send_emails_to`) |
 
-Unknown arguments through `SomcpTool::unknownFields()`; `id_contact` and
+Both are declared in the schema of `define()`, not in `contactSchema()`, so a
+client that checks arguments against the schema accepts an item of the list
+given back whole. Unknown arguments through `SomcpTool::unknownFields()`; `id_contact` and
 `used_for_customer_messages`, which the list answers, are named as worked out
 by the shop. The form fills an empty language with the default language's
 text; the tool keeps the rule of #149 instead (every language being filled
@@ -4267,6 +4271,7 @@ then **Save** do. Only the fields given change.
 |---|---|---|---|
 | `id_contact` | integer | yes | from `somcp_list_contacts`; `SomcpTool::notAnIdentifier('id_contact')`; unknown or not of this shop: `SomcpTool::notFound('id_contact', 'contact', <id>, 'somcp_list_contacts')` |
 | `languages`, `name`, `email`, `customer_service`, `description` | | no | the rules of `somcp_create_contact`, through the same function (`SomcpToolCreateContact::planContact()`); `name` and `description` per language keyed by ISO code, a language left out keeping its text; `email` given `""` empties the address, as the form allows |
+| `used_for_customer_messages` | boolean | no | read by `somcp_list_contacts`: taken only as the list gives it, so an item can be given back whole; the receiver of the messages is chosen with `somcp_update_email_settings` (`send_emails_to`) |
 
 A plain text of `name` or `description` equal to a stored text (one item of
 `somcp_list_contacts` given back, which answers them in one language) is no

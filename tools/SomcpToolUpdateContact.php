@@ -47,6 +47,13 @@ class SomcpToolUpdateContact
                 'description' => 'The contact to change, from somcp_list_contacts.',
             ],
         ] + $schema['properties'];
+        // Declared so a client that checks arguments against the schema
+        // accepts an item of the list given back whole.
+        $schema['properties']['used_for_customer_messages'] = [
+            'type' => 'boolean',
+            'description' => 'Read by somcp_list_contacts: taken only as the list gives it, so an item can be given '
+                . 'back whole. To choose the receiver of the messages use somcp_update_email_settings (send_emails_to).',
+        ];
 
         return new SomcpTool(
             'somcp_update_contact',

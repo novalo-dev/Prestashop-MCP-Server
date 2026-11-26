@@ -3802,6 +3802,26 @@ if ($createContact !== null && $listContacts !== null) {
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_contact (its list item given back, no change)');
             }
+
+            // Every key of the list item is a property of both schemas (#435),
+            // so a field added to the list later cannot make a client that
+            // checks arguments against the schema refuse the item given back.
+            ++$calls;
+            $undeclared = [];
+            foreach (['somcp_update_contact' => $updateContact, 'somcp_create_contact' => $createContact] as $toolName => $tool) {
+                $properties = $tool->describe()['inputSchema']['properties'] ?? [];
+                foreach (array_keys($item ?? []) as $key) {
+                    if (!array_key_exists($key, $properties)) {
+                        $undeclared[] = $toolName . ': ' . $key;
+                    }
+                }
+            }
+            if ($item === null || $undeclared !== []) {
+                $failures[] = 'somcp_list_contacts (its item against the schemas): expected every key declared - '
+                    . ($item === null ? 'no list item' : implode(', ', $undeclared));
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_contacts (its item against the schemas)');
+            }
         }
 
         // The delete of the same contact (#429): it answers the contact as it

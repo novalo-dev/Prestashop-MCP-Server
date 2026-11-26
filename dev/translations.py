@@ -1182,6 +1182,10 @@ T = {
  "Supprimer un e-mail envoyé de la liste",
  "Eliminar un correo electrónico enviado de la lista",
  "Eine gesendete E-Mail aus der Liste löschen"),
+"Erase the list of sent e-mails": (
+ "Effacer la liste des e-mails envoyés",
+ "Borrar la lista de correos electrónicos enviados",
+ "Die Liste der gesendeten E-Mails leeren"),
 "Read the order settings": (
  "Lire les paramètres des commandes",
  "Leer los parámetros de pedidos",

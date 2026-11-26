@@ -3576,6 +3576,62 @@ if ($deleteCategory !== null) {
     }
 }
 
+// The list of sent e-mails erased (#425), last of all the calls: the
+// scenarios read that list, and the JSON one cannot run after them. Erasing it
+// must answer erased, a second time must find nothing left, and the list must
+// then be empty.
+$eraseEmailLogs = $registry->get('somcp_erase_email_logs');
+$listEmailLogs = $registry->get('somcp_list_email_logs');
+if ($eraseEmailLogs !== null && $listEmailLogs !== null) {
+    $eraseCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $eraseText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 3;
+    try {
+        $result = $eraseCall($eraseEmailLogs, []);
+        if (!empty($result['isError']) || strpos($eraseText($result), '"erased": true') === false) {
+            $failures[] = 'somcp_erase_email_logs (the list erased): expected it erased - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_erase_email_logs (the list erased)');
+        }
+
+        $result = $eraseCall($eraseEmailLogs, []);
+        if (!empty($result['isError']) || strpos($eraseText($result), '"deleted_count": 0') === false) {
+            $failures[] = 'somcp_erase_email_logs (erased again): expected nothing left - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_erase_email_logs (erased again, nothing left)');
+        }
+
+        $result = $eraseCall($listEmailLogs, []);
+        if (!empty($result['isError']) || strpos($eraseText($result), '"total_count": 0') === false) {
+            $failures[] = 'somcp_list_email_logs (after the erase): expected an empty list - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_email_logs (after the erase, empty)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_erase_email_logs (the list erased): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // Permissions. The calls above run as a superadmin holding exactly the scopes
 // each tool needs; what matters as much is who is turned away. Checked on the
 // registry's own gate - isAvailableTo(), which decides both the listing and

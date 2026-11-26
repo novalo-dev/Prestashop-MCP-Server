@@ -70,6 +70,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_email_settings`
 - `somcp_list_email_logs`
 - `somcp_delete_email_log`
+- `somcp_erase_email_logs`
 - `somcp_get_order_settings`
 - `somcp_update_order_settings`
 - `somcp_get_product_settings`
@@ -290,6 +291,9 @@ merchant needs.
 `somcp_delete_email_log` deletes one line of that list, for example the line
 of a customer who asked to be forgotten: ask the merchant first, it cannot be
 undone, and the e-mail itself stays sent.
+`somcp_erase_email_logs` empties the whole list, as its Erase all button: on a
+multistore installation the lines of every shop go. Ask the merchant first, it
+cannot be undone; for one customer use `somcp_delete_email_log` instead.
 `somcp_get_order_settings` gives the checkout rules of Order Settings: guest
 checkout, the minimum purchase total, the terms of service and their page,
 gift wrapping and recycled packaging. Read it before telling a merchant why a

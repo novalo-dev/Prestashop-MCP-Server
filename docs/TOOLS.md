@@ -3567,6 +3567,46 @@ again:` (`SomcpTool::refused('deleted', $problems)`): an unknown argument,
 **Differences between 8.0.1 and 9.0.0** - none: `Mail::delete()` (the
 `ObjectModel` one) on both.
 
+#### `somcp_erase_email_logs`
+**State**: written · [issue #425](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/425)
+**Nature**: `acts(DELETE, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_clear_cache`
+
+**Does** - empties the list of sent e-mails of **Advanced Parameters >
+E-mail**, as its **Erase all** button does. The log is one table for the whole
+installation: on a multistore installation, this removes the lines of every
+shop, as the button does.
+
+**Do not use for** - one line (→ `somcp_delete_email_log`); stopping the log
+(→ `somcp_update_email_settings`, `log_emails`).
+
+**Parameters** - none, as `somcp_clear_cache`: the tool is marked
+`destructiveHint`, so the client asks the merchant before the call. Unknown
+arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the lines are counted (`SELECT COUNT(*) FROM mail`), then
+`Mail::eraseAllLogs()`, the call of `EmailLogEraser::eraseAll()`: no SQL write
+of its own. A list already empty is not erased again. `false` or an exception:
+a tool error `The list of sent e-mails could not be erased.`, logged as
+`email_logs_erase_failed`. Logged as `email_logs_erased` with the count only.
+
+**Returns** - `erased: true`, `deleted_count`: the number of lines there were
+(`0` for a list already empty). `warning`, joined by a space when several
+apply: multistore on with more than one shop (counted as
+`somcp_list_email_logs` counts them) `The lines of every shop were erased:
+PrestaShop keeps one log for all of them.`; **Log Emails** off `Log Emails is
+off: the list stays empty until it is turned on with
+somcp_update_email_settings (log_emails).`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:` (`SomcpTool::refused('deleted', $problems)`): an unknown argument.
+
+**Notes**
+- Changes the shop and cannot be undone: the assistant asks first. Replayable: a second call answers `deleted_count: 0`.
+- The JSON scenario only checks the refusal of an unknown argument: the other scenarios read the list. The shop test erases it after every scenario, erases it again to see `deleted_count: 0`, then reads `somcp_list_email_logs` to see `total_count: 0`.
+
+**Differences between 8.0.1 and 9.0.0** - none: `Mail::eraseAllLogs()` is the
+same `TRUNCATE` on both.
+
 #### `somcp_get_order_settings`
 **State**: written · [issue #400](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/400)
 **Nature**: `acts(VIEW, 'AdminOrderPreferences')` · **Scope**: `mcp.orders.read`, as `somcp_get_shipping_preferences`

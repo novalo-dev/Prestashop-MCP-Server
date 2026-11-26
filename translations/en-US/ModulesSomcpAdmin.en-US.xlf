@@ -1487,6 +1487,11 @@
       <source>Delete a sent e-mail from the list</source>
       <target>Delete a sent e-mail from the list</target>
     </trans-unit>
+    <!-- Erase the list of sent e-mails -->
+    <trans-unit id="2dc8ed0fba681331370b13960718334e" resname="Erase the list of sent e-mails">
+      <source>Erase the list of sent e-mails</source>
+      <target>Erase the list of sent e-mails</target>
+    </trans-unit>
     <!-- Read the order settings -->
     <trans-unit id="f8b79ca9484cd0d4735f3c389f0ef2ae" resname="Read the order settings">
       <source>Read the order settings</source>

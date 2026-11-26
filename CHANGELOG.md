@@ -70,6 +70,11 @@ does what the delete button of a line of that list does, for example for a
 customer who asked to be forgotten. The answer gives the line as it was, and
 the module's own log keeps only its number and template, never the address.
 
+**Erase the list of sent e-mails.** The new tool somcp_erase_email_logs does
+what the Erase all button of that list does. The answer gives the number of
+lines erased, and says when they belonged to every shop of a multistore
+installation or when Log Emails is off.
+
 **Read the order settings.** The new tool somcp_get_order_settings reads Shop
 Parameters > Order Settings: guest checkout, the minimum purchase total, the
 terms of service and the page that holds them, reordering, delayed shipping,

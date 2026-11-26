@@ -1178,6 +1178,10 @@ T = {
  "Lister les titres de civilité",
  "Listar los tratamientos",
  "Die Anreden auflisten"),
+"Delete a sent e-mail from the list": (
+ "Supprimer un e-mail envoyé de la liste",
+ "Eliminar un correo electrónico enviado de la lista",
+ "Eine gesendete E-Mail aus der Liste löschen"),
 "Read the order settings": (
  "Lire les paramètres des commandes",
  "Leer los parámetros de pedidos",

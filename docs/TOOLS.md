@@ -3525,6 +3525,48 @@ a text filter that is not a string (`<field>: a text`).
 **Differences between 8.0.1 and 9.0.0** - only the column sizes of
 `recipient` and `subject`; the list, its filters and its query are the same.
 
+#### `somcp_delete_email_log`
+**State**: written · [issue #424](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/424)
+**Nature**: `acts(DELETE, 'AdminEmails')` · **Scope**: `mcp.system.write`, as `somcp_clear_cache`
+
+**Does** - deletes one line of the list of sent e-mails of **Advanced
+Parameters > E-mail**, as its **delete** button does: for example the line of
+a customer who asked to be forgotten. One line per call: **Delete selected**
+is the same call repeated; **Erase all** is `somcp_erase_email_logs`.
+
+**Do not use for** - every line at once (→ `somcp_erase_email_logs`);
+stopping the log (→ `somcp_update_email_settings`, `log_emails`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_mail` | integer | required; the **ID** of the list, from `somcp_list_email_logs`; not a whole number above 0: `SomcpTool::notAnIdentifier('id_mail')`; unknown: `SomcpTool::notFound('id_mail', 'logged e-mail', <id>, 'somcp_list_email_logs')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the line is read first through
+`SomcpToolListEmailLogs::email()`, then `(new Mail($idMail))->delete()`, as
+`EmailLogEraser::erase()` does: no SQL of its own. A `false` or an exception:
+a tool error `The logged e-mail could not be deleted: <reason>. Read it with
+somcp_list_email_logs before calling again.`, logged as
+`email_log_delete_failed`. Logged as `email_log_deleted` with the `id_mail`
+and the template only, never the recipient or the subject.
+
+**Returns** - `deleted: true`, `id_mail`, and `email`: the line as it was, the
+same object as one item of `emails` of `somcp_list_email_logs`.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:` (`SomcpTool::refused('deleted', $problems)`): an unknown argument,
+`id_mail` missing or not an identifier, an unknown `id_mail`.
+
+**Notes**
+- Changes the shop: the assistant asks first. Not replayable: a second call answers the unknown `id_mail`. Nothing in the shop depends on a line of the log.
+- The shop test writes a line of its own through the `Mail` object, deletes it, then deletes it again to see the refusal: the recipients of the demo lines are real addresses.
+
+**Differences between 8.0.1 and 9.0.0** - none: `Mail::delete()` (the
+`ObjectModel` one) on both.
+
 #### `somcp_get_order_settings`
 **State**: written · [issue #400](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/400)
 **Nature**: `acts(VIEW, 'AdminOrderPreferences')` · **Scope**: `mcp.orders.read`, as `somcp_get_shipping_preferences`

@@ -59,7 +59,7 @@ class SomcpToolListEmailLogs
             'Lists the e-mails the shop sent, newest first, as the list of Advanced Parameters > E-mail: '
                 . 'recipient, template, language, subject, when. Use it to check that order and account '
                 . 'e-mails really go out. Only kept while Log Emails is on (log_emails). For the e-mail '
-                . 'settings use somcp_get_email_settings. '
+                . 'settings use somcp_get_email_settings, to remove a line somcp_delete_email_log. '
                 . 'total_count counts every match: read the next page with offset.',
             [
                 'type' => 'object',
@@ -190,16 +190,7 @@ class SomcpToolListEmailLogs
 
         $emails = [];
         foreach (Db::getInstance()->executeS($page) ?: [] as $row) {
-            $emails[] = [
-                'id_mail' => (int) $row['id_mail'],
-                'recipient' => (string) $row['recipient'],
-                'template' => (string) $row['template'],
-                // A language deleted since leaves no row to join: null rather
-                // than a code the shop no longer has.
-                'language' => isset($row['iso_code']) && $row['iso_code'] !== '' ? (string) $row['iso_code'] : null,
-                'subject' => (string) $row['subject'],
-                'sent' => SomcpTool::isoDate($row['date_add'] ?? null),
-            ];
+            $emails[] = self::line($row);
         }
 
         $logEmails = (bool) SomcpToolGetEmailSettings::settings($idShop)['log_emails'];
@@ -229,6 +220,47 @@ class SomcpToolListEmailLogs
         }
 
         return SomcpTool::json($result);
+    }
+
+    /**
+     * One line of the log as the list answers it, null when there is none.
+     *
+     * Public so somcp_delete_email_log answers with the very object this list
+     * gives, read before the line is gone.
+     *
+     * @param int $idMail
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function email(int $idMail): ?array
+    {
+        $query = self::query([], 0, null, null);
+        $query->select('m.`id_mail`, m.`recipient`, m.`template`, m.`subject`, m.`date_add`, l.`iso_code`');
+        $query->where('m.`id_mail` = ' . (int) $idMail);
+        $row = Db::getInstance()->getRow($query);
+
+        return is_array($row) && $row !== [] ? self::line($row) : null;
+    }
+
+    /**
+     * A row of the table as one item of emails.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    private static function line(array $row): array
+    {
+        return [
+            'id_mail' => (int) $row['id_mail'],
+            'recipient' => (string) $row['recipient'],
+            'template' => (string) $row['template'],
+            // A language deleted since leaves no row to join: null rather
+            // than a code the shop no longer has.
+            'language' => isset($row['iso_code']) && $row['iso_code'] !== '' ? (string) $row['iso_code'] : null,
+            'subject' => (string) $row['subject'],
+            'sent' => SomcpTool::isoDate($row['date_add'] ?? null),
+        ];
     }
 
     /**

@@ -1482,6 +1482,11 @@
       <source>List the social titles</source>
       <target>Lister les titres de civilité</target>
     </trans-unit>
+    <!-- Delete a sent e-mail from the list -->
+    <trans-unit id="620c29d47445cb2d11a2cbe21293ab0b" resname="Delete a sent e-mail from the list">
+      <source>Delete a sent e-mail from the list</source>
+      <target>Supprimer un e-mail envoyé de la liste</target>
+    </trans-unit>
     <!-- Read the order settings -->
     <trans-unit id="f8b79ca9484cd0d4735f3c389f0ef2ae" resname="Read the order settings">
       <source>Read the order settings</source>

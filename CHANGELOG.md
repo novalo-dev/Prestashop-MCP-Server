@@ -65,6 +65,11 @@ the list. The assistant can now check that the order and account e-mails
 really go out, and says when Log Emails is off and new e-mails are no longer
 kept.
 
+**Delete a sent e-mail from the list.** The new tool somcp_delete_email_log
+does what the delete button of a line of that list does, for example for a
+customer who asked to be forgotten. The answer gives the line as it was, and
+the module's own log keeps only its number and template, never the address.
+
 **Read the order settings.** The new tool somcp_get_order_settings reads Shop
 Parameters > Order Settings: guest checkout, the minimum purchase total, the
 terms of service and the page that holds them, reordering, delayed shipping,

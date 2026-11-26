@@ -414,6 +414,69 @@ if ($createStatus !== null && $deleteStatus !== null) {
     }
 }
 
+// A logged e-mail deleted twice (#424): the recipients of the demo lines are
+// real addresses and the test e-mail is not logged, so the line is written
+// here through the Mail object, as Mail::send() writes it. Deleting it must
+// answer it as it was, and deleting it again must be refused rather than
+// read as a success.
+$deleteEmailLog = $registry->get('somcp_delete_email_log');
+if ($deleteEmailLog !== null) {
+    $logCall = static function (array $arguments) use ($deleteEmailLog, $context, $employee): array {
+        return $deleteEmailLog->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $deleteEmailLog->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $logText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 2;
+    try {
+        $line = new Mail();
+        $line->recipient = 'somcp-test@example.com';
+        $line->template = 'somcp_test';
+        $line->subject = 'Somcp deleted twice';
+        $line->id_lang = (int) $context->language->id;
+        if (!$line->add() || (int) $line->id === 0) {
+            $failures[] = 'somcp_delete_email_log (a line just logged): the line could not be written';
+        } else {
+            $idMail = (int) $line->id;
+            $result = $logCall(['id_mail' => $idMail]);
+            $text = $logText($result);
+            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false
+                || strpos($text, '"template": "somcp_test"') === false) {
+                $failures[] = 'somcp_delete_email_log (a line just logged): expected it deleted - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_email_log (a line just logged)');
+            }
+
+            $result = $logCall(['id_mail' => $idMail]);
+            $text = $logText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was deleted') === false
+                || strpos($text, 'no logged e-mail of this shop has the identifier ' . $idMail) === false) {
+                $failures[] = 'somcp_delete_email_log (the same line again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_email_log (the same line again, refused)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_email_log (a line just logged): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A tax rule created, updated, then deleted twice (#294, #296): the JSON
 // scenarios cannot hold the identifier of a rule they created, which differs
 // from one version to the other, and every demo rule is still taken by a

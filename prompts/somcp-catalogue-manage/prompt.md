@@ -69,6 +69,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_email_settings`
 - `somcp_update_email_settings`
 - `somcp_list_email_logs`
+- `somcp_delete_email_log`
 - `somcp_get_order_settings`
 - `somcp_update_order_settings`
 - `somcp_get_product_settings`
@@ -286,6 +287,9 @@ would then get no order confirmation.
 to check that the order and account e-mails really go out. It only grows while
 Log Emails is on; each line holds a customer's address, so quote only what the
 merchant needs.
+`somcp_delete_email_log` deletes one line of that list, for example the line
+of a customer who asked to be forgotten: ask the merchant first, it cannot be
+undone, and the e-mail itself stays sent.
 `somcp_get_order_settings` gives the checkout rules of Order Settings: guest
 checkout, the minimum purchase total, the terms of service and their page,
 gift wrapping and recycled packaging. Read it before telling a merchant why a

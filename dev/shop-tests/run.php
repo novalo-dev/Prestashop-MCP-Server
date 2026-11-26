@@ -2219,8 +2219,14 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
             $db->insert('cart_rule_product_rule', ['id_product_rule_group' => $idZeroGroup, 'type' => 'categories']);
             $db->insert('cart_rule_product_rule_value', ['id_product_rule' => (int) $db->Insert_ID(), 'id_item' => 2]);
             $db->update('cart_rule', ['product_restriction' => 1], '`id_cart_rule` = ' . $idRule);
+            // The rule was loaded by the calls above, and the core keeps that
+            // copy for the rest of the process with the box still unchecked. A
+            // real call runs in a request of its own, so the copy is dropped
+            // here for the tool to read the rule as stored.
+            Cache::clean('objectmodel_CartRule_' . $idRule . '_*');
+            // somcp_get_cart_rule answers the rule under cart_rule.
             $read = json_decode(trim($answer($getRule->call(['id_cart_rule' => $idRule], $ruleContext))), true);
-            $readSelection = $read['restrictions']['product'] ?? null;
+            $readSelection = $read['cart_rule']['restrictions']['product'] ?? null;
             $raised = is_array($readSelection) ? $readSelection : [];
             foreach ($raised as $g => $group) {
                 $raised[$g]['quantity'] = 1;

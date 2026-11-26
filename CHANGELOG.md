@@ -280,6 +280,13 @@ them. The tools and the checks on every call are unchanged.
 **The built-in assistant runs on Neuron AI 4.1.28.** Nothing changes in how
 you use it.
 
+### Security
+
+**A deposit never keeps more files than it was opened for.** Files sent to
+one deposit at the same moment were each counted before any of them was
+recorded, so a deposit opened for one file could keep several. The files of
+a deposit are now counted one after the other, whichever way they arrive.
+
 ## 2.0.5 - 2026-11-25
 
 ### Added

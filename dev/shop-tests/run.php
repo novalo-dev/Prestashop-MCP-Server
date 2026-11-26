@@ -553,13 +553,14 @@ if ($createTitle !== null && $listTitles !== null) {
     }
 }
 
-// A customer group changed and put back (#443): the read of group 3 given
-// back whole changes nothing, then Discount and Show prices are changed and
-// restored, in a finally so the demo group is left as it was.
+// A customer group changed and put back (#443, #444): the read of group 3
+// given back whole changes nothing, then Discount, Show prices and the
+// category discounts are changed and restored, in a finally so the demo
+// group is left as it was.
 $getGroup = $registry->get('somcp_get_customer_group');
 $updateGroup = $registry->get('somcp_update_customer_group');
 if ($getGroup !== null && $updateGroup !== null) {
-    $calls += 4;
+    $calls += 8;
     $groupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
         $result = $tool->call($arguments, [
             'id_shop' => (int) $context->shop->id,
@@ -607,9 +608,27 @@ if ($getGroup !== null && $updateGroup !== null) {
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (Show prices off then on)');
         }
+        $set = $groupCall($updateGroup, ['id_group' => 3, 'category_discounts' => [['id_category' => 3, 'reduction' => 10]]]);
+        $readBack = $groupCall($getGroup, ['id_group' => 3]);
+        $rows = $readBack['group']['category_discounts'] ?? null;
+        $kept = $groupCall($updateGroup, ['id_group' => 3, 'category_discounts' => is_array($rows) ? $rows : []]);
+        $cleared = $groupCall($updateGroup, ['id_group' => 3, 'category_discounts' => []]);
+        if (empty($set['changed'])
+            || !is_array($rows) || count($rows) !== 1 || (int) ($rows[0]['id_category'] ?? 0) !== 3
+            || ($rows[0]['category'] ?? null) !== 'Clothes' || (float) ($rows[0]['reduction'] ?? -1) !== 10.0
+            || ($kept['changed'] ?? null) !== false
+            || empty($cleared['changed']) || ($cleared['group']['category_discounts'] ?? null) !== []) {
+            $failures[] = 'somcp_update_customer_group (10 % on Clothes, given back, then none): unexpected - '
+                . json_encode([$set, $rows, $kept, $cleared]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (10 % on Clothes, given back, then none)');
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
+        // The demo group has no category discount: whatever the test left is removed.
+        Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'group_reduction` WHERE `id_group` = 3');
+        Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'product_group_reduction_cache` WHERE `id_group` = 3');
         $left = new Group(3);
         if ((float) $left->reduction !== $storedReduction || (bool) $left->show_prices !== $storedShowPrices) {
             $left->reduction = $storedReduction;

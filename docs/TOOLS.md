@@ -6373,12 +6373,12 @@ modules differ between the shops.
 
 **Does** - changes a customer group of **Shop Parameters > Customer Settings >
 Groups**, as its **Edit** form then **Save** do: its name in each language,
-its **Discount**, its **Price display method** and **Show prices**. Only the
-fields given change. One group per call. **Category discount** (#444) and
-**Authorized modules** (#445) are left as they are.
+its **Discount**, its **Price display method**, **Show prices** and its
+**Category discount** list (#444). Only the fields given change. One group per
+call. **Authorized modules** (#445) are left as they are.
 
-**Do not use for** - the category discounts and the modules, not changed yet;
-the groups of one customer (→ `somcp_update_customer`).
+**Do not use for** - the authorized modules, not changed yet; the groups of one
+customer (→ `somcp_update_customer`).
 
 **Parameters**
 
@@ -6390,15 +6390,17 @@ the groups of one customer (→ `somcp_update_customer`).
 | `reduction` | **Discount** | number | percent as shown, 0 to 100, at most 2 decimals, the rule of `validateDiscount()`: `reduction: a percentage from 0 to 100` |
 | `price_display_method` | **Price display method** | string | `tax_excluded` or `tax_included`, the words of `somcp_list_customer_groups`; anything else: `SomcpTool::oneOf()` |
 | `show_prices` | **Show prices** | boolean | `show_prices: true or false` |
+| `category_discounts` | **Category discount** | array | the whole list, as the form saves it: each item `{"id_category": <int>, "reduction": <number>}`, the shape `somcp_get_customer_group` answers (its `category` name is accepted and ignored); `[]` removes every row. Not a list of objects: `category_discounts: a list of {id_category, reduction}`; `id_category` not an identifier (`SomcpTool::notAnIdentifier()`) or not of this shop (`SomcpToolUpdateCategory::existingCategory()`): `SomcpTool::notFound('category_discounts[<i>].id_category', 'category', <id>, 'somcp_list_categories')`; the Root category (`PS_ROOT_CATEGORY`), not in the tree of the form: `category_discounts[<i>].id_category: the Root category is not in the tree of the form, choose Home or below`; `reduction` by the rule of the Discount: `category_discounts[<i>].reduction: a percentage from 0 to 100`; the same category twice: `category_discounts[<i>].id_category: given twice`; another key of an item: `category_discounts[<i>].<key>: not a field of a category discount` |
 
 The read given back whole changes nothing: the other fields of the `group` of
 `somcp_get_customer_group` (`names`, `members_count`, `date_add`,
-`default_for`, `category_discounts`, `authorized_modules`,
-`unauthorized_modules`) are declared in the schema and accepted unchanged;
-given with another value they are refused (`members_count: read only`,
-`date_add: read only`, `default_for: chosen in Customer Settings > Groups,
-Default groups options`, `category_discounts: not changed by this tool yet`,
-the same for both module lists). `name` and `names` given back are read by
+`default_for`, `authorized_modules`, `unauthorized_modules`) are declared in
+the schema and accepted unchanged; given with another value they are refused
+(`members_count: read only`, `date_add: read only`, `default_for: chosen in
+Customer Settings > Groups, Default groups options`, `authorized_modules: not
+changed by this tool yet`, the same for `unauthorized_modules`). The
+`category_discounts` given back as read (same categories, same percents, any
+order) is no change. `name` and `names` given back are read by
 `SomcpToolCreateProduct::nameGivenBack()`, as `somcp_update_title` reads them:
 a plain `name` equal to a stored text is no change. Unknown arguments through
 `SomcpTool::unknownFields()`.
@@ -6410,8 +6412,22 @@ the `Group` object with the fields given, `update()` on the shop of the token
 (`id_shop_list`). A `false` or an exception: a tool error `The customer group
 could not be changed: <reason>. Read it with somcp_get_customer_group before
 calling again.`, logged as `customer_group_update_failed`.
-`Tools::clearSmartyCache()` when `reduction`, `price_display_method` or
-`show_prices` changed, as the **Show prices** switch of the list does. Logged as
+
+A `category_discounts` that differs is written as `updateCategoryReduction()`
+of `AdminGroupsController` writes it, in one database transaction with the
+`Group` fields: `DELETE` of the rows of the group in `group_reduction` and
+`product_group_reduction_cache` (a direct write, as the controller does:
+`GroupReduction::delete()` would empty the price cache of every group for the
+products of the category); when the list is not empty,
+`Configuration::updateGlobalValue('PS_GROUP_FEATURE_ACTIVE', 1)` if it was
+off; then per row `Category::addGroupsIfNoExist()` (the group is given access
+to the category) and a `GroupReduction` (`reduction` = percent / 100)
+`add()`, which fills `product_group_reduction_cache`. A failure rolls the
+transaction back and answers `The category discounts could not be saved:
+<reason>. Read the group with somcp_get_customer_group before calling again.`
+
+`Tools::clearSmartyCache()` when `reduction`, `price_display_method`,
+`show_prices` or `category_discounts` changed, as the **Show prices** switch of the list does. Logged as
 `customer_group_updated` with the `id_group` and the names of the fields
 changed.
 
@@ -6424,7 +6440,15 @@ Settings instead.`; `reduction` above 0 while customer groups are still
 disabled after the save (`Group::update()` turns the global value on by
 itself): `SomcpToolGetCustomerGroup::GROUPS_DISABLED`; a default group
 (`default_for` not empty): `This group is used for <visitors, guests,
-customers>: the change reaches every one of them.`
+customers>: the change reaches every one of them.`; customer groups turned on
+by a category discount: `Customer groups were turned on in Advanced
+Parameters > Performance, as the back office does when a category discount is
+saved.`; a category discount list not empty while the group **Discount** is
+above 0, the two warnings of the screen in one sentence: `A category discount
+replaces the group discount for the products of that category, it does not add
+to it; only products whose default category it is are concerned.`; a category
+the group could not see before (`category_group`, read before the write): `The
+group can now see the category <name>.`
 
 **Errors** - in the envelope `Nothing was changed. Correct these and call
 again:`: an unknown argument; `id_group` missing, not an identifier or not of
@@ -6432,7 +6456,8 @@ this shop; the rules above; a read only field given with another value.
 
 **Notes** - changes the shop: the assistant asks first. Replayable: a second
 identical call changes nothing. The shop test gives back the read of group 3,
-sets its Discount to 5 and back to 0, and Show prices off and back on, and
+sets its Discount to 5 and back to 0, Show prices off and back on, and its
+category discounts to 10 % on Clothes, given back unchanged, then `[]`, and
 restores the group whatever happens.
 
 **Differences between 8.0.1 and 9.0.0** - none: the same legacy controller,

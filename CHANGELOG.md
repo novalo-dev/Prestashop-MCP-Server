@@ -16,6 +16,17 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Discounts by category for a customer group.** somcp_update_customer_group
+now changes the Category discount block of a group, as Add a category discount
+then Save do on Shop Parameters > Customer Settings > Groups: the whole list is
+given, a category with its percent per row, and an empty list removes them all.
+The group is given access to each category, as the back office does, and the
+answer warns that such a discount replaces the group Discount for the products
+of that category. The list read with somcp_get_customer_group and given back as
+it is changes nothing.
+
 ## 2.0.6 - 2026-11-26
 
 ### Added

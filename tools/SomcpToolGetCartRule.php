@@ -46,9 +46,10 @@ class SomcpToolGetCartRule
     /**
      * @var array<string, string> the key each type of product rule gives its values: id_item holds
      *                            a product, a category, an attribute value, a brand or a supplier, so
-     *                            the name says which, as the list tool of that type returns it
+     *                            the name says which, as the list tool of that type returns it. Public
+     *                            so the cart rule tools that write Product selection read the same keys
      */
-    private const ITEM_KEYS = [
+    public const ITEM_KEYS = [
         'products' => 'id_product',
         'categories' => 'id_category',
         'attributes' => 'id_attribute',

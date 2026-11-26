@@ -2044,14 +2044,15 @@ if ($updateCountry !== null && $idAfghanistan > 0) {
 }
 
 // A customer group restriction set on a cart rule, read back, then lifted
-// (#406): the JSON scenario only covers the refusals, since a restriction
-// left on a demo rule would change what the tools after it read. The rule is
-// created here for that alone and deleted whatever happens.
+// (#406), and the same for Product selection (#433): the JSON scenario only
+// covers the refusals, since a restriction left on a demo rule would change
+// what the tools after it read. The rule is created here for that alone and
+// deleted whatever happens. The category 2 is Home on every demo shop.
 $createRule = $registry->get('somcp_create_cart_rule');
 $updateRule = $registry->get('somcp_update_cart_rule');
 $getRule = $registry->get('somcp_get_cart_rule');
 if ($createRule !== null && $updateRule !== null && $getRule !== null) {
-    $calls += 4;
+    $calls += 10;
     $ruleContext = [
         'id_shop' => (int) $context->shop->id,
         'id_employee' => (int) $employee->id,
@@ -2093,6 +2094,11 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
                 'group read back' => [$getRule, ['id_cart_rule' => $idRule], ['"group": [', '"id_group": 3']],
                 'group lifted' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['group' => null]], ['"changed": true', '"field": "restrictions.group"', '"new": null']],
                 'nothing left' => [$getRule, ['id_cart_rule' => $idRule], ['"group": null']],
+                'product selection set' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['product' => [['quantity' => 2, 'rules' => [['type' => 'categories', 'values' => [['id_category' => 2]]]]]]]], ['"changed": true', '"field": "restrictions.product"']],
+                'product selection read back' => [$getRule, ['id_cart_rule' => $idRule], ['"product": [', '"quantity": 2', '"type": "categories"', '"id_category": 2']],
+                'product selection given back' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['product' => [['quantity' => 2, 'rules' => [['type' => 'categories', 'values' => [['id_category' => 2, 'name' => 'Home']]]]]]]], ['"changed": false']],
+                'product selection lifted' => [$updateRule, ['id_cart_rule' => $idRule, 'restrictions' => ['product' => null]], ['"changed": true', '"field": "restrictions.product"', '"new": null']],
+                'no product selection left' => [$getRule, ['id_cart_rule' => $idRule], ['"product": null']],
             ] as $label => [$tool, $arguments, $needles]) {
                 $result = $tool->call($arguments, $ruleContext);
                 $text = $answer($result);
@@ -2104,6 +2110,26 @@ if ($createRule !== null && $updateRule !== null && $getRule !== null) {
                 } else {
                     printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (' . $label . ')');
                 }
+            }
+            // Lifted as afterUpdate() clears it: no row of the three tables
+            // is left behind for the rule.
+            $rows = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_group` g
+                 LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule` r ON r.`id_product_rule_group` = g.`id_product_rule_group`
+                 WHERE g.`id_cart_rule` = ' . $idRule
+            ) + (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule` r
+                 LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule_group` g ON g.`id_product_rule_group` = r.`id_product_rule_group`
+                 WHERE g.`id_product_rule_group` IS NULL'
+            ) + (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_value` v
+                 LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule` r ON r.`id_product_rule` = v.`id_product_rule`
+                 WHERE r.`id_product_rule` IS NULL'
+            );
+            if ($rows !== 0) {
+                $failures[] = 'somcp_update_cart_rule (product selection lifted): ' . $rows . ' row(s) left in the product rule tables';
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cart_rule (product selection lifted, no row left)');
             }
         }
     } catch (Throwable $e) {

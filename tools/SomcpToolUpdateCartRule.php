@@ -32,10 +32,11 @@ declare(strict_types=1);
  *
  * The rule is written through CartRule::update() only. The back office's
  * afterUpdate() deletes every restriction row of the rule and writes back
- * what its form posted; going that way would wipe the product selection and
- * the compatibility, which this tool does not write. The countries, carriers
- * and groups given are written by writeRestrictions() instead, in the same
- * transaction as the rule.
+ * what its form posted; going that way would wipe what the call does not
+ * give. The countries, carriers and groups given are written by
+ * writeRestrictions() instead, Product selection by writeProductSelection()
+ * and the compatibility by writeCompatibility(), in the same transaction as
+ * the rule.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -88,8 +89,8 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             'Changes one cart rule, as Catalog > Discounts > Cart Rules > Edit, under the names of '
                 . 'somcp_create_cart_rule; what somcp_get_cart_rule returns can be given back. id_cart_rule from '
                 . 'somcp_list_cart_rules. Only what is given changes. quantity is what is left. Placed orders keep their '
-                . 'amount. Status: somcp_set_cart_rule_active. restrictions: countries, carriers, groups and other rules '
-                . 'it combines with; products and shops stay in the back office. Show the merchant the change and call once they agree. Not to be retried: if the answer is lost, read somcp_get_cart_rule first.',
+                . 'amount. Status: somcp_set_cart_rule_active. restrictions: countries, carriers, groups, product selection '
+                . 'and other rules it combines with; shops stay in the back office. Show the merchant the change and call once they agree. Not to be retried: if the answer is lost, read somcp_get_cart_rule first.',
             self::inputSchema(),
             [SomcpScope::SALES_WRITE],
             [self::class, 'handle'],
@@ -145,8 +146,9 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         }
         $schema['properties']['restrictions'] = [
             'type' => 'object',
-            'description' => 'As somcp_get_cart_rule returns it. country, carrier, group, cart_rule: lists of {"id_country"}, '
-                . '{"id_reference"}, {"id_group"}, {"id_cart_rule"}, null for none ([] for cart_rule: combines with none).',
+            'description' => 'As somcp_get_cart_rule gives it; null: none; cart_rule []: combines with none. product: '
+                . '[{"quantity", "rules": [{"type", "values"}]}], type: products, attributes, categories, manufacturers, '
+                . 'suppliers.',
         ];
         $schema['required'] = ['id_cart_rule'];
 
@@ -246,10 +248,10 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
      * The restrictions this call changes, as rows to write.
      *
      * country, carrier and group go through planRestrictions(), cart_rule
-     * through planCompatibility(), the checks the creation shares; one that
-     * holds what is stored already is left out, so a rule read and given back
-     * whole writes nothing. product and shop are still the merchant's on the
-     * Conditions tab: accepted only as read.
+     * through planCompatibility(), product through planProductSelection(),
+     * the checks the creation shares; one that holds what is stored already
+     * is left out, so a rule read and given back whole writes nothing. shop is
+     * still the merchant's on the Conditions tab: accepted only as read.
      *
      * @param mixed $restrictions as given
      * @param array<string, mixed> $current as somcp_get_cart_rule returns them
@@ -257,7 +259,8 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
      * @param int $idCartRule the rule being changed
      * @param array<int, string> $errors
      *
-     * @return array<string, array<int, int>|null>
+     * @return array<string, mixed> the identifiers of each key, the groups of
+     *                              planProductSelection() for product
      */
     private static function changedRestrictions($restrictions, array $current, int $idShop, int $idCartRule, array &$errors): array
     {
@@ -268,7 +271,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             return [];
         }
         foreach ($restrictions as $key => $value) {
-            if (isset(self::RESTRICTION_TABLES[$key]) || $key === 'cart_rule') {
+            if (isset(self::RESTRICTION_TABLES[$key]) || $key === 'cart_rule' || $key === 'product') {
                 continue;
             }
             if (!array_key_exists($key, $current)) {
@@ -289,6 +292,18 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         foreach ($rows as $key => $ids) {
             if ($ids === self::restrictionIds($current, $key)) {
                 unset($rows[$key]);
+            }
+        }
+
+        if (array_key_exists('product', $restrictions)) {
+            $stored = self::readProductGroups($current['product'] ?? null);
+            // [] given back from a rule whose box is checked with no group, as
+            // the form can leave it, is what was read: nothing to write.
+            if (!($restrictions['product'] === [] && $stored === [])) {
+                $groups = self::planProductSelection($restrictions['product'], $idShop, $errors);
+                if ($groups !== false && $groups !== $stored) {
+                    $rows['product'] = $groups;
+                }
             }
         }
 
@@ -529,7 +544,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
      *
      * @param CartRule $cartRule
      * @param array<string, mixed> $current the rule before, as somcp_get_cart_rule returns it
-     * @param array{fields: array<string, mixed>, names: array<int, string>, specific_product: int, restrictions: array<string, array<int, int>|null>} $write
+     * @param array{fields: array<string, mixed>, names: array<int, string>, specific_product: int, restrictions: array<string, mixed>} $write
      * @param array<string, mixed> $plan
      * @param int $idLang
      * @param int $idShop
@@ -549,6 +564,28 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             self::fill($cartRule, ['name' => $names]);
         }
 
+        // The group the back office adds for a specific product, as
+        // postProcess() does: when the discount applies to a product that no
+        // products rule of Product selection holds. Given with the selection,
+        // it joins the groups written, so it is added once.
+        $added = 0;
+        $idSpecific = (int) $plan['specific_product'];
+        if (array_key_exists('product', $write['restrictions'])) {
+            $groups = $write['restrictions']['product'] ?? [];
+            if ($idSpecific > 0 && !self::holdsProduct($groups, $idSpecific)) {
+                $groups[] = self::productGroup($idSpecific);
+                $added = $idSpecific;
+            }
+            $write['restrictions']['product'] = $groups === [] ? null : $groups;
+            $write['specific_product'] = 0;
+        } elseif ($write['specific_product'] > 0) {
+            if (self::holdsProduct(self::readProductGroups($current['restrictions']['product'] ?? null) ?? [], $write['specific_product'])) {
+                $write['specific_product'] = 0;
+            } else {
+                $added = $write['specific_product'];
+            }
+        }
+
         $failure = '';
         $restricted = [];
         $db = Db::getInstance();
@@ -566,6 +603,10 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
                 && ($restricted = self::writeCompatibility($cartRule, $write['restrictions']['cart_rule'])) === null) {
                 $done = false;
                 $failure = 'the compatibility with the other cart rules could not be saved';
+            } elseif (array_key_exists('product', $write['restrictions'])
+                && !self::writeProductSelection($cartRule, $write['restrictions']['product'])) {
+                $done = false;
+                $failure = 'the product selection could not be saved';
             } else {
                 // update() only: it leaves the other restriction tables as they are.
                 $done = (bool) $cartRule->update();
@@ -614,6 +655,14 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         }
         // Identifiers only: the names follow the language read in.
         foreach (array_keys($write['restrictions']) as $key) {
+            if ($key === 'product') {
+                $old = self::withoutNames($current['restrictions']['product'] ?? null);
+                $new = self::withoutNames($after['restrictions']['product'] ?? null);
+                if (json_encode($old) !== json_encode($new)) {
+                    $changes[] = ['field' => 'restrictions.product', 'old' => $old, 'new' => $new];
+                }
+                continue;
+            }
             $old = self::restrictionIds($current['restrictions'] ?? [], $key);
             $new = self::restrictionIds($after['restrictions'] ?? [], $key);
             if ($old !== $new) {
@@ -628,17 +677,27 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         ];
         // The back office restricts those rules on its own: the merchant
         // learns it from the assistant rather than at the till.
+        $warnings = [];
         $warning = self::compatibilityWarning($restricted ?? []);
         if ($warning !== '') {
-            $result['warning'] = $warning;
+            $warnings[] = $warning;
+        }
+        if ($added > 0) {
+            $warnings[] = 'Product ' . $added . ' was added to Product selection, as the back office adds it: the '
+                . 'discount applies to that product.';
+        }
+        if ($warnings !== []) {
+            $result['warning'] = implode(' ', $warnings);
         }
 
         // The form keeps the product it added to Product selection when the
-        // discount moves away from it, and so does this tool.
+        // discount moves away from it, and so does this tool, unless the
+        // selection given in the call took it out.
         $left = (int) ($current['reduction']['id_product'] ?? 0);
-        if ($left > 0 && $left !== (int) ($after['reduction']['id_product'] ?? 0)) {
+        if ($left > 0 && $left !== (int) ($after['reduction']['id_product'] ?? 0)
+            && self::holdsProduct(self::readProductGroups($after['restrictions']['product'] ?? null) ?? [], $left)) {
             $result['product_selection'] = 'Product ' . $left . ' is still in Product selection, as the back office keeps '
-                . 'it: the rule only applies to carts that hold it until the merchant removes it on the Conditions tab.';
+                . 'it: the rule only applies to carts that hold it until it is removed from restrictions.product.';
         }
 
         SomcpLogger::log(

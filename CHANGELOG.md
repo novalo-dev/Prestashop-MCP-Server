@@ -52,6 +52,13 @@ each holds and how many are not translated; then the wordings of one domain,
 each with its source, the translation that comes with the files and the
 shop's own change, searched by words and page by page.
 
+**Change a translation of a language.** The new tool somcp_update_translation
+does what Save and Reset do on the card Modify translations of International >
+Translations: the shop's own translation of one wording is saved, or removed so
+the translation that comes with the files shows again. A translation that
+drops or adds a placeholder of the source (%s, %d) is refused, as on screen,
+and a change in the wordings of the back office menu translates the menu again.
+
 ### Changed
 
 **The members of a customer group.** The search of customers can list the

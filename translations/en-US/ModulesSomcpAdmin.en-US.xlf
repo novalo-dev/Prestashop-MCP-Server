@@ -1622,6 +1622,11 @@
       <source>List the translations of a language</source>
       <target>List the translations of a language</target>
     </trans-unit>
+    <!-- Change a translation of a language -->
+    <trans-unit id="7b733ddbc82daec6dba1a87bb8fca223" resname="Change a translation of a language">
+      <source>Change a translation of a language</source>
+      <target>Change a translation of a language</target>
+    </trans-unit>
     <!-- Export the translations of a language -->
     <trans-unit id="b2451bccee124f8ae91bf2cc863169fd" resname="Export the translations of a language">
       <source>Export the translations of a language</source>

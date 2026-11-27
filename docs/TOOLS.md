@@ -5402,6 +5402,65 @@ characters at most>.`; the folder of the shop is taken out of the message.
 **Differences between 8.0.1 and 9.0.0** - the themes offered (`classic` on
 8.0.1; `classic` and `hummingbird` on 9.0.0); the code read is the same.
 
+#### `somcp_update_translation`
+**State**: written · [issue #454](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/454)
+**Nature**: `acts(EDIT, 'AdminTranslations')` · **Scope**: `mcp.catalog.write`
+
+**Does** - the changing half of the card **Modify translations** of
+**International > Translations**: saves the shop's own translation of one
+wording (**Save**), or removes it (**Reset**) so the translation of the files
+shows again.
+
+**Do not use for** - reading the wordings (→ `somcp_list_translations`);
+installing PrestaShop's translations (→ `somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language`, `type`, `theme`, `module` | as `somcp_list_translations` | | `language`, `type` | checked by `SomcpToolListTranslations::selection()`, the same rules and messages |
+| `domain` | the tree | string | yes | a `domain` `somcp_list_translations` answers; missing: `domain: required, ...`; not in the tree: `SomcpTool::notFound('domain', 'domain', <name>, 'somcp_list_translations', 'domain')` |
+| `source` | the source above the box | string | yes | the `source` of a wording of that domain; missing: `source: required, ...`; not in the domain: `SomcpTool::notFound('source', 'wording', <text, 100 characters>, 'somcp_list_translations', 'source')` |
+| `translation` | the box | string | without `reset` | the shop's translation, 4000 characters at most; empty after `trim()`: `translation: a text - use reset to show the translation of the files again`; not the same number of placeholders as the source (`PassVsprintf`, `Translator::$regexSprintfParams`): `translation: keep the placeholders of the source (<the placeholders>)` |
+| `reset` | **Reset** | boolean | no | true: the shop's translation removed; with `translation`: `reset: without translation` |
+| `file_translation`, `shop_translation`, `shown` | | | no | read only: accepted when equal to the read; another value: `<field>: read only - change translation` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; the problems in the
+envelope `Nothing was changed. Correct these and call again:`.
+
+**Then** - inside `SomcpBackOffice::asBackOffice()`, the wording read as
+`somcp_list_translations` reads it; `translation` equal to its
+`shop_translation`, or `reset` when it has none: `changed: false`, nothing
+written. Otherwise `prestashop.service.translation`: `findLanguageByLocale()`,
+then `saveTranslationMessage($lang, <domain>, <source>, <translation>, <theme>)`
+or `resetTranslationMessage(<id_lang>, <domain>, <source>, <theme>)`, the theme
+`null` for the core's wordings and `classic`, as the editor sends them, and
+`Messages` saved in the catalogue `messages`; then `Tools::clearSf2Cache()`
+(removed once the answer is sent, as PrestaShop 9's clearer does) and, for
+`AdminNavigationMenu`, the translator cleared for the language and the `tab`
+names translated again for the shop of the token, as
+`translateMultilingualContent()` does. Logger line `translation_updated`: the
+language, the domain, `saved` or `reset`, never the wording.
+
+**Returns** - `changed`, `language`, `type`, `domain`, `changes` (`field`
+`translation`, `old`, `new`) when changed, and `translation`: the wording read
+again as `somcp_list_translations` answers it; `warning` for
+`AdminNavigationMenu` (`The back office menu is translated again for this
+language.`) and in multistore (`The translations are shared by every shop.`).
+
+**Errors** - `saveTranslationMessage()` refusing: `The translation could not
+be saved. Read the wording with somcp_list_translations before calling
+again.`; a failure of the core: `The translation could not be saved: <message,
+500 characters at most>.`, the folder of the shop taken out.
+
+**Notes** - one wording per call. The table `translation` has no shop: the
+change reaches every shop.
+
+**Differences between 8.0.1 and 9.0.0** - the right the screen asks (`create`
+or `update`); the cache clearer of the API (an in-process `cache:clear` on 8,
+a clearing at the end of the request on 9), both replaced by
+`Tools::clearSf2Cache()`.
+
 #### `somcp_get_localization_settings`
 **State**: written · [issue #382](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/382)
 **Nature**: `acts(VIEW, 'AdminLocalization')` · **Scope**: `mcp.catalog.read`

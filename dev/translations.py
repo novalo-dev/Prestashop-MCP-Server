@@ -1290,6 +1290,10 @@ T = {
  "Lister les traductions d'une langue",
  "Listar las traducciones de un idioma",
  "Die Übersetzungen einer Sprache auflisten"),
+"Change a translation of a language": (
+ "Modifier une traduction d'une langue",
+ "Cambiar una traducción de un idioma",
+ "Eine Übersetzung einer Sprache ändern"),
 "Export the translations of a language": (
  "Exporter les traductions d'une langue",
  "Exportar las traducciones de un idioma",

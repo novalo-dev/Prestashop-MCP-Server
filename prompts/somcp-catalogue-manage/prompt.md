@@ -36,6 +36,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_install_language_pack`
 - `somcp_export_translations`
 - `somcp_list_translations`
+- `somcp_update_translation`
 - `somcp_get_localization_settings`
 - `somcp_update_localization_settings`
 - `somcp_import_localization_pack`
@@ -502,6 +503,11 @@ it changes nothing, and the pack is what another shop imports.
 them: without `domain`, the domains of a type with their counts; with one, its
 wordings, each with its `source`, the translation of the files and the shop's
 own (`shop_translation`, `null` when the shop has none).
+`somcp_update_translation` saves the shop's own translation of one wording, or
+removes it with `reset` so the translation of the files shows again, as Save
+and Reset of the same card: give the `domain` and the `source` the list
+answered, keep the placeholders (`%s`, `%d`) of the source, and remember the
+change reaches every shop.
 `somcp_get_localization_settings` says which language, country and currency
 the shop starts from, its time zone, and the weight, distance, volume and
 dimension units every product weight and carrier range is read in: read it

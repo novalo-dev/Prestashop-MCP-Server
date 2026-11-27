@@ -24,7 +24,8 @@ merchant does it:
 - **Base settings**: the shop details come next. The countries are read and
   changed, the states, languages and currencies read, created, changed and
   deleted, with the localization settings; a language's translations are
-  installed from PrestaShop, read wording by wording and exported as a pack.
+  installed from PrestaShop, read and changed wording by wording and exported
+  as a pack.
   Taxes, tax rules and the tax
   options are done.
 - **Shipping and payment preferences**: a carrier is read, changed and

@@ -1178,6 +1178,38 @@ if ($createStore !== null && $listStoresAgain !== null) {
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_store (the same call twice)');
             }
+
+            // The picture (#463): a GIF deposited is stored with its
+            // thumbnail, the item given back with its download_ref changes
+            // nothing, and null is refused as the screen cannot remove one.
+            $calls += 4;
+            $reference = SomcpUpload::inviteFor((int) $employee->id, $updateStore, 'image');
+            $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+            $entered = $invitation === null
+                ? 'no deposit could be opened'
+                : SomcpUpload::enter($invitation, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'store.gif');
+            $pictured = $entered === '' ? $storeCall($updateStore, ['id_store' => $idNewStore, 'image' => ['upload_ref' => $reference]]) : [];
+            $fields = array_column(is_array($pictured['changes'] ?? null) ? $pictured['changes'] : [], 'field');
+            if ($entered !== '' || ($pictured['changed'] ?? null) !== true || $fields !== ['image']
+                || ($pictured['image']['stored'] ?? null) !== true || empty($pictured['store']['image'])
+                || !is_file(_PS_STORE_IMG_DIR_ . $idNewStore . '.jpg')
+                || !is_file(_PS_STORE_IMG_DIR_ . $idNewStore . '-stores_default.jpg')) {
+                $failures[] = 'somcp_update_store (a GIF picture deposited): ' . $entered . ' ' . json_encode($pictured);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (a GIF picture deposited, with its thumbnail)');
+                $back = $storeCall($updateStore, $pictured['store']);
+                if (($back['changed'] ?? null) !== false) {
+                    $failures[] = 'somcp_update_store (the item with its picture given back whole): expected changed false - ' . json_encode($back);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_store (the item with its picture given back whole)');
+                }
+                $removed = $storeCall($updateStore, ['id_store' => $idNewStore, 'image' => null]);
+                if (strpos((string) ($removed['error'] ?? ''), "- image: the back office cannot remove a store's picture") === false) {
+                    $failures[] = 'somcp_update_store (the picture set to null): expected the refusal - ' . json_encode($removed);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_store (the picture set to null, refused)');
+                }
+            }
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_store: ' . get_class($e) . ' - ' . $e->getMessage();
@@ -1188,6 +1220,10 @@ if ($createStore !== null && $listStoresAgain !== null) {
             foreach ($leftovers as $row) {
                 if ((int) $row['id_store'] > 5) {
                     (new Store((int) $row['id_store']))->delete();
+                    // Store::delete() leaves the picture and its thumbnails.
+                    foreach (glob(_PS_STORE_IMG_DIR_ . (int) $row['id_store'] . '[.-]*') ?: [] as $file) {
+                        @unlink($file);
+                    }
                 }
             }
         } catch (Throwable $e) {

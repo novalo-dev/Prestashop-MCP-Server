@@ -36,7 +36,7 @@ require_once __DIR__ . '/SomcpToolCreateStore.php';
 class SomcpToolUpdateStore extends SomcpToolCreateStore
 {
     /** @var array<int, string> Answered by somcp_list_stores, taken only as read. */
-    private const READ_ONLY = ['id_country', 'id_state', 'country_name', 'state_name', 'date_add', 'date_upd', 'image'];
+    private const READ_ONLY = ['id_country', 'id_state', 'country_name', 'state_name', 'date_add', 'date_upd'];
 
     /** @var array<int, string> The plain texts, compared as given. */
     private const PLAIN_TEXTS = ['city', 'phone', 'fax', 'email', 'postcode'];
@@ -71,13 +71,14 @@ class SomcpToolUpdateStore extends SomcpToolCreateStore
             Somcp::t('Change a store'),
             'Changes a store of Shop Parameters > Contact > Stores, as Edit then Save, or switches it on or off as '
                 . 'the Enabled switch: name, address, country and state by ISO code, coordinates, phone, e-mail, '
-                . 'note, opening hours. Only the fields given change; an item of somcp_list_stores given back whole '
+                . 'note, opening hours, picture. Only the fields given change; an item of somcp_list_stores given back whole '
                 . 'changes nothing. To add a store use somcp_create_store; for the address of the shop itself '
                 . 'somcp_update_contact_details.',
             $schema,
             [SomcpScope::CUSTOMERS_WRITE],
             [self::class, 'handle'],
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminStores')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminStores'),
+            files: ['image' => SomcpUpload::images()]
         );
     }
 
@@ -127,7 +128,7 @@ class SomcpToolUpdateStore extends SomcpToolCreateStore
 
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
         $read = SomcpToolListStores::read($idStore, $idLang, $idShop) ?? [];
-        self::readOnly($arguments, $read, $idStore, $errors);
+        self::readOnly($arguments, $read, $errors);
 
         $given = self::withoutUnchanged($arguments, $store, $read, $languages);
         $plan = self::planStore($given, $idShop, $errors, false);
@@ -158,6 +159,10 @@ class SomcpToolUpdateStore extends SomcpToolCreateStore
             $done = false;
             $failure = $e->getMessage();
         }
+        // After the fields, over the current files under the same names: a
+        // picture the shop refuses leaves the store with the one it had, and
+        // the fields saved, as the brands and suppliers do with their logo.
+        $image = $done && isset($plan['image']) ? self::storePicture($idStore, $plan['image']) : null;
         if (!$done) {
             SomcpLogger::log('store_update_failed', SomcpLogger::OUTCOME_FAILURE, 'store ' . $idStore . ': '
                 . Tools::substr($failure, 0, 500), '', $idEmployee);
@@ -178,6 +183,9 @@ class SomcpToolUpdateStore extends SomcpToolCreateStore
             'store' => SomcpToolListStores::read($idStore, $idLang, $idShop),
             'language' => (string) Language::getIsoById($idLang),
         ];
+        if ($image !== null) {
+            $result['image'] = $image;
+        }
         $shops = (int) Db::getInstance()->getValue(
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'store_shop` WHERE `id_store` = ' . (int) $idStore
         );
@@ -194,25 +202,17 @@ class SomcpToolUpdateStore extends SomcpToolCreateStore
      *
      * @param array<string, mixed> $arguments
      * @param array<string, mixed> $read
-     * @param int $idStore
      * @param array<int, string> $errors
      *
      * @return void
      */
-    private static function readOnly(array $arguments, array $read, int $idStore, array &$errors): void
+    private static function readOnly(array $arguments, array $read, array &$errors): void
     {
         foreach (self::READ_ONLY as $field) {
             if (!array_key_exists($field, $arguments)) {
                 continue;
             }
-            $value = $arguments[$field];
-            if ($field === 'image') {
-                if (!SomcpUpload::same($value, 'store_image', (string) $idStore)) {
-                    $errors[] = 'image: read only - the picture is not changed by this tool';
-                }
-                continue;
-            }
-            if ($value === ($read[$field] ?? null)) {
+            if ($arguments[$field] === ($read[$field] ?? null)) {
                 continue;
             }
             if ($field === 'country_name' || $field === 'state_name') {
@@ -265,6 +265,11 @@ class SomcpToolUpdateStore extends SomcpToolCreateStore
         }
         if (array_key_exists('hours', $given) && self::sameHours($given['hours'], self::stored($store->hours))) {
             unset($given['hours']);
+        }
+        // The download_ref the list answers for this store's picture, or null
+        // when it has none, is the picture it already has.
+        if (array_key_exists('image', $given) && SomcpUpload::same($given['image'], 'store_image', (string) $store->id)) {
+            unset($given['image']);
         }
         // The list says null for what the row holds in another shape: given
         // back, it is the read, not a value to check.
@@ -402,6 +407,12 @@ class SomcpToolUpdateStore extends SomcpToolCreateStore
             if ($merged !== $stored) {
                 $set['hours'] = $merged;
             }
+        }
+
+        // An address cannot be compared with a stored file: a picture given
+        // is a change, named without either address.
+        if (isset($plan['image'])) {
+            $changes[] = ['field' => 'image', 'old' => null, 'new' => null];
         }
 
         return [$changes, $set];

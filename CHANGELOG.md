@@ -72,15 +72,15 @@ them.
 **Create a store.** The new tool somcp_create_store does what Add new store
 then Save do on Shop Parameters > Contact, tab Stores: a store gets its name,
 address, country and state, latitude and longitude, phone, e-mail address,
-note, opening hours of each day and whether it is shown, each checked as on
-screen - a state for a country that has states, the postcode in the format of
+note, opening hours of each day, whether it is shown and its picture, each
+checked as on screen - a state for a country that has states, the postcode in the format of
 the country, coordinates that are not 0. The answer is the store as the list
 of the stores gives it.
 
 **Change a store.** The new tool somcp_update_store does what Edit then Save
 do on a store of Shop Parameters > Contact, tab Stores, and what its Enabled
-switch does: only the fields given change, each checked as when creating a
-store, a new country checked with its state and postcode. A value the store
+switch does: only the fields given change, the picture included, each
+checked as when creating a store, a new country checked with its state and postcode. A value the store
 already holds is never refused, and a store given back as the list reads it
 changes nothing.
 

@@ -40,7 +40,7 @@ class SomcpToolCreateStore extends SomcpToolCreateSupplier
     /** @var array<int, string> The fields of a store this tool and the update take. */
     public const STORE_FIELDS = [
         'languages', 'name', 'address1', 'address2', 'note', 'hours', 'postcode', 'city', 'country', 'state',
-        'latitude', 'longitude', 'phone', 'fax', 'email', 'active',
+        'latitude', 'longitude', 'phone', 'fax', 'email', 'active', 'image',
     ];
 
     /** @var array<string, string> The plain texts, and what the definition refuses in each. */
@@ -69,12 +69,13 @@ class SomcpToolCreateStore extends SomcpToolCreateSupplier
             Somcp::t('Create a store'),
             'Creates a store of Shop Parameters > Contact > Stores, as Add new store: name, address, country and '
                 . 'state by ISO code, latitude and longitude, phone, e-mail, note, opening hours and whether it is '
-                . 'shown on the storefront page of the stores. One store per call, not to be retried: read '
+                . 'shown on the storefront page of the stores, and its picture. One store per call, not to be retried: read '
                 . 'somcp_list_stores first. For the address of the shop itself use somcp_update_contact_details.',
             self::storeSchema(['name', 'address1', 'city', 'country', 'latitude', 'longitude']),
             [SomcpScope::CUSTOMERS_WRITE],
             [self::class, 'handle'],
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminStores')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminStores'),
+            files: ['image' => SomcpUpload::images()]
         );
     }
 
@@ -132,6 +133,7 @@ class SomcpToolCreateStore extends SomcpToolCreateSupplier
                     'description' => 'Active: whether the storefront page of the stores shows it. true by default, '
                         . 'as the form.',
                 ],
+                'image' => SomcpUpload::schema('Picture: the storefront picture of the store.', 'the picture'),
             ],
             'additionalProperties' => false,
         ];
@@ -163,7 +165,7 @@ class SomcpToolCreateStore extends SomcpToolCreateSupplier
 
         $store = new Store();
         $languages = $plan['languages'];
-        $values = array_diff_key($plan, ['languages' => true, 'texts' => true, 'hours' => true]);
+        $values = array_diff_key($plan, ['languages' => true, 'texts' => true, 'hours' => true, 'image' => true]);
         foreach (['address2', 'note'] as $field) {
             // Left out, it is empty in every language, as the form leaves it.
             $plan['texts'][$field] = $plan['texts'][$field] ?? [];
@@ -192,8 +194,22 @@ class SomcpToolCreateStore extends SomcpToolCreateSupplier
             return SomcpTool::text('The store could not be created: ' . $failure . '.', true);
         }
         $idStore = (int) $store->id;
+
+        // The picture needs the id_store for its name, so it comes after the
+        // row; one the shop refuses takes the store away again, so a failed
+        // call leaves nothing to clean up.
+        if (isset($plan['image'])) {
+            $image = self::storePicture($idStore, $plan['image']);
+            if (!empty($image['refused'])) {
+                $store->delete();
+                SomcpLogger::log('store_create_failed', SomcpLogger::OUTCOME_FAILURE, 'the picture: ' . $image['refused'], '', $idEmployee);
+
+                return SomcpTool::text('The store could not be created: the picture ' . $image['refused'] . '.', true);
+            }
+        }
         // The identifier only: the rest is an address.
-        SomcpLogger::log('store_created', SomcpLogger::OUTCOME_SUCCESS, 'store ' . $idStore, '', $idEmployee);
+        SomcpLogger::log('store_created', SomcpLogger::OUTCOME_SUCCESS, 'store ' . $idStore
+            . (isset($plan['image']) ? ' with its picture' : ''), '', $idEmployee);
 
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
         $result = [
@@ -350,7 +366,39 @@ class SomcpToolCreateStore extends SomcpToolCreateSupplier
             }
         }
 
+        // The Picture field of the form replaces a picture and has no delete
+        // link: null is refused rather than read as a removal the screen
+        // cannot do.
+        if (array_key_exists('image', $arguments)) {
+            if ($arguments['image'] === null && !$required) {
+                $errors[] = 'image: the back office cannot remove a store\'s picture - give a new one or leave the field out';
+            } else {
+                $image = SomcpUpload::argument($arguments, 'image', $errors, 'image');
+                if ($image !== null) {
+                    $plan['image'] = $image;
+                }
+            }
+        }
+
         return $plan;
+    }
+
+    /**
+     * The picture written as the store form's Save writes it.
+     *
+     * AdminController::postImage() keeps img/st/<id_store>.jpg and one
+     * thumbnail per image type of the stores, and the form shows a copy
+     * cached in img/tmp, dropped so it shows the new one: the path of the
+     * brands and suppliers, which differs only by folder, types and cache.
+     *
+     * @param int $idStore
+     * @param array{url: string, upload_ref: string} $source
+     *
+     * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
+     */
+    public static function storePicture(int $idStore, array $source): array
+    {
+        return self::storeLogoIn($idStore, $source, _PS_STORE_IMG_DIR_, 'stores', 'store_');
     }
 
     /**

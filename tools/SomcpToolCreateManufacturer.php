@@ -348,23 +348,23 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
     }
 
     /**
-     * A logo downloaded, checked and written the way the core's brand and
-     * supplier uploaders write theirs.
+     * A logo or picture downloaded, checked and written the way the core's
+     * brand and supplier uploaders, and the store form, write theirs.
      *
-     * Those two uploaders differ only by folder, image types and cached copy,
-     * so one path serves both, and the file itself comes from SomcpUpload::fetchImage(),
+     * Those differ only by folder, image types and cached copy, so one path
+     * serves the brands, the suppliers and the stores, and the file itself comes from SomcpUpload::fetchImage(),
      * as every other image does: a second copy would be a second place to
      * forget one of its checks.
      *
-     * @param int $id the brand or supplier
+     * @param int $id the brand, supplier or store
      * @param array{url: string, upload_ref: string} $source
-     * @param string $directory where the uploader writes, _PS_MANU_IMG_DIR_ or _PS_SUPP_IMG_DIR_
-     * @param string $for the image types to make: manufacturers or suppliers
+     * @param string $directory where the uploader writes, _PS_MANU_IMG_DIR_, _PS_SUPP_IMG_DIR_ or _PS_STORE_IMG_DIR_
+     * @param string $for the image types to make: manufacturers, suppliers or stores
      * @param string $miniPrefix the name of the copy the back office list keeps in the image cache
      *
      * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
      */
-    protected static function storeLogoIn(int $id, array $source, string $directory, string $for, string $miniPrefix): array
+    public static function storeLogoIn(int $id, array $source, string $directory, string $for, string $miniPrefix): array
     {
         $origin = SomcpUpload::origin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');

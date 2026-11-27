@@ -96,7 +96,9 @@ ignored), the file of a virtual product (`virtual_file.file` of
 `somcp_update_product`), the icon of an order status
 (`somcp_update_order_status`) and the attribute value texture
 (`somcp_update_attribute_value`, where a `null` given back for a value that has
-a texture is refused: `remove_texture` removes it). A list of objects read back
+a texture is refused: `remove_texture` removes it) and the picture of a store
+(`somcp_update_store`, where `null` for a store that has one is refused: the
+screen cannot remove it). A list of objects read back
 is taken where the write takes their identifiers, and the schema says so: the
 `groups` of `somcp_get_category` go back to the category writes as they are.
 
@@ -4613,8 +4615,8 @@ the update will follow.
 **Does** - creates a store of **Shop Parameters > Contact**, tab **Stores**,
 as **Add new store** then **Save**: its name, address, country and state,
 coordinates, phone, e-mail, note, hours and whether it is shown on the
-storefront page of the stores. One store per call. The **Picture** comes
-with part 2 (#463).
+storefront page of the stores, and its **Picture** (part 2, #463). One
+store per call.
 
 **Do not use for** - the address of the shop itself (→
 `somcp_update_contact_details`); a contact of the contact form (→
@@ -4637,6 +4639,7 @@ update of a store, on the model of `SomcpToolCreateContact::planContact()`:
 | `latitude`, `longitude` | **Latitude / Longitude** | number | both required and not 0 (`latitude: required, not 0`), `Validate::isCoordinate()` within -90 to 90 and -180 to 180, rounded to 8 decimals as the screen saves them |
 | `phone`, `fax`, `email` | **Phone**, **Fax**, **Email address** | string | optional, `validateField()` |
 | `active` | **Active** | boolean | `true` when left out, as the form |
+| `image` | **Picture** | object | `SomcpUpload::schema('Picture: the storefront picture of the store.', 'the picture')`, read in `planStore()` with `SomcpUpload::argument($arguments, 'image', $errors, 'image')`, as the `image` of `somcp_create_title`; `files: ['image' => SomcpUpload::images()]` |
 
 Unknown arguments through `SomcpTool::unknownFields()`: an item of
 `somcp_list_stores` given back is not a creation, `id_store` is refused as
@@ -4648,12 +4651,19 @@ answers one item, read again by `SomcpToolListStores::read()` (the query of
 the list, then `item()`), in the shop's default language, `language` beside
 it; `warning` when the shop runs several shops: `The store was created for
 this shop only.` A `false` or an exception of `Store::add()`: `The store
-could not be created: <reason>.`, nothing else written.
+could not be created: <reason>.`, nothing else written. A picture the shop
+refuses deletes the store just created: `The store could not be created: the
+picture <reason>.`
 
 **Notes**
 - `new Store()`, filled, `id_shop_list` set to the shop of the token, then
   `add()`: the rows of `store`, `store_lang` (every language) and
   `store_shop`.
+- The picture after `add()`, through `SomcpToolCreateStore::storePicture()`,
+  which calls `SomcpToolCreateManufacturer::storeLogoIn()` (shared with the
+  brands and suppliers): `img/st/<id_store>.jpg`, one thumbnail per image
+  type `stores` in every format switched on (made on a create too, which the
+  screen does not), the cached `img/tmp/store_<id_store>.jpg` removed.
 - The module's log line `store_created` names the `id_store` only.
 - Changes the shop: the assistant asks first. Not replayable: a second call
   creates a second store.
@@ -4672,8 +4682,8 @@ running version decides through `validateField()`. The rest is the same.
 **Does** - changes a store of **Shop Parameters > Contact**, tab **Stores**,
 as **Edit** then **Save**, and switches it on or off as the **Enabled**
 switch of the list and **Enable selection** / **Disable selection** do (an
-`active`-only call, one store at a time). One store per call. The
-**Picture** comes with part 2 of `somcp_create_store` (#463).
+`active`-only call, one store at a time), and replaces its **Picture**. One
+store per call.
 
 **Do not use for** - creating a store (→ `somcp_create_store`); the address
 of the shop itself (→ `somcp_update_contact_details`).
@@ -4684,7 +4694,8 @@ of the shop itself (→ `somcp_update_contact_details`).
 |---|---|---|
 | `id_store` | integer | required, a store of the shop of the token (`store_shop`): `SomcpTool::notAnIdentifier('id_store')`, `SomcpTool::notFound('id_store', 'store', <id>, 'somcp_list_stores')` |
 | every field of `somcp_create_store` | | optional: only what is given changes, checked by `SomcpToolCreateStore::planStore($arguments, $idShop, $errors, false)` |
-| `id_country`, `id_state`, `country_name`, `state_name`, `date_add`, `date_upd`, `image` | | read only: accepted when equal to the store as read, `<field>: read only` otherwise; `country_name` / `state_name` tell to change `country` / `state`; `image` is equal when `SomcpUpload::same()` recognises its `download_ref` |
+| `image` | object | a new picture, as in the create; the `download_ref` `somcp_list_stores` read for this store, or `null` when it has none, is unchanged (`SomcpUpload::same($given, 'store_image', <id_store>)`); `null` for a store that has one is refused: `image: the back office cannot remove a store's picture - give a new one or leave the field out` |
+| `id_country`, `id_state`, `country_name`, `state_name`, `date_add`, `date_upd` | | read only: accepted when equal to the store as read, `<field>: read only` otherwise; `country_name` / `state_name` tell to change `country` / `state` |
 
 Rules of a change:
 - The checks compare first: a field equal to the store as read is left out
@@ -4707,7 +4718,12 @@ and the hours as `<field> (<iso>)`), `store` read again by
 Nothing was written.` `warning` when the store is tied to several shops
 (`store_shop`): `This store is shown on <n> shops: the change applies to all
 of them.` A `false` or an exception of `Store::update()`: `The store could
-not be changed: <reason>.`
+not be changed: <reason>.` A new picture is written after the fields, over
+the current files under the same names (`storePicture()`): `changes` names
+`image` with `old` and `new` `null`, never an address, and `image` beside
+`store` holds the `url` or `upload_ref` given with `stored: true` or
+`refused: <reason>`, as `somcp_update_manufacturer` answers `logo`; a refused
+picture leaves the store with the one it had and the fields saved.
 
 **Errors** - in the envelope `Nothing was changed. Correct these and call
 again:`: those of `somcp_create_store` for a changed field, an unknown or

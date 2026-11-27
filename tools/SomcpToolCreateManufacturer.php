@@ -403,17 +403,18 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      *
      * Every thumbnail of the image types in every format, the original, and
      * the two copies the back office keeps in the image cache, so no page goes
-     * on showing the old logo. Shared by the brand and supplier updates, which
-     * differ only by folder, image types and cache names, as storeLogoIn() is.
+     * on showing the old logo. Shared by the brand and supplier updates and
+     * the deletion of a store, which differ only by folder, image types and
+     * cache names, as storeLogoIn() is.
      *
-     * @param int $id the brand or supplier
-     * @param string $directory where the logo lives, _PS_MANU_IMG_DIR_ or _PS_SUPP_IMG_DIR_
-     * @param string $for the image types it was resized to: manufacturers or suppliers
-     * @param string $cacheName the name of its copies in the image cache: manufacturer or supplier
+     * @param int $id the brand, supplier or store
+     * @param string $directory where the logo lives, _PS_MANU_IMG_DIR_, _PS_SUPP_IMG_DIR_ or _PS_STORE_IMG_DIR_
+     * @param string $for the image types it was resized to: manufacturers, suppliers or stores
+     * @param string $cacheName the name of its copies in the image cache: manufacturer, supplier or store
      *
      * @return array<string, mixed>
      */
-    protected static function removeLogoIn(int $id, string $directory, string $for, string $cacheName): array
+    public static function removeLogoIn(int $id, string $directory, string $for, string $cacheName): array
     {
         $files = [$directory . $id . '.jpg'];
         // The formats PrestaShop 8.1 added are listed whether or not they are

@@ -4668,8 +4668,9 @@ picture <reason>.`
 - Changes the shop: the assistant asks first. Not replayable: a second call
   creates a second store.
 - The JSON scenario checks the refusals; the shop test creates a store in
-  Miami, reads it in `somcp_list_stores` and deletes it with `Store::delete()`
-  in a `finally`. Stores 1 to 5 are never changed.
+  Miami, reads it in `somcp_list_stores` and deletes it with
+  `somcp_delete_store`, `Store::delete()` in a `finally` only when that tool
+  failed. Stores 1 to 5 are never changed.
 
 **Differences between 8.0.1 and 9.0.0** - the size of `note` and `hours`
 (65 000 on 8.0.1, the medium text limit on 9.0.0), which the definition of the
@@ -4742,6 +4743,57 @@ foreign `id_store`, a read-only field changed, an unknown argument.
   reads it back. Stores 1 to 5 are never changed.
 
 **Differences between 8.0.1 and 9.0.0** - none in the form or its saving.
+
+#### `somcp_delete_store`
+**State**: written · [issue #464](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/464)
+**Nature**: `acts(DELETE, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_delete_contact`
+
+**Does** - deletes a store of **Shop Parameters > Contact**, tab **Stores**,
+as the row action **Delete** and the bulk action **Delete selected** do, one
+store per call, its picture with it.
+
+**Do not use for** - hiding a store without losing it (→
+`somcp_update_store` with `active: false`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_store` | integer | required, a store of the shop of the token: `SomcpTool::notAnIdentifier('id_store')`, `SomcpTool::notFound('id_store', 'store', <id>, 'somcp_list_stores')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every mistake in one
+answer, in the envelope `Nothing was deleted. Correct these and call again:`.
+
+**Returns** - `deleted: true`, `id_store` and `store`: the item as
+`SomcpToolListStores::read()` answered it before, in the shop's default
+language, as `somcp_delete_contact` answers. `warning` when another shop
+still shows the store (`The store was removed from this shop; <n> other
+shops still show it.`), when it was the last store of the shop (`The shop has
+no store left: the storefront page of the stores is empty.`), and when a file
+of the picture could not be removed. A `false` or an exception of
+`Store::delete()`: `The store could not be deleted: <reason>. Read it with
+somcp_list_stores before calling again.`
+
+**Notes**
+- `AdminStoresController` sets `$this->deleted = false`, so a delete really
+  deletes: `new Store($idStore)`, `id_shop_list` set to the shop of the
+  token, `delete()`, which removes the rows of `store_shop`, then `store` and
+  `store_lang` once no shop holds the store.
+- Neither version removes `img/st/<id>.jpg` nor its thumbnails; once the
+  `store` row is gone the tool does, with
+  `SomcpToolCreateManufacturer::removeLogoIn($idStore, _PS_STORE_IMG_DIR_,
+  'stores', 'store')`: the original, every thumbnail in every format and the
+  cached copies, as #441 decided for a title. A file left does not undo the
+  deletion.
+- The module's log line `store_deleted` names the `id_store` only.
+- Changes the shop and cannot be undone: the assistant asks first. Not
+  replayable: a second call answers that the store is unknown.
+- The JSON scenario checks the refusals; the shop test deletes the store made
+  by `somcp_create_store` with its picture, then checks the list no longer
+  answers it and no `img/st/<id>` file is left. Stores 1 to 5 are never
+  deleted.
+
+**Differences between 8.0.1 and 9.0.0** - none.
 
 #### `somcp_get_contact_details`
 **State**: written · [issue #456](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/456)

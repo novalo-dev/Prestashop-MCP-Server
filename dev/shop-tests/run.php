@@ -1085,7 +1085,8 @@ if ($updateContactDetails !== null && $getContactDetails !== null) {
 // A store created (#461), then read in the list as the merchant sees it:
 // the hours of each day, the country and state by ISO code, no picture.
 // Stores 1 to 5 are the demo's and never touched; the store made here is
-// deleted in the finally, through the object, until a tool deletes stores.
+// deleted by somcp_delete_store, and the finally falls back to the object
+// only when that tool failed.
 $createStore = $registry->get('somcp_create_store');
 $listStoresAgain = $registry->get('somcp_list_stores');
 if ($createStore !== null && $listStoresAgain !== null) {
@@ -1209,6 +1210,29 @@ if ($createStore !== null && $listStoresAgain !== null) {
                 } else {
                     printf("  %-6s %s\n", 'ok', 'somcp_update_store (the picture set to null, refused)');
                 }
+            }
+        }
+
+        // The deletion (#464): the store made above goes with its picture,
+        // which the back office would leave on disk.
+        $deleteStore = $registry->get('somcp_delete_store');
+        if ($deleteStore !== null && $idNewStore > 5) {
+            $calls += 3;
+            $deleted = $storeCall($deleteStore, ['id_store' => $idNewStore]);
+            $listedGone = $storeCall($listStoresAgain, ['name' => 'Somcp test store']);
+            $files = glob(_PS_STORE_IMG_DIR_ . $idNewStore . '[.-]*') ?: [];
+            if (($deleted['deleted'] ?? null) !== true || ($deleted['store']['id_store'] ?? null) !== $idNewStore
+                || ($listedGone['total_count'] ?? null) !== 0 || $files !== []) {
+                $failures[] = 'somcp_delete_store (the store made above, with its picture): ' . json_encode($deleted)
+                    . ' - listed ' . json_encode($listedGone) . ' - files left ' . json_encode($files);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_store (the store made above, with its picture)');
+            }
+            $again = $storeCall($deleteStore, ['id_store' => $idNewStore]);
+            if (strpos((string) ($again['error'] ?? ''), 'somcp_list_stores') === false) {
+                $failures[] = 'somcp_delete_store (deleted twice): expected the store unknown - ' . json_encode($again);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_store (deleted twice, answered unknown)');
             }
         }
     } catch (Throwable $e) {

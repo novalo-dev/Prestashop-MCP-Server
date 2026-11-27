@@ -1246,6 +1246,10 @@ T = {
  "Modifier un magasin",
  "Modificar una tienda",
  "Ein Geschäft ändern"),
+"Delete a store": (
+ "Supprimer un magasin",
+ "Eliminar una tienda",
+ "Ein Geschäft löschen"),
 "Get the contact details of the shop": (
  "Lire les coordonnées de la boutique",
  "Leer los datos de contacto de la tienda",

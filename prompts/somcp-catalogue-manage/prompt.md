@@ -77,6 +77,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_stores`
 - `somcp_create_store`
 - `somcp_update_store`
+- `somcp_delete_store`
 - `somcp_get_contact_details`
 - `somcp_update_contact_details`
 - `somcp_get_email_settings`
@@ -309,6 +310,9 @@ share a name, give the country and the state by ISO code and the latitude and
 longitude, and ask the merchant first; a second call makes a second store.
 `somcp_update_store` changes a store or switches it off: give back the item of
 the list with the change, and ask the merchant first.
+`somcp_delete_store` deletes a store for good, its picture with it: ask the
+merchant first, offer to switch it off instead, and keep its answer, which
+holds what it takes to create it again.
 `somcp_get_contact_details` reads the shop's own name, e-mail address,
 registration number and address, which the e-mails and the invoices print:
 read it before telling a merchant why an invoice shows the wrong address.

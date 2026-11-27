@@ -84,6 +84,11 @@ checked as when creating a store, a new country checked with its state and postc
 already holds is never refused, and a store given back as the list reads it
 changes nothing.
 
+**Delete a store.** The new tool somcp_delete_store does what the Delete
+action does on a store of Shop Parameters > Contact, tab Stores, one store per
+call, and answers the store as it was. Its picture is deleted with it, where
+the back office leaves the files on the server.
+
 **Read the contact details of the shop.** The new tool
 somcp_get_contact_details reads the card Contact details of Shop Parameters >
 Contact, tab Stores: the shop name, e-mail address, registration number,

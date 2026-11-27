@@ -1567,6 +1567,11 @@
       <source>Change a store</source>
       <target>Change a store</target>
     </trans-unit>
+    <!-- Delete a store -->
+    <trans-unit id="642a104ac616392bf592beefa6045c50" resname="Delete a store">
+      <source>Delete a store</source>
+      <target>Delete a store</target>
+    </trans-unit>
     <!-- Get the contact details of the shop -->
     <trans-unit id="0c66db3c29d38926dcde73447ee2b642" resname="Get the contact details of the shop">
       <source>Get the contact details of the shop</source>

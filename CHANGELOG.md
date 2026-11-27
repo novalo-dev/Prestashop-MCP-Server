@@ -214,6 +214,14 @@ every language, so it can be created again, and warns when the shop has no
 contact left. The contact that receives the customers' messages is kept: the
 back office would delete it and leave those messages without a receiver.
 
+**List the stores.** The new tool somcp_list_stores lists the stores of Shop
+Parameters > Contact, tab Stores, the ones the storefront page of the stores
+shows: each with every field of its Edit form - name, address, country and
+state, latitude and longitude, phone, e-mail address, note, whether it is
+shown, the opening hours of each day and its picture, which the assistant can
+download. It filters on the name, the city, the postcode, the country and
+whether the store is shown, as the list does.
+
 **List the social titles.** The new tool somcp_list_titles lists the titles of
 Shop Parameters > Customer Settings, tab Titles: their name in each language,
 the gender they stand for and their image. The assistant now finds the title

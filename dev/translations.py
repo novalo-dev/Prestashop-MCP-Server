@@ -1234,6 +1234,10 @@ T = {
  "Lister les contacts",
  "Listar los contactos",
  "Die Kontakte auflisten"),
+"List the stores": (
+ "Lister les magasins",
+ "Listar las tiendas",
+ "Die Geschäfte auflisten"),
 "Create a contact": (
  "Créer un contact",
  "Crear un contacto",

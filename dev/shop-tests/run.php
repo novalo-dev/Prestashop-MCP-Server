@@ -876,6 +876,59 @@ if ($exportTranslations !== null) {
     }
 }
 
+// The demo stores read (#455): store 1 is Dade County with its Monday hours
+// as the shop keeps them, a list rather than the joined text of the form; its
+// picture, when the shop has the file, leads to the JPEG through the reference.
+$listStores = $registry->get('somcp_list_stores');
+if ($listStores !== null) {
+    ++$calls;
+    try {
+        $result = $listStores->call([], [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $listStores->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => [],
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $stores = json_decode(trim($text), true);
+        $first = is_array($stores) ? ($stores['stores'][0] ?? []) : [];
+        if (($first['id_store'] ?? null) !== 1 || ($first['name'] ?? null) !== 'Dade County'
+            || ($first['hours']['monday'] ?? null) !== ['09:00AM - 07:00PM']) {
+            $failures[] = 'somcp_list_stores (store 1 and its Monday hours): expected Dade County, ["09:00AM - 07:00PM"] - ' . $text;
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_stores (store 1 and its Monday hours)');
+        }
+
+        $picture = is_array($first['image'] ?? null) ? (string) ($first['image'][SomcpDownload::ARG_REF] ?? '') : '';
+        if ($picture !== '') {
+            $query = SomcpDownload::query($picture);
+            $file = SomcpDownload::check($query, (int) $employee->id, (int) $context->shop->id) === ''
+                ? SomcpDownload::file($query['kind'], $query['id'], (int) $context->shop->id)
+                : 'refused';
+            if (!is_array($file) || strncmp($file['bytes'], "\xFF\xD8", 2) !== 0) {
+                $failures[] = 'somcp_list_stores (the picture of store 1, downloaded): expected a JPEG - '
+                    . json_encode(is_array($file) ? ['name' => $file['name'], 'bytes' => strlen($file['bytes'])] : $file);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_stores (the picture of store 1, downloaded)');
+            }
+        } elseif (is_file(_PS_STORE_IMG_DIR_ . '1.jpg')) {
+            $failures[] = 'somcp_list_stores (the picture of store 1): the shop has img/st/1.jpg, the answer no image';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_stores (no picture for store 1 on this shop, not downloaded)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_list_stores: ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A logged e-mail deleted twice (#424): the recipients of the demo lines are
 // real addresses and the test e-mail is not logged, so the line is written
 // here through the Mail object, as Mail::send() writes it. Deleting it must

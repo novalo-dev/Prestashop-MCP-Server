@@ -1552,6 +1552,11 @@
       <source>List the contacts</source>
       <target>Lister les contacts</target>
     </trans-unit>
+    <!-- List the stores -->
+    <trans-unit id="4d47291b0a273d43cd013f830022cf92" resname="List the stores">
+      <source>List the stores</source>
+      <target>Lister les magasins</target>
+    </trans-unit>
     <!-- Create a contact -->
     <trans-unit id="e4c16f79a29856399a679d5cde54f1ee" resname="Create a contact">
       <source>Create a contact</source>

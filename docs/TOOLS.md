@@ -4541,6 +4541,65 @@ or the contact of **Send emails to**, given in one answer.
 **Differences between 8.0.1 and 9.0.0** - none: `ContactDeleter` and
 `Contact::delete()` are the same on both.
 
+#### `somcp_list_stores`
+**State**: written · [issue #455](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/455)
+**Nature**: `acts(VIEW, 'AdminStores')` · **Scope**: `mcp.customers.read`, as `somcp_list_contacts`
+
+**Does** - lists the stores of **Shop Parameters > Contact**, tab **Stores**
+(`AdminStores`): the stores the storefront page of the stores shows, each with
+every field of its **Edit** form (address, coordinates, hours, picture), so
+the item can be given back whole to the update that follows. Read only,
+replayable.
+
+**Do not use for** - the contact addresses of the contact form (→
+`somcp_list_contacts`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `language` | | string | ISO code of an active language for the texts and the country and state names, by `SomcpTool::readLanguage()`; the shop default when left out; a code the shop does not have is refused |
+| `name` | filter **Name** | string | contains, without case |
+| `city`, `postcode` | filters **City**, **Zip/Postal code** | string | contains, without case |
+| `id_country` | filter **Country** | integer | from `somcp_list_countries`; `SomcpTool::notAnIdentifier('id_country')`; unknown or not of this shop: `SomcpTool::notFound('id_country', 'country', <id>, 'somcp_list_countries')` |
+| `active` | filter **Enabled** | boolean | `active: true or false` otherwise |
+| `sort` | the sortable columns | string | `id_asc` (default, as the screen), `id_desc`, `name_asc`, `name_desc`, `city_asc`, `city_desc`, through `SomcpTool::oneOf()` |
+| `limit`, `offset` | | integers | as `somcp_list_cart_rules`: 20 by default, 100 at most; `offset` 0 at least |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Every mistake in one
+refusal, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns**
+- `stores`: one object per store of the shop of the token (`store_shop`),
+  built by `SomcpToolListStores::item()`, public for the tools that write a
+  store: `id_store`, `name` (**Name**), `address1` (**Address**), `address2`
+  (**Address (2)**), `postcode` (**Zip/Postal code**), `city`, `id_country`
+  and `country` (its name in the language read), `id_state` and `state`
+  (`null` without a state), `latitude`, `longitude` (numbers), `phone`,
+  `fax`, `email` (**Email address**), `note`, `active` (**Active**: shown on
+  the storefront), `hours`, `image`, `date_add`, `date_upd`
+  (`SomcpTool::isoDate()`);
+- `hours`: the seven days by their English names (`monday` to `sunday`), in
+  the order of the form, each the list `store_lang.hours` stores for that day
+  in the language read (`[]` for an empty day); `null` when the row holds no
+  valid JSON list of seven lists of strings. Never the joined text of the form
+  (` | ` between two openings);
+- `image`: the **Picture**, `SomcpDownload::offer('store_image', <id_store>,
+  <id_shop>)`, `null` without a picture. The kind `store_image` of
+  `SomcpDownload::KINDS`, reader `somcp_list_stores`, is `img/st/<id>.jpg`
+  with `store_shop` as its shop table; the thumbnails
+  (`<id>-stores_default.jpg`) are never offered;
+- `returned`, `total_count`, `offset`, `language`.
+
+**Notes**
+- The texts are those of `language`; the update will take them per language, as every write does.
+- The JSON scenario reads the 5 demo stores, filters on a name, and checks the refusals; the shop test reads store 1 (**Dade County**) and its Monday hours, and downloads its picture when the shop has one.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list or the form. Only
+the thumbnails written for a new picture differ (8.0.1 `-<type>.jpg` and `2x`
+with `PS_HIGHT_DPI`, 9.0.0 every format of `ImageFormatConfiguration`), which
+the update will follow.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

@@ -888,12 +888,14 @@ if ($updateDefaults !== null && $listRoles !== null) {
 // A customer group created (#467, #468): named in every active language, read
 // back with somcp_get_customer_group, every installed module authorized; then
 // one with a category discount on Home and every module but Payments by check,
-// whose payment is named in the warning. Both are removed in a finally so the
-// demo data keeps its three groups.
+// whose payment is named in the warning. The first is then deleted with
+// somcp_delete_customer_group (#469) and read back unknown; whatever is left is
+// removed in a finally so the demo data keeps its three groups.
 $createGroup = $registry->get('somcp_create_customer_group');
 $readGroup = $registry->get('somcp_get_customer_group');
 if ($createGroup !== null && $readGroup !== null) {
     $calls += 4;
+    $deleteGroup = $registry->get('somcp_delete_customer_group');
     $newGroupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
         $result = $tool->call($arguments, [
             'id_shop' => (int) $context->shop->id,
@@ -957,6 +959,19 @@ if ($createGroup !== null && $readGroup !== null) {
                 $failures[] = 'somcp_create_customer_group (a discount on Home, Payments by check left out): ' . json_encode([$lists, $readLists]);
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_create_customer_group (a discount on Home, Payments by check left out)');
+            }
+        }
+        if ($deleteGroup !== null && $idNewGroup > 3) {
+            $calls += 2;
+            $deleted = $newGroupCall($deleteGroup, ['id_group' => $idNewGroup]);
+            $gone = $newGroupCall($readGroup, ['id_group' => $idNewGroup]);
+            if (($deleted['deleted'] ?? null) !== true || ($deleted['id_group'] ?? null) !== $idNewGroup
+                || ($deleted['group']['id_group'] ?? null) !== $idNewGroup
+                || strpos((string) ($gone['error'] ?? ''), 'no customer group of this shop has the identifier ' . $idNewGroup) === false) {
+                $failures[] = 'somcp_delete_customer_group (the group just created, then read unknown): ' . json_encode([$deleted, $gone]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_customer_group (the group just created, then read unknown)');
+                $idNewGroup = 0;
             }
         }
     } catch (Throwable $e) {

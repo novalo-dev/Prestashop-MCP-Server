@@ -7159,6 +7159,65 @@ association** on 8.0.1, **Store association** on 9.0.0 (the tool takes no
 shop: the shop of the token). Otherwise the same legacy controller, the same
 `Group` definition and `Group::add()`.
 
+#### `somcp_delete_customer_group`
+**State**: written · [issue #469](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/469)
+**Nature**: `acts(DELETE, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer_group`
+
+**Does** - deletes a customer group of **Shop Parameters > Customer
+Settings > Groups**, as the row action **Delete** and the bulk action
+**Delete selected** do, one group per call. The three groups of **Default groups
+options** are refused, as the list shows no **Delete** for them.
+
+**Do not use for** - taking one customer out of a group (→
+`somcp_update_customer`); changing which group visitors, guests or customers
+get (→ `somcp_update_default_groups`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_group` | integer | required, a group of the shop of the token (`SomcpToolGetCustomerGroup::inShop()`): `id_group: required - find it with somcp_list_customer_groups`, `SomcpTool::notAnIdentifier('id_group')`, `SomcpTool::notFound('id_group', 'customer group', <id>, 'somcp_list_customer_groups')`; one of the three default groups (`PS_UNIDENTIFIED_GROUP`, `PS_GUEST_GROUP`, `PS_CUSTOMER_GROUP` of the shop): `id_group: the group of <visitors / guests / customers> cannot be deleted - choose another one with somcp_update_default_groups first` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the group read first with `SomcpToolGetCustomerGroup::group()`,
+and counted: its members (`customer_group`), the customers whose default
+group it is, the cart rules kept to it alone, its specific prices. Then
+`Group::delete()`, the core's own deletion (the group in every shop, its rows
+of `cart_rule_group`, `customer_group`, `category_group`, `group_reduction`,
+`product_group_reduction_cache` and `module_group`; the customers left in no
+group put in the Customers group, the default group of the others given
+again), never rows deleted by hand. A refusal: `The customer group could not
+be deleted: <reason>. Read it with somcp_get_customer_group before calling
+again.`, logged as `customer_group_delete_failed`. Then
+`Tools::clearSmartyCache()`, since the members now see the prices of another
+group. Logged as `customer_group_deleted` with the `id_group` and the counts
+only.
+
+**Returns** - `deleted: true`, `id_group` and `group`: the group as read
+before. `warning`, each when it applies: `Its <n> members keep their other
+groups; those left in none were put in <name of the Customers group>.`; `<n>
+customers had it as default group: each now has the first group he is in.`;
+`<n> cart rules were kept to this group only: no customer can use them any
+more - change them with somcp_update_cart_rule.`; `<n> specific prices were
+for this group: they no longer apply to anyone.`; in a shop of several,
+`This group also belonged to the shops <names>: it is deleted for all of
+them.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`: `id_group` missing, not an identifier, unknown or of another shop, or
+a default group; an unknown argument.
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first,
+naming the members counted. Not replayable: when the answer is lost, read
+`somcp_list_customer_groups` first. The shop test creates a group with
+`somcp_create_customer_group`, deletes it, and checks that
+`somcp_get_customer_group` answers it unknown; groups 1 to 3 are never
+deleted.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same `Group::delete()`
+and the same skip list of the row action.
+
 ### Diagnostics
 
 Tools that describe the connection itself, and the two that carry files in and out of the shop for the other tools.
@@ -10605,7 +10664,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_list_languages`, `somcp_create_language`, `somcp_update_language`, `somcp_delete_language`, `somcp_install_language_pack`, `somcp_export_translations`, `somcp_list_translations`, `somcp_update_translation`, `somcp_get_localization_settings`, `somcp_update_localization_settings`, `somcp_import_localization_pack`, `somcp_get_general_settings`, `somcp_update_general_settings`, `somcp_get_maintenance_settings`, `somcp_update_maintenance_settings`, `somcp_list_currencies`, `somcp_get_currency`, `somcp_create_currency`, `somcp_update_currency`, `somcp_delete_currency`, `somcp_update_exchange_rates`, `somcp_create_tax`, `somcp_update_tax`, `somcp_delete_tax`, `somcp_get_tax_options`, `somcp_update_tax_options`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_add_country_rule`, `somcp_update_country_rule`, `somcp_delete_country_rule`, `somcp_list_customer_groups`, `somcp_get_customer_group`, `somcp_update_customer_group`, `somcp_update_default_groups`, `somcp_create_customer_group`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_get_shipping_preferences`, `somcp_update_shipping_preferences`, `somcp_get_payment_preferences`, `somcp_update_payment_restrictions`, `somcp_list_contacts`, `somcp_create_contact`, `somcp_update_contact`, `somcp_delete_contact`, `somcp_list_stores`, `somcp_create_store`, `somcp_update_store`, `somcp_delete_store`, `somcp_get_contact_details`, `somcp_update_contact_details`, `somcp_get_email_settings`, `somcp_update_email_settings`, `somcp_list_email_logs`, `somcp_delete_email_log`, `somcp_erase_email_logs`, `somcp_send_test_email`, `somcp_get_order_settings`, `somcp_update_order_settings`, `somcp_get_product_settings`, `somcp_update_product_settings`, `somcp_get_customer_settings`, `somcp_update_customer_settings`, `somcp_list_titles`, `somcp_create_title`, `somcp_update_title`, `somcp_delete_title`, `somcp_list_zones`, `somcp_create_zone`, `somcp_update_zone`, `somcp_delete_zone`, `somcp_list_countries`, `somcp_get_country`, `somcp_update_country`, `somcp_get_country_options`, `somcp_update_country_options`, `somcp_list_states`, `somcp_create_state`, `somcp_update_state`, `somcp_delete_state`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_list_languages`, `somcp_create_language`, `somcp_update_language`, `somcp_delete_language`, `somcp_install_language_pack`, `somcp_export_translations`, `somcp_list_translations`, `somcp_update_translation`, `somcp_get_localization_settings`, `somcp_update_localization_settings`, `somcp_import_localization_pack`, `somcp_get_general_settings`, `somcp_update_general_settings`, `somcp_get_maintenance_settings`, `somcp_update_maintenance_settings`, `somcp_list_currencies`, `somcp_get_currency`, `somcp_create_currency`, `somcp_update_currency`, `somcp_delete_currency`, `somcp_update_exchange_rates`, `somcp_create_tax`, `somcp_update_tax`, `somcp_delete_tax`, `somcp_get_tax_options`, `somcp_update_tax_options`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_add_country_rule`, `somcp_update_country_rule`, `somcp_delete_country_rule`, `somcp_list_customer_groups`, `somcp_get_customer_group`, `somcp_update_customer_group`, `somcp_update_default_groups`, `somcp_create_customer_group`, `somcp_delete_customer_group`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_get_shipping_preferences`, `somcp_update_shipping_preferences`, `somcp_get_payment_preferences`, `somcp_update_payment_restrictions`, `somcp_list_contacts`, `somcp_create_contact`, `somcp_update_contact`, `somcp_delete_contact`, `somcp_list_stores`, `somcp_create_store`, `somcp_update_store`, `somcp_delete_store`, `somcp_get_contact_details`, `somcp_update_contact_details`, `somcp_get_email_settings`, `somcp_update_email_settings`, `somcp_list_email_logs`, `somcp_delete_email_log`, `somcp_erase_email_logs`, `somcp_send_test_email`, `somcp_get_order_settings`, `somcp_update_order_settings`, `somcp_get_product_settings`, `somcp_update_product_settings`, `somcp_get_customer_settings`, `somcp_update_customer_settings`, `somcp_list_titles`, `somcp_create_title`, `somcp_update_title`, `somcp_delete_title`, `somcp_list_zones`, `somcp_create_zone`, `somcp_update_zone`, `somcp_delete_zone`, `somcp_list_countries`, `somcp_get_country`, `somcp_update_country`, `somcp_get_country_options`, `somcp_update_country_options`, `somcp_list_states`, `somcp_create_state`, `somcp_update_state`, `somcp_delete_state`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

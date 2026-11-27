@@ -543,6 +543,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_customer_group` | ✎ Change a customer group | Groups › edit |
 | `somcp_update_default_groups` | ✎ Change the default customer groups | Groups › edit |
 | `somcp_create_customer_group` | ✎ Create a customer group | Groups › add |
+| `somcp_delete_customer_group` | ✎ Delete a customer group | Groups › delete |
 
 ### 📈 Statistics
 

@@ -43,7 +43,7 @@ merchant does it:
 - **E-mails and preferences**: the e-mail settings are read and changed, the
   SMTP password and the DKIM key staying with the merchant; the order, customer
   and product settings are read and changed, with the customer groups, also
-  created, the groups given by default to visitors, guests and new customers, and the
+  created and deleted, the groups given by default to visitors, guests and new customers, and the
   social titles; the shop's e-mails come next.
 
 The simplest tools, mostly reads, are labelled

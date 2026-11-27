@@ -1112,6 +1112,11 @@
       <source>Create a customer group</source>
       <target>Crear un grupo de clientes</target>
     </trans-unit>
+    <!-- Delete a customer group -->
+    <trans-unit id="c1ba0f3c46cfa79918fda6329640fec6" resname="Delete a customer group">
+      <source>Delete a customer group</source>
+      <target>Eliminar un grupo de clientes</target>
+    </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
       <source>List return statuses</source>

@@ -66,6 +66,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_customer_group`
 - `somcp_update_default_groups`
 - `somcp_create_customer_group`
+- `somcp_delete_customer_group`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
@@ -621,7 +622,11 @@ authorized modules, every installed module when none is given. Say that a new
 group sees the home category (and the categories given a discount) only, and
 give it its other categories with the groups field of `somcp_update_category`,
 or its members see no product of them; name the payment modules it is left
-without.
+without. `somcp_delete_customer_group` deletes a group for good: the groups
+of visitors, guests and customers cannot be deleted (choose another one with
+`somcp_update_default_groups` first). Count its members with
+`somcp_list_customer_groups` and name them before asking, since those left
+in no group go to the Customers group.
 
 ## Changing products
 

@@ -882,6 +882,10 @@ T = {
  "Créer un groupe de clients",
  "Crear un grupo de clientes",
  "Eine Kundengruppe erstellen"),
+"Delete a customer group": (
+ "Supprimer un groupe de clients",
+ "Eliminar un grupo de clientes",
+ "Eine Kundengruppe löschen"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",

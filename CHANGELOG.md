@@ -45,6 +45,14 @@ group. The answer is the group as somcp_get_customer_group reads it, and
 says that a new group sees the home category only until its other categories
 are given to it, and which payment modules it was left without.
 
+**Delete a customer group.** The new tool somcp_delete_customer_group does
+what Delete does on a row of Shop Parameters > Customer Settings > Groups. The
+groups of visitors, guests and customers cannot be deleted, as on screen. Its
+members keep their other groups and those left in none go to the Customers
+group; the answer holds the group as it was and counts its members, the
+customers who had it as default group, the cart rules kept to it and its
+specific prices.
+
 **Change the default customer groups.** The new tool
 somcp_update_default_groups does what the Save of the card Default groups
 options does on Shop Parameters > Customer Settings > Groups: it chooses the

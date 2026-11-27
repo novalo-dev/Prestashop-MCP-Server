@@ -170,7 +170,7 @@ class SomcpToolGetCustomer
         $ids = array_map('intval', array_column(Db::getInstance()->executeS($query) ?: [], 'id_customer'));
 
         if ($ids === []) {
-            return 'email: no customer of this shop has this email - find one with somcp_search_customers';
+            return SomcpTool::notFound('email', 'customer', $email, 'somcp_search_customers', 'email');
         }
         // A guest and a registered account can share an email: picking one
         // here could show the merchant the wrong person.

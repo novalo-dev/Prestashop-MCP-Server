@@ -170,7 +170,7 @@ class SomcpToolListCatalogPriceRules
             $iso = is_string($arguments['currency']) ? $arguments['currency'] : '';
             $resolved = preg_match('/^[A-Za-z]{3}$/', $iso) ? (int) Currency::getIdByIsoCode(Tools::strtoupper($iso), $idShop) : 0;
             if ($resolved <= 0) {
-                $problems[] = 'currency: not a currency of this shop';
+                $problems[] = SomcpTool::notFound('currency', 'currency', $iso, 'somcp_list_currencies', 'ISO code');
             } else {
                 $idCurrency = $resolved;
             }
@@ -181,7 +181,7 @@ class SomcpToolListCatalogPriceRules
             $iso = is_string($arguments['country']) ? Tools::strtoupper($arguments['country']) : '';
             $resolved = preg_match('/^[A-Z]{2}$/', $iso) ? (int) Country::getByIso($iso) : 0;
             if ($resolved <= 0) {
-                $problems[] = 'country: no country of this shop has the ISO code "' . (string) ($arguments['country'] ?? '') . '"';
+                $problems[] = SomcpTool::notFound('country', 'country', $iso, 'somcp_list_countries', 'ISO code');
             } else {
                 $idCountry = $resolved;
             }

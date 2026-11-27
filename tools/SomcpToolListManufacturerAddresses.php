@@ -134,7 +134,7 @@ class SomcpToolListManufacturerAddresses
             // rather than answering false, so the code is checked first.
             $idCountry = Validate::isLanguageIsoCode($countryIso) ? (int) Country::getByIso($countryIso) : 0;
             if ($idCountry <= 0) {
-                $errors[] = 'country: no country has the ISO code ' . $countryIso . ' - give a code such as FR';
+                $errors[] = SomcpTool::notFound('country', 'country', $countryIso, 'somcp_list_countries', 'ISO code');
             }
         }
 

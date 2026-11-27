@@ -163,6 +163,13 @@ shop e-mail address.
 
 ### Changed
 
+**Unknown countries, currencies and customer e-mails.** An unknown country,
+currency or customer e-mail is now refused with the value given and the tool
+that lists the right ones, as every other identifier. This holds for the
+suppliers, brand addresses, stores, contact details and tax rules, for the
+specific prices of products and catalog price rules, for cart rules and new
+orders, for the currency of an order, and for the customer read by e-mail.
+
 **The country and the state of an address come as their codes.** The
 addresses of an order, of a customer and of a change of address, and the
 delivery country of the order search, now give the country and the state by

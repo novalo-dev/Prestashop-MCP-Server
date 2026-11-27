@@ -342,7 +342,9 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $idCountry = (int) array_key_first($found);
         $country = $idCountry > 0 ? new Country($idCountry) : null;
         if ($country === null || !Validate::isLoadedObject($country)) {
-            $errors[] = 'country: no country of this shop has the ISO code "' . $iso . '"';
+            // The line of every tool that takes a country: the code given
+            // back, and where the right ones are read.
+            $errors[] = SomcpTool::notFound('country', 'country', $iso, 'somcp_list_countries', 'ISO code');
 
             return null;
         }

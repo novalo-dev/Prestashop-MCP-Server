@@ -2005,7 +2005,9 @@ class SomcpToolCreateProduct
             // rather than answering false, so the code is checked first.
             $idCountry = $iso !== null && Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
             if ($idCountry <= 0) {
-                $errors[] = $at . 'country: no country with this ISO code';
+                // The code given back, so the assistant knows which one of
+                // several rules was refused, and where the right ones are.
+                $errors[] = SomcpTool::notFound($at . 'country', 'country', self::refusedValue($item['country']), 'somcp_list_countries', 'ISO code');
             }
             $rule['id_country'] = $idCountry;
         }
@@ -3735,10 +3737,22 @@ class SomcpToolCreateProduct
         $iso = self::string($value);
         $id = $iso !== null && preg_match('/^[A-Za-z]{3}$/', $iso) ? (int) Currency::getIdByIsoCode(Tools::strtoupper($iso), $idShop) : 0;
         if ($id <= 0) {
-            $errors[] = $path . ': not a currency of this shop';
+            $errors[] = SomcpTool::notFound($path, 'currency', self::refusedValue($value), 'somcp_list_currencies', 'ISO code');
         }
 
         return $id;
+    }
+
+    /**
+     * A value as the call gave it, for a line that names what was refused.
+     *
+     * @param mixed $value
+     *
+     * @return string
+     */
+    protected static function refusedValue($value): string
+    {
+        return is_scalar($value) ? trim((string) $value) : (string) json_encode($value);
     }
 
     /**

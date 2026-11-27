@@ -923,6 +923,10 @@ if ($createGroup !== null && $readGroup !== null) {
         foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
             $groupNames[(string) $language['iso_code']] = 'Somcp test group';
         }
+        // Left out, the method is the one of the shop, as the form presets
+        // it: read from the shop rather than assumed from the demo data.
+        $shopMethod = (int) Configuration::get('PRICE_DISPLAY_METHOD', null, (int) $context->shop->id_shop_group, (int) $context->shop->id) === 0
+            ? 'tax_included' : 'tax_excluded';
         $created = $newGroupCall($createGroup, ['name' => $groupNames]);
         $idNewGroup = (int) ($created['id_group'] ?? 0);
         $read = $idNewGroup > 0 ? $newGroupCall($readGroup, ['id_group' => $idNewGroup]) : [];
@@ -933,7 +937,7 @@ if ($createGroup !== null && $readGroup !== null) {
         sort($authorized);
         if (($created['created'] ?? null) !== true || $idNewGroup <= 3
             || strpos((string) ($created['warning'] ?? ''), 'The group sees only the home category') !== 0
-            || ($created['group']['price_display_method'] ?? null) !== 'tax_excluded'
+            || ($created['group']['price_display_method'] ?? null) !== $shopMethod
             || ($created['group']['show_prices'] ?? null) !== true
             || $authorized !== $installed
             || ($read['group']['id_group'] ?? $read['id_group'] ?? null) !== $idNewGroup) {

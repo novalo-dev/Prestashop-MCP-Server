@@ -161,6 +161,15 @@ groups can be filtered by discount, number of members and creation date, and
 sorted as the back office list: the groups that give a discount, or those
 nobody is in, no longer need the back office.
 
+### Fixed
+
+**A carrier given back as it was, after a customer group was deleted.** The
+customer groups of a carrier read with somcp_get_carrier and given back as
+they are to somcp_update_carrier changed nothing, except on a shop where a
+customer group had been deleted: PrestaShop keeps the deleted group on its
+carriers, and the change answered a list one group shorter. The groups
+compared are now those of the shop only, as the read gives them.
+
 ## 2.0.6 - 2026-11-26
 
 ### Added

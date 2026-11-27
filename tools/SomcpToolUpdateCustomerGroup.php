@@ -742,6 +742,11 @@ class SomcpToolUpdateCustomerGroup
             Configuration::updateGlobalValue('PS_GROUP_FEATURE_ACTIVE', 1);
         }
         foreach ($discounts as $idCategory => $percent) {
+            // Category::getGroups() keeps its answer for the request, and
+            // Group::add() opens the home category to a new group without
+            // clearing it: read again, or the row already there is inserted
+            // twice.
+            Cache::clean('Category::getGroups_' . (int) $idCategory);
             $category = new Category((int) $idCategory);
             $category->addGroupsIfNoExist($idGroup);
             $reduction = new GroupReduction();

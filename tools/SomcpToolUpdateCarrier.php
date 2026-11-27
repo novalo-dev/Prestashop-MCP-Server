@@ -990,10 +990,15 @@ class SomcpToolUpdateCarrier
             $delay[(int) $line['id_lang']] = (string) $line['delay'];
         }
 
+        // The groups of this shop only, as somcp_get_carrier reads them:
+        // Group::delete() leaves its rows of carrier_group behind, and a row
+        // of a group gone would turn the read given back into a change.
         $groups = [];
         foreach ($db->executeS(
-            'SELECT `id_group` FROM `' . _DB_PREFIX_ . 'carrier_group` WHERE `id_carrier` = ' . $idCarrier
-            . ' ORDER BY `id_group` ASC'
+            'SELECT cg.`id_group` FROM `' . _DB_PREFIX_ . 'carrier_group` cg'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'group_shop` gs ON gs.`id_group` = cg.`id_group` AND gs.`id_shop` = ' . $idShop
+            . ' WHERE cg.`id_carrier` = ' . $idCarrier
+            . ' ORDER BY cg.`id_group` ASC'
         ) ?: [] as $line) {
             $groups[] = (int) $line['id_group'];
         }

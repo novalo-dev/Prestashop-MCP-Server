@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "the groups the demo data already holds change nothing, and nothing is written", "arguments": {"visitors_group": 1, "guests_group": 2, "customers_group": 3}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written.", "\"visitors_group\": 1", "\"guests_group\": 2", "\"customers_group\": 3"]},
+    {"why": "nothing given", "arguments": {}, "expect": "error", "contains": ["Nothing was changed.", "- give at least one of visitors_group, guests_group, customers_group"]},
+    {"why": "an unknown group, named with the tool that lists them", "arguments": {"guests_group": 999999}, "expect": "error", "contains": ["Nothing was changed.", "- guests_group: no customer group of this shop has the identifier 999999 - find it with somcp_list_customer_groups"]},
+    {"why": "not an identifier", "arguments": {"guests_group": "x"}, "expect": "error", "contains": ["Nothing was changed.", "- guests_group: a whole number above 0"]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was changed.", "- x: not a field of this tool"]}
+  ]
+}

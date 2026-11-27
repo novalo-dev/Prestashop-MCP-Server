@@ -820,6 +820,71 @@ if ($getGroup !== null && $updateGroup !== null) {
     }
 }
 
+// The default groups changed and put back (#465): the Guests group set to
+// Customer, read back through default_for of the list, then Guest again in a
+// finally, so the demo roles are left as they were.
+$updateDefaults = $registry->get('somcp_update_default_groups');
+$listRoles = $registry->get('somcp_list_customer_groups');
+if ($updateDefaults !== null && $listRoles !== null) {
+    $calls += 2;
+    $rolesCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $rolesOf = static function (int $idGroup) use ($rolesCall, $listRoles): ?array {
+        foreach ($rolesCall($listRoles, [])['groups'] ?? [] as $group) {
+            if ((int) ($group['id_group'] ?? 0) === $idGroup) {
+                return $group['default_for'] ?? null;
+            }
+        }
+
+        return null;
+    };
+    $storedGuests = (int) Configuration::get('PS_GUEST_GROUP', null, (int) Shop::getGroupFromShop((int) $context->shop->id), (int) $context->shop->id);
+    try {
+        $set = $rolesCall($updateDefaults, ['guests_group' => 3]);
+        $roles = $rolesOf(3);
+        if (empty($set['changed']) || count($set['changes'] ?? []) !== 1
+            || ($set['default_groups']['guests_group'] ?? null) !== 3 || $roles !== ['guests', 'customers']) {
+            $failures[] = 'somcp_update_default_groups (the Guests group set to 3): unexpected - ' . json_encode([$set, $roles]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_default_groups (the Guests group set to 3)');
+        }
+        $back = $rolesCall($updateDefaults, ['guests_group' => 2]);
+        $roles = $rolesOf(2);
+        if (empty($back['changed']) || $roles !== ['guests']) {
+            $failures[] = 'somcp_update_default_groups (the Guests group given back to 2): unexpected - ' . json_encode([$back, $roles]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_default_groups (the Guests group given back to 2)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_default_groups: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Written where the tool writes, so the shop's own value is the demo one again.
+        $rolesShop = (int) $context->shop->id;
+        $rolesShopGroup = (int) Shop::getGroupFromShop($rolesShop);
+        if ((int) Configuration::get('PS_GUEST_GROUP', null, $rolesShopGroup, $rolesShop) !== $storedGuests) {
+            Configuration::updateValue('PS_GUEST_GROUP', $storedGuests, false, $rolesShopGroup, $rolesShop);
+        }
+    }
+}
+
 // A translation pack exported (#452): the reference answered must lead to a
 // zip whose files are the XLF of the locale, read the way somcp_download_file
 // reads it; on a shop with Hummingbird, its theme wordings export too.

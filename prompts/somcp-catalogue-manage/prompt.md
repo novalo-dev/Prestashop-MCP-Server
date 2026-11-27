@@ -64,6 +64,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_customer_groups`
 - `somcp_get_customer_group`
 - `somcp_update_customer_group`
+- `somcp_update_default_groups`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
@@ -607,6 +608,11 @@ can then see the category. The authorized modules are the whole list of the
 modules set to Yes, by the technical name of `somcp_list_modules`: every
 module left out is set to No, and at least one must stay. Say which payment
 modules the group loses, since its members can no longer pay with them.
+`somcp_update_default_groups` chooses the group of the visitors, of the
+guests and of the newly registered customers, each an `id_group` of the
+list, whose `default_for` says which roles a group holds: say that the
+prices and discounts a visitor or a new customer sees follow the group
+chosen.
 
 ## Changing products
 

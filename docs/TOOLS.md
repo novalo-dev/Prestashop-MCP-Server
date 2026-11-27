@@ -7023,6 +7023,61 @@ happens.
 **Differences between 8.0.1 and 9.0.0** - none: the same legacy controller,
 the same `Group` definition.
 
+#### `somcp_update_default_groups`
+**State**: written · [issue #465](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/465)
+**Nature**: `acts(EDIT, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer_group`
+
+**Does** - saves the card **Default groups options** of **Shop Parameters >
+Customer Settings**, tab **Groups**: which group a visitor, a guest and a
+newly registered customer belong to. Only the fields given change. The read is
+`somcp_list_customer_groups`, which answers `default_for` (`visitors`,
+`guests`, `customers`) on each group.
+
+**Do not use for** - changing a group itself (→ `somcp_update_customer_group`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `visitors_group` | **Visitors group** | integer | optional, an `id_group` of the shop of the token (`SomcpToolGetCustomerGroup::inShop()`, as `somcp_update_customer_group` checks one); `SomcpTool::notAnIdentifier('visitors_group')`; `SomcpTool::notFound('visitors_group', 'customer group', <id>, 'somcp_list_customer_groups')` |
+| `guests_group` | **Guests group** | integer | the same |
+| `customers_group` | **Customers group** | integer | the same |
+
+At least one: `give at least one of visitors_group, guests_group,
+customers_group`. Unknown arguments through `SomcpTool::unknownFields()`. One
+group may hold several roles. Customer groups switched off
+(`PS_GROUP_FEATURE_ACTIVE` 0): refused, `customer groups are disabled in
+Advanced Parameters > Performance, so the back office does not show these
+options`, as the card is hidden.
+
+**Then** - every check first, every mistake in one answer. Each key that
+differs (`PS_UNIDENTIFIED_GROUP`, `PS_GUEST_GROUP`, `PS_CUSTOMER_GROUP`)
+through `Configuration::updateValue($key, $id, false, $idShopGroup, $idShop)`,
+the shop of the token, as `AdminController::processUpdateOptions()` saves the
+card. Nothing different: `changed: false`, `The default groups already hold
+every value given. Nothing was written.`. A key refused:
+`SomcpToolUpdateGeneralSettings::failed()`, logged as
+`default_groups_update_failed`. Logged as `default_groups_updated` with the
+fields changed.
+
+**Returns** - `changed`, `changes` (`field`, `old`, `new`, the `id_group`
+before and after) and `default_groups`: `{"visitors_group": 1,
+"guests_group": 2, "customers_group": 3}` read again. `warning` when the shop
+is one of several: `The settings changed for this shop only, as the back
+office saves them in a shop context.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: an unknown argument; no field given; a group not an identifier or not
+of this shop; customer groups disabled.
+
+**Notes** - changes the shop: the assistant asks first; the prices and
+discounts a visitor or a new customer sees follow the group chosen.
+Replayable. The shop test gives the three demo groups back (no change), sets
+the Guests group to 3, checks `default_for` of group 3 with
+`somcp_list_customer_groups`, and gives group 2 back whatever happens.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same legacy controller.
+
 ### Diagnostics
 
 Tools that describe the connection itself, and the two that carry files in and out of the shop for the other tools.
@@ -10443,7 +10498,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_list_languages`, `somcp_create_language`, `somcp_update_language`, `somcp_delete_language`, `somcp_install_language_pack`, `somcp_export_translations`, `somcp_list_translations`, `somcp_update_translation`, `somcp_get_localization_settings`, `somcp_update_localization_settings`, `somcp_import_localization_pack`, `somcp_get_general_settings`, `somcp_update_general_settings`, `somcp_get_maintenance_settings`, `somcp_update_maintenance_settings`, `somcp_list_currencies`, `somcp_get_currency`, `somcp_create_currency`, `somcp_update_currency`, `somcp_delete_currency`, `somcp_update_exchange_rates`, `somcp_create_tax`, `somcp_update_tax`, `somcp_delete_tax`, `somcp_get_tax_options`, `somcp_update_tax_options`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_add_country_rule`, `somcp_update_country_rule`, `somcp_delete_country_rule`, `somcp_list_customer_groups`, `somcp_get_customer_group`, `somcp_update_customer_group`, `somcp_update_default_groups`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_get_shipping_preferences`, `somcp_update_shipping_preferences`, `somcp_get_payment_preferences`, `somcp_update_payment_restrictions`, `somcp_list_contacts`, `somcp_create_contact`, `somcp_update_contact`, `somcp_delete_contact`, `somcp_list_stores`, `somcp_create_store`, `somcp_update_store`, `somcp_delete_store`, `somcp_get_contact_details`, `somcp_update_contact_details`, `somcp_get_email_settings`, `somcp_update_email_settings`, `somcp_list_email_logs`, `somcp_delete_email_log`, `somcp_erase_email_logs`, `somcp_send_test_email`, `somcp_get_order_settings`, `somcp_update_order_settings`, `somcp_get_product_settings`, `somcp_update_product_settings`, `somcp_get_customer_settings`, `somcp_update_customer_settings`, `somcp_list_titles`, `somcp_create_title`, `somcp_update_title`, `somcp_delete_title`, `somcp_list_zones`, `somcp_create_zone`, `somcp_update_zone`, `somcp_delete_zone`, `somcp_list_countries`, `somcp_get_country`, `somcp_update_country`, `somcp_get_country_options`, `somcp_update_country_options`, `somcp_list_states`, `somcp_create_state`, `somcp_update_state`, `somcp_delete_state`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 
@@ -10471,7 +10526,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `customer` (name, email or company).
 
-**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_list_customer_groups`, `somcp_get_customer_group`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search, then read the one customer the merchant means; the email is more reliable than the name; personal data stays in the answer it was asked for; no password ever goes through the conversation.
 

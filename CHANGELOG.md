@@ -35,6 +35,13 @@ current shop only. A group cannot be left with no module, as on screen, and
 the answer names the payment modules its customers no longer see. The list
 read with somcp_get_customer_group and given back as it is changes nothing.
 
+**Change the default customer groups.** The new tool
+somcp_update_default_groups does what the Save of the card Default groups
+options does on Shop Parameters > Customer Settings > Groups: it chooses the
+group of the visitors, of the guests and of the newly registered customers,
+which decides the prices and discounts they see. Only the groups given change,
+and giving back the groups already chosen changes nothing.
+
 **Export the translations of a language.** The new tool
 somcp_export_translations does what the card Export a language of
 International > Translations does: the translation pack of one language - the

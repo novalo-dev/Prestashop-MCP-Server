@@ -3258,7 +3258,9 @@ if ($deleteMeta !== null && $listMeta !== null) {
         } else {
             $made = new Meta();
             $made->page = $free;
-            $made->configurable = true;
+            // An unsigned integer in the definition of Meta on 8 and 9: a
+            // boolean fails its isUnsignedInt check on add().
+            $made->configurable = 1;
             $made->url_rewrite = [];
             foreach (Language::getLanguages(false) as $language) {
                 $made->url_rewrite[(int) $language['id_lang']] = 'somcp-test-page';

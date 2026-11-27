@@ -3216,6 +3216,85 @@ if ($deleteRule !== null && $createForDelete !== null && $getForDelete !== null)
     }
 }
 
+// A shop page deleted (#470): a page made for that alone, for a module front
+// controller that has none and is never one of somcp, with a Rewritten URL in
+// every language; deleted with the tool, then gone from somcp_list_meta_pages.
+// The demo pages are never deleted, and the finally removes the page whatever
+// happens.
+$deleteMeta = $registry->get('somcp_delete_meta_page');
+$listMeta = $registry->get('somcp_list_meta_pages');
+if ($deleteMeta !== null && $listMeta !== null) {
+    $calls += 2;
+    $metaContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($deleteMeta->getRequiredScopes(), $listMeta->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $metaText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idMetaMade = 0;
+    try {
+        $free = '';
+        foreach (Meta::getPages(true) as $candidate) {
+            if (strpos((string) $candidate, 'module-') === 0 && strpos((string) $candidate, 'module-somcp-') !== 0) {
+                $free = (string) $candidate;
+                break;
+            }
+        }
+        if ($free === '') {
+            $failures[] = 'somcp_delete_meta_page: no module page without its row to create one';
+        } else {
+            $made = new Meta();
+            $made->page = $free;
+            $made->configurable = true;
+            $made->url_rewrite = [];
+            foreach (Language::getLanguages(false) as $language) {
+                $made->url_rewrite[(int) $language['id_lang']] = 'somcp-test-page';
+            }
+            $made->add();
+            $idMetaMade = (int) $made->id;
+            $deleted = $idMetaMade > 0 ? $deleteMeta->call(['id_meta' => $idMetaMade], $metaContext) : [];
+            $text = $metaText($deleted);
+            $listed = $metaText($listMeta->call([], $metaContext));
+            $answer = json_decode(trim($text), true);
+            $listedPages = json_decode(trim($listed), true)['pages'] ?? null;
+            $isos = array_keys(is_array($answer['texts'] ?? null) ? $answer['texts'] : []);
+            if ($idMetaMade <= 0 || !empty($deleted['isError']) || ($answer['deleted'] ?? null) !== true
+                || ($answer['id_meta'] ?? null) !== $idMetaMade || ($answer['page'] ?? null) !== $free
+                || $isos === [] || ($answer['texts'][$isos[0]]['link_rewrite'] ?? null) !== 'somcp-test-page'
+                || !is_array($listedPages) || in_array($idMetaMade, array_map('intval', array_column($listedPages, 'id_meta')), true)
+                || Validate::isLoadedObject(new Meta($idMetaMade))) {
+                $failures[] = 'somcp_delete_meta_page (a page made for a module, deleted, then gone from the list): unexpected - '
+                    . json_encode([excerpt($deleted), $free]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_meta_page (a page made for a module, deleted, then gone from the list)');
+                $idMetaMade = 0;
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_meta_page: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idMetaMade > 0) {
+            $left = new Meta($idMetaMade);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
 // A customer group restriction set on a cart rule, read back, then lifted
 // (#406), and the same for Product selection (#433): the JSON scenario only
 // covers the refusals, since a restriction left on a demo rule would change

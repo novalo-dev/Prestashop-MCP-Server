@@ -164,9 +164,7 @@ class SomcpToolUpdateMetaPage
         if ($meta === null || !(bool) $meta->configurable) {
             $errors = self::fieldProblems($arguments);
             if ($meta !== null) {
-                $errors[] = 'id_meta: the page ' . (string) $meta->page . ' takes its texts from each product, '
-                    . 'category or CMS page, and Traffic & SEO does not list it - change the product, category or '
-                    . 'page itself with its own tool';
+                $errors[] = self::notConfigurable($meta);
             } else {
                 $errors[] = $idMeta > 0
                     ? SomcpTool::notFound('id_meta', 'page', $idMeta, 'somcp_list_meta_pages')
@@ -196,6 +194,21 @@ class SomcpToolUpdateMetaPage
     }
 
     /**
+     * Why a page Traffic & SEO does not list is refused: the same sentence
+     * for somcp_delete_meta_page, which refuses those pages too.
+     *
+     * @param Meta $meta
+     *
+     * @return string
+     */
+    public static function notConfigurable(Meta $meta): string
+    {
+        return 'id_meta: the page ' . (string) $meta->page . ' takes its texts from each product, '
+            . 'category or CMS page, and Traffic & SEO does not list it - change the product, category or '
+            . 'page itself with its own tool';
+    }
+
+    /**
      * The misspelt fields, and the former names with the one to send now, in
      * place of the "not a field" line they would otherwise get.
      *
@@ -216,13 +229,14 @@ class SomcpToolUpdateMetaPage
 
     /**
      * The page with its texts in this shop, every language loaded, or null.
+     * Public: somcp_delete_meta_page loads the page it deletes the same way.
      *
      * @param mixed $id
      * @param int $idShop
      *
      * @return Meta|null
      */
-    private static function page($id, int $idShop): ?Meta
+    public static function page($id, int $idShop): ?Meta
     {
         $idMeta = is_int($id) ? $id : 0;
         if ($idMeta <= 0) {
@@ -495,14 +509,15 @@ class SomcpToolUpdateMetaPage
 
     /**
      * The page's search engine fields, in the languages changed, under the
-     * names somcp_list_meta_pages uses.
+     * names somcp_list_meta_pages uses. Public: somcp_delete_meta_page
+     * answers the texts of the page it deletes with it.
      *
      * @param Meta $stored
      * @param array<int, string> $isos
      *
      * @return array<string, mixed>
      */
-    private static function describe(Meta $stored, array $isos): array
+    public static function describe(Meta $stored, array $isos): array
     {
         $texts = [];
         foreach ($isos as $idLang => $iso) {

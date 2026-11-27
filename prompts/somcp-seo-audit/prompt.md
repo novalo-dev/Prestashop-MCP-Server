@@ -14,6 +14,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_update_cms_seo`
 - `somcp_list_meta_pages`
 - `somcp_update_meta_page`
+- `somcp_delete_meta_page`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
@@ -73,7 +74,12 @@ installation has its own titles, descriptions and URLs.
    `somcp_list_meta_pages` returns: `meta_title`, `meta_description`,
    `meta_keywords` and `link_rewrite`. The home page has no friendly URL, and
    a new one on any other page makes its old address stop working: say so
-   before the call.
+   before the call. A page the shop no longer wants in Traffic & SEO is
+   deleted with `somcp_delete_meta_page`: it loses its Rewritten URL, its
+   Page title and its Meta description in every language, and a page of the
+   shop answers again at `index.php?controller=<page>`. Ask first, naming the
+   page and its Rewritten URL, and keep the texts it answers to create it
+   again if the merchant changes his mind.
 6. **Check the public page.** A value in the database is not proof of what
    the theme prints: call `somcp_audit_page` with the address or the path of
    the page (`/` for the home page) to see the title, description, headings,

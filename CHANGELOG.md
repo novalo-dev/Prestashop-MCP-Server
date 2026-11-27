@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Delete a shop page from SEO & URLs.** The new tool somcp_delete_meta_page
+does what Delete does on a row of Shop Parameters > Traffic & SEO > SEO &
+URLs: the page loses its Page title, Meta description and Rewritten URL in
+every language, and comes back to the list of pages Add new page offers. The
+product, category and CMS templates, which the list does not show, are
+refused. The answer holds the texts the page had, to create it again, and
+says when a page of the shop now answers at its plain address.
+
 **Discounts by category for a customer group.** somcp_update_customer_group
 now changes the Category discount block of a group, as Add a category discount
 then Save do on Shop Parameters > Customer Settings > Groups: the whole list is

@@ -9759,6 +9759,66 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
 - `seo_warnings`, for each language changed: a `meta_title` over 70 characters, a `meta_description` over 160 (the lengths every SEO tool advises past and the audits flag), each with its length in the sentence of `SomcpTool::metaLengthAdvice()` every SEO write gives (`meta_title is 85 characters: past 70, a search result cuts it`), and a new `link_rewrite`, whose old address breaks; the assistant tells the merchant before the call.
 
+#### `somcp_delete_meta_page`
+**State**: written · [issue #470](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/470)
+**Nature**: `acts(DELETE, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - deletes a page of **Shop Parameters > Traffic & SEO > SEO &
+URLs**, as the row action **Delete** and the bulk action **Delete selected**
+of the list do, one page per call: its **Page title**, **Meta description**
+and **Rewritten URL** in every language go with it, and the page goes back to
+the **Page name** list of **Add new page**.
+
+**Do not use for** - emptying a text (→ `somcp_update_meta_page`); the SEO of
+a product, a category or a CMS page (→ their own tools).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_meta` | integer | required, from `somcp_list_meta_pages`: `id_meta: required - find it with somcp_list_meta_pages`, `SomcpTool::notAnIdentifier('id_meta')`, `SomcpTool::notFound('id_meta', 'page', <id>, 'somcp_list_meta_pages')`; a page whose `configurable` is false (`product`, `category`, `cms` and the module pages of the payment steps) is refused with the sentence of `somcp_update_meta_page` (`SomcpToolUpdateMetaPage::notConfigurable()`), since the list does not show them and the screen cannot delete them |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every mistake in one
+answer, in the envelope `Nothing was deleted. Correct these and call again:`.
+
+**Returns** - `deleted: true`, `id_meta`, `page` and `texts`: per ISO code of
+the shop's active languages, the `meta_title`, `meta_description`,
+`meta_keywords` (`null` on PrestaShop 9) and `link_rewrite` the page had, read
+before the deletion by `SomcpToolUpdateMetaPage::describe()`, so the page can
+be created again with the same texts. `warning`, each when it applies:
+- `page` is a page of the core (no `module-` prefix): `<page> no longer has a
+  Rewritten URL: it answers at index.php?controller=<page>, and links to its
+  old address lead nowhere.`;
+- `page` is `index`: `The home page no longer has a page title nor a meta
+  description of its own.`;
+- `.htaccess` could not be written again: `The page was deleted, but the
+  .htaccess file could not be written again: save Set up URLs once in Traffic
+  & SEO.`;
+- the shop is one of several: `The page is deleted for every shop: its texts
+  were kept by shop, the page itself is shared.`
+
+A `false` or an exception of `Meta::delete()` with the page still there: a
+tool error `The page could not be deleted: <reason>.`
+
+**Notes**
+- The page is loaded as `somcp_update_meta_page` loads it
+  (`SomcpToolUpdateMetaPage::page()`, `new Meta($id, null, $idShop)`), then
+  `Meta::delete()`, the core's own deletion that `MetaEraser` calls on 8.0 and
+  9.0: `ObjectModel::delete()` removes `meta` and `meta_lang` of every shop (a
+  page has no shop of its own), then `Tools::generateHtaccess()` writes the
+  rewriting rules again. `Meta::delete()` also answers `false` when the rows
+  are gone and only `.htaccess` failed: `meta` is read again to tell the two
+  apart.
+- No other table holds an `id_meta`: the storefront finds a page by its name
+  (`Meta::getMetaByPage()`), and a page without its row answers at
+  `index.php?controller=<page>` with the shop's default title.
+- Logged as `meta_page_deleted` with the `id_meta` and the `page` only.
+- Changes the shop and cannot be undone: the assistant asks first, naming the
+  page and its Rewritten URL. Not replayable: when the answer is lost, read
+  `somcp_list_meta_pages` first.
+- No difference between 8.0 and 9.0 in the deletion; `meta_keywords` exists
+  on 8.0 only (`SomcpToolUpdateMetaPage::hasKeywords()`).
+
 #### `somcp_get_seo_settings`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
@@ -10776,7 +10836,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `focus` (optional: products, categories, pages or the whole shop).
 
-**Tools** - `somcp_ping`, `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_update_cms_seo`, `somcp_list_meta_pages`, `somcp_update_meta_page`, `somcp_get_seo_settings`, `somcp_get_robots_txt`, `somcp_generate_robots_txt`, `somcp_audit_page`, `somcp_check_links`, `somcp_audit_sitemap`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_update_cms_seo`, `somcp_list_meta_pages`, `somcp_update_meta_page`, `somcp_delete_meta_page`, `somcp_get_seo_settings`, `somcp_get_robots_txt`, `somcp_generate_robots_txt`, `somcp_audit_page`, `somcp_check_links`, `somcp_audit_sitemap`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - start with `somcp_get_seo_settings` and the audits, then sort what was found by its effect on sales: products that sell or should sell first; propose every new title or description to the merchant before writing it, in each language of the shop; change a URL of a live page only after saying that the old one stops working; after a change, check the public page with `somcp_audit_page`, since a value in the database is not proof of what the theme prints.
 

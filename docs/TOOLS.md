@@ -4600,6 +4600,58 @@ the thumbnails written for a new picture differ (8.0.1 `-<type>.jpg` and `2x`
 with `PS_HIGHT_DPI`, 9.0.0 every format of `ImageFormatConfiguration`), which
 the update will follow.
 
+#### `somcp_get_contact_details`
+**State**: written · [issue #456](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/456)
+**Nature**: `acts(VIEW, 'AdminStores')` · **Scope**: `mcp.customers.read`, as `somcp_list_contacts`
+
+**Does** - reads the card **Contact details** of **Shop Parameters >
+Contact**, tab **Stores**: the shop's own name, e-mail, registration number,
+address and phone, which the e-mails, the invoices and the page titles print.
+Read only, replayable; one object per shop.
+
+**Do not use for** - the stores shown on the storefront (→
+`somcp_list_stores`); the addresses of the contact form (→
+`somcp_list_contacts`).
+
+**Parameters** - none (`additionalProperties: false`), as
+`somcp_get_general_settings`; an unknown argument through
+`SomcpTool::unknownFields()`.
+
+**Returns**
+- `contact_details`, built by `SomcpToolGetContactDetails::details()`, public
+  for the change that follows, each key read for the shop of the token and
+  its group through `SomcpToolGetGeneralSettings::stored()`:
+
+| Field | Screen | Setting |
+|---|---|---|
+| `shop_name` | **Store name** | `PS_SHOP_NAME` |
+| `shop_email` | **Shop email** | `PS_SHOP_EMAIL` |
+| `registration_number` | **Registration number** | `PS_SHOP_DETAILS` |
+| `address1` | **Shop address line 1** | `PS_SHOP_ADDR1` |
+| `address2` | **Shop address line 2** | `PS_SHOP_ADDR2` |
+| `postcode` | **Zip/Postal code** | `PS_SHOP_CODE` |
+| `city` | **City** | `PS_SHOP_CITY` |
+| `id_country`, `country` | **Country** | `PS_SHOP_COUNTRY_ID` |
+| `id_state`, `state` | **State** | `PS_SHOP_STATE_ID` |
+| `phone` | **Phone** | `PS_SHOP_PHONE` |
+| `fax` | **Fax** | `PS_SHOP_FAX` |
+
+- `id_country` and `id_state` are `null` for 0 or no row, with `country` and
+  `state` `null`; otherwise the names in the shop's default language, from
+  the identifiers (never `PS_SHOP_COUNTRY` and `PS_SHOP_STATE`, which the
+  screen writes beside them);
+- `language`: the ISO code of the names;
+- `warning` when no country is saved: `No country is saved: the screen
+  preselects <name of the context country>, which the shop does not use until
+  it is saved.` The answer never gives that preselected country as the shop's.
+
+**Notes** - the e-mail is the shop's, not a person's: it is answered as the
+screen shows it. The field names are those of the change, which takes the same
+object back.
+
+**Differences between 8.0.1 and 9.0.0** - none in the card
+(`_getDefaultFieldsContent()` is the same on both).
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

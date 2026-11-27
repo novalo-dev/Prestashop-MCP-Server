@@ -76,6 +76,7 @@
     "somcp_update_contact",
     "somcp_delete_contact",
     "somcp_list_stores",
+    "somcp_get_contact_details",
     "somcp_get_email_settings",
     "somcp_update_email_settings",
     "somcp_list_email_logs",

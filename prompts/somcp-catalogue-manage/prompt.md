@@ -75,6 +75,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_contact`
 - `somcp_delete_contact`
 - `somcp_list_stores`
+- `somcp_get_contact_details`
 - `somcp_get_email_settings`
 - `somcp_update_email_settings`
 - `somcp_list_email_logs`
@@ -300,6 +301,9 @@ receives the customers' messages is refused: choose another receiver first.
 `somcp_list_stores` lists the stores shown on the storefront page of the stores,
 with their address, coordinates, hours of each day and picture: read it before
 telling a customer when a store is open, and give its id_store as it is.
+`somcp_get_contact_details` reads the shop's own name, e-mail address,
+registration number and address, which the e-mails and the invoices print:
+read it before telling a merchant why an invoice shows the wrong address.
 `somcp_get_email_settings` says how the shop sends its e-mails (sendmail, SMTP
 or never) and where customer messages go: read it before telling a merchant
 why a customer got no order confirmation. It says whether the SMTP password

@@ -172,12 +172,15 @@ class SomcpToolGetGeneralSettings
     /**
      * A key as stored for the shop of the token.
      *
+     * Public so every setting of a shop is read the same way, the contact
+     * details of somcp_get_contact_details included.
+     *
      * @param string $key
      * @param int $idShop
      *
      * @return string
      */
-    private static function stored(string $key, int $idShop): string
+    public static function stored(string $key, int $idShop): string
     {
         // The group of the shop too, so a value set for the group of shops is
         // read as the back office of that shop shows it.

@@ -222,6 +222,13 @@ shown, the opening hours of each day and its picture, which the assistant can
 download. It filters on the name, the city, the postcode, the country and
 whether the store is shown, as the list does.
 
+**Read the contact details of the shop.** The new tool
+somcp_get_contact_details reads the card Contact details of Shop Parameters >
+Contact, tab Stores: the shop name, e-mail address, registration number,
+address, country, state, phone and fax that the e-mails, the invoices and the
+page titles print. When no country is saved, the answer says so instead of
+giving the country the screen preselects.
+
 **List the social titles.** The new tool somcp_list_titles lists the titles of
 Shop Parameters > Customer Settings, tab Titles: their name in each language,
 the gender they stand for and their image. The assistant now finds the title

@@ -1238,6 +1238,10 @@ T = {
  "Lister les magasins",
  "Listar las tiendas",
  "Die Geschäfte auflisten"),
+"Get the contact details of the shop": (
+ "Lire les coordonnées de la boutique",
+ "Leer los datos de contacto de la tienda",
+ "Die Kontaktdaten des Shops lesen"),
 "Create a contact": (
  "Créer un contact",
  "Crear un contacto",

@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the card Contact details of the shop, with the names of the screen", "arguments": {}, "expect": "ok", "contains": ["\"contact_details\": {", "\"shop_name\":", "\"shop_email\":", "\"registration_number\":", "\"id_country\":", "\"id_state\":", "\"language\": \"en\""]},
+    {"why": "an unknown field", "arguments": {"foo": 1}, "expect": "error", "contains": ["Nothing was read.", "- foo: not a field of this tool"]}
+  ]
+}

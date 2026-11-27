@@ -5385,7 +5385,7 @@ Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
 answer, in the envelope `Nothing was read. Correct these and call again:`.
 
 **Then** - inside `SomcpBackOffice::asBackOffice()`:
-- the tree: `prestashop.translation.builder.translation_tree` (`getTree()`) on the definition of `prestashop.translation.factory.provider_definition` (`build($type, $selected)`), `themes` with no theme or `classic` read as `front`, as `listTreeAction()` does; the leaves flattened in the tree's order;
+- the tree: `prestashop.translation.builder.translation_catalogue` (`getRawCatalogue()->buildTree()`, shaped as the editor's `TranslationsTreeBuilder` shapes it, without its API links, whose router needs a session on PrestaShop 8) on the definition of `prestashop.translation.factory.provider_definition` (`build($type, $selected)`), `themes` with no theme or `classic` read as `front`, as `listTreeAction()` does; the leaves flattened in the tree's order;
 - a domain: `prestashop.translation.builder.translation_catalogue` (`getDomainCatalogue()`) with `ModuleProviderDefinition(<module>)`, else `ThemeProviderDefinition(<theme>)`, else `CoreDomainProviderDefinition(<domain>)`, as `listDomainTranslationAction()` does; `Messages` is the catalogue `messages` of the other wordings.
 
 **Returns**

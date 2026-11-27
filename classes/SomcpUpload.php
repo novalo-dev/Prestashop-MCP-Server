@@ -2109,9 +2109,30 @@ class SomcpUpload
 
         @rmdir($directory);
         // The module's own folder under var/, left behind by the line above.
-        // rmdir refuses a directory that is not empty, so another module's
-        // data there would stop this and that is the right outcome.
-        @rmdir(dirname($directory));
+        // Another folder of the module, or another module's data, there keeps
+        // it, and that is the right outcome.
+        self::removeEmptyFolder(dirname($directory));
+    }
+
+    /**
+     * Removes a folder only when nothing is left in it. The module's folder
+     * under var/ holds the deposits, the exports and the memory side by side:
+     * a call that made it for its own work removes it only when the others
+     * are not there, without asking rmdir to fail, which raises a notice even
+     * behind the silence operator.
+     *
+     * @param string $directory absolute path
+     */
+    public static function removeEmptyFolder(string $directory): void
+    {
+        $directory = rtrim($directory, '/\\');
+        if (!is_dir($directory)) {
+            return;
+        }
+        $entries = @scandir($directory);
+        if (is_array($entries) && array_diff($entries, ['.', '..']) === []) {
+            @rmdir($directory);
+        }
     }
 
     /**

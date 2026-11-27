@@ -290,8 +290,13 @@ class SomcpToolListTranslations
     public static function domains(array $selection, array $search): array
     {
         $factory = SomcpBackOffice::coreService('prestashop.translation.factory.provider_definition');
-        $builder = SomcpBackOffice::coreService('prestashop.translation.builder.translation_tree');
-        if ($factory === null || $builder === null || !method_exists($factory, 'build') || !method_exists($builder, 'getTree')) {
+        // The catalogue builder rather than the tree builder of the editor:
+        // that one adds to every node a link of the back office's API, whose
+        // router asks the session for a CSRF token on PrestaShop 8. The MCP
+        // endpoint has no session of its own to start, and the link is no use
+        // to an assistant; the tree below is the same one without it.
+        $builder = SomcpBackOffice::coreService('prestashop.translation.builder.translation_catalogue');
+        if ($factory === null || $builder === null || !method_exists($factory, 'build') || !method_exists($builder, 'getRawCatalogue')) {
             throw new RuntimeException('the builders of the back office are not available');
         }
 
@@ -302,8 +307,8 @@ class SomcpToolListTranslations
         if ($type === 'themes' && $selected === null) {
             $type = 'front';
         }
-        $tree = $builder->getTree($factory->build($type, $selected), $selection['locale'], $search);
-        $root = is_array($tree['tree'] ?? null) ? $tree['tree'] : [];
+        $raw = $builder->getRawCatalogue($factory->build($type, $selected), $selection['locale'], $search)->buildTree();
+        $root = self::tree(is_array($raw) ? $raw : [], null, null);
 
         $domains = [];
         self::flatten($root, [], $domains);
@@ -313,6 +318,43 @@ class SomcpToolListTranslations
             'total_missing_translations' => (int) ($root['total_missing_translations'] ?? 0),
             'domains' => $domains,
         ];
+    }
+
+    /**
+     * A branch of the catalogue's tree in the shape the editor's tree builder
+     * gives it (TranslationsTreeBuilder::recursivelyBuildApiTree()): the
+     * counts of the node, its name and full name, its children sorted by name.
+     *
+     * @param array<string, mixed> $branch
+     * @param string|null $name
+     * @param string|null $fullName
+     *
+     * @return array<string, mixed>
+     */
+    private static function tree(array $branch, ?string $name, ?string $fullName): array
+    {
+        $node = [];
+        if ($name !== null) {
+            $node['name'] = $name;
+        }
+        if ($fullName !== null) {
+            $node['full_name'] = $fullName;
+        }
+        foreach ($branch as $key => $value) {
+            if ($key === PrestaShop\PrestaShop\Core\Translation\Builder\Map\Catalogue::METADATA_KEY_NAME) {
+                $node['total_translations'] = is_array($value) ? (int) ($value['count'] ?? 0) : 0;
+                $node['total_missing_translations'] = is_array($value) ? (int) ($value['missing_translations'] ?? 0) : 0;
+                continue;
+            }
+            $node['children'][] = self::tree(is_array($value) ? $value : [], (string) $key, (string) $fullName . $key);
+        }
+        if (isset($node['children'])) {
+            usort($node['children'], static function (array $first, array $second): int {
+                return strcmp((string) $first['name'], (string) $second['name']);
+            });
+        }
+
+        return $node;
     }
 
     /**

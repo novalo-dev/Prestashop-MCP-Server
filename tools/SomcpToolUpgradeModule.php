@@ -197,7 +197,7 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
             return self::run($name, $idShop, $installed, $version, $archive, $maintenance);
         } finally {
             Tools::deleteDirectory($work);
-            @rmdir(rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::WORK_DIR);
+            SomcpUpload::removeEmptyFolder(rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::WORK_DIR);
         }
     }
 

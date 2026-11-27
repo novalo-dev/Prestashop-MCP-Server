@@ -30,6 +30,7 @@ if (!defined('_PS_VERSION_')) {
 }
 
 require_once __DIR__ . '/SomcpToolGetGeneralSettings.php';
+require_once __DIR__ . '/SomcpToolListStores.php';
 
 class SomcpToolGetContactDetails
 {
@@ -137,18 +138,24 @@ class SomcpToolGetContactDetails
             $details[$field] = $value;
         }
 
-        // The names come from the identifiers, never from PS_SHOP_COUNTRY and
-        // PS_SHOP_STATE, which only follow them when the screen saves.
-        $country = $details['id_country'] !== null ? Country::getNameById($idLang, $details['id_country']) : false;
-        $state = $details['id_state'] !== null ? State::getNameById($details['id_state']) : false;
+        // The codes and names come from the identifiers, never from
+        // PS_SHOP_COUNTRY and PS_SHOP_STATE, which only follow them when the
+        // screen saves; in the shape of the stores of the same page, so a
+        // country read here is given as it is to any other tool.
+        $place = SomcpToolListStores::place((int) $details['id_country'], (int) $details['id_state'], $idLang);
 
         $ordered = [];
         foreach ($details as $field => $value) {
-            $ordered[$field] = $value;
             if ($field === 'id_country') {
-                $ordered['country'] = is_string($country) && $country !== '' ? $country : null;
+                foreach (['id_country', 'country', 'country_name'] as $key) {
+                    $ordered[$key] = $place[$key];
+                }
             } elseif ($field === 'id_state') {
-                $ordered['state'] = is_string($state) && $state !== '' ? $state : null;
+                foreach (['id_state', 'state', 'state_name'] as $key) {
+                    $ordered[$key] = $place[$key];
+                }
+            } else {
+                $ordered[$field] = $value;
             }
         }
 

@@ -29,7 +29,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once __DIR__ . '/SomcpToolListCountries.php';
+require_once __DIR__ . '/SomcpToolCreateSupplier.php';
 
 class SomcpToolListStores
 {
@@ -40,7 +40,7 @@ class SomcpToolListStores
     private const MAX_LIMIT = 100;
 
     /** @var array<int, string> */
-    private const FIELDS = ['language', 'name', 'city', 'postcode', 'id_country', 'active', 'sort', 'limit', 'offset'];
+    private const FIELDS = ['language', 'name', 'city', 'postcode', 'country', 'active', 'sort', 'limit', 'offset'];
 
     /**
      * @var array<string, string> The sortable columns of the back office list, each way,
@@ -92,9 +92,10 @@ class SomcpToolListStores
                         'type' => 'string',
                         'description' => 'Part of the Zip/Postal code, without case, as the filter of the list.',
                     ],
-                    'id_country' => [
-                        'type' => 'integer',
-                        'description' => 'Only the stores of this country, an id_country from somcp_list_countries.',
+                    'country' => [
+                        'type' => 'string',
+                        'description' => 'Only the stores of this country, its ISO code of 2 letters (for example US), '
+                            . 'as somcp_list_countries gives it.',
                     ],
                     'active' => [
                         'type' => 'boolean',
@@ -150,13 +151,20 @@ class SomcpToolListStores
         }
 
         $idCountry = 0;
-        if (array_key_exists('id_country', $arguments) && $arguments['id_country'] !== null) {
-            $idCountry = SomcpTool::id($arguments, 'id_country');
-            if ($idCountry === 0) {
-                $problems[] = SomcpTool::notAnIdentifier('id_country');
-            } elseif ($language !== null && SomcpToolListCountries::country($idShop, $language[0], $idCountry) === null) {
-                // Only a country of the shop of the token, as somcp_list_countries lists them.
-                $problems[] = SomcpTool::notFound('id_country', 'country', $idCountry, 'somcp_list_countries');
+        if (array_key_exists('country', $arguments) && $arguments['country'] !== null && $arguments['country'] !== '') {
+            if (!is_scalar($arguments['country'])) {
+                $problems[] = 'country: an ISO code of 2 letters, for example US';
+            } else {
+                $code = Tools::strtoupper(trim((string) $arguments['country']));
+                // The ISO code every other tool takes, read through the join
+                // somcp_list_states reads it with, so only a country of the
+                // shop of the token is found; validated first so a malformed
+                // code never reaches the query.
+                $found = Validate::isLanguageIsoCode($code) ? SomcpToolCreateSupplier::shopCountries($idShop, $code) : [];
+                $idCountry = (int) array_key_first($found);
+                if ($idCountry === 0) {
+                    $problems[] = SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code');
+                }
             }
         }
 
@@ -253,9 +261,7 @@ class SomcpToolListStores
     public static function item(array $row, int $idLang, int $idShop): array
     {
         $idStore = (int) $row['id_store'];
-        $idCountry = (int) $row['id_country'];
-        $idState = (int) $row['id_state'];
-        $state = $idState > 0 ? State::getNameById($idState) : false;
+        $place = self::place((int) $row['id_country'], (int) $row['id_state'], $idLang);
 
         return [
             'id_store' => $idStore,
@@ -264,10 +270,7 @@ class SomcpToolListStores
             'address2' => (string) ($row['address2'] ?? ''),
             'postcode' => (string) $row['postcode'],
             'city' => (string) $row['city'],
-            'id_country' => $idCountry,
-            'country' => $idCountry > 0 ? (string) Country::getNameById($idLang, $idCountry) : '',
-            'id_state' => $idState > 0 ? $idState : null,
-            'state' => is_string($state) ? $state : null,
+        ] + $place + [
             'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float) $row['latitude'] : null,
             'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float) $row['longitude'] : null,
             'phone' => (string) $row['phone'],
@@ -279,6 +282,37 @@ class SomcpToolListStores
             'image' => SomcpDownload::offer('store_image', (string) $idStore, $idShop),
             'date_add' => SomcpTool::isoDate($row['date_add']),
             'date_upd' => SomcpTool::isoDate($row['date_upd']),
+        ];
+    }
+
+    /**
+     * A country and a state as every tool gives them: the ISO codes under
+     * country and state, the names beside them, the identifiers kept.
+     *
+     * Public so the contact details of the shop, which sit on the same page,
+     * answer the place in this very shape. Each value is null when nothing is
+     * saved, or when the row names a country or a state the shop no longer has.
+     *
+     * @param int $idCountry
+     * @param int $idState
+     * @param int $idLang the language of the names
+     *
+     * @return array{id_country: int|null, country: string|null, country_name: string|null, id_state: int|null, state: string|null, state_name: string|null}
+     */
+    public static function place(int $idCountry, int $idState, int $idLang): array
+    {
+        $country = $idCountry > 0 ? new Country($idCountry, $idLang) : null;
+        $country = $country !== null && Validate::isLoadedObject($country) ? $country : null;
+        $state = $idState > 0 ? new State($idState) : null;
+        $state = $state !== null && Validate::isLoadedObject($state) ? $state : null;
+
+        return [
+            'id_country' => $idCountry > 0 ? $idCountry : null,
+            'country' => $country !== null ? (string) $country->iso_code : null,
+            'country_name' => $country !== null ? (string) $country->name : null,
+            'id_state' => $idState > 0 ? $idState : null,
+            'state' => $state !== null ? (string) $state->iso_code : null,
+            'state_name' => $state !== null ? (string) $state->name : null,
         ];
     }
 

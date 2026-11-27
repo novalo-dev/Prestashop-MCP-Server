@@ -382,13 +382,16 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
     /**
      * The state given, which must be one of the country's when it has states.
      *
+     * Public so the contact details of the shop require and refuse a state
+     * with the same lines as every address tool.
+     *
      * @param array<string, mixed> $arguments
      * @param Country $country
      * @param array<int, string> $errors
      *
      * @return int 0 when the country has no states
      */
-    protected static function supplierState(array $arguments, Country $country, array &$errors): int
+    public static function supplierState(array $arguments, Country $country, array &$errors): int
     {
         $hasStates = (bool) $country->contains_states;
         if (!array_key_exists('state', $arguments) || $arguments['state'] === '' || $arguments['state'] === null) {

@@ -4561,7 +4561,7 @@ replayable.
 | `language` | | string | ISO code of an active language for the texts and the country and state names, by `SomcpTool::readLanguage()`; the shop default when left out; a code the shop does not have is refused |
 | `name` | filter **Name** | string | contains, without case |
 | `city`, `postcode` | filters **City**, **Zip/Postal code** | string | contains, without case |
-| `id_country` | filter **Country** | integer | from `somcp_list_countries`; `SomcpTool::notAnIdentifier('id_country')`; unknown or not of this shop: `SomcpTool::notFound('id_country', 'country', <id>, 'somcp_list_countries')` |
+| `country` | filter **Country** | string | the ISO code (`US`, without case), read as `somcp_list_states` reads its `country` filter, through `SomcpToolCreateSupplier::shopCountries()`; not a text: `country: an ISO code of 2 letters, for example US`; unknown or not of this shop: `SomcpTool::notFound('country', 'country', <code>, 'somcp_list_countries', 'ISO code')` |
 | `active` | filter **Enabled** | boolean | `active: true or false` otherwise |
 | `sort` | the sortable columns | string | `id_asc` (default, as the screen), `id_desc`, `name_asc`, `name_desc`, `city_asc`, `city_desc`, through `SomcpTool::oneOf()` |
 | `limit`, `offset` | | integers | as `somcp_list_cart_rules`: 20 by default, 100 at most; `offset` 0 at least |
@@ -4573,9 +4573,10 @@ refusal, in the envelope `Nothing was read. Correct these and call again:`.
 - `stores`: one object per store of the shop of the token (`store_shop`),
   built by `SomcpToolListStores::item()`, public for the tools that write a
   store: `id_store`, `name` (**Name**), `address1` (**Address**), `address2`
-  (**Address (2)**), `postcode` (**Zip/Postal code**), `city`, `id_country`
-  and `country` (its name in the language read), `id_state` and `state`
-  (`null` without a state), `latitude`, `longitude` (numbers), `phone`,
+  (**Address (2)**), `postcode` (**Zip/Postal code**), `city`, `id_country`,
+  `country` (its ISO code, `US`) and `country_name` (its name in the language
+  read), `id_state`, `state` (its ISO code, `FL`) and `state_name` (`null`
+  without a state), built by `SomcpToolListStores::place()`, `latitude`, `longitude` (numbers), `phone`,
   `fax`, `email` (**Email address**), `note`, `active` (**Active**: shown on
   the storefront), `hours`, `image`, `date_add`, `date_upd`
   (`SomcpTool::isoDate()`);
@@ -4631,15 +4632,18 @@ Read only, replayable; one object per shop.
 | `address2` | **Shop address line 2** | `PS_SHOP_ADDR2` |
 | `postcode` | **Zip/Postal code** | `PS_SHOP_CODE` |
 | `city` | **City** | `PS_SHOP_CITY` |
-| `id_country`, `country` | **Country** | `PS_SHOP_COUNTRY_ID` |
-| `id_state`, `state` | **State** | `PS_SHOP_STATE_ID` |
+| `id_country`, `country`, `country_name` | **Country** | `PS_SHOP_COUNTRY_ID` |
+| `id_state`, `state`, `state_name` | **State** | `PS_SHOP_STATE_ID` |
 | `phone` | **Phone** | `PS_SHOP_PHONE` |
 | `fax` | **Fax** | `PS_SHOP_FAX` |
 
-- `id_country` and `id_state` are `null` for 0 or no row, with `country` and
-  `state` `null`; otherwise the names in the shop's default language, from
-  the identifiers (never `PS_SHOP_COUNTRY` and `PS_SHOP_STATE`, which the
-  screen writes beside them);
+- `id_country` and `id_state` are `null` for 0 or no row, with `country`,
+  `country_name`, `state` and `state_name` `null`; otherwise `country` and
+  `state` are the ISO codes (`US`, `FL`) every other tool takes, and
+  `country_name` and `state_name` the names in the shop's default language,
+  from the identifiers (never `PS_SHOP_COUNTRY` and `PS_SHOP_STATE`, which the
+  screen writes beside them), in the shape of `somcp_list_stores`
+  (`SomcpToolListStores::place()`);
 - `language`: the ISO code of the names;
 - `warning` when no country is saved: `No country is saved: the screen
   preselects <name of the context country>, which the shop does not use until
@@ -4675,15 +4679,16 @@ an address of the contact form (→ `somcp_update_contact`).
 | `shop_email` | **Shop email** | required, `Validate::isEmail()`: `contact_details.shop_email: an e-mail address` |
 | `registration_number`, `postcode`, `city`, `phone`, `fax` | **Registration number**, **Zip/Postal code**, **City**, **Phone**, **Fax** | `isGenericName`, may be empty |
 | `address1`, `address2` | **Shop address line 1**, **line 2** | `Validate::isAddress()`, may be empty |
-| `id_country` | **Country** | an existing country: `SomcpTool::notFound()` naming `somcp_list_countries`; `null` or 0 refused when one is saved (`the back office cannot empty a saved country`) |
-| `id_state` | **State** | an enabled state of the country given or saved, as `AdminStoresController::beforeUpdateOptions()`: `not a state of this country - find one with somcp_list_states`; `null` refused the same way when one is saved; required when the call touches the country or the state and the country has states |
-| `country`, `state` | | read only: accepted when equal to the read, else `read only - change id_country` |
+| `country` | **Country** | the ISO code of a country of the shop, through `SomcpToolCreateSupplier::supplierCountry()`: `contact_details.country: no country of this shop has the ISO code "ZZ"`; `null` or empty refused when one is saved (`contact_details.country: the back office cannot empty a saved country`) |
+| `state` | **State** | the ISO code of a state of the country given or saved, through `SomcpToolCreateSupplier::supplierState()`: `contact_details.state: US has no state with the ISO code "ZZ"`, `contact_details.state: required, US has states - give the ISO code of one` when the country changes to one with states, `contact_details.state: FR has no states, leave the field out`; enabled, as `AdminStoresController::beforeUpdateOptions()`: `contact_details.state: not an enabled state of US - find one with somcp_list_states`; `null` refused when one is saved and the country does not change |
+| `id_country`, `country_name`, `id_state`, `state_name` | | read only: accepted when equal to the read, else `contact_details.id_country: read only - change country` (or `state`) |
 
 Every mistake in one answer (`SomcpTool::refused('changed', ...)`), an unknown
 field through `SomcpTool::unknownFields()`.
 
 **Returns** - as `somcp_update_general_settings`: `changed`; `changes`
-(`field`, `old`, `new`); `contact_details` read again by
+(`field`, `old`, `new`; the country and the state as `country` and `state`,
+by ISO code); `contact_details` read again by
 `SomcpToolGetContactDetails::details()`; `language`; `warning` when
 `shop_email` changes (`The e-mails of the shop are now sent from <address>.`,
 since `Mail::send()` takes `PS_SHOP_EMAIL` as the sender) and when the shop is

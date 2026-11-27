@@ -24,13 +24,15 @@ declare(strict_types=1);
  * each field as AdminController::processUpdateOptions() and
  * AdminStoresController::beforeUpdateOptions() do, then writes only the keys
  * whose value differs, for the shop of the token, with the names of the
- * country and the state kept in step as the screen keeps them.
+ * country and the state kept in step as the screen keeps them. The country
+ * and the state are taken by ISO code, as every address tool takes them.
  */
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once __DIR__ . '/SomcpToolCreateSupplier.php';
 require_once __DIR__ . '/SomcpToolGetContactDetails.php';
 require_once __DIR__ . '/SomcpToolUpdateGeneralSettings.php';
 
@@ -92,22 +94,31 @@ class SomcpToolUpdateContactDetails
                             'address2' => $text('Shop address line 2, may be empty.'),
                             'postcode' => $text('Zip/Postal code, may be empty.'),
                             'city' => $text('City, may be empty.'),
-                            'id_country' => [
-                                'type' => ['integer', 'null'],
-                                'description' => 'Country, an id_country of somcp_list_countries.',
-                            ],
                             'country' => [
                                 'type' => ['string', 'null'],
-                                'description' => 'Read only: the name of id_country, accepted as read.',
-                            ],
-                            'id_state' => [
-                                'type' => ['integer', 'null'],
-                                'description' => 'State, an enabled id_state of the country from somcp_list_states; '
-                                    . 'required when the country has states.',
+                                'description' => 'Country, its ISO code of 2 letters (for example US), as '
+                                    . 'somcp_list_countries gives it.',
                             ],
                             'state' => [
                                 'type' => ['string', 'null'],
-                                'description' => 'Read only: the name of id_state, accepted as read.',
+                                'description' => 'State, the ISO code of an enabled state of the country (for example '
+                                    . 'FL), as somcp_list_states gives it; required when the country has states.',
+                            ],
+                            'id_country' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Read only: the identifier of country, accepted as read.',
+                            ],
+                            'country_name' => [
+                                'type' => ['string', 'null'],
+                                'description' => 'Read only: the name of country, accepted as read.',
+                            ],
+                            'id_state' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Read only: the identifier of state, accepted as read.',
+                            ],
+                            'state_name' => [
+                                'type' => ['string', 'null'],
+                                'description' => 'Read only: the name of state, accepted as read.',
                             ],
                             'phone' => $text('Phone, may be empty.'),
                             'fax' => $text('Fax, may be empty.'),
@@ -163,7 +174,7 @@ class SomcpToolUpdateContactDetails
         }
         $problems = array_merge($problems, SomcpTool::unknownFields(
             $card,
-            array_merge(array_keys(SomcpToolGetContactDetails::KEYS), ['country', 'state']),
+            array_keys($stored),
             [],
             'contact_details.'
         ));
@@ -186,47 +197,52 @@ class SomcpToolUpdateContactDetails
             $given[$field] = $card[$field];
         }
 
-        $idCountry = self::place($card, 'id_country', $stored, $problems);
+        // The country and the state by ISO code, as every address tool takes
+        // them, through the same lookups and refusal lines.
         $country = null;
-        if ($idCountry !== null) {
-            $country = new Country($idCountry);
-            if (!Validate::isLoadedObject($country)) {
-                $problems[] = SomcpTool::notFound('contact_details.id_country', 'country', $idCountry, 'somcp_list_countries');
-                $country = null;
-            } else {
-                $given['id_country'] = $idCountry;
+        $countryChanged = false;
+        if (self::emptied($card, 'country', $stored, $problems)) {
+            $found = [];
+            $country = SomcpToolCreateSupplier::supplierCountry(['country' => $card['country']], $idShop, $found);
+            self::prefix($found, $problems);
+            if ($country !== null && $country->iso_code !== $stored['country']) {
+                $countryChanged = true;
+                $given['id_country'] = (int) $country->id;
             }
         } elseif ($stored['id_country'] !== null) {
             $country = new Country((int) $stored['id_country']);
+            $country = Validate::isLoadedObject($country) ? $country : null;
         }
 
-        $idState = self::place($card, 'id_state', $stored, $problems);
-        if ($idState !== null && $country !== null) {
-            // As beforeUpdateOptions(): an enabled state of the country given
-            // or saved, or the screen refuses the whole card.
-            $active = Db::getInstance()->getValue('SELECT `active` FROM `' . _DB_PREFIX_ . 'state` WHERE `id_country` = '
-                . (int) $country->id . ' AND `id_state` = ' . (int) $idState);
-            if ((int) $active !== 1) {
-                $problems[] = 'contact_details.id_state: not a state of this country - find one with somcp_list_states';
-            } else {
-                $given['id_state'] = $idState;
+        $stateGiven = self::emptied($card, 'state', $stored, $problems, $countryChanged);
+        if ($stateGiven && $card['state'] === $stored['state'] && !$countryChanged) {
+            $stateGiven = false;
+        }
+        if (($stateGiven || $countryChanged) && $country !== null) {
+            $found = [];
+            $idState = SomcpToolCreateSupplier::supplierState($stateGiven ? ['state' => $card['state']] : [], $country, $found);
+            self::prefix($found, $problems);
+            if ($idState > 0) {
+                // As beforeUpdateOptions(): an enabled state of the country,
+                // or the screen refuses the whole card.
+                $active = Db::getInstance()->getValue('SELECT `active` FROM `' . _DB_PREFIX_ . 'state` WHERE `id_country` = '
+                    . (int) $country->id . ' AND `id_state` = ' . (int) $idState);
+                if ((int) $active !== 1) {
+                    $problems[] = 'contact_details.state: not an enabled state of ' . $country->iso_code
+                        . ' - find one with somcp_list_states';
+                } else {
+                    $given['id_state'] = $idState;
+                }
             }
-        } elseif ($idState !== null) {
-            $problems[] = 'contact_details.id_state: a country first - find one with somcp_list_countries';
-        }
-        // The store form asks a state of a country that has some; asked only
-        // when the call touches the place, so a change of the phone is never
-        // held up by a card saved before.
-        $touched = array_key_exists('id_country', $card) || array_key_exists('id_state', $card);
-        $finalState = $given['id_state'] ?? ($idCountry === null ? $stored['id_state'] : null);
-        if ($touched && $country !== null && (bool) $country->contains_states && $finalState === null
-            && !self::hasError($problems, 'contact_details.id_state')) {
-            $problems[] = 'contact_details.id_state: required, as this country has states - find one with somcp_list_states';
+        } elseif ($stateGiven && !self::hasError($problems, 'contact_details.country')) {
+            $problems[] = 'contact_details.state: a country first - find one with somcp_list_countries';
         }
 
-        foreach (['country' => 'id_country', 'state' => 'id_state'] as $name => $id) {
-            if (array_key_exists($name, $card) && $card[$name] !== $stored[$name]) {
-                $problems[] = 'contact_details.' . $name . ': read only - change ' . $id;
+        // What the read says beside the codes is given back as read, never
+        // changed on its own.
+        foreach (['id_country' => 'country', 'country_name' => 'country', 'id_state' => 'state', 'state_name' => 'state'] as $field => $through) {
+            if (array_key_exists($field, $card) && $card[$field] !== $stored[$field]) {
+                $problems[] = 'contact_details.' . $field . ': read only - change ' . $through;
             }
         }
 
@@ -277,9 +293,19 @@ class SomcpToolUpdateContactDetails
         // The fields only: the values are the shop's address and phone.
         SomcpLogger::log('contact_details_updated', SomcpLogger::OUTCOME_SUCCESS, implode(', ', $saved), '', $idEmployee);
 
+        $after = SomcpToolGetContactDetails::details($idShop, $idLang);
         $result = [
             'changed' => true,
-            'changes' => array_map(static function (array $change): array {
+            'changes' => array_map(static function (array $change) use ($stored, $after): array {
+                // The country and the state are said by the codes the call
+                // gave, not by the identifiers written for them.
+                $named = ['id_country' => 'country', 'id_state' => 'state'];
+                if (isset($named[$change['field']])) {
+                    $field = $named[$change['field']];
+
+                    return ['field' => $field, 'old' => $stored[$field], 'new' => $after[$field]];
+                }
+
                 return ['field' => $change['field'], 'old' => $change['old'], 'new' => $change['new']];
             }, $plan),
         ];
@@ -296,7 +322,7 @@ class SomcpToolUpdateContactDetails
         }
         // Read back rather than echoed: what the assistant shows is what the
         // shop stored.
-        $result['contact_details'] = SomcpToolGetContactDetails::details($idShop, $idLang);
+        $result['contact_details'] = $after;
         $result['language'] = $iso;
 
         return SomcpTool::json($result);
@@ -331,39 +357,45 @@ class SomcpToolUpdateContactDetails
     }
 
     /**
-     * The identifier given for the country or the state, or null when it is
-     * left out or empty. The screen never writes a 0 (`if (!$this->errors &&
-     * $value)`), so emptying one already saved is refused rather than
-     * answered as done.
+     * Whether a code is given for the country or the state. The screen never
+     * writes an empty one (`if (!$this->errors && $value)`), so emptying one
+     * already saved is refused rather than answered as done.
      *
      * @param array<string, mixed> $card
-     * @param string $field id_country or id_state
+     * @param string $field country or state
      * @param array<string, mixed> $stored
      * @param array<int, string> $problems
+     * @param bool $countryChanged a state may be left empty for a new country without states
      *
-     * @return int|null
+     * @return bool
      */
-    private static function place(array $card, string $field, array $stored, array &$problems): ?int
+    private static function emptied(array $card, string $field, array $stored, array &$problems, bool $countryChanged = false): bool
     {
         if (!array_key_exists($field, $card)) {
-            return null;
+            return false;
         }
-        $value = $card[$field];
-        if ($value === null || $value === 0) {
-            if ($stored[$field] !== null) {
-                $problems[] = 'contact_details.' . $field . ': the back office cannot empty a saved '
-                    . ($field === 'id_country' ? 'country' : 'state');
+        if ($card[$field] === null || $card[$field] === '') {
+            if ($stored[$field] !== null && !$countryChanged) {
+                $problems[] = 'contact_details.' . $field . ': the back office cannot empty a saved ' . $field;
             }
 
-            return null;
-        }
-        if (!is_int($value) || $value < 0) {
-            $problems[] = SomcpTool::notAnIdentifier('contact_details.' . $field);
-
-            return null;
+            return false;
         }
 
-        return $value;
+        return true;
+    }
+
+    /**
+     * The lines of the shared lookups, under the card they belong to.
+     *
+     * @param array<int, string> $found
+     * @param array<int, string> $problems
+     */
+    private static function prefix(array $found, array &$problems): void
+    {
+        foreach ($found as $line) {
+            $problems[] = 'contact_details.' . $line;
+        }
     }
 
     /**

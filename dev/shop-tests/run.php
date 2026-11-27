@@ -1044,15 +1044,26 @@ if ($updateContactDetails !== null && $getContactDetails !== null) {
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (the read given back whole)');
             }
-            $saved = $contactCall($updateContactDetails, ['contact_details' => ['city' => 'Miami', 'id_country' => 21, 'id_state' => 12]]);
+            // The country and the state by ISO code (#459), as every other
+            // tool takes them: US is country 21 and FL state 12 of the demo.
+            $saved = $contactCall($updateContactDetails, ['contact_details' => ['city' => 'Miami', 'country' => 'US', 'state' => 'FL']]);
             $fields = array_column(is_array($saved['changes'] ?? null) ? $saved['changes'] : [], 'field');
-            $after = $contactCall($getContactDetails, [])['contact_details'] ?? [];
-            if (($saved['changed'] ?? null) !== true || $fields !== ['city', 'id_country', 'id_state']
-                || ($after['city'] ?? null) !== 'Miami' || ($after['id_country'] ?? null) !== 21 || ($after['id_state'] ?? null) !== 12
+            $readAgain = $contactCall($getContactDetails, []);
+            $after = $readAgain['contact_details'] ?? [];
+            if (($saved['changed'] ?? null) !== true || $fields !== ['city', 'country', 'state']
+                || ($after['city'] ?? null) !== 'Miami' || ($after['country'] ?? null) !== 'US' || ($after['state'] ?? null) !== 'FL'
+                || ($after['id_country'] ?? null) !== 21 || ($after['id_state'] ?? null) !== 12
                 || (int) Configuration::get('PS_SHOP_COUNTRY_ID') !== 21 || (string) Configuration::get('PS_SHOP_STATE') === '') {
                 $failures[] = 'somcp_update_contact_details (a city, a country and its state): ' . json_encode($saved) . ' - read again ' . json_encode($after);
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (a city, a country and its state, read again)');
+            }
+            $calls += 1;
+            $same = $contactCall($updateContactDetails, $readAgain);
+            if (($same['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_contact_details (the saved country and state given back whole): expected changed false - ' . json_encode($same);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (the saved country and state given back whole)');
             }
         }
     } catch (Throwable $e) {

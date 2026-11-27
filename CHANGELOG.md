@@ -65,20 +65,24 @@ shows: each with every field of its Edit form - name, address, country and
 state, latitude and longitude, phone, e-mail address, note, whether it is
 shown, the opening hours of each day and its picture, which the assistant can
 download. It filters on the name, the city, the postcode, the country and
-whether the store is shown, as the list does.
+whether the store is shown, as the list does. The country and the state are
+given by ISO code, with their names beside them, as every other tool gives
+them.
 
 **Read the contact details of the shop.** The new tool
 somcp_get_contact_details reads the card Contact details of Shop Parameters >
 Contact, tab Stores: the shop name, e-mail address, registration number,
 address, country, state, phone and fax that the e-mails, the invoices and the
-page titles print. When no country is saved, the answer says so instead of
-giving the country the screen preselects.
+page titles print, the country and the state by ISO code with their names
+beside them. When no country is saved, the answer says so instead of giving
+the country the screen preselects.
 
 **Change the contact details of the shop.** The new tool
 somcp_update_contact_details does what Save does on the card Contact details
 of Shop Parameters > Contact, tab Stores: the shop name, e-mail address,
 registration number, address, country, state, phone and fax change, each
-checked as on screen, and only the fields given. The details read with
+checked as on screen, and only the fields given. The country and the state
+are given by ISO code, as every other tool takes them. The details read with
 somcp_get_contact_details and given back as they are change nothing. A state
 must be one of the country, a saved country or state cannot be emptied, as on
 screen, and the answer warns that the shop's e-mails are now sent from a new

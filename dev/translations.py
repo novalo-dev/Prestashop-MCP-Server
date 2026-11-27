@@ -1262,6 +1262,10 @@ T = {
  "Supprimer un magasin",
  "Eliminar una tienda",
  "Ein Geschäft löschen"),
+"Add a shop page to SEO & URLs": (
+ "Ajouter une page de la boutique dans SEO et URL",
+ "Añadir una página de la tienda en SEO y URL",
+ "Eine Shop-Seite in SEO und URL hinzufügen"),
 "Delete a shop page from SEO & URLs": (
  "Supprimer une page de la boutique dans SEO et URL",
  "Eliminar una página de la tienda en SEO y URL",

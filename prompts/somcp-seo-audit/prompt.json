@@ -14,6 +14,7 @@
     "somcp_update_cms_seo",
     "somcp_list_meta_pages",
     "somcp_update_meta_page",
+    "somcp_create_meta_page",
     "somcp_delete_meta_page",
     "somcp_get_seo_settings",
     "somcp_get_robots_txt",

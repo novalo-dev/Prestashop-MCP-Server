@@ -162,7 +162,7 @@ class SomcpToolUpdateMetaPage
         $idMeta = SomcpTool::id($arguments, 'id_meta');
         $meta = self::page($idMeta, $idShop);
         if ($meta === null || !(bool) $meta->configurable) {
-            $errors = self::fieldProblems($arguments);
+            $errors = self::fieldProblems($arguments, ['id_meta']);
             if ($meta !== null) {
                 $errors[] = self::notConfigurable($meta);
             } else {
@@ -175,7 +175,7 @@ class SomcpToolUpdateMetaPage
         }
 
         $errors = [];
-        $plan = self::plan($arguments, $meta, $idShop, $errors);
+        $plan = self::plan($arguments, $meta, $idShop, $errors, ['id_meta']);
         if ($errors !== []) {
             return SomcpTool::refused('changed', $errors);
         }
@@ -213,14 +213,15 @@ class SomcpToolUpdateMetaPage
      * place of the "not a field" line they would otherwise get.
      *
      * @param array<string, mixed> $arguments
+     * @param array<int, string> $own the fields that name the page: id_meta here, page for somcp_create_meta_page
      *
      * @return array<int, string>
      */
-    private static function fieldProblems(array $arguments): array
+    private static function fieldProblems(array $arguments, array $own): array
     {
         return SomcpTool::unknownFields(
             $arguments,
-            array_merge(['id_meta', 'languages'], array_keys(self::TEXTS)),
+            array_merge($own, ['languages'], array_keys(self::TEXTS)),
             [],
             '',
             self::RENAMED
@@ -253,20 +254,23 @@ class SomcpToolUpdateMetaPage
      * What will be written, or every reason the call is refused.
      *
      * A value equal to what the page holds is left out, so what remains is
-     * exactly what changes.
+     * exactly what changes. Public: somcp_create_meta_page checks its texts
+     * here, on a Meta not saved yet whose page is set, so a page is created
+     * under the rules it is later changed with.
      *
      * @param array<string, mixed> $arguments
      * @param Meta $meta
      * @param int $idShop
      * @param array<int, string> $errors
+     * @param array<int, string> $own the fields that name the page in the calling tool
      *
      * @return array{texts: array<string, array<int, string>>, changes: array<int, array<string, mixed>>, moved: array<int, string>, isos: array<int, string>}
      */
-    private static function plan(array $arguments, Meta $meta, int $idShop, array &$errors): array
+    public static function plan(array $arguments, Meta $meta, int $idShop, array &$errors, array $own): array
     {
         $plan = ['texts' => [], 'changes' => [], 'moved' => [], 'isos' => []];
 
-        $errors = array_merge($errors, self::fieldProblems($arguments));
+        $errors = array_merge($errors, self::fieldProblems($arguments, $own));
 
         if (array_key_exists('meta_keywords', $arguments) && !self::hasKeywords()) {
             // The list answers null for the field on PrestaShop 9: that null

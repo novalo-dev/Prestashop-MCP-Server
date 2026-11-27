@@ -14,6 +14,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_update_cms_seo`
 - `somcp_list_meta_pages`
 - `somcp_update_meta_page`
+- `somcp_create_meta_page`
 - `somcp_delete_meta_page`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
@@ -74,7 +75,10 @@ installation has its own titles, descriptions and URLs.
    `somcp_list_meta_pages` returns: `meta_title`, `meta_description`,
    `meta_keywords` and `link_rewrite`. The home page has no friendly URL, and
    a new one on any other page makes its old address stop working: say so
-   before the call. A page the shop no longer wants in Traffic & SEO is
+   before the call. A page of the shop or of a module that Traffic & SEO does
+   not list yet is added with `somcp_create_meta_page`, under a page name
+   taken from `addable_pages` of `somcp_list_meta_pages`, with its Rewritten
+   URL at least in the default language: ask first. A page the shop no longer wants in Traffic & SEO is
    deleted with `somcp_delete_meta_page`: it loses its Rewritten URL, its
    Page title and its Meta description in every language, and a page of the
    shop answers again at `index.php?controller=<page>`. Ask first, naming the

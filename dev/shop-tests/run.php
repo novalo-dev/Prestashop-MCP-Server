@@ -3216,6 +3216,91 @@ if ($deleteRule !== null && $createForDelete !== null && $getForDelete !== null)
     }
 }
 
+// A shop page added (#471): the first module page of addable_pages that is
+// not one of somcp, first with a Rewritten URL the form refuses, then with
+// one in every active language; listed afterwards and no longer offered. The
+// finally removes it whatever happens, so the demo pages stay as they were.
+$createMeta = $registry->get('somcp_create_meta_page');
+$listMetaPages = $registry->get('somcp_list_meta_pages');
+if ($createMeta !== null && $listMetaPages !== null) {
+    $calls += 3;
+    $addContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($createMeta->getRequiredScopes(), $listMetaPages->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $addText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idMetaAdded = 0;
+    $addPage = '';
+    try {
+        $before = json_decode(trim($addText($listMetaPages->call([], $addContext))), true);
+        foreach (is_array($before['addable_pages'] ?? null) ? $before['addable_pages'] : [] as $candidate) {
+            $value = (string) ($candidate['page'] ?? '');
+            if (strpos($value, 'module-') === 0 && strpos($value, 'module-somcp-') !== 0) {
+                $addPage = $value;
+                break;
+            }
+        }
+        if ($addPage === '') {
+            $failures[] = 'somcp_create_meta_page: no module page in addable_pages of somcp_list_meta_pages';
+        } else {
+            $isos = [];
+            foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
+                $isos[] = Tools::strtolower((string) $language['iso_code']);
+            }
+            $bad = $createMeta->call(['page' => $addPage, 'link_rewrite' => array_fill_keys($isos, 'a b')], $addContext);
+            $badText = $addText($bad);
+            if (empty($bad['isError']) || strpos($badText, '"Only letters and hyphens are allowed."') === false
+                || (int) Db::getInstance()->getValue('SELECT `id_meta` FROM `' . _DB_PREFIX_ . 'meta` WHERE `page` = \'' . pSQL($addPage) . '\'') > 0) {
+                $failures[] = 'somcp_create_meta_page (a Rewritten URL with a space, refused, nothing created): unexpected - ' . excerpt($bad);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_meta_page (a Rewritten URL with a space, refused, nothing created)');
+            }
+            $created = $createMeta->call(['page' => $addPage, 'link_rewrite' => array_fill_keys($isos, 'somcp-test-page')], $addContext);
+            $answer = json_decode(trim($addText($created)), true);
+            $idMetaAdded = (int) ($answer['id_meta'] ?? 0);
+            $after = json_decode(trim($addText($listMetaPages->call([], $addContext))), true);
+            $listedIds = array_map('intval', array_column(is_array($after['pages'] ?? null) ? $after['pages'] : [], 'id_meta'));
+            $offered = array_column(is_array($after['addable_pages'] ?? null) ? $after['addable_pages'] : [], 'page');
+            if (!empty($created['isError']) || ($answer['created'] ?? null) !== true || $idMetaAdded <= 0
+                || ($answer['page'] ?? null) !== $addPage || ($answer['link_rewrite'] ?? null) !== 'somcp-test-page'
+                || !in_array($idMetaAdded, $listedIds, true) || in_array($addPage, $offered, true)) {
+                $failures[] = 'somcp_create_meta_page (a module page added, then listed and no longer offered): unexpected - '
+                    . json_encode([excerpt($created), $addPage]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_meta_page (a module page added, then listed and no longer offered)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_meta_page: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Found by its name as well: an answer that lost the identifier must
+        // not leave the page behind.
+        if ($idMetaAdded <= 0 && $addPage !== '') {
+            $idMetaAdded = (int) Db::getInstance()->getValue('SELECT `id_meta` FROM `' . _DB_PREFIX_ . 'meta` WHERE `page` = \'' . pSQL($addPage) . '\'');
+        }
+        if ($idMetaAdded > 0) {
+            $added = new Meta($idMetaAdded);
+            if (Validate::isLoadedObject($added)) {
+                $added->delete();
+            }
+        }
+    }
+}
+
 // A shop page deleted (#470): a page made for that alone, for a module front
 // controller that has none and is never one of somcp, with a Rewritten URL in
 // every language; deleted with the tool, then gone from somcp_list_meta_pages.

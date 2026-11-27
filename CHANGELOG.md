@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Add a shop page to SEO & URLs.** The new tool somcp_create_meta_page does
+what Add new page then Save do on Shop Parameters > Traffic & SEO > SEO & URLs:
+a page of the shop or of a module that has none yet gets its Page title, Meta
+description and Rewritten URL, under the same rules as when a page is changed,
+the Rewritten URL being required in the default language. somcp_list_meta_pages
+now also gives the pages that can be added, as the Page name list of the form
+shows them, so the assistant never guesses a page name.
+
 **Delete a shop page from SEO & URLs.** The new tool somcp_delete_meta_page
 does what Delete does on a row of Shop Parameters > Traffic & SEO > SEO &
 URLs: the page loses its Page title, Meta description and Rewritten URL in

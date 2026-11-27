@@ -9721,7 +9721,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
-**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `meta_title` (the **Page title**), `meta_description` (the **Meta description**), `meta_keywords` (the **Meta keywords**, PrestaShop 8 only, `null` on 9), `link_rewrite` (the **Rewritten URL**), `url`, `configurable`. Plus `count` and the `language` read.
+**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `meta_title` (the **Page title**), `meta_description` (the **Meta description**), `meta_keywords` (the **Meta keywords**, PrestaShop 8 only, `null` on 9), `link_rewrite` (the **Rewritten URL**), `url`, `configurable`. Plus `count`, the `language` read, and `addable_pages`: the pages **Add new page** offers in its **Page name** list (`Meta::getPages(true)`: the front controllers of the core and of the modules that have no row yet), each `{"page": "<value>", "label": "<the label of the list>"}` (`<module> - <controller>` for a module page), sorted by `page`, the values `somcp_create_meta_page` takes.
 
 **Notes**
 - Read from `meta` and `meta_lang` of the token's shop, as the Traffic & SEO page lists them, in one query, without paging: a shop has a few dozen pages.
@@ -9758,6 +9758,58 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - The home page (`index`) has no `link_rewrite`: a new one is refused, the value it holds given back unchanged is not. `EditMetaHandler` only checks the shape of a friendly URL; the tool also refuses one already used by another page of the shop in the same language, since both addresses would lead to one page.
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
 - `seo_warnings`, for each language changed: a `meta_title` over 70 characters, a `meta_description` over 160 (the lengths every SEO tool advises past and the audits flag), each with its length in the sentence of `SomcpTool::metaLengthAdvice()` every SEO write gives (`meta_title is 85 characters: past 70, a search result cuts it`), and a new `link_rewrite`, whose old address breaks; the assistant tells the merchant before the call.
+
+#### `somcp_create_meta_page`
+**State**: written · [issue #471](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/471)
+**Nature**: `acts(ADD, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - creates a page of **Shop Parameters > Traffic & SEO > SEO &
+URLs**, as **Add new page** then **Save** do (**New page configuration**): a
+**Page name** that has no row yet, with its **Page title**, **Meta
+description** and **Rewritten URL** per language. One page per call.
+
+**Do not use for** - changing a page (→ `somcp_update_meta_page`); a
+product, a category or a CMS page (→ their own tools).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `page` | **Page name** | string | required (`page: required - take one of addable_pages of somcp_list_meta_pages`); one of the values of `Meta::getPages(true)`, given as `addable_pages` by `somcp_list_meta_pages` (`page: not a page that can be added - take one of addable_pages of somcp_list_meta_pages`); a page that already has a row: `page: <page> already has its page - change it with somcp_update_meta_page (id_meta <id>)` |
+| `languages` | | array | as `somcp_update_meta_page` |
+| `meta_title` | **Page title** | object | per ISO code, the rules of `somcp_update_meta_page` |
+| `meta_description` | **Meta description** | object | per ISO code, the same |
+| `meta_keywords` | **Meta keywords** | object | PrestaShop 8 only (`SomcpToolUpdateMetaPage::hasKeywords()`), the same |
+| `link_rewrite` | **Rewritten URL** | object | per ISO code: required in the shop default language unless `page` is `index` (`link_rewrite (<iso>): required in the shop default language, the page needs an address`); the rules and messages of `somcp_update_meta_page` (`Validate::isLinkRewrite()`, 254 characters at most, unique in the shop); a language left empty takes the text of the default language, as the core does |
+
+The texts are checked by `SomcpToolUpdateMetaPage::plan()`, called with a
+`Meta` not saved yet whose `page` is set, never copied. Unknown arguments
+through `SomcpTool::unknownFields()`: `id_meta`, `url` and `configurable`,
+fields of the list, answer `<field>: not a field of this tool`. Every mistake
+in one answer, in the envelope `Nothing was created. Correct these and call
+again:`.
+
+**Returns** - `created: true`, `id_meta`, and the page as
+`somcp_list_meta_pages` reads it in the shop default language (`page`,
+`meta_title`, `meta_description`, `meta_keywords` (`null` on PrestaShop 9),
+`link_rewrite`, `url`, `configurable`), then `texts`: per ISO code of the
+languages filled, the four texts as `SomcpToolUpdateMetaPage::describe()`
+reads them back. `warning` when the shop is one of several: `The page exists
+for every shop; its texts were written for this shop only.` A `false` or an
+exception of `Meta::add()`: a tool error `The page could not be created:
+<reason>.`
+
+**Notes**
+- `Meta` filled as `AddMetaHandler` fills it on 8.0 and 9.0 (`configurable`
+  1, an empty Rewritten URL taking the one of the default language),
+  `id_shop_list` set to the shop of the token (`meta_lang` is kept by shop),
+  `add()`, then `Hook::exec('actionAdminMetaSave')` as the screen does, so a
+  module keeping its own list of addresses (a sitemap) hears of it.
+- Logged as `meta_page_created` with the new `id_meta` and the `page` only.
+- Changes the shop: the assistant asks first. Not replayable: a second call
+  is refused (`already has its page`).
+- **Meta keywords** on 8.0 only; otherwise the same handler and the same
+  `Meta::getPages()` on 8.0 and 9.0.
 
 #### `somcp_delete_meta_page`
 **State**: written · [issue #470](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/470)
@@ -10836,7 +10888,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `focus` (optional: products, categories, pages or the whole shop).
 
-**Tools** - `somcp_ping`, `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_update_cms_seo`, `somcp_list_meta_pages`, `somcp_update_meta_page`, `somcp_delete_meta_page`, `somcp_get_seo_settings`, `somcp_get_robots_txt`, `somcp_generate_robots_txt`, `somcp_audit_page`, `somcp_check_links`, `somcp_audit_sitemap`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_update_cms_seo`, `somcp_list_meta_pages`, `somcp_update_meta_page`, `somcp_create_meta_page`, `somcp_delete_meta_page`, `somcp_get_seo_settings`, `somcp_get_robots_txt`, `somcp_generate_robots_txt`, `somcp_audit_page`, `somcp_check_links`, `somcp_audit_sitemap`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - start with `somcp_get_seo_settings` and the audits, then sort what was found by its effect on sales: products that sell or should sell first; propose every new title or description to the merchant before writing it, in each language of the shop; change a URL of a live page only after saying that the old one stops working; after a change, check the public page with `somcp_audit_page`, since a value in the database is not proof of what the theme prints.
 

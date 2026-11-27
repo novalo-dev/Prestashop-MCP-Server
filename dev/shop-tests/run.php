@@ -623,10 +623,13 @@ if ($listGroups !== null) {
     }
 }
 
-// The members of a group (#446): customer 1, whose default group is 3, is
-// added to group 2 too. id_group finds the members, as the View page of the
-// group, while id_default_group still finds only the default ones; the row
-// is removed in a finally so the demo data is left as it was.
+// The members of a group (#446): customer 1 is put in group 2 (Guest) if it
+// is not already, then id_group must list exactly the rows of customer_group,
+// as the View page of the group does, and id_default_group exactly the
+// customers whose default group is 2. Both are read from the database rather
+// than assumed from the demo data: the scenarios run before this check change
+// the groups of the demo customers. The row is removed in a finally only when
+// this check added it, so the shop is left as it was.
 $searchCustomers = $registry->get('somcp_search_customers');
 if ($searchCustomers !== null) {
     $calls += 2;
@@ -656,28 +659,45 @@ if ($searchCustomers !== null) {
 
         return $found;
     };
+    $db = Db::getInstance();
+    $idShop = (int) $context->shop->id;
+    $column = static function (string $sql) use ($db): array {
+        $found = array_map('intval', array_column($db->executeS($sql) ?: [], 'id_customer'));
+        sort($found);
+
+        return $found;
+    };
+    $added = false;
     try {
-        (new Customer(1))->addGroups([2]);
+        if (!$db->getValue('SELECT 1 FROM `' . _DB_PREFIX_ . 'customer_group` WHERE `id_customer` = 1 AND `id_group` = 2')) {
+            (new Customer(1))->addGroups([2]);
+            $added = true;
+        }
         $members = $searchCall(['id_group' => 2, 'limit' => 100]);
         $defaults = $searchCall(['id_default_group' => 2, 'limit' => 100]);
-        // The demo shop has customers 3 and 4 in Guest; another test may have
-        // added some, so the members are compared to the default ones plus 1.
-        $expected = array_values(array_unique(array_merge($ids($defaults), [1])));
-        sort($expected);
-        if ($ids($members) !== $expected || (int) ($members['total_count'] ?? 0) !== count($expected)) {
-            $failures[] = 'somcp_search_customers (the members of group 2): expected ' . json_encode($expected) . ' - ' . json_encode($ids($members));
+        $expectedMembers = $column('SELECT c.`id_customer` FROM `' . _DB_PREFIX_ . 'customer` c'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'customer_group` cg ON cg.`id_customer` = c.`id_customer` AND cg.`id_group` = 2'
+            . ' WHERE c.`id_shop` = ' . $idShop . ' AND c.`deleted` = 0');
+        $expectedDefaults = $column('SELECT `id_customer` FROM `' . _DB_PREFIX_ . 'customer`'
+            . ' WHERE `id_default_group` = 2 AND `id_shop` = ' . $idShop . ' AND `deleted` = 0');
+        if ($ids($members) !== $expectedMembers || (int) ($members['total_count'] ?? 0) !== count($expectedMembers) || !in_array(1, $ids($members), true)) {
+            $failures[] = 'somcp_search_customers (the members of group 2): expected ' . json_encode($expectedMembers) . ' - ' . json_encode($ids($members));
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_search_customers (the members of group 2)');
         }
-        if (in_array(1, $ids($defaults), true) || !in_array(3, $ids($defaults), true)) {
-            $failures[] = 'somcp_search_customers (the default group 2): expected customer 3 and not customer 1 - ' . json_encode($ids($defaults));
+        if ($ids($defaults) !== $expectedDefaults || (int) ($defaults['total_count'] ?? 0) !== count($expectedDefaults)) {
+            $failures[] = 'somcp_search_customers (the default group 2): expected ' . json_encode($expectedDefaults) . ' - ' . json_encode($ids($defaults));
+        } elseif ((int) (new Customer(1))->id_default_group !== 2 && in_array(1, $ids($defaults), true)) {
+            $failures[] = 'somcp_search_customers (the default group 2): customer 1 is a member of group 2, not its default one - ' . json_encode($ids($defaults));
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_search_customers (the default group 2, not its other members)');
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_search_customers (members of a group): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
-        Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'customer_group` WHERE `id_customer` = 1 AND `id_group` = 2');
+        if ($added) {
+            $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'customer_group` WHERE `id_customer` = 1 AND `id_group` = 2');
+        }
     }
 }
 

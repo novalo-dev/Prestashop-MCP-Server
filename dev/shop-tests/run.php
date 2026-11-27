@@ -1082,6 +1082,78 @@ if ($updateContactDetails !== null && $getContactDetails !== null) {
     }
 }
 
+// A store created (#461), then read in the list as the merchant sees it:
+// the hours of each day, the country and state by ISO code, no picture.
+// Stores 1 to 5 are the demo's and never touched; the store made here is
+// deleted in the finally, through the object, until a tool deletes stores.
+$createStore = $registry->get('somcp_create_store');
+$listStoresAgain = $registry->get('somcp_list_stores');
+if ($createStore !== null && $listStoresAgain !== null) {
+    $storeCall = static function ($tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $idNewStore = 0;
+    try {
+        $calls += 2;
+        $created = $storeCall($createStore, [
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp test store'],
+            'address1' => ['en' => '1 Test Street'],
+            'city' => 'Miami',
+            'postcode' => '33135',
+            'country' => 'US',
+            'state' => 'FL',
+            'latitude' => 25.765005,
+            'longitude' => -80.243797,
+            'hours' => ['monday' => ['09:00AM - 07:00PM']],
+        ]);
+        $idNewStore = (int) ($created['store']['id_store'] ?? 0);
+        $listed = $storeCall($listStoresAgain, ['name' => 'Somcp test store']);
+        $item = $listed['stores'][0] ?? [];
+        if (($created['created'] ?? null) !== true || $idNewStore <= 5
+            || ($item['id_store'] ?? null) !== $idNewStore
+            || ($item['hours']['monday'] ?? null) !== ['09:00AM - 07:00PM'] || ($item['hours']['tuesday'] ?? null) !== []
+            || ($item['country'] ?? null) !== 'US' || ($item['state'] ?? null) !== 'FL'
+            || ($item['latitude'] ?? null) !== 25.765005 || array_key_exists('image', $item) === false || $item['image'] !== null
+            || ($item['active'] ?? null) !== true) {
+            $failures[] = 'somcp_create_store (a store in Miami, read in the list): ' . json_encode($created) . ' - listed ' . json_encode($listed);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_store (a store in Miami, read in the list)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_store: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        try {
+            // Any store of this name, should the answer have lost its id.
+            $leftovers = Db::getInstance()->executeS('SELECT DISTINCT `id_store` FROM `' . _DB_PREFIX_ . 'store_lang` WHERE `name` = \'Somcp test store\'') ?: [];
+            foreach ($leftovers as $row) {
+                if ((int) $row['id_store'] > 5) {
+                    (new Store((int) $row['id_store']))->delete();
+                }
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_store (the clean up): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
 // A logged e-mail deleted twice (#424): the recipients of the demo lines are
 // real addresses and the test e-mail is not logged, so the line is written
 // here through the Mail object, as Mail::send() writes it. Deleting it must

@@ -1557,6 +1557,11 @@
       <source>List the stores</source>
       <target>List the stores</target>
     </trans-unit>
+    <!-- Create a store -->
+    <trans-unit id="52bd2612c7c5dc55b7b49ea90a8842fa" resname="Create a store">
+      <source>Create a store</source>
+      <target>Create a store</target>
+    </trans-unit>
     <!-- Get the contact details of the shop -->
     <trans-unit id="0c66db3c29d38926dcde73447ee2b642" resname="Get the contact details of the shop">
       <source>Get the contact details of the shop</source>

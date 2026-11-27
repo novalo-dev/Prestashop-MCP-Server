@@ -69,6 +69,14 @@ whether the store is shown, as the list does. The country and the state are
 given by ISO code, with their names beside them, as every other tool gives
 them.
 
+**Create a store.** The new tool somcp_create_store does what Add new store
+then Save do on Shop Parameters > Contact, tab Stores: a store gets its name,
+address, country and state, latitude and longitude, phone, e-mail address,
+note, opening hours of each day and whether it is shown, each checked as on
+screen - a state for a country that has states, the postcode in the format of
+the country, coordinates that are not 0. The answer is the store as the list
+of the stores gives it.
+
 **Read the contact details of the shop.** The new tool
 somcp_get_contact_details reads the card Contact details of Shop Parameters >
 Contact, tab Stores: the shop name, e-mail address, registration number,

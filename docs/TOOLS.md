@@ -4606,6 +4606,65 @@ the thumbnails written for a new picture differ (8.0.1 `-<type>.jpg` and `2x`
 with `PS_HIGHT_DPI`, 9.0.0 every format of `ImageFormatConfiguration`), which
 the update will follow.
 
+#### `somcp_create_store`
+**State**: written · [issue #461](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/461)
+**Nature**: `acts(ADD, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_create_contact`
+
+**Does** - creates a store of **Shop Parameters > Contact**, tab **Stores**,
+as **Add new store** then **Save**: its name, address, country and state,
+coordinates, phone, e-mail, note, hours and whether it is shown on the
+storefront page of the stores. One store per call. The **Picture** comes
+with part 2 (#463).
+
+**Do not use for** - the address of the shop itself (→
+`somcp_update_contact_details`); a contact of the contact form (→
+`somcp_create_contact`).
+
+**Parameters** - checked by `SomcpToolCreateStore::planStore(array
+$arguments, int $idShop, array &$errors, bool $required)`, public for the
+update of a store, on the model of `SomcpToolCreateContact::planContact()`:
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `languages` | | array | `SomcpToolCreateProduct::languages()`, every active language by default (#149) |
+| `name`, `address1` | **Name**, **Address** | object | required, one text per language filled keyed by ISO code (`SomcpToolCreateProduct::texts()`), trimmed, never empty (`name (en): required, it cannot be empty`), checked with `Store::validateField()` (`name (<iso>): <rule> - <reason>`); a language not filled takes the default language's text |
+| `address2`, `note` | **Address (2)**, **Note** | object | as `name`, may be empty; empty in every language when left out |
+| `hours` | **Monday** ... **Sunday** | object | the shape `somcp_list_stores` answers (`{"monday": ["09:00AM - 07:00PM"], "sunday": []}`), for every language filled, or one such object per language keyed by ISO code; a day left out is `[]`; an unknown day `hours: one of monday, tuesday, wednesday, thursday, friday, saturday, sunday` (`SomcpTool::oneOf()`); a day that is not a list of texts `hours.<day>: a list of texts`; stored as `json_encode()` of the seven lists in the order of the form |
+| `postcode` | **Zip/Postal code** | string | the three rules of `AdminStoresController::postProcess()` in its order (`SomcpToolCreateStore::postcodeProblem()`): `postcode: not in the format of US (00000)`, `postcode: required by <iso>` when `need_zip_code`, `postcode: letters, digits, spaces and - only` (`Validate::isPostCode()`); 12 characters at most |
+| `city` | **City** | string | required, `validateField()` |
+| `country` | **Country** | string | required, ISO code, `SomcpToolCreateSupplier::supplierCountry()` |
+| `state` | **State** | string | ISO code, `SomcpToolCreateSupplier::supplierState()`: `state: required, US has states - give the ISO code of one`, `state: FR has no states, leave the field out` |
+| `latitude`, `longitude` | **Latitude / Longitude** | number | both required and not 0 (`latitude: required, not 0`), `Validate::isCoordinate()` within -90 to 90 and -180 to 180, rounded to 8 decimals as the screen saves them |
+| `phone`, `fax`, `email` | **Phone**, **Fax**, **Email address** | string | optional, `validateField()` |
+| `active` | **Active** | boolean | `true` when left out, as the form |
+
+Unknown arguments through `SomcpTool::unknownFields()`: an item of
+`somcp_list_stores` given back is not a creation, `id_store` is refused as
+unknown. Every mistake in one answer, in the envelope `Nothing was created.
+Correct these and call again:`.
+
+**Returns** - `created: true`, `store`: the store as `somcp_list_stores`
+answers one item, read again by `SomcpToolListStores::read()` (the query of
+the list, then `item()`), in the shop's default language, `language` beside
+it; `warning` when the shop runs several shops: `The store was created for
+this shop only.` A `false` or an exception of `Store::add()`: `The store
+could not be created: <reason>.`, nothing else written.
+
+**Notes**
+- `new Store()`, filled, `id_shop_list` set to the shop of the token, then
+  `add()`: the rows of `store`, `store_lang` (every language) and
+  `store_shop`.
+- The module's log line `store_created` names the `id_store` only.
+- Changes the shop: the assistant asks first. Not replayable: a second call
+  creates a second store.
+- The JSON scenario checks the refusals; the shop test creates a store in
+  Miami, reads it in `somcp_list_stores` and deletes it with `Store::delete()`
+  in a `finally`. Stores 1 to 5 are never changed.
+
+**Differences between 8.0.1 and 9.0.0** - the size of `note` and `hours`
+(65 000 on 8.0.1, the medium text limit on 9.0.0), which the definition of the
+running version decides through `validateField()`. The rest is the same.
+
 #### `somcp_get_contact_details`
 **State**: written · [issue #456](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/456)
 **Nature**: `acts(VIEW, 'AdminStores')` · **Scope**: `mcp.customers.read`, as `somcp_list_contacts`

@@ -247,6 +247,33 @@ class SomcpToolListStores
     }
 
     /**
+     * One store of the shop as the list answers it, read from the tables, or
+     * null when the shop has no such store.
+     *
+     * Public so the tools that write a store answer what the shop stored,
+     * through the very query of the list.
+     *
+     * @param int $idStore
+     * @param int $idLang
+     * @param int $idShop
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function read(int $idStore, int $idLang, int $idShop): ?array
+    {
+        $row = Db::getInstance()->getRow(
+            'SELECT s.*, sl.`name`, sl.`address1`, sl.`address2`, sl.`hours`, sl.`note`
+             FROM `' . _DB_PREFIX_ . 'store` s
+             INNER JOIN `' . _DB_PREFIX_ . 'store_shop` ss ON ss.`id_store` = s.`id_store` AND ss.`id_shop` = ' . (int) $idShop . '
+             LEFT JOIN `' . _DB_PREFIX_ . 'store_lang` sl
+                    ON sl.`id_store` = s.`id_store` AND sl.`id_lang` = ' . (int) $idLang . '
+             WHERE s.`id_store` = ' . (int) $idStore
+        );
+
+        return is_array($row) && $row !== [] ? self::item($row, $idLang, $idShop) : null;
+    }
+
+    /**
      * One store as the list answers it.
      *
      * Public so the tools that create or change a store answer it in this

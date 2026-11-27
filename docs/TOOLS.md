@@ -4598,7 +4598,7 @@ refusal, in the envelope `Nothing was read. Correct these and call again:`.
 - `returned`, `total_count`, `offset`, `language`.
 
 **Notes**
-- The texts are those of `language`; the update will take them per language, as every write does.
+- The texts are those of `language`; `somcp_update_store` takes them per language, as every write does.
 - The JSON scenario reads the 5 demo stores, filters on a name, and checks the refusals; the shop test reads store 1 (**Dade County**) and its Monday hours, and downloads its picture when the shop has one.
 
 **Differences between 8.0.1 and 9.0.0** - none in the list or the form. Only
@@ -4664,6 +4664,68 @@ could not be created: <reason>.`, nothing else written.
 **Differences between 8.0.1 and 9.0.0** - the size of `note` and `hours`
 (65 000 on 8.0.1, the medium text limit on 9.0.0), which the definition of the
 running version decides through `validateField()`. The rest is the same.
+
+#### `somcp_update_store`
+**State**: written · [issue #462](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/462)
+**Nature**: `acts(EDIT, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_update_contact`
+
+**Does** - changes a store of **Shop Parameters > Contact**, tab **Stores**,
+as **Edit** then **Save**, and switches it on or off as the **Enabled**
+switch of the list and **Enable selection** / **Disable selection** do (an
+`active`-only call, one store at a time). One store per call. The
+**Picture** comes with part 2 of `somcp_create_store` (#463).
+
+**Do not use for** - creating a store (→ `somcp_create_store`); the address
+of the shop itself (→ `somcp_update_contact_details`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_store` | integer | required, a store of the shop of the token (`store_shop`): `SomcpTool::notAnIdentifier('id_store')`, `SomcpTool::notFound('id_store', 'store', <id>, 'somcp_list_stores')` |
+| every field of `somcp_create_store` | | optional: only what is given changes, checked by `SomcpToolCreateStore::planStore($arguments, $idShop, $errors, false)` |
+| `id_country`, `id_state`, `country_name`, `state_name`, `date_add`, `date_upd`, `image` | | read only: accepted when equal to the store as read, `<field>: read only` otherwise; `country_name` / `state_name` tell to change `country` / `state`; `image` is equal when `SomcpUpload::same()` recognises its `download_ref` |
+
+Rules of a change:
+- The checks compare first: a field equal to the store as read is left out
+  of the plan and never refused, even when the screen would refuse it today,
+  as #436 decided for the cart rules. A changed `country` re-checks the
+  `state` and the `postcode` against it; a changed `state` or `postcode` is
+  checked against the store's country, as the screen sends them together.
+- A translated text given as one text, as the list answers it in one
+  language, is unchanged when it is the stored text of a language; keyed by
+  ISO code, as in the create (`languages` to fill only some).
+- `hours` in the shape of the list (seven days) is unchanged when equal to
+  the hours of a language as stored; keyed by ISO code, a language left out
+  keeps its hours; a day left out of a language given is `[]`.
+- An item of `somcp_list_stores` given back whole changes nothing.
+
+**Returns** - `changed`, `changes` (`field`, `old`, `new`; a translated text
+and the hours as `<field> (<iso>)`), `store` read again by
+`SomcpToolListStores::read()` in the shop's default language, `language`.
+`changed: false` with `reason: The store already holds every value given.
+Nothing was written.` `warning` when the store is tied to several shops
+(`store_shop`): `This store is shown on <n> shops: the change applies to all
+of them.` A `false` or an exception of `Store::update()`: `The store could
+not be changed: <reason>.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: those of `somcp_create_store` for a changed field, an unknown or
+foreign `id_store`, a read-only field changed, an unknown argument.
+
+**Notes**
+- `new Store($idStore)`, the fields changed set, `id_shop_list` set to the
+  shop of the token, then `update()`; `store_shop` keeps its rows.
+- The module's log line `store_updated` names the `id_store` and the fields
+  changed, never their values.
+- Changes the shop: the assistant asks first. Replayable: the same call twice
+  changes nothing the second time.
+- The JSON scenario checks the refusals on store 1 and an item given back;
+  the shop test gives store 1 back whole, then changes the phone and the
+  Monday hours of a store made by `somcp_create_store`, switches it off and
+  reads it back. Stores 1 to 5 are never changed.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form or its saving.
 
 #### `somcp_get_contact_details`
 **State**: written · [issue #456](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/456)

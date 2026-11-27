@@ -77,6 +77,13 @@ screen - a state for a country that has states, the postcode in the format of
 the country, coordinates that are not 0. The answer is the store as the list
 of the stores gives it.
 
+**Change a store.** The new tool somcp_update_store does what Edit then Save
+do on a store of Shop Parameters > Contact, tab Stores, and what its Enabled
+switch does: only the fields given change, each checked as when creating a
+store, a new country checked with its state and postcode. A value the store
+already holds is never refused, and a store given back as the list reads it
+changes nothing.
+
 **Read the contact details of the shop.** The new tool
 somcp_get_contact_details reads the card Contact details of Shop Parameters >
 Contact, tab Stores: the shop name, e-mail address, registration number,

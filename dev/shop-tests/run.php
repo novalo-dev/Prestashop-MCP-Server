@@ -1137,6 +1137,48 @@ if ($createStore !== null && $listStoresAgain !== null) {
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_create_store (a store in Miami, read in the list)');
         }
+
+        // The update (#462): store 1 given back whole changes nothing; the
+        // store made above gets a phone and Monday hours, then is switched
+        // off and read back off. Stores 1 to 5 are never written.
+        $updateStore = $registry->get('somcp_update_store');
+        if ($updateStore !== null && $idNewStore > 5) {
+            $calls += 5;
+            $first = $storeCall($listStoresAgain, ['limit' => 1]);
+            $again = $storeCall($updateStore, is_array($first['stores'][0] ?? null) ? $first['stores'][0] : ['id_store' => 1]);
+            if (($again['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_store (store 1 given back whole): expected changed false - ' . json_encode($again);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (store 1 given back whole)');
+            }
+            $saved = $storeCall($updateStore, [
+                'id_store' => $idNewStore,
+                'phone' => '0102030405',
+                'hours' => ['en' => ['monday' => ['10:00AM - 06:00PM']]],
+                'languages' => ['en'],
+            ]);
+            $fields = array_column(is_array($saved['changes'] ?? null) ? $saved['changes'] : [], 'field');
+            if (($saved['changed'] ?? null) !== true || $fields !== ['phone', 'hours (en)']
+                || ($saved['store']['phone'] ?? null) !== '0102030405') {
+                $failures[] = 'somcp_update_store (a phone and the Monday hours): ' . json_encode($saved);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (a phone and the Monday hours)');
+            }
+            $off = $storeCall($updateStore, ['id_store' => $idNewStore, 'active' => false]);
+            $listedOff = $storeCall($listStoresAgain, ['name' => 'Somcp test store', 'active' => false]);
+            if (($off['changed'] ?? null) !== true || ($listedOff['stores'][0]['id_store'] ?? null) !== $idNewStore
+                || ($listedOff['stores'][0]['active'] ?? null) !== false) {
+                $failures[] = 'somcp_update_store (switched off, read back): ' . json_encode($off) . ' - listed ' . json_encode($listedOff);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (switched off, read back)');
+            }
+            $twice = $storeCall($updateStore, ['id_store' => $idNewStore, 'active' => false]);
+            if (($twice['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_store (the same call twice): expected changed false - ' . json_encode($twice);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (the same call twice)');
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_store: ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {

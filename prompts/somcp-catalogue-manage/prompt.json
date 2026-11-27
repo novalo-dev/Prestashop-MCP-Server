@@ -35,6 +35,7 @@
     "somcp_update_language",
     "somcp_delete_language",
     "somcp_install_language_pack",
+    "somcp_export_translations",
     "somcp_get_localization_settings",
     "somcp_update_localization_settings",
     "somcp_import_localization_pack",

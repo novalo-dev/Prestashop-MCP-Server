@@ -2083,7 +2083,19 @@ class SomcpUpload
      */
     public static function removeStore(): void
     {
-        $directory = rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::STORE;
+        self::removeFolder(self::STORE);
+    }
+
+    /**
+     * Removes a folder of the module under the shop's root and every file in
+     * it, then the module's own folder under var/ when nothing else is left
+     * there. Called on uninstall, for each folder the module keeps files in.
+     *
+     * @param string $relative from the shop's root, with a trailing slash
+     */
+    public static function removeFolder(string $relative): void
+    {
+        $directory = rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . $relative;
         if (!is_dir($directory)) {
             return;
         }
@@ -2234,7 +2246,21 @@ class SomcpUpload
      */
     private static function directory(): string
     {
-        $directory = rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::STORE;
+        return self::closedFolder(self::STORE);
+    }
+
+    /**
+     * A folder of the module under the shop's root, created and closed off
+     * on first use. Shared by every folder the module keeps files in, so
+     * each one is shut to the web the same way.
+     *
+     * @param string $relative from the shop's root, with a trailing slash
+     *
+     * @return string an absolute path with a trailing slash, or an empty string
+     */
+    public static function closedFolder(string $relative): string
+    {
+        $directory = rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . $relative;
 
         if (!is_dir($directory) && !@mkdir($directory, 0750, true) && !is_dir($directory)) {
             return '';

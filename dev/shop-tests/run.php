@@ -820,6 +820,68 @@ if ($getGroup !== null && $updateGroup !== null) {
     }
 }
 
+// A translation pack exported (#452): the reference answered must lead to a
+// zip whose files are the XLF of the locale, read the way somcp_download_file
+// reads it; on a shop with Hummingbird, its theme wordings export too.
+$exportTranslations = $registry->get('somcp_export_translations');
+if ($exportTranslations !== null) {
+    $calls += 2;
+    $exportCall = static function (array $arguments) use ($exportTranslations, $context, $employee): array {
+        $result = $exportTranslations->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $exportTranslations->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    try {
+        $pack = $exportCall(['language' => 'en', 'core' => ['email']]);
+        $query = SomcpDownload::query((string) ($pack['file'][SomcpDownload::ARG_REF] ?? ''));
+        $file = SomcpDownload::check($query, (int) $employee->id, (int) $context->shop->id) === ''
+            ? SomcpDownload::file($query['kind'], $query['id'], (int) $context->shop->id)
+            : 'refused';
+        // A zip keeps the names of its files uncompressed, so the locale of
+        // the XLF files is read without unpacking it.
+        if (!is_array($file) || strncmp($file['bytes'], 'PK', 2) !== 0 || strpos($file['bytes'], '.en-US.xlf') === false) {
+            $failures[] = 'somcp_export_translations (the e-mails of en, downloaded): expected a zip of en-US XLF files - '
+                . json_encode(is_array($file) ? ['name' => $file['name'], 'bytes' => strlen($file['bytes'])] : [$file, $pack]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_export_translations (the e-mails of en, downloaded)');
+        }
+
+        $installedThemes = [];
+        foreach (SomcpToolGetTheme::repository()->getList() as $theme) {
+            if ($theme instanceof PrestaShop\PrestaShop\Core\Addon\Theme\Theme) {
+                $installedThemes[] = (string) $theme->getName();
+            }
+        }
+        if (in_array('hummingbird', $installedThemes, true)) {
+            $themePack = $exportCall(['language' => 'en', 'theme' => 'hummingbird']);
+            if (($themePack['exported'] ?? null) !== true || ($themePack['parts'] ?? []) !== ['theme hummingbird']) {
+                $failures[] = 'somcp_export_translations (the theme hummingbird): expected exported - ' . json_encode($themePack);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_export_translations (the theme hummingbird)');
+            }
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_export_translations (no hummingbird theme on this version, not called)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_export_translations: ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A logged e-mail deleted twice (#424): the recipients of the demo lines are
 // real addresses and the test e-mail is not logged, so the line is written
 // here through the Mail object, as Mail::send() writes it. Deleting it must

@@ -64,8 +64,11 @@ fetches itself, and on a back office page for the merchant. Who may have a
 file is who may run the tool that reads that kind of file
 (`SomcpDownload::KINDS`), with its scopes and back office rights. A new kind of
 file is one entry of `KINDS` and of `SomcpDownload::stored()`, never a link
-built in the tool: the Tools and prompts check refuses a file of `tools/` that
-calls `getMediaLink()`, `getImageLink()` or the other link builders of files.
+built in the tool; a file the shop builds for one download (the
+`translation_export` pack of `somcp_export_translations`) is kept by
+`SomcpDownload::keepExport()` in `var/somcp/exports/` for 15 minutes. The
+Tools and prompts check refuses a file of `tools/` that calls
+`getMediaLink()`, `getImageLink()` or the other link builders of files.
 
 **Files in.** A tool that takes a file declares the field in `files:` and reads
 it with `SomcpUpload::source()`: a public `url` the shop downloads, or the
@@ -5301,6 +5304,55 @@ The folder of the shop is taken out of the core's messages.
 - A real install reaches PrestaShop's server and rewrites translation files: the scenario only checks the refusals, made before any download.
 
 **Differences between 8.0.1 and 9.0.0** - none in the card, the controller, `LanguagePackImporter` or `LanguagePackInstaller`; 9.0.0 tries the download three times before giving up, 8.0.1 once, each attempt waiting 20 seconds.
+
+#### `somcp_export_translations`
+**State**: written · [issue #452](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/452)
+**Nature**: `acts(ADD, 'AdminTranslations')` · **Scope**: `mcp.catalog.write`
+
+**Does** - builds the translation pack of one language as a zip of XLF files,
+as the card **Export a language** of **International > Translations** does
+(button **Export**): the core parts, a theme and a module, any of them
+together, with the shop's own changes of the wordings over the files. The zip
+is handed over as a `download_ref`, kept 15 minutes.
+
+**Do not use for** - installing a language with PrestaShop's translations (→
+`somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | **Language** | string | yes | the ISO code of an installed language of the shop of the token, as `somcp_list_languages` answers `iso_code`; another: `SomcpTool::notFound('language', 'language', <code>, 'somcp_list_languages', 'iso_code')`; missing: `language: required` |
+| `core` | **PrestaShop translations** (boxes **Back office**, **Front office**, **Email**, **Other**) | array of strings | no | any of `back_office`, `front_office`, `email`, `other`, sent to the core as `back`, `front`, `mails`, `others`; `email` adds `mails_body`, as the screen does; another value: `core[<i>]: one of back_office, front_office, email, other` |
+| `theme` | **Theme translations** | string | no | the name of an installed theme other than `classic` (`somcp_get_theme`, `name`); `classic`: `theme: the wordings of classic are the core's Front office - give front_office in core`, as `ExportCataloguesType::excludeDefaultThemeFromChoices()` leaves it out; another: `SomcpTool::notFound('theme', 'theme', <name>, 'somcp_get_theme', 'name')` |
+| `module` | **Installed module translations** | string | no | the technical name of an installed module, compared without case (`somcp_list_modules`, `name`); another: `SomcpTool::notFound('module', 'installed module', <name>, 'somcp_list_modules', 'name')` |
+
+None of `core`, `theme`, `module` given, or `core: []` alone: `core, theme or
+module: at least one - You must select at least one translation type to export
+translations.`. Unknown arguments through `SomcpTool::unknownFields()`; every
+problem in one answer, in the envelope `Nothing was exported. Correct these and
+call again:`.
+
+**Then**
+- `@set_time_limit(120)` when `max_execution_time` is above 0 and below 120, as `somcp_install_language_pack` does: the back office catalogue of a language is over 10 000 wordings;
+- inside `SomcpBackOffice::asBackOffice()` (the back office's kernel, shared with the Module Manager tools), `prestashop.translation.export.translation_catalogue` (`TranslationCatalogueExporter::export($selections, $locale)`), the selections built as `TranslationsController::exportCataloguesAction()` builds them, the locale read with `Language::getLocaleByIso()`;
+- the zip the core answers moved at once (`SomcpDownload::keepExport()`: `rename()`, or `copy()` then `unlink()` across devices) to `var/somcp/exports/`, closed as the deposits are (`SomcpUpload::closedFolder()`), under `<YmdHis>-<16 hex>.zip`: PrestaShop 8 empties its own export folder at the next export. The files there older than 15 minutes are removed first, and the folder on uninstall (`SomcpDownload::removeExports()`).
+
+**Returns** - `exported: true`, `language`, `locale`, `parts` (`back_office`,
+`front_office`, `email`, `other`, `theme <name>`, `module <name>`, in the order
+given), `file` (`{"download_ref": "translation_export.<id>.<expiry>.<signature>"}`,
+kind `translation_export` of `SomcpDownload::KINDS`, whose reader is this
+tool), `bytes`, `expires_at`, `then`.
+
+**Errors** - a failure of the core (an exception of `export()`, the kernel not
+booting): `The translations could not be exported: <message, 500 characters at
+most>.`, nothing kept; the folder of the shop is taken out of the message.
+
+**Notes**
+- Changes nothing of the shop: it writes one file of its own, kept 15 minutes. The pack is what **Add / Update a language** of another shop imports; this tool does not import one.
+- Logged as `translations_exported` or `translations_export_failed` with the language and the parts, never the file name.
+
+**Differences between 8.0.1 and 9.0.0** - 8.0.1 empties the whole export folder before each export, 9.0.0 works in `export/<uniqid()>/` and keeps the others (left to the core, as the screen leaves it); the themes offered (none but `classic` on 8.0.1, `hummingbird` on 9.0.0).
 
 #### `somcp_get_localization_settings`
 **State**: written · [issue #382](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/382)

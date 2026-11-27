@@ -35,6 +35,15 @@ current shop only. A group cannot be left with no module, as on screen, and
 the answer names the payment modules its customers no longer see. The list
 read with somcp_get_customer_group and given back as it is changes nothing.
 
+**Export the translations of a language.** The new tool
+somcp_export_translations does what the card Export a language of
+International > Translations does: the translation pack of one language - the
+back office, the storefront, the e-mails, the other wordings, a theme or a
+module, any of them together - is built as a zip of XLF files, with the shop's
+own changes to the wordings in it. The assistant hands the zip over as a file,
+kept 15 minutes; nothing of the shop is changed. It is the pack another shop
+imports with Add / Update a language.
+
 ### Changed
 
 **The members of a customer group.** The search of customers can list the

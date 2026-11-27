@@ -1286,6 +1286,10 @@ T = {
  "Ajouter ou mettre à jour une langue depuis PrestaShop",
  "Añadir o actualizar un idioma desde PrestaShop",
  "Eine Sprache von PrestaShop hinzufügen oder aktualisieren"),
+"Export the translations of a language": (
+ "Exporter les traductions d'une langue",
+ "Exportar las traducciones de un idioma",
+ "Die Übersetzungen einer Sprache exportieren"),
 "Add a language": (
  "Ajouter une langue",
  "Añadir un idioma",

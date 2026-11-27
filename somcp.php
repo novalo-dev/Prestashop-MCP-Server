@@ -379,6 +379,7 @@ class Somcp extends Module
         $this->uninstallDatabase();
         $this->undeclareToolHook();
         SomcpUpload::removeStore();
+        SomcpDownload::removeExports();
         SomcpConfig::purge();
         SomcpUpdate::purge();
         SomcpContributors::purge();

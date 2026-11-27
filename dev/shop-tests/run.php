@@ -876,6 +876,79 @@ if ($exportTranslations !== null) {
     }
 }
 
+// A wording read with somcp_list_translations and given back whole changes
+// nothing (#458): file_translation is what the XLF files of the shop hold,
+// which a JSON scenario cannot know, so it is read first, then given back.
+// The reset runs whatever failed, so the shop keeps no translation of its own.
+$updateTranslation = $registry->get('somcp_update_translation');
+$listTranslations = $registry->get('somcp_list_translations');
+if ($updateTranslation !== null && $listTranslations !== null) {
+    $translationCall = static function ($tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $wording = ['language' => 'en', 'type' => 'back_office', 'domain' => 'AdminActions'];
+    try {
+        $calls += 3;
+        $saved = $translationCall($updateTranslation, $wording + ['source' => 'Save', 'translation' => 'Save now']);
+        if (($saved['changed'] ?? null) !== true) {
+            $failures[] = 'somcp_update_translation (the wording given back whole): the save answered ' . json_encode($saved);
+        } else {
+            $read = $translationCall($listTranslations, $wording + ['search' => 'Save', 'limit' => 100]);
+            $rows = array_values(array_filter(
+                is_array($read['translations'] ?? null) ? $read['translations'] : [],
+                static function ($row): bool {
+                    return is_array($row) && ($row['source'] ?? null) === 'Save';
+                }
+            ));
+            if (count($rows) !== 1 || ($rows[0]['shop_translation'] ?? null) !== 'Save now') {
+                $failures[] = 'somcp_update_translation (the wording given back whole): expected one row Save with Save now - '
+                    . json_encode($read);
+            } else {
+                $row = $rows[0];
+                $again = $translationCall($updateTranslation, $wording + [
+                    'source' => $row['source'],
+                    'file_translation' => $row['file_translation'],
+                    'shop_translation' => $row['shop_translation'],
+                    'shown' => $row['shown'],
+                    'translation' => $row['shop_translation'],
+                ]);
+                if (($again['changed'] ?? null) !== false || array_key_exists('changes', $again)) {
+                    $failures[] = 'somcp_update_translation (the wording given back whole): expected changed false and no changes - '
+                        . json_encode($again);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_translation (the wording given back whole)');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_translation (the wording given back whole): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        ++$calls;
+        try {
+            $translationCall($updateTranslation, $wording + ['source' => 'Save', 'reset' => true]);
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_update_translation (the reset after the wording given back whole): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
 // The demo stores read (#455): store 1 is Dade County with its Monday hours
 // as the shop keeps them, a list rather than the joined text of the form; its
 // picture, when the shop has the file, leads to the JPEG through the reference.

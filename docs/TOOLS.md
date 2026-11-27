@@ -5515,6 +5515,11 @@ again.`; a failure of the core: `The translation could not be saved: <message,
 **Notes** - one wording per call. The table `translation` has no shop: the
 change reaches every shop.
 
+The JSON scenario covers the refusals, the save, the same save again and the
+two resets; the shop test reads the saved wording with
+`somcp_list_translations`, gives its row back whole (`changed: false`, no
+`changes`), then resets it whatever failed.
+
 **Differences between 8.0.1 and 9.0.0** - the right the screen asks (`create`
 or `update`); the cache clearer of the API (an in-process `cache:clear` on 8,
 a clearing at the end of the request on 9), both replaced by

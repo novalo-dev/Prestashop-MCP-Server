@@ -238,7 +238,12 @@ class SomcpToolSearchOrders
                 // parcel. The mobile number when there is one, since that is
                 // what the carriers use.
                 'phone' => (string) ($row['phone_mobile'] ?: $row['phone']),
-                'delivery_country' => (string) $row['country_name'],
+                // The ISO code its own delivery_country filter takes, so one
+                // order's country finds the others; delivery_country_iso is
+                // the name of the first releases, kept for the clients built
+                // on it.
+                'delivery_country' => (string) $row['country_iso'],
+                'delivery_country_name' => (string) $row['country_name'],
                 'delivery_country_iso' => (string) $row['country_iso'],
                 // The Total column of the back office, named so the assistant
                 // never has to guess whether tax is in it.

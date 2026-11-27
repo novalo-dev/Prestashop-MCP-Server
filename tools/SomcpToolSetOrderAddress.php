@@ -330,8 +330,10 @@ class SomcpToolSetOrderAddress
                 'address1' => (string) ($row['address1'] ?? ''),
                 'postcode' => (string) ($row['postcode'] ?? ''),
                 'city' => (string) ($row['city'] ?? ''),
-                'country' => (string) ($row['country'] ?? ''),
-            ];
+            ] + array_intersect_key(
+                SomcpToolGetOrder::place(new Address((int) $row['id_address']), $idLang),
+                ['country' => true, 'country_name' => true]
+            );
         }
 
         return $listed;

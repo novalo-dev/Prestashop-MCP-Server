@@ -470,8 +470,10 @@ or carts that were never paid for (→ Carts).
 **Returns** - per order: `id_order`, `reference`, `date_add` (ISO 8601 with
 the shop's offset, the name `somcp_get_order` uses) and `date` (the same value,
 the name kept for the clients built on it), `customer_name`,
-`new_client`, `company`, `phone`, `delivery_country` (name in the language
-read), `delivery_country_iso`, `total_paid_tax_incl`, `currency`,
+`new_client`, `company`, `phone`, `delivery_country` (the ISO code, the
+value the `delivery_country` filter takes), `delivery_country_name` (its name
+in the language read), `delivery_country_iso` (the same code, the name kept
+for the clients built on it), `total_paid_tax_incl`, `currency`,
 `payment_method`, `status`, `status_id`, `status_color`. Plus `returned`,
 `total_count`, `offset` and `language`.
 
@@ -532,7 +534,10 @@ them, what the order page shows:
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
 - `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
-  `state` (the region), `dni` (empty when not set);
+  `country` and `state` (the ISO codes, `FR`, `FL`, `""` without a state)
+  with `country_name` and `state_name` beside them, built by
+  `SomcpToolGetOrder::place()`, the shape every tool that takes a country or
+  a state reads; `dni` (empty when not set);
 - `products`, per line: `id_order_detail`, `id_order_invoice` (the invoice
   the line is on, the one `somcp_update_order_product` takes, 0 when on none),
   `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
@@ -1506,7 +1511,7 @@ customer tools), or changing the carrier of the order.
 `previous_address` and `address`, each in the shape of `addresses.delivery` of
 `somcp_get_order` built by the same function (`id_address`, `alias`,
 `firstname`, `lastname`, `company`, `address1`, `address2`, `postcode`, `city`,
-`state`, `country`, ...), `previous_totals` and `totals`, the order totals
+`country`, `country_name`, `state`, `state_name`, ...), `previous_totals` and `totals`, the order totals
 before and after the change, each exactly as `somcp_get_order` returns `totals`
 (built by the same function), and `currency`. The same address as now is
 `changed: false` with a `reason`, and nothing happens.
@@ -1518,7 +1523,7 @@ invoice`; `id_address` missing or not a whole number; `id_address: no address
 of this customer has the identifier <n> - find it with somcp_get_customer` for
 an unknown, deleted or other customer's address, followed in the same answer by
 the list of the customer's addresses (`id_address`, `alias`, `address1`,
-`postcode`, `city`, `country`). A failure inside the core is reported without
+`postcode`, `city`, `country` by ISO code, `country_name`). A failure inside the core is reported without
 its raw message as "The address could not be changed. Read addresses with
 somcp_get_order before trying again: part of the change may have been saved.":
 both handlers save the cart before the order.
@@ -8526,7 +8531,7 @@ A misspelt field is named and nothing is read. A customer of another shop, or de
 **Returns**
 - `customer`: `id_customer`, `firstname`, `lastname`, `email`, `id_gender`, `social_title`, `birthday` (`YYYY-MM-DD`, `null` when none), `age` (`null` when no birthday), `date_add`, `last_visit` (`null` when never), `customer_language` (ISO code of the language the customer uses), `newsletter`, `newsletter_date_add`, `group_ids` (every group's `id_group`, in `groups` order) and `id_default_group`, the names `somcp_update_customer` and `somcp_create_customer` take, `partner_offers`, `date_upd`, `active`, `is_guest`, `private_note` (as `somcp_get_order` names it), and the B2B fields, always given and empty when unset: `company`, `siret`, `ape`, `website`, `allowed_outstanding_amount` with `currency` (the default currency), `max_payment_days`, `id_risk`, `risk`.
 - `groups`: each `id_group`, `name`, `default` (the names for the merchant; the ids to give back are `group_ids` and `id_default_group` in `customer`).
-- `addresses`: each `id_address`, `alias`, `company`, `firstname`, `lastname`, `address1`, `address2`, `postcode`, `city`, `state`, `country`, `country_iso`, `phone`, `phone_mobile`, `vat_number`, `dni`, `other` (the names of the addresses of `somcp_get_order`).
+- `addresses`: each `id_address`, `alias`, `company`, `firstname`, `lastname`, `address1`, `address2`, `postcode`, `city`, `country` and `state` (ISO codes, `""` without a state), `country_name` and `state_name`, from `SomcpToolGetOrder::place()`, `country_iso` (the same code as `country`, the name kept for the clients built on it), `phone`, `phone_mobile`, `vat_number`, `dni`, `other` (the names of the addresses of `somcp_get_order`).
 - `orders`: `count`, `valid_count`, `valid_total_tax_incl` with `currency` (**for a total amount of**, `SUM(total_paid_tax_incl / conversion_rate)` of the valid orders, in the default currency), `invalid_count`, `sales_rank` (`null` with no valid order), and `latest`, the 10 newest: `id_order`, `reference`, `date_add`, `payment`, `status` (`status_id`, `name`), `products_count` (units ordered), `total_paid_tax_incl`, `currency` (the order's). More with `somcp_search_orders` (`customer_email`).
 - `carts`: `count` and `latest`, the 10 newest: `id_cart`, `date_add`, `carrier`, `total_tax_incl` (`null` when the cart cannot be priced any more), `currency`, `id_order` (`null` when not ordered).
 - `purchased_products`: the 10 newest order lines, every order valid or not: `date_add`, `id_order`, `valid`, `id_product`, `id_product_attribute`, `name` (with its combination), `quantity`.

@@ -90,6 +90,15 @@ shop e-mail address.
 
 ### Changed
 
+**The country and the state of an address come as their codes.** The
+addresses of an order, of a customer and of a change of address, and the
+delivery country of the order search, now give the country and the state by
+their ISO codes (US, FL), with their names beside them, as the tools that take
+a country or a state want them. An assistant can give the country of one order
+back to the search of orders, or to any tool that takes a country, without
+looking it up again. The names stay in the answer, and the codes the answers
+already carried keep their place.
+
 **The members of a customer group.** The search of customers can list the
 members of a group, as the View page of Customer Settings > Groups, and not
 only the customers whose default group it is: a customer who belongs to the

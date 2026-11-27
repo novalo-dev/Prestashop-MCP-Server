@@ -44,6 +44,14 @@ own changes to the wordings in it. The assistant hands the zip over as a file,
 kept 15 minutes; nothing of the shop is changed. It is the pack another shop
 imports with Add / Update a language.
 
+**Read the translations of a language.** The new tool somcp_list_translations
+reads what the card Modify translations of International > Translations shows:
+the domains of the back office, the storefront (core or a theme), a module,
+the e-mail subjects or bodies, or the other wordings, with how many wordings
+each holds and how many are not translated; then the wordings of one domain,
+each with its source, the translation that comes with the files and the
+shop's own change, searched by words and page by page.
+
 ### Changed
 
 **The members of a customer group.** The search of customers can list the

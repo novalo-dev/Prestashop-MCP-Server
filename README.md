@@ -488,6 +488,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_delete_language` | ✎ Delete a language | Languages › delete |
 | `somcp_install_language_pack` | ✎ Add or update a language from PrestaShop | Translations › add / update a language |
 | `somcp_export_translations` | ✎ Export the translations of a language | Translations › add |
+| `somcp_list_translations` | ● List the translations of a language | Translations › view |
 | `somcp_get_localization_settings` | ● Read the localization settings | Localization › view |
 | `somcp_update_localization_settings` | ✎ Change the localization settings | Localization › edit |
 | `somcp_import_localization_pack` | ✎ Import a localization pack | Localization › edit |

@@ -861,13 +861,7 @@ if ($exportTranslations !== null) {
             printf("  %-6s %s\n", 'ok', 'somcp_export_translations (the e-mails of en, downloaded)');
         }
 
-        $installedThemes = [];
-        foreach (SomcpToolGetTheme::repository()->getList() as $theme) {
-            if ($theme instanceof PrestaShop\PrestaShop\Core\Addon\Theme\Theme) {
-                $installedThemes[] = (string) $theme->getName();
-            }
-        }
-        if (in_array('hummingbird', $installedThemes, true)) {
+        if (in_array('hummingbird', SomcpToolExportTranslations::installedThemes(), true)) {
             $themePack = $exportCall(['language' => 'en', 'theme' => 'hummingbird']);
             if (($themePack['exported'] ?? null) !== true || ($themePack['parts'] ?? []) !== ['theme hummingbird']) {
                 $failures[] = 'somcp_export_translations (the theme hummingbird): expected exported - ' . json_encode($themePack);

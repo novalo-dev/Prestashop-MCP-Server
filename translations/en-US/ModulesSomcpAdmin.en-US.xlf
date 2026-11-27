@@ -1617,6 +1617,11 @@
       <source>Add or update a language from PrestaShop</source>
       <target>Add or update a language from PrestaShop</target>
     </trans-unit>
+    <!-- List the translations of a language -->
+    <trans-unit id="8633b57b46abca660850be6465fc7406" resname="List the translations of a language">
+      <source>List the translations of a language</source>
+      <target>List the translations of a language</target>
+    </trans-unit>
     <!-- Export the translations of a language -->
     <trans-unit id="b2451bccee124f8ae91bf2cc863169fd" resname="Export the translations of a language">
       <source>Export the translations of a language</source>

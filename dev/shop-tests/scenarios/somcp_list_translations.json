@@ -1,0 +1,16 @@
+{
+  "calls": [
+    {"why": "no type", "arguments": {"language": "en"}, "expect": "error", "contains": ["Nothing was read.", "type: required, one of back_office, front_office, module, email_subject, email_body, other"]},
+    {"why": "a type the card does not have", "arguments": {"language": "en", "type": "emails"}, "expect": "error", "contains": ["type: one of back_office, front_office, module, email_subject, email_body, other"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "xx", "type": "back_office"}, "expect": "error", "contains": ["language: no language of this shop has the iso_code xx - find it with somcp_list_languages"]},
+    {"why": "the modules without a module", "arguments": {"language": "en", "type": "module"}, "expect": "error", "contains": ["module: required with type module"]},
+    {"why": "a theme with the back office", "arguments": {"language": "en", "type": "back_office", "theme": "classic"}, "expect": "error", "contains": ["theme: only with type front_office"]},
+    {"why": "a module that is not installed", "arguments": {"language": "en", "type": "module", "module": "no_such_module"}, "expect": "error", "contains": ["module: no installed module of this shop has the name no_such_module"]},
+    {"why": "a domain the tree does not have", "arguments": {"language": "en", "type": "back_office", "domain": "NoSuchDomain"}, "expect": "error", "contains": ["domain: no domain of this shop has the domain NoSuchDomain - find it with somcp_list_translations"]},
+    {"why": "pages out of bounds and a field the tool does not take", "arguments": {"language": "en", "type": "back_office", "limit": 0, "offset": -1, "page": 2}, "expect": "error", "contains": ["page: not a field of this tool", "limit: a whole number from 1 to 100", "offset: a whole number, 0 at least"]},
+    {"why": "the tree of the back office wordings of English", "arguments": {"language": "en", "type": "back_office"}, "expect": "ok", "contains": ["\"locale\": \"en-US\"", "\"domain\": \"AdminGlobal\"", "\"total_missing_translations\""]},
+    {"why": "Save in the domain AdminActions, where the buttons of the back office take it", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "search": "Save"}, "expect": "ok", "contains": ["\"source\": \"Save\"", "\"shop_translation\"", "\"shown\""]},
+    {"why": "the domains of the module's own wordings", "arguments": {"language": "en", "type": "module", "module": "somcp"}, "expect": "ok", "contains": ["\"domain\": \"ModulesSomcpAdmin\"", "\"module\": \"somcp\""]},
+    {"why": "the front office of no theme, the core's", "arguments": {"language": "en", "type": "front_office"}, "expect": "ok", "contains": ["\"type\": \"front_office\"", "\"theme\": null"]}
+  ]
+}

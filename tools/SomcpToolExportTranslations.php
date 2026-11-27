@@ -227,13 +227,14 @@ class SomcpToolExportTranslations
 
     /**
      * The locale of an installed language of the shop, as the core's exporter takes it.
+     * Shared with somcp_list_translations, which reads the same catalogues.
      *
      * @param string $iso
      * @param int $idShop
      *
      * @return string empty when the shop has no such language
      */
-    private static function locale(string $iso, int $idShop): string
+    public static function locale(string $iso, int $idShop): string
     {
         if ($iso === '') {
             return '';
@@ -264,6 +265,22 @@ class SomcpToolExportTranslations
 
             return '';
         }
+        if ($name === '' || !in_array($name, self::installedThemes(), true)) {
+            $problems[] = SomcpTool::notFound('theme', 'theme', is_string($value) ? $value : json_encode($value), 'somcp_get_theme', 'name');
+
+            return '';
+        }
+
+        return $name;
+    }
+
+    /**
+     * The names of the themes installed, as somcp_get_theme reads them.
+     *
+     * @return array<int, string>
+     */
+    public static function installedThemes(): array
+    {
         $installed = [];
         try {
             foreach (SomcpToolGetTheme::repository()->getList() as $theme) {
@@ -275,25 +292,21 @@ class SomcpToolExportTranslations
         } catch (Exception $e) {
             // A broken theme folder leaves the list as read so far.
         }
-        if ($name === '' || !in_array($name, $installed, true)) {
-            $problems[] = SomcpTool::notFound('theme', 'theme', is_string($value) ? $value : json_encode($value), 'somcp_get_theme', 'name');
 
-            return '';
-        }
-
-        return $name;
+        return $installed;
     }
 
     /**
      * The module given, checked against the installed modules without case,
-     * as somcp_update_customer_group compares them.
+     * as somcp_update_customer_group compares them. Shared with
+     * somcp_list_translations.
      *
      * @param mixed $value
      * @param array<int, string> $problems
      *
      * @return string the module's technical name, empty when refused
      */
-    private static function module($value, array &$problems): string
+    public static function module($value, array &$problems): string
     {
         $key = is_string($value) ? Tools::strtolower(trim($value)) : '';
         foreach (Module::getModulesInstalled() ?: [] as $row) {

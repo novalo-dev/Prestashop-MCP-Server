@@ -5354,6 +5354,54 @@ most>.`, nothing kept; the folder of the shop is taken out of the message.
 
 **Differences between 8.0.1 and 9.0.0** - 8.0.1 empties the whole export folder before each export, 9.0.0 works in `export/<uniqid()>/` and keeps the others (left to the core, as the screen leaves it); the themes offered (none but `classic` on 8.0.1, `hummingbird` on 9.0.0).
 
+#### `somcp_list_translations`
+**State**: written · [issue #453](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/453)
+**Nature**: `acts(VIEW, 'AdminTranslations')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the translations of a language as the card **Modify
+translations** of **International > Translations** shows them (button
+**Modify**): without `domain`, the domains of one type of wordings with their
+counts, the tree on the left of the editor; with `domain`, its wordings, each
+with the source, the translation of the files and the shop's own.
+
+**Do not use for** - the pack of a language as a file (→
+`somcp_export_translations`); installing PrestaShop's translations (→
+`somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | **Select your language** | string | yes | ISO code of an installed language, as `somcp_list_languages` answers `iso_code`, checked by `SomcpToolExportTranslations::locale()`; another: `SomcpTool::notFound('language', 'language', <code>, 'somcp_list_languages', 'iso_code')` |
+| `type` | **Type of translation**, **Select the type of email content** | string | yes | `back_office`, `front_office`, `module`, `email_subject`, `email_body`, `other`, sent as `back`, `themes`, `modules`, `mails`, `mails_body`, `others`; missing: `type: required, one of ...`; another: `type: one of ...` |
+| `theme` | **Select your theme** | string | no | with `front_office` only: an installed theme (`somcp_get_theme`, `name`); left out or `classic`: **Core (no theme selected)**, the core's front office; another: `SomcpTool::notFound('theme', 'theme', <name>, 'somcp_get_theme', 'name')`; with another type: `theme: only with type front_office` |
+| `module` | **Select your module** | string | with `module` | an installed module compared without case (`somcp_list_modules`, `name`), through `SomcpToolExportTranslations::module()`; missing: `module: required with type module - find it with somcp_list_modules`; with another type: `module: only with type module` |
+| `domain` | the tree | string | no | a `domain` this tool answers without it (`AdminCatalogFeature`, `ShopThemeCheckout`...); not in the tree: `SomcpTool::notFound('domain', 'domain', <name>, 'somcp_list_translations', 'domain')` |
+| `search` | **Search translations** | string | no | words, all found without case in the source, the file or the shop's translation (`Message::contains()`); with or without `domain` |
+| `missing_only` | the red count of a node | boolean | no | the domains with a wording missing, or the wordings with neither file nor shop translation; default false |
+| `limit`, `offset` | | integers | no | with `domain`: `limit` 20 by default and 100 at most (`limit: a whole number from 1 to 100`), `offset` 0 at least (`offset: a whole number, 0 at least`) |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Then** - inside `SomcpBackOffice::asBackOffice()`:
+- the tree: `prestashop.translation.builder.translation_tree` (`getTree()`) on the definition of `prestashop.translation.factory.provider_definition` (`build($type, $selected)`), `themes` with no theme or `classic` read as `front`, as `listTreeAction()` does; the leaves flattened in the tree's order;
+- a domain: `prestashop.translation.builder.translation_catalogue` (`getDomainCatalogue()`) with `ModuleProviderDefinition(<module>)`, else `ThemeProviderDefinition(<theme>)`, else `CoreDomainProviderDefinition(<domain>)`, as `listDomainTranslationAction()` does; `Messages` is the catalogue `messages` of the other wordings.
+
+**Returns**
+- without `domain`: `language`, `locale`, `type`, `theme`, `module`, `total_translations`, `total_missing_translations`, `domains` (each `domain`, `name`, `path`, `total_translations`, `total_missing_translations`);
+- with `domain`: the same header, `domain`, `total_translations`, `total_missing_translations`, `returned`, `total_count`, `offset`, `translations` (each `source`, `file_translation`, `shop_translation`, `shown` = `shop_translation ?? file_translation ?? source`).
+
+**Errors** - a failure of the core (`TranslationFilesNotFoundException`, the
+kernel not booting): `The translations could not be read: <message, 500
+characters at most>.`; the folder of the shop is taken out of the message.
+
+**Notes** - read only. A wording keeps its placeholders (`%s`, `%1$s`,
+`%name%`) as the source writes them.
+
+**Differences between 8.0.1 and 9.0.0** - the themes offered (`classic` on
+8.0.1; `classic` and `hummingbird` on 9.0.0); the code read is the same.
+
 #### `somcp_get_localization_settings`
 **State**: written · [issue #382](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/382)
 **Nature**: `acts(VIEW, 'AdminLocalization')` · **Scope**: `mcp.catalog.read`

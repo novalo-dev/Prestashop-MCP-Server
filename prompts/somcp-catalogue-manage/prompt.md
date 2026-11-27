@@ -35,6 +35,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_delete_language`
 - `somcp_install_language_pack`
 - `somcp_export_translations`
+- `somcp_list_translations`
 - `somcp_get_localization_settings`
 - `somcp_update_localization_settings`
 - `somcp_import_localization_pack`
@@ -497,6 +498,10 @@ page titles) in that language: confirm with the merchant first.
 core parts, a theme, a module - as a zip of XLF files, as Export a language
 does, and answers a `download_ref` for `somcp_download_file`, kept 15 minutes:
 it changes nothing, and the pack is what another shop imports.
+`somcp_list_translations` reads the wordings as Modify translations shows
+them: without `domain`, the domains of a type with their counts; with one, its
+wordings, each with its `source`, the translation of the files and the shop's
+own (`shop_translation`, `null` when the shop has none).
 `somcp_get_localization_settings` says which language, country and currency
 the shop starts from, its time zone, and the weight, distance, volume and
 dimension units every product weight and carrier range is read in: read it

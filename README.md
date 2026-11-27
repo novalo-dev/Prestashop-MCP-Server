@@ -627,6 +627,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_cart_rule` | ✎ Create a cart rule | Cart Rules › add |
 | `somcp_update_cart_rule` | ✎ Change a cart rule | Cart Rules › edit |
 | `somcp_set_cart_rule_active` | ✎ Switch a cart rule on or off | Cart Rules › edit |
+| `somcp_delete_cart_rule` | ✎ Delete a cart rule | Cart Rules › delete |
 | `somcp_list_catalog_price_rules` | ● List catalogue price rules | Catalog Price Rules › view |
 | `somcp_create_catalog_price_rule` | ✎ Create a catalogue price rule | Catalog Price Rules › add |
 

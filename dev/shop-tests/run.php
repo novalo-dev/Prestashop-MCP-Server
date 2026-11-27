@@ -3027,6 +3027,85 @@ if ($listRules !== null) {
     }
 }
 
+// A cart rule deleted (#466): created for that alone, deleted with the tool,
+// then read as unknown; PS_CART_RULE_FEATURE_ACTIVE must be what the active
+// rules left say, with the warning when it went off. The demo rule
+// is never touched, and the finally deletes the rule and puts the key back
+// whatever happens.
+$deleteRule = $registry->get('somcp_delete_cart_rule');
+$createForDelete = $registry->get('somcp_create_cart_rule');
+$getForDelete = $registry->get('somcp_get_cart_rule');
+if ($deleteRule !== null && $createForDelete !== null && $getForDelete !== null) {
+    $calls += 1;
+    $deleteContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge(
+            $deleteRule->getRequiredScopes(),
+            $createForDelete->getRequiredScopes(),
+            $getForDelete->getRequiredScopes()
+        ))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $deleteText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $featureBefore = (string) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE');
+    $idDeleted = 0;
+    try {
+        $created = $createForDelete->call([
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp deleted'],
+            'code' => 'SOMCPDELETE',
+            'free_shipping' => true,
+        ], $deleteContext);
+        $idDeleted = (int) (json_decode(trim($deleteText($created)), true)['id_cart_rule'] ?? 0);
+        $featureOn = (bool) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE');
+        $deleted = $idDeleted > 0 ? $deleteRule->call(['id_cart_rule' => $idDeleted], $deleteContext) : $created;
+        $text = $deleteText($deleted);
+        $read = $idDeleted > 0 ? $getForDelete->call(['id_cart_rule' => $idDeleted], $deleteContext) : [];
+        // The core sets the key again from the active rules left, so it is
+        // compared with what they say rather than with its value before: a
+        // creation turns it on even for a rule created off.
+        $featureAfter = (bool) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE');
+        $featureExpected = (bool) CartRule::isCurrentlyUsed('cart_rule', true);
+        $missing = array_filter(['"deleted": true', '"id_cart_rule": ' . $idDeleted, '"name": {', 'Somcp deleted', '"code": "SOMCPDELETE"'], static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        });
+        if ($idDeleted <= 0 || !empty($deleted['isError']) || $missing !== []
+            || empty($read['isError']) || strpos($deleteText($read), 'no cart rule of this shop has the identifier ' . $idDeleted) === false
+            || $featureAfter !== $featureExpected
+            || (strpos($text, 'No cart rule is active any more') !== false) !== ($featureOn && !$featureExpected)) {
+            $failures[] = 'somcp_delete_cart_rule (a rule created, deleted, then unknown): unexpected - '
+                . json_encode([excerpt($deleted), $missing, excerpt($read), $featureAfter, $featureExpected]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_cart_rule (a rule created, deleted, then unknown)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_cart_rule: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idDeleted > 0) {
+            $left = new CartRule($idDeleted);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+        if ((string) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE') !== $featureBefore) {
+            Configuration::updateGlobalValue('PS_CART_RULE_FEATURE_ACTIVE', $featureBefore);
+        }
+    }
+}
+
 // A customer group restriction set on a cart rule, read back, then lifted
 // (#406), and the same for Product selection (#433): the JSON scenario only
 // covers the refusals, since a restriction left on a demo rule would change

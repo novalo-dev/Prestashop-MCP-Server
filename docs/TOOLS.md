@@ -10339,7 +10339,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Does** - switches one cart rule on or off: the **Status** switch of the list **Catalog > Discounts > Cart Rules**, and of **Information** > **Status** in its form. Nothing else changes.
 
-**Do not use for** - changing anything else of the rule (→ `somcp_update_cart_rule`), deleting it (back office).
+**Do not use for** - changing anything else of the rule (→ `somcp_update_cart_rule`), deleting it (→ `somcp_delete_cart_rule`).
 
 **Parameters**
 
@@ -10361,6 +10361,32 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Differences between 8.0.1 and 9.0.0**
 - None: the same list, the same switch and the same column.
+
+#### `somcp_delete_cart_rule`
+**State**: written · [issue #466](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/466)
+**Nature**: `acts(DELETE, 'AdminCartRules')` · **Scope**: `mcp.sales.write`, as `somcp_set_cart_rule_active`
+
+**Does** - deletes a cart rule of **Catalog > Discounts > Cart Rules**, as the row action **Delete** and the bulk action **Delete selected** do, one rule per call, with every row of its conditions and actions.
+
+**Do not use for** - switching a rule off (→ `somcp_set_cart_rule_active`); changing it (→ `somcp_update_cart_rule`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_cart_rule` | integer | required, a rule of the shop of the token, by the test of the list (`SomcpToolSetCartRuleActive::existing()`, `SomcpToolListCartRules::inShop()`): `SomcpTool::notAnIdentifier('id_cart_rule')`, `SomcpTool::notFound('id_cart_rule', 'cart rule', <id>, 'somcp_list_cart_rules')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the rule read first with `SomcpToolGetCartRule::byId()` (the shop's default language), to answer it, and its rows of `cart_cart_rule` counted. Then `CartRule::delete()`, the core's own deletion, with the employee of the token on the context (`SomcpToolCreateProduct::asEmployee()`): `cart_rule` and `cart_rule_lang`, then `cart_cart_rule` (the rule leaves the carts in progress), `cart_rule_carrier`, `cart_rule_shop`, `cart_rule_group`, `cart_rule_country`, `cart_rule_combination` (both sides), `cart_rule_product_rule_group` and the orphan `cart_rule_product_rule` and `cart_rule_product_rule_value`; `PS_CART_RULE_FEATURE_ACTIVE` is set again from the rules left, globally. `order_cart_rule` is untouched. A `false` or an exception: a tool error `The cart rule could not be deleted: <reason>. Read it with somcp_get_cart_rule before calling again.`, logged as `cart_rule_delete_failed`. Logged as `cart_rule_deleted` with the `id_cart_rule` only (a rule may hold a customer).
+
+**Returns** - `deleted: true`, `id_cart_rule` and `cart_rule`: the rule as read before, as `somcp_delete_contact` answers. `warning`, each when it applies: `<n> orders used this rule: they keep their discount.` (its `times_used`); `It was removed from <n> carts in progress.`; `No cart rule is active any more: the voucher field is no longer shown at checkout.` (`PS_CART_RULE_FEATURE_ACTIVE` went from 1 to 0); the shop is one of several and the rule was not kept to this shop: `This rule also applied to <every shop / the shops ...>: it is deleted for all of them.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: `id_cart_rule` missing, not an identifier, unknown or of another shop; an unknown argument.
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first. Not replayable. To stop a rule without losing it: `somcp_set_cart_rule_active`. The shop test creates a rule with `somcp_create_cart_rule`, deletes it, checks that `somcp_get_cart_rule` answers it unknown and that `PS_CART_RULE_FEATURE_ACTIVE` is what it was before, and puts it back whatever happens; rule 1 of the demo data is never deleted.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same `CartRule::delete()` body.
 
 #### `somcp_list_catalog_price_rules`
 **State**: written · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)
@@ -10638,6 +10664,6 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `period` (optional: the number of days to look back, 30 by default).
 
-**Tools** - `somcp_ping`, `somcp_list_abandoned_carts`, `somcp_list_search_terms`, `somcp_list_viewed_not_sold`, `somcp_list_unsold_products`, `somcp_list_cart_rules`, `somcp_get_cart_rule`, `somcp_create_cart_rule`, `somcp_update_cart_rule`, `somcp_set_cart_rule_active`, `somcp_list_catalog_price_rules`, `somcp_create_catalog_price_rule`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_abandoned_carts`, `somcp_list_search_terms`, `somcp_list_viewed_not_sold`, `somcp_list_unsold_products`, `somcp_list_cart_rules`, `somcp_get_cart_rule`, `somcp_create_cart_rule`, `somcp_update_cart_rule`, `somcp_set_cart_rule_active`, `somcp_delete_cart_rule`, `somcp_list_catalog_price_rules`, `somcp_create_catalog_price_rule`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - start from data, never from a guess: abandoned carts, searches with no result, products viewed but not sold, products that stopped selling; propose each promotion with its cost (the discount times the expected quantity) before creating it; a cart rule is created inactive unless the merchant says otherwise; never email or contact a customer: report the carts, the merchant decides.

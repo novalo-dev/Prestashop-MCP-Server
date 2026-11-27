@@ -42,6 +42,12 @@ group of the visitors, of the guests and of the newly registered customers,
 which decides the prices and discounts they see. Only the groups given change,
 and giving back the groups already chosen changes nothing.
 
+**Delete a cart rule.** The new tool somcp_delete_cart_rule does what Delete
+does on Catalog > Discounts > Cart Rules: the voucher or discount goes with all
+its conditions, and leaves the carts in progress, while the orders that used
+it keep their discount. The answer gives the rule as it was, and says when no
+active rule is left, since the voucher field then disappears from checkout.
+
 **Export the translations of a language.** The new tool
 somcp_export_translations does what the card Export a language of
 International > Translations does: the translation pack of one language - the

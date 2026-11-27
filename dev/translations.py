@@ -3063,6 +3063,10 @@ T = {
  "Activer ou désactiver une règle panier",
  "Activar o desactivar una regla de carrito",
  "Eine Warenkorbregel aktivieren oder deaktivieren"),
+"Delete a cart rule": (
+ "Supprimer une règle panier",
+ "Eliminar una regla de carrito",
+ "Eine Warenkorbregel löschen"),
 "Sales - changes": (
  "Ventes - modifications",
  "Ventas - cambios",

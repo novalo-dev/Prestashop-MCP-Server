@@ -3852,6 +3852,11 @@
       <source>Switch a cart rule on or off</source>
       <target>Switch a cart rule on or off</target>
     </trans-unit>
+    <!-- Delete a cart rule -->
+    <trans-unit id="90e9c2b94f47f41bc1bb4515cc544698" resname="Delete a cart rule">
+      <source>Delete a cart rule</source>
+      <target>Delete a cart rule</target>
+    </trans-unit>
     <!-- Sales - changes -->
     <trans-unit id="a1be5de2a33a782765a42196dbdc0c93" resname="Sales - changes">
       <source>Sales - changes</source>

@@ -16,6 +16,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_create_cart_rule`
 - `somcp_update_cart_rule`
 - `somcp_set_cart_rule_active`
+- `somcp_delete_cart_rule`
 - `somcp_list_catalog_price_rules`
 - `somcp_create_catalog_price_rule`
 
@@ -179,6 +180,18 @@ dates you used.
    dates are over or still to come, or with nothing left of **Total
    available**, does not apply yet. If an answer is lost, read the rule with
    `somcp_get_cart_rule` before calling again.
+
+## Deleting a voucher or a discount
+
+1. Deleting cannot be undone: offer `somcp_set_cart_rule_active` first, which
+   stops the promotion and keeps the rule. Delete only once the merchant has
+   agreed, with `somcp_delete_cart_rule` and the `id_cart_rule` of
+   `somcp_list_cart_rules`.
+2. Orders that used the rule keep their discount, and the rule leaves the
+   carts in progress. Read the `warning` of the answer to the merchant: with
+   no active rule left, the voucher field is no longer shown at checkout.
+3. The answer holds the rule as it was. If an answer is lost, look for the
+   rule with `somcp_list_cart_rules` before calling again.
 
 ## Catalogue price rules
 

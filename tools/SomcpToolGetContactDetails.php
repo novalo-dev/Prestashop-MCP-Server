@@ -102,7 +102,7 @@ class SomcpToolGetContactDetails
         if ($result['contact_details']['id_country'] === null) {
             // The screen preselects the country of the context when none is
             // saved; the answer says so rather than giving it as the shop's.
-            $country = Context::getContext()->country;
+            $country = Somcp::legacyContext()->country;
             $name = Validate::isLoadedObject($country) ? (string) Country::getNameById($idLang, (int) $country->id) : '';
             if ($name !== '') {
                 $result['warning'] = 'No country is saved: the screen preselects ' . $name

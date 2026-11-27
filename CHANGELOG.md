@@ -59,6 +59,31 @@ the translation that comes with the files shows again. A translation that
 drops or adds a placeholder of the source (%s, %d) is refused, as on screen,
 and a change in the wordings of the back office menu translates the menu again.
 
+**List the stores.** The new tool somcp_list_stores lists the stores of Shop
+Parameters > Contact, tab Stores, the ones the storefront page of the stores
+shows: each with every field of its Edit form - name, address, country and
+state, latitude and longitude, phone, e-mail address, note, whether it is
+shown, the opening hours of each day and its picture, which the assistant can
+download. It filters on the name, the city, the postcode, the country and
+whether the store is shown, as the list does.
+
+**Read the contact details of the shop.** The new tool
+somcp_get_contact_details reads the card Contact details of Shop Parameters >
+Contact, tab Stores: the shop name, e-mail address, registration number,
+address, country, state, phone and fax that the e-mails, the invoices and the
+page titles print. When no country is saved, the answer says so instead of
+giving the country the screen preselects.
+
+**Change the contact details of the shop.** The new tool
+somcp_update_contact_details does what Save does on the card Contact details
+of Shop Parameters > Contact, tab Stores: the shop name, e-mail address,
+registration number, address, country, state, phone and fax change, each
+checked as on screen, and only the fields given. The details read with
+somcp_get_contact_details and given back as they are change nothing. A state
+must be one of the country, a saved country or state cannot be emptied, as on
+screen, and the answer warns that the shop's e-mails are now sent from a new
+shop e-mail address.
+
 ### Changed
 
 **The members of a customer group.** The search of customers can list the
@@ -213,21 +238,6 @@ on a contact of Shop Parameters > Contact. It answers the contact as it was, in
 every language, so it can be created again, and warns when the shop has no
 contact left. The contact that receives the customers' messages is kept: the
 back office would delete it and leave those messages without a receiver.
-
-**List the stores.** The new tool somcp_list_stores lists the stores of Shop
-Parameters > Contact, tab Stores, the ones the storefront page of the stores
-shows: each with every field of its Edit form - name, address, country and
-state, latitude and longitude, phone, e-mail address, note, whether it is
-shown, the opening hours of each day and its picture, which the assistant can
-download. It filters on the name, the city, the postcode, the country and
-whether the store is shown, as the list does.
-
-**Read the contact details of the shop.** The new tool
-somcp_get_contact_details reads the card Contact details of Shop Parameters >
-Contact, tab Stores: the shop name, e-mail address, registration number,
-address, country, state, phone and fax that the e-mails, the invoices and the
-page titles print. When no country is saved, the answer says so instead of
-giving the country the screen preselects.
 
 **List the social titles.** The new tool somcp_list_titles lists the titles of
 Shop Parameters > Customer Settings, tab Titles: their name in each language,

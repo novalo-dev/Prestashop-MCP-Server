@@ -1562,6 +1562,11 @@
       <source>Get the contact details of the shop</source>
       <target>Die Kontaktdaten des Shops lesen</target>
     </trans-unit>
+    <!-- Change the contact details of the shop -->
+    <trans-unit id="6b445ac511f4cf50d3d6d070a99db275" resname="Change the contact details of the shop">
+      <source>Change the contact details of the shop</source>
+      <target>Die Kontaktdaten des Shops ändern</target>
+    </trans-unit>
     <!-- Create a contact -->
     <trans-unit id="e4c16f79a29856399a679d5cde54f1ee" resname="Create a contact">
       <source>Create a contact</source>

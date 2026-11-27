@@ -358,6 +358,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_delete_contact` | ✎ Delete a contact | Contacts › delete |
 | `somcp_list_stores` | ● List the stores | Stores › view |
 | `somcp_get_contact_details` | ● Get the contact details of the shop | Stores › view |
+| `somcp_update_contact_details` | ✎ Change the contact details of the shop | Stores › edit |
 | `somcp_list_zones` | ● List zones | Zones › view |
 | `somcp_create_zone` | ✎ Create a zone | Zones › add |
 | `somcp_update_zone` | ✎ Change a zone | Zones › edit |

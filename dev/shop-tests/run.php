@@ -1002,6 +1002,75 @@ if ($listStores !== null) {
     }
 }
 
+// The contact details read and given back whole change nothing (#457), then a
+// city, a country and its state are saved and read again. The demo shops keep
+// no country nor state, and the tool cannot empty them as the screen cannot,
+// so the finally puts the city back and deletes those four keys.
+$updateContactDetails = $registry->get('somcp_update_contact_details');
+$getContactDetails = $registry->get('somcp_get_contact_details');
+if ($updateContactDetails !== null && $getContactDetails !== null) {
+    $contactCall = static function ($tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $city = null;
+    try {
+        $calls += 4;
+        $read = $contactCall($getContactDetails, []);
+        $card = is_array($read['contact_details'] ?? null) ? $read['contact_details'] : null;
+        if ($card === null) {
+            $failures[] = 'somcp_update_contact_details (the read): ' . json_encode($read);
+        } else {
+            $city = (string) $card['city'];
+            $again = $contactCall($updateContactDetails, $read);
+            if (($again['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_contact_details (the read given back whole): expected changed false - ' . json_encode($again);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (the read given back whole)');
+            }
+            $saved = $contactCall($updateContactDetails, ['contact_details' => ['city' => 'Miami', 'id_country' => 21, 'id_state' => 12]]);
+            $fields = array_column(is_array($saved['changes'] ?? null) ? $saved['changes'] : [], 'field');
+            $after = $contactCall($getContactDetails, [])['contact_details'] ?? [];
+            if (($saved['changed'] ?? null) !== true || $fields !== ['city', 'id_country', 'id_state']
+                || ($after['city'] ?? null) !== 'Miami' || ($after['id_country'] ?? null) !== 21 || ($after['id_state'] ?? null) !== 12
+                || (int) Configuration::get('PS_SHOP_COUNTRY_ID') !== 21 || (string) Configuration::get('PS_SHOP_STATE') === '') {
+                $failures[] = 'somcp_update_contact_details (a city, a country and its state): ' . json_encode($saved) . ' - read again ' . json_encode($after);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (a city, a country and its state, read again)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_contact_details: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        try {
+            if ($city !== null) {
+                $contactCall($updateContactDetails, ['contact_details' => ['city' => $city]]);
+            }
+            foreach (['PS_SHOP_COUNTRY_ID', 'PS_SHOP_COUNTRY', 'PS_SHOP_STATE_ID', 'PS_SHOP_STATE'] as $key) {
+                Configuration::deleteByName($key);
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_update_contact_details (the reset): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
 // A logged e-mail deleted twice (#424): the recipients of the demo lines are
 // real addresses and the test e-mail is not logged, so the line is written
 // here through the Mail object, as Mail::send() writes it. Deleting it must

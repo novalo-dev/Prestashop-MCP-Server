@@ -22,8 +22,8 @@ What comes next is letting an assistant set up a whole shop, in the order a
 merchant does it:
 
 - **Base settings**: the contacts of the contact form are read, created,
-  changed and deleted, the stores and the shop's contact details are read;
-  changing the contact details and the stores comes next. The countries are read and
+  changed and deleted, the stores are read, and the shop's contact details
+  are read and changed; changing the stores comes next. The countries are read and
   changed, the states, languages and currencies read, created, changed and
   deleted, with the localization settings; a language's translations are
   installed from PrestaShop, read and changed wording by wording and exported

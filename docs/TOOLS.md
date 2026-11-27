@@ -4652,6 +4652,61 @@ object back.
 **Differences between 8.0.1 and 9.0.0** - none in the card
 (`_getDefaultFieldsContent()` is the same on both).
 
+#### `somcp_update_contact_details`
+**State**: written · [issue #457](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/457)
+**Nature**: `acts(EDIT, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_update_contact`
+
+**Does** - the **Save** of the card **Contact details** of **Shop Parameters >
+Contact**, tab **Stores**: changes the shop's name, e-mail, registration
+number, address, country, state and phone. Only the fields given change; the
+`contact_details` of `somcp_get_contact_details` given back whole changes
+nothing.
+
+**Do not use for** - a store of the storefront page (→ `somcp_list_stores`);
+an address of the contact form (→ `somcp_update_contact`).
+
+**Parameters** - `contact_details` (required), an object with the fields of
+`somcp_get_contact_details`, every one optional. The `language` and the
+`warning` of the read, given back beside it, are no change.
+
+| Name | Screen | Rule, refusal |
+|---|---|---|
+| `shop_name` | **Store name** | required, `Validate::isGenericName()`, 255 characters: `contact_details.shop_name: a name without < > = { }` |
+| `shop_email` | **Shop email** | required, `Validate::isEmail()`: `contact_details.shop_email: an e-mail address` |
+| `registration_number`, `postcode`, `city`, `phone`, `fax` | **Registration number**, **Zip/Postal code**, **City**, **Phone**, **Fax** | `isGenericName`, may be empty |
+| `address1`, `address2` | **Shop address line 1**, **line 2** | `Validate::isAddress()`, may be empty |
+| `id_country` | **Country** | an existing country: `SomcpTool::notFound()` naming `somcp_list_countries`; `null` or 0 refused when one is saved (`the back office cannot empty a saved country`) |
+| `id_state` | **State** | an enabled state of the country given or saved, as `AdminStoresController::beforeUpdateOptions()`: `not a state of this country - find one with somcp_list_states`; `null` refused the same way when one is saved; required when the call touches the country or the state and the country has states |
+| `country`, `state` | | read only: accepted when equal to the read, else `read only - change id_country` |
+
+Every mistake in one answer (`SomcpTool::refused('changed', ...)`), an unknown
+field through `SomcpTool::unknownFields()`.
+
+**Returns** - as `somcp_update_general_settings`: `changed`; `changes`
+(`field`, `old`, `new`); `contact_details` read again by
+`SomcpToolGetContactDetails::details()`; `language`; `warning` when
+`shop_email` changes (`The e-mails of the shop are now sent from <address>.`,
+since `Mail::send()` takes `PS_SHOP_EMAIL` as the sender) and when the shop is
+one of several (`The settings changed for this shop only, as the back office
+saves them in a shop context.`). Nothing different: `changed: false`, `The
+contact details already hold every value given. Nothing was written.`
+
+**Notes**
+- Each key differing is written with `Configuration::updateValue($key, $value,
+  false, $idShopGroup, $idShop)` for the shop of the token, html off as the
+  screen; with the country and the state, their names `PS_SHOP_COUNTRY` and
+  `PS_SHOP_STATE` in the shop's default language, which the screen keeps in
+  step. A key refused: `SomcpToolUpdateGeneralSettings::failed()`, naming what
+  was saved before it.
+- The screen never writes a 0 country or state (`if (!$this->errors &&
+  $value)`), so a saved one cannot be emptied, here as there.
+- The module's log line `contact_details_updated` names the fields changed,
+  never their values.
+- The refusals carry the path `contact_details.`, as the other tools that take
+  a nested object.
+
+**Differences between 8.0.1 and 9.0.0** - none in the card or its saving.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`

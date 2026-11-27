@@ -282,20 +282,32 @@ class SomcpToolUpdateGeneralSettings
      * The answer to a save that stopped half way, naming what was saved so
      * the assistant reads the settings before trying again.
      *
+     * Public so every tool that saves configuration keys one after the other
+     * stops in the same words, naming its own read.
+     *
      * @param array<int, string> $saved
      * @param string $failure
      * @param int $idEmployee
+     * @param string $what what could not be changed, as the sentence opens
+     * @param string $reader the tool that reads them again
+     * @param string $event the line of the module's log
      *
      * @return array<string, mixed>
      */
-    private static function failed(array $saved, string $failure, int $idEmployee): array
-    {
-        SomcpLogger::log('general_settings_update_failed', SomcpLogger::OUTCOME_FAILURE, $failure, '', $idEmployee);
+    public static function failed(
+        array $saved,
+        string $failure,
+        int $idEmployee,
+        string $what = 'The general settings',
+        string $reader = 'somcp_get_general_settings',
+        string $event = 'general_settings_update_failed',
+    ): array {
+        SomcpLogger::log($event, SomcpLogger::OUTCOME_FAILURE, $failure, '', $idEmployee);
 
         return SomcpTool::text(
-            'The general settings could not be changed: ' . $failure
+            $what . ' could not be changed: ' . $failure
                 . ($saved !== [] ? ', after ' . implode(', ', $saved) . ' had been saved' : '')
-                . '. Read them with somcp_get_general_settings before calling again.',
+                . '. Read them with ' . $reader . ' before calling again.',
             true
         );
     }

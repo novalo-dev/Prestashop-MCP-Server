@@ -1242,6 +1242,10 @@ T = {
  "Lire les coordonnées de la boutique",
  "Leer los datos de contacto de la tienda",
  "Die Kontaktdaten des Shops lesen"),
+"Change the contact details of the shop": (
+ "Modifier les coordonnées de la boutique",
+ "Modificar los datos de contacto de la tienda",
+ "Die Kontaktdaten des Shops ändern"),
 "Create a contact": (
  "Créer un contact",
  "Crear un contacto",

@@ -701,14 +701,14 @@ if ($searchCustomers !== null) {
     }
 }
 
-// A customer group changed and put back (#443, #444): the read of group 3
-// given back whole changes nothing, then Discount, Show prices and the
-// category discounts are changed and restored, in a finally so the demo
-// group is left as it was.
+// A customer group changed and put back (#443, #444, #445): the read of
+// group 3 given back whole changes nothing, then Discount, Show prices, the
+// category discounts and the authorized modules are changed and restored, in
+// a finally so the demo group is left as it was.
 $getGroup = $registry->get('somcp_get_customer_group');
 $updateGroup = $registry->get('somcp_update_customer_group');
 if ($getGroup !== null && $updateGroup !== null) {
-    $calls += 8;
+    $calls += 11;
     $groupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
         $result = $tool->call($arguments, [
             'id_shop' => (int) $context->shop->id,
@@ -732,6 +732,8 @@ if ($getGroup !== null && $updateGroup !== null) {
     $stored = new Group(3);
     $storedReduction = (float) $stored->reduction;
     $storedShowPrices = (bool) $stored->show_prices;
+    $storedModules = array_map('intval', array_column(Module::getAuthorizedModules(3, [(int) $context->shop->id]) ?: [], 'id_module'));
+    sort($storedModules);
     try {
         $read = $groupCall($getGroup, ['id_group' => 3]);
         $same = isset($read['group']) ? $groupCall($updateGroup, $read['group']) : [];
@@ -771,6 +773,32 @@ if ($getGroup !== null && $updateGroup !== null) {
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (10 % on Clothes, given back, then none)');
         }
+        $modules = $groupCall($getGroup, ['id_group' => 3])['group']['authorized_modules'] ?? null;
+        $sameModules = $groupCall($updateGroup, ['id_group' => 3, 'authorized_modules' => is_array($modules) ? $modules : []]);
+        if (!is_array($modules) || ($sameModules['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_customer_group (the authorized modules given back): expected no change - ' . json_encode($sameModules);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (the authorized modules given back, no change)');
+        }
+        // Payments by check is installed and hooked to the payment step by a
+        // standard install; a shop without it skips the payment check.
+        if (is_array($modules) && in_array('ps_checkpayment', $modules, true)) {
+            $without = $groupCall($updateGroup, ['id_group' => 3, 'authorized_modules' => array_values(array_diff($modules, ['ps_checkpayment']))]);
+            $again = $groupCall($updateGroup, ['id_group' => 3, 'authorized_modules' => $modules]);
+            $hooked = (bool) Db::getInstance()->getValue('SELECT 1 FROM `' . _DB_PREFIX_ . 'hook_module` hm'
+                . ' INNER JOIN `' . _DB_PREFIX_ . 'hook` h ON h.`id_hook` = hm.`id_hook`'
+                . ' INNER JOIN `' . _DB_PREFIX_ . 'module` m ON m.`id_module` = hm.`id_module`'
+                . " WHERE h.`name` = 'paymentOptions' AND m.`name` = 'ps_checkpayment' AND hm.`id_shop` = " . (int) $context->shop->id);
+            if (empty($without['changed']) || in_array('ps_checkpayment', $without['group']['authorized_modules'] ?? ['ps_checkpayment'], true)
+                || !in_array('ps_checkpayment', $without['group']['unauthorized_modules'] ?? [], true)
+                || ($hooked && strpos((string) ($without['warning'] ?? ''), 'no longer see these payment modules') === false)
+                || empty($again['changed']) || ($again['group']['authorized_modules'] ?? null) !== $modules) {
+                $failures[] = 'somcp_update_customer_group (Payments by check set to No, then Yes): unexpected - '
+                    . json_encode([$without['changes'] ?? $without, $without['warning'] ?? null, $again['changed'] ?? $again]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (Payments by check set to No, then Yes)');
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
@@ -782,6 +810,12 @@ if ($getGroup !== null && $updateGroup !== null) {
             $left->reduction = $storedReduction;
             $left->show_prices = $storedShowPrices;
             $left->update();
+        }
+        $leftModules = array_map('intval', array_column(Module::getAuthorizedModules(3, [(int) $context->shop->id]) ?: [], 'id_module'));
+        sort($leftModules);
+        if ($leftModules !== $storedModules && $storedModules !== []) {
+            Group::addModulesRestrictions(3, $storedModules, [(int) $context->shop->id]);
+            Cache::clean(Hook::MODULE_LIST_BY_HOOK_KEY . '*');
         }
     }
 }

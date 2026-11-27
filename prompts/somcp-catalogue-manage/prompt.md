@@ -557,14 +557,17 @@ ignores groups for prices: say so before writing a price for one group.
 language, its discounts by category (a percent that replaces the group
 discount for the products whose default category it is) and the modules its
 members may use. `somcp_update_customer_group` changes its name, Discount (a
-percent, 5 for 5 %), Price display method, Show prices and its category
-discounts: give back the read with only the fields to change, and say when the
+percent, 5 for 5 %), Price display method, Show prices, its category
+discounts and its authorized modules: give back the read with only the fields to change, and say when the
 group is a default one, since the change then reaches every visitor, guest or
 customer. The category discounts are always the whole list: read it, add or
 remove a row, and give the whole list back, since a row left out is removed.
 Take each `id_category` from `somcp_list_categories`, and say that a category
 discount replaces the group Discount for those products, and that the group
-can then see the category.
+can then see the category. The authorized modules are the whole list of the
+modules set to Yes, by the technical name of `somcp_list_modules`: every
+module left out is set to No, and at least one must stay. Say which payment
+modules the group loses, since its members can no longer pay with them.
 
 ## Changing products
 

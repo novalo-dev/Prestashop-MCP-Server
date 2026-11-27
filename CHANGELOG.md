@@ -27,6 +27,14 @@ answer warns that such a discount replaces the group Discount for the products
 of that category. The list read with somcp_get_customer_group and given back as
 it is changes nothing.
 
+**Authorized modules of a customer group.** somcp_update_customer_group now
+changes the Authorized modules block of a group, as its Yes and No then Save
+do on Shop Parameters > Customer Settings > Groups: the whole list of the
+modules set to Yes is given, and every module left out is set to No, on the
+current shop only. A group cannot be left with no module, as on screen, and
+the answer names the payment modules its customers no longer see. The list
+read with somcp_get_customer_group and given back as it is changes nothing.
+
 ### Changed
 
 **The members of a customer group.** The search of customers can list the

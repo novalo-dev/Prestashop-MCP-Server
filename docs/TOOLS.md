@@ -6388,11 +6388,10 @@ modules differ between the shops.
 **Does** - changes a customer group of **Shop Parameters > Customer Settings >
 Groups**, as its **Edit** form then **Save** do: its name in each language,
 its **Discount**, its **Price display method**, **Show prices** and its
-**Category discount** list (#444). Only the fields given change. One group per
-call. **Authorized modules** (#445) are left as they are.
+**Category discount** list (#444) and its **Authorized modules** (#445). Only
+the fields given change. One group per call.
 
-**Do not use for** - the authorized modules, not changed yet; the groups of one
-customer (→ `somcp_update_customer`).
+**Do not use for** - the groups of one customer (→ `somcp_update_customer`).
 
 **Parameters**
 
@@ -6405,16 +6404,16 @@ customer (→ `somcp_update_customer`).
 | `price_display_method` | **Price display method** | string | `tax_excluded` or `tax_included`, the words of `somcp_list_customer_groups`; anything else: `SomcpTool::oneOf()` |
 | `show_prices` | **Show prices** | boolean | `show_prices: true or false` |
 | `category_discounts` | **Category discount** | array | the whole list, as the form saves it: each item `{"id_category": <int>, "reduction": <number>}`, the shape `somcp_get_customer_group` answers (its `category` name is accepted and ignored); `[]` removes every row. Not a list of objects: `category_discounts: a list of {id_category, reduction}`; `id_category` not an identifier (`SomcpTool::notAnIdentifier()`) or not of this shop (`SomcpToolUpdateCategory::existingCategory()`): `SomcpTool::notFound('category_discounts[<i>].id_category', 'category', <id>, 'somcp_list_categories')`; the Root category (`PS_ROOT_CATEGORY`), not in the tree of the form: `category_discounts[<i>].id_category: the Root category is not in the tree of the form, choose Home or below`; `reduction` by the rule of the Discount: `category_discounts[<i>].reduction: a percentage from 0 to 100`; the same category twice: `category_discounts[<i>].id_category: given twice`; another key of an item: `category_discounts[<i>].<key>: not a field of a category discount` |
+| `authorized_modules` | **Authorized modules:** | array of strings | the whole list of the modules set to **Yes**, by technical name, the shape `somcp_get_customer_group` answers; every installed module left out is set to **No**. Not a list of strings: `authorized_modules: a list of module names from somcp_list_modules`; a name that is not an installed module (`Module::getModulesInstalled()`, compared without case, as `somcp_get_module` does): `SomcpTool::notFound('authorized_modules[<i>]', 'installed module', <name>, 'somcp_list_modules', 'name')`; `[]`: `authorized_modules: at least one module - the back office cannot leave a group with none`, as the screen |
+| `unauthorized_modules` | | array of strings | the other half of the read: accepted only when it is exactly the installed modules not in `authorized_modules` (or not in the stored list when `authorized_modules` is left out), compared without case and in any order; otherwise `unauthorized_modules: the installed modules left out of authorized_modules` |
 
 The read given back whole changes nothing: the other fields of the `group` of
 `somcp_get_customer_group` (`names`, `members_count`, `date_add`,
-`default_for`, `authorized_modules`, `unauthorized_modules`) are declared in
-the schema and accepted unchanged; given with another value they are refused
-(`members_count: read only`, `date_add: read only`, `default_for: chosen in
-Customer Settings > Groups, Default groups options`, `authorized_modules: not
-changed by this tool yet`, the same for `unauthorized_modules`). The
-`category_discounts` given back as read (same categories, same percents, any
-order) is no change. `name` and `names` given back are read by
+`default_for`) are declared in the schema and accepted unchanged; given with
+another value they are refused (`members_count: read only`, `date_add: read
+only`, `default_for: chosen in Customer Settings > Groups, Default groups
+options`). The `category_discounts` and the `authorized_modules` given back as
+read (same rows, any order) are no change. `name` and `names` given back are read by
 `SomcpToolCreateProduct::nameGivenBack()`, as `somcp_update_title` reads them:
 a plain `name` equal to a stored text is no change. Unknown arguments through
 `SomcpTool::unknownFields()`.
@@ -6440,6 +6439,17 @@ to the category) and a `GroupReduction` (`reduction` = percent / 100)
 transaction back and answers `The category discounts could not be saved:
 <reason>. Read the group with somcp_get_customer_group before calling again.`
 
+An `authorized_modules` that differs is written as `updateRestrictions()` of
+`AdminGroupsController` writes it, in the same transaction:
+`Group::addModulesRestrictions(<id_group>, <id_module of each name>,
+[<shop of the token>])`, never the shops of the context (a token acts for one
+shop, and `module_group` of another shop is never touched), then
+`Cache::clean(Hook::MODULE_LIST_BY_HOOK_KEY . '*')`. The tool writes no SQL of
+its own for it. A `false` rolls back and answers `The authorized modules could
+not be saved. Read the group with somcp_get_customer_group before calling
+again.`; the log line names `authorized_modules` among the fields changed,
+never the modules.
+
 `Tools::clearSmartyCache()` when `reduction`, `price_display_method`,
 `show_prices` or `category_discounts` changed, as the **Show prices** switch of the list does. Logged as
 `customer_group_updated` with the `id_group` and the names of the fields
@@ -6462,7 +6472,12 @@ above 0, the two warnings of the screen in one sentence: `A category discount
 replaces the group discount for the products of that category, it does not add
 to it; only products whose default category it is are concerned.`; a category
 the group could not see before (`category_group`, read before the write): `The
-group can now see the category <name>.`
+group can now see the category <name>.`; a module newly set to **No** that is
+hooked to `paymentOptions` for the shop of the token (`hook_module`, read
+before the write; `Hook::getHookModuleExecList()` filters by the groups of the
+visitor of the context and would miss one): `The customers of this group no
+longer see these payment modules: <display names>.`, since a group left
+without a payment module cannot order.
 
 **Errors** - in the envelope `Nothing was changed. Correct these and call
 again:`: an unknown argument; `id_group` missing, not an identifier or not of
@@ -6471,8 +6486,10 @@ this shop; the rules above; a read only field given with another value.
 **Notes** - changes the shop: the assistant asks first. Replayable: a second
 identical call changes nothing. The shop test gives back the read of group 3,
 sets its Discount to 5 and back to 0, Show prices off and back on, and its
-category discounts to 10 % on Clothes, given back unchanged, then `[]`, and
-restores the group whatever happens.
+category discounts to 10 % on Clothes, given back unchanged, then `[]`, gives
+its `authorized_modules` back unchanged, then without `ps_checkpayment` (the
+payment warning) and the full list again, and restores the group whatever
+happens.
 
 **Differences between 8.0.1 and 9.0.0** - none: the same legacy controller,
 the same `Group` definition.

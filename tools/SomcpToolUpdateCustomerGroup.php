@@ -22,12 +22,13 @@ declare(strict_types=1);
  *
  * The same legacy AdminGroupsController on 8.0 and 9.0 checks the Discount
  * with validateDiscount(), then saves the Group object. The page always
- * sends every field; the tool changes only those given, and leaves the
- * authorized modules as they are: they are read back unchanged, so the
- * answer of somcp_get_customer_group can be given back whole.
+ * sends every field; the tool changes only those given, so the answer of
+ * somcp_get_customer_group can be given back whole.
  *
  * The Category discount block is saved as updateCategoryReduction() saves
- * it: the whole list replaced, in the same transaction as the group.
+ * it: the whole list replaced, in the same transaction as the group. The
+ * Authorized modules block is saved as updateRestrictions() saves it, through
+ * Group::addModulesRestrictions(), for the shop of the token only.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -54,9 +55,10 @@ class SomcpToolUpdateCustomerGroup
         'members_count' => 'read only',
         'date_add' => 'read only',
         'default_for' => 'chosen in Customer Settings > Groups, Default groups options',
-        'authorized_modules' => 'not changed by this tool yet',
-        'unauthorized_modules' => 'not changed by this tool yet',
     ];
+
+    /** The hook of the payment step: a module on it set to No leaves the group without that payment. */
+    private const PAYMENT_HOOK = 'paymentOptions';
 
     /**
      * @return SomcpTool
@@ -78,7 +80,7 @@ class SomcpToolUpdateCustomerGroup
                 . 'name per language, its Discount, its Price display method and Show prices. Only the fields '
                 . 'given change, a language left out keeping its text; the group of somcp_get_customer_group given '
                 . 'back as it is changes nothing. Category discount takes the whole list, as the form saves it. '
-                . 'Authorized modules are not changed here. '
+                . 'Authorized modules take the whole list of the modules set to Yes, as the form saves it. '
                 . 'For the groups of one customer use somcp_update_customer.',
             [
                 'type' => 'object',
@@ -138,8 +140,20 @@ class SomcpToolUpdateCustomerGroup
                             'required' => ['id_category', 'reduction'],
                         ],
                     ],
-                    'authorized_modules' => $readBack('array', 'Not changed by this tool.'),
-                    'unauthorized_modules' => $readBack('array', 'Not changed by this tool.'),
+                    'authorized_modules' => [
+                        'type' => 'array',
+                        'description' => 'Authorized modules: the whole list set to Yes, by technical name of '
+                            . 'somcp_list_modules, as somcp_get_customer_group reads it; every installed module '
+                            . 'left out is set to No.',
+                        'items' => ['type' => 'string'],
+                    ],
+                    'unauthorized_modules' => [
+                        'type' => 'array',
+                        'description' => 'Read by somcp_get_customer_group: taken only when it is exactly the '
+                            . 'installed modules left out of authorized_modules, so the group can be given back '
+                            . 'whole.',
+                        'items' => ['type' => 'string'],
+                    ],
                 ],
                 'required' => ['id_group'],
                 'additionalProperties' => false,
@@ -165,7 +179,7 @@ class SomcpToolUpdateCustomerGroup
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
 
         $errors = SomcpTool::unknownFields($arguments, array_merge(
-            ['id_group', 'languages', 'name', 'names', 'reduction', 'price_display_method', 'show_prices', 'category_discounts'],
+            ['id_group', 'languages', 'name', 'names', 'reduction', 'price_display_method', 'show_prices', 'category_discounts', 'authorized_modules', 'unauthorized_modules'],
             array_keys(self::READ_ONLY)
         ));
 
@@ -204,6 +218,11 @@ class SomcpToolUpdateCustomerGroup
             }
         }
         unset($given['names']);
+        $modules = null;
+        if ($before !== null) {
+            $modules = self::planModules($given, $before, $errors);
+        }
+        unset($given['authorized_modules'], $given['unauthorized_modules']);
         $plan = self::planGroup($given, $idShop, $errors);
 
         if ($errors !== [] || $plan === null || $group === null) {
@@ -236,6 +255,15 @@ class SomcpToolUpdateCustomerGroup
         if (isset($plan['category_discounts']) && !self::sameDiscounts($plan['category_discounts'], $oldDiscounts)) {
             $changes[] = ['field' => 'category_discounts', 'old' => $before['category_discounts'], 'new' => self::discountRows($plan['category_discounts'])];
         }
+        $newlyOff = [];
+        if ($modules !== null) {
+            $newNames = array_values($modules);
+            sort($newNames);
+            if ($newNames !== $before['authorized_modules']) {
+                $changes[] = ['field' => 'authorized_modules', 'old' => $before['authorized_modules'], 'new' => $newNames];
+                $newlyOff = array_values(array_diff($before['authorized_modules'], $newNames));
+            }
+        }
 
         if ($changes === []) {
             return SomcpTool::json([
@@ -262,6 +290,9 @@ class SomcpToolUpdateCustomerGroup
         $group->id_shop_list = [$idShop];
 
         $discounts = in_array('category_discounts', $fields, true) ? $plan['category_discounts'] : null;
+        $restrictions = in_array('authorized_modules', $fields, true) && $modules !== null ? array_keys($modules) : null;
+        // Read before the write: the warning names the payments the group loses.
+        $paymentsLost = $newlyOff !== [] ? self::paymentModules($newlyOff, $idShop) : [];
         $opened = [];
         $featureOff = false;
         if ($discounts !== null) {
@@ -276,16 +307,17 @@ class SomcpToolUpdateCustomerGroup
         }
 
         $db = Db::getInstance();
-        // One transaction when the list is written, so a group is never left
+        // One transaction when a list is written, so a group is never left
         // with its old rows deleted and only part of the new ones saved.
-        $transaction = $discounts !== null && $db->execute('START TRANSACTION');
+        $lists = $discounts !== null || $restrictions !== null;
+        $transaction = $lists && $db->execute('START TRANSACTION');
         try {
             $done = true;
             $failure = '';
-            if ($discounts !== null && !$transaction) {
+            if ($lists && !$transaction) {
                 $done = false;
                 $failure = 'the database refused to open a transaction';
-            } elseif (array_diff($fields, ['category_discounts']) !== [] && !$group->update()) {
+            } elseif (array_diff($fields, ['category_discounts', 'authorized_modules']) !== [] && !$group->update()) {
                 $done = false;
                 $failure = 'PrestaShop refused to save it';
             } elseif ($discounts !== null) {
@@ -294,6 +326,12 @@ class SomcpToolUpdateCustomerGroup
                 if (!$done) {
                     $failure = 'The category discounts could not be saved: ' . $failure;
                 }
+            }
+            // The shop of the token only: the core passes the shops of the
+            // context, and a token acts for one shop.
+            if ($done && $restrictions !== null && !Group::addModulesRestrictions($idGroup, $restrictions, [$idShop])) {
+                $done = false;
+                $failure = 'The authorized modules could not be saved';
             }
         } catch (Throwable $e) {
             $done = false;
@@ -307,7 +345,8 @@ class SomcpToolUpdateCustomerGroup
                 . Tools::substr($failure, 0, 500), '', $idEmployee);
 
             return SomcpTool::text(
-                (strpos($failure, 'The category discounts') === 0 ? $failure : 'The customer group could not be changed: '
+                (strpos($failure, 'The category discounts') === 0 || strpos($failure, 'The authorized modules') === 0
+                    ? $failure : 'The customer group could not be changed: '
                     . $failure) . '. Read the group with somcp_get_customer_group before calling again.',
                 true
             );
@@ -316,6 +355,11 @@ class SomcpToolUpdateCustomerGroup
         // clears them too, so the new prices show.
         if (array_intersect($fields, ['reduction', 'price_display_method', 'show_prices', 'category_discounts']) !== []) {
             Tools::clearSmartyCache();
+        }
+        // The storefront keeps the modules of each hook per group in cache,
+        // as updateRestrictions() knows: cleared so the new list applies.
+        if ($restrictions !== null) {
+            Cache::clean(Hook::MODULE_LIST_BY_HOOK_KEY . '*');
         }
         SomcpLogger::log('customer_group_updated', SomcpLogger::OUTCOME_SUCCESS, 'group ' . $idGroup . ': '
             . implode(', ', $fields), '', $idEmployee);
@@ -347,6 +391,10 @@ class SomcpToolUpdateCustomerGroup
         }
         foreach ($opened as $name) {
             $warnings[] = 'The group can now see the category ' . $name . '.';
+        }
+        if ($paymentsLost !== []) {
+            $warnings[] = 'The customers of this group no longer see these payment modules: '
+                . implode(', ', $paymentsLost) . '.';
         }
         if (($before['default_for'] ?? []) !== []) {
             $warnings[] = 'This group is used for ' . implode(', ', $before['default_for'])
@@ -431,6 +479,112 @@ class SomcpToolUpdateCustomerGroup
         }
 
         return $plan;
+    }
+
+    /**
+     * The Authorized modules given, checked against the installed modules.
+     *
+     * unauthorized_modules is the other half of the read: taken only when it
+     * is exactly the installed modules not in the list kept, so the read
+     * given back whole passes and a contradiction is not silently dropped.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $before the group as the read gives it
+     * @param array<int, string> $errors
+     *
+     * @return array<int, string>|null technical names keyed by module, null when not given or refused
+     */
+    private static function planModules(array $arguments, array $before, array &$errors): ?array
+    {
+        if (!array_key_exists('authorized_modules', $arguments) && !array_key_exists('unauthorized_modules', $arguments)) {
+            return null;
+        }
+        $installed = [];
+        foreach (Module::getModulesInstalled() ?: [] as $row) {
+            $installed[Tools::strtolower((string) $row['name'])] = ['id' => (int) $row['id_module'], 'name' => (string) $row['name']];
+        }
+        $count = count($errors);
+        $plan = null;
+        if (array_key_exists('authorized_modules', $arguments)) {
+            $value = $arguments['authorized_modules'];
+            if (!is_array($value) || array_values($value) !== $value || array_filter($value, 'is_string') !== $value) {
+                $errors[] = 'authorized_modules: a list of module names from somcp_list_modules';
+            } elseif ($value === []) {
+                $errors[] = 'authorized_modules: at least one module - the back office cannot leave a group with none';
+            } else {
+                $plan = [];
+                foreach ($value as $i => $name) {
+                    $key = Tools::strtolower(trim($name));
+                    if (!isset($installed[$key])) {
+                        $errors[] = SomcpTool::notFound('authorized_modules[' . $i . ']', 'installed module', trim($name), 'somcp_list_modules', 'name');
+                    } else {
+                        $plan[$installed[$key]['id']] = $installed[$key]['name'];
+                    }
+                }
+            }
+        }
+        if (array_key_exists('unauthorized_modules', $arguments)) {
+            $kept = $plan !== null ? array_values($plan) : (array) ($before['authorized_modules'] ?? []);
+            $keptKeys = array_map([Tools::class, 'strtolower'], $kept);
+            $expected = [];
+            foreach ($installed as $key => $module) {
+                if (!in_array($key, $keptKeys, true)) {
+                    $expected[] = $key;
+                }
+            }
+            $value = $arguments['unauthorized_modules'];
+            $given = is_array($value) && array_filter($value, 'is_string') === $value
+                ? array_map(static function (string $name): string {
+                    return Tools::strtolower(trim($name));
+                }, array_values($value))
+                : null;
+            if ($given !== null) {
+                sort($given);
+                sort($expected);
+            }
+            if ($given === null || $given !== $expected) {
+                $errors[] = 'unauthorized_modules: the installed modules left out of authorized_modules';
+            }
+        }
+        if (count($errors) !== $count) {
+            return null;
+        }
+
+        return $plan;
+    }
+
+    /**
+     * Which of the modules named hook to the payment step of the shop.
+     *
+     * Read from hook_module for the shop of the token rather than from
+     * Hook::getHookModuleExecList(), which filters by the groups of the
+     * visitor of the context and would miss a payment the group still has.
+     *
+     * @param array<int, string> $names technical names
+     * @param int $idShop
+     *
+     * @return array<int, string> the display names, as the block lists them
+     */
+    private static function paymentModules(array $names, int $idShop): array
+    {
+        $rows = Db::getInstance()->executeS(
+            'SELECT m.`name` FROM `' . _DB_PREFIX_ . 'hook_module` hm'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'hook` h ON h.`id_hook` = hm.`id_hook`'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'module` m ON m.`id_module` = hm.`id_module`'
+            . " WHERE h.`name` = '" . pSQL(self::PAYMENT_HOOK) . "' AND hm.`id_shop` = " . (int) $idShop
+        ) ?: [];
+        $wanted = array_map([Tools::class, 'strtolower'], $names);
+        $found = [];
+        foreach ($rows as $row) {
+            $name = (string) $row['name'];
+            if (in_array(Tools::strtolower($name), $wanted, true)) {
+                $module = Module::getInstanceByName($name);
+                $found[] = $module && (string) $module->displayName !== '' ? (string) $module->displayName : $name;
+            }
+        }
+        sort($found);
+
+        return array_values(array_unique($found));
     }
 
     /**

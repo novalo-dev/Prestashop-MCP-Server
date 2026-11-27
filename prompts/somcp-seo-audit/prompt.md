@@ -16,6 +16,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_update_meta_page`
 - `somcp_create_meta_page`
 - `somcp_delete_meta_page`
+- `somcp_list_search_engines`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
@@ -84,6 +85,10 @@ installation has its own titles, descriptions and URLs.
    shop answers again at `index.php?controller=<page>`. Ask first, naming the
    page and its Rewritten URL, and keep the texts it answers to create it
    again if the merchant changes his mind.
+   When visits come from a search engine but no keyword shows in the
+   statistics, read `somcp_list_search_engines`: each row gives the Server
+   whose visitors' keywords are kept and the GET variable of its address that
+   holds them.
 6. **Check the public page.** A value in the database is not proof of what
    the theme prints: call `somcp_audit_page` with the address or the path of
    the page (`/` for the home page) to see the title, description, headings,

@@ -9871,6 +9871,49 @@ tool error `The page could not be deleted: <reason>.`
 - No difference between 8.0 and 9.0 in the deletion; `meta_keywords` exists
   on 8.0 only (`SomcpToolUpdateMetaPage::hasKeywords()`).
 
+#### `somcp_list_search_engines`
+**State**: written · [issue #472](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/472)
+**Nature**: `acts(VIEW, 'AdminSearchEngines')` · **Scope**: `mcp.seo.read`, as `somcp_list_meta_pages`
+
+**Does** - lists the search engines of **Shop Parameters > Traffic & SEO >
+Search Engines**, as the list of that tab shows them: each **Server** and its
+**GET variable**, with the filters, the sort and the paging of the list. A row
+tells the shop where the words a visitor typed sit in the address he came
+from: `SearchEngine::getKeywords()` takes the first row whose **Server** is
+part of the referrer's host and reads its **GET variable**, and
+`connections_source.keywords`, which the keyword statistics read, keeps them.
+
+**Do not use for** - the keywords visitors typed (the statistics); the shop's
+own search (**Shop Parameters > Search**).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_search_engine` | **ID** filter | integer | optional, exact; `SomcpTool::notAnIdentifier('id_search_engine')` |
+| `server` | **Server** filter | string | optional, part of the server, without case |
+| `get_variable` | **GET variable** filter | string | optional, part of the variable, without case |
+| `sort` | the sortable columns | string | `id_asc` (default, as the list), `id_desc`, `server_asc`, `server_desc`, `get_variable_asc`, `get_variable_desc`; anything else through `SomcpTool::oneOf()` |
+| `limit`, `offset` | the paging | integer | as `somcp_list_stores`: `limit` 1 to 100, 20 by default; `offset` 0 at least |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every mistake in one
+answer, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns** - `search_engines`: each `{id_search_engine, server,
+get_variable}`, the words of the screen (`get_variable` is the column
+`getvar`); `returned`, `total_count` (the rows matching the filters), `limit`,
+`offset`, as every paged list.
+
+**Notes**
+- Read with one `DbQuery` on `search_engine`: the filters through `pSQL()` and
+  `LIKE`, with `%` and `_` escaped so they match themselves, the sort from a
+  fixed map, never from the argument, the identifier breaking ties.
+- `search_engine` has no shop and no language: every shop reads the same rows.
+- The install gives 38 rows (1 `google` / `q`, 3 `yandex` / `text`, 6 `yahoo` /
+  `p`, 13 `bing` / `q`, 38 `rambler` / `words`).
+- Read only, replayable. No difference between 8.0 and 9.0: the same grid,
+  form and table.
+
 #### `somcp_get_seo_settings`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`

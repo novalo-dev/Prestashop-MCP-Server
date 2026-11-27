@@ -18,6 +18,12 @@ are:
 
 ### Added
 
+**List the search engines.** The new tool somcp_list_search_engines reads
+Shop Parameters > Traffic & SEO > Search Engines as its list shows it: each
+Server with its GET variable, the part of a visitor's address that holds the
+words he typed, which the keyword statistics are built from. It takes the
+filters, the sort and the paging of the list.
+
 **Add a shop page to SEO & URLs.** The new tool somcp_create_meta_page does
 what Add new page then Save do on Shop Parameters > Traffic & SEO > SEO & URLs:
 a page of the shop or of a module that has none yet gets its Page title, Meta

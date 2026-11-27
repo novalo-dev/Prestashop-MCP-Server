@@ -604,6 +604,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_meta_page` | ✎ Change the SEO of a shop page | SEO & URLs › edit |
 | `somcp_create_meta_page` | ✎ Add a shop page to SEO & URLs | SEO & URLs › add |
 | `somcp_delete_meta_page` | ✎ Delete a shop page from SEO & URLs | SEO & URLs › delete |
+| `somcp_list_search_engines` | ● List the search engines | Search Engines › view |
 | `somcp_get_robots_txt` | ● Read the robots.txt file | SEO & URLs › view |
 | `somcp_generate_robots_txt` | ✎ Generate the robots.txt file | SEO & URLs › add, edit, delete |
 

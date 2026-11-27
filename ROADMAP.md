@@ -36,6 +36,9 @@ merchant does it:
   next. **Payment > Preferences** is read and
   changed, module by module. The payment modules themselves,
   their accounts and keys, stay with the merchant.
+- **Traffic & SEO**: the shop's own pages are read, created, changed and
+  deleted, and the search engines are read; adding and changing a search
+  engine comes next.
 - **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
   never the parent theme or its templates, and the native modules of the
   storefront those themes show - the slider, the home texts, the footer links,

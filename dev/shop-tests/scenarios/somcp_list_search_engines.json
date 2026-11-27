@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "lists the search engines by identifier, as the list of the tab", "arguments": {}, "expect": "ok", "contains": ["\"search_engines\"", "\"id_search_engine\": 1", "\"server\": \"google\"", "\"get_variable\": \"q\"", "\"total_count\": 38", "\"limit\": 20"]},
+    {"why": "filtered by part of the Server, whatever the case", "arguments": {"server": "YAN"}, "expect": "ok", "contains": ["\"server\": \"yandex\"", "\"total_count\": 1"]},
+    {"why": "filtered by part of the GET variable", "arguments": {"get_variable": "words"}, "expect": "ok", "contains": ["\"server\": \"rambler\""]},
+    {"why": "sorted by Server, last first, one row", "arguments": {"sort": "server_desc", "limit": 1}, "expect": "ok", "contains": ["\"server\": \"yandex\"", "\"returned\": 1"]},
+    {"why": "an underscore matches itself, not any letter", "arguments": {"server": "_"}, "expect": "ok", "contains": ["\"search_engines\": []", "\"total_count\": 0"]},
+    {"why": "an identifier no row has lists nothing", "arguments": {"id_search_engine": 999999}, "expect": "ok", "contains": ["\"search_engines\": []", "\"total_count\": 0"]},
+    {"why": "an order outside the list is refused with the accepted ones", "arguments": {"sort": "x"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- sort: one of id_asc"]},
+    {"why": "a limit and an offset out of range are refused at once", "arguments": {"limit": 0, "offset": -1}, "expect": "error", "contains": ["- limit: a whole number from 1 to 100", "- offset: a whole number, 0 at least"]},
+    {"why": "an identifier of the wrong kind is refused", "arguments": {"id_search_engine": [1]}, "expect": "error", "contains": ["- id_search_engine: a whole number above 0"]},
+    {"why": "a misspelt filter is refused", "arguments": {"x": 1}, "expect": "error", "contains": ["- x: not a field of this tool"]}
+  ]
+}

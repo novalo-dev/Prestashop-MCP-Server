@@ -1597,6 +1597,11 @@
       <source>Delete a shop page from SEO &amp; URLs</source>
       <target>Eliminar una página de la tienda en SEO y URL</target>
     </trans-unit>
+    <!-- List the search engines -->
+    <trans-unit id="3c24aa8465859c1451d896ef3146a3f0" resname="List the search engines">
+      <source>List the search engines</source>
+      <target>Listar los motores de búsqueda</target>
+    </trans-unit>
     <!-- Get the contact details of the shop -->
     <trans-unit id="0c66db3c29d38926dcde73447ee2b642" resname="Get the contact details of the shop">
       <source>Get the contact details of the shop</source>

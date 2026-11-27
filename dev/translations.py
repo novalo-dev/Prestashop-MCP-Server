@@ -1270,6 +1270,10 @@ T = {
  "Supprimer une page de la boutique dans SEO et URL",
  "Eliminar una página de la tienda en SEO y URL",
  "Eine Shop-Seite aus SEO und URL löschen"),
+"List the search engines": (
+ "Lister les moteurs de recherche",
+ "Listar los motores de búsqueda",
+ "Die Suchmaschinen auflisten"),
 "Get the contact details of the shop": (
  "Lire les coordonnées de la boutique",
  "Leer los datos de contacto de la tienda",

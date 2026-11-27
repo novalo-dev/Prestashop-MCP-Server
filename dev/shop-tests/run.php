@@ -885,13 +885,15 @@ if ($updateDefaults !== null && $listRoles !== null) {
     }
 }
 
-// A customer group created (#467): named in every active language, read back
-// with somcp_get_customer_group, every installed module authorized, then
-// removed in a finally so the demo data keeps its three groups.
+// A customer group created (#467, #468): named in every active language, read
+// back with somcp_get_customer_group, every installed module authorized; then
+// one with a category discount on Home and every module but Payments by check,
+// whose payment is named in the warning. Both are removed in a finally so the
+// demo data keeps its three groups.
 $createGroup = $registry->get('somcp_create_customer_group');
 $readGroup = $registry->get('somcp_get_customer_group');
 if ($createGroup !== null && $readGroup !== null) {
-    $calls += 2;
+    $calls += 4;
     $newGroupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
         $result = $tool->call($arguments, [
             'id_shop' => (int) $context->shop->id,
@@ -913,6 +915,7 @@ if ($createGroup !== null && $readGroup !== null) {
         return is_array($decoded) ? $decoded : ['error' => $text];
     };
     $idNewGroup = 0;
+    $idListsGroup = 0;
     try {
         $groupNames = [];
         foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
@@ -936,14 +939,38 @@ if ($createGroup !== null && $readGroup !== null) {
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_create_customer_group (a group named in every language, read back)');
         }
+        if (in_array('ps_checkpayment', $installed, true)) {
+            $home = (int) Configuration::get('PS_HOME_CATEGORY');
+            $lists = $newGroupCall($createGroup, [
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp test lists'],
+                'category_discounts' => [['id_category' => $home, 'reduction' => 10]],
+                'authorized_modules' => array_values(array_diff($installed, ['ps_checkpayment'])),
+            ]);
+            $idListsGroup = (int) ($lists['id_group'] ?? 0);
+            $readLists = $idListsGroup > 0 ? $newGroupCall($readGroup, ['id_group' => $idListsGroup]) : [];
+            $rows = $readLists['group']['category_discounts'] ?? [];
+            if (($lists['created'] ?? null) !== true || $idListsGroup <= 3
+                || count($rows) !== 1 || (int) ($rows[0]['id_category'] ?? 0) !== $home || (float) ($rows[0]['reduction'] ?? 0) !== 10.0
+                || ($readLists['group']['unauthorized_modules'] ?? null) !== ['ps_checkpayment']
+                || strpos((string) ($lists['warning'] ?? ''), 'no longer see these payment modules') === false) {
+                $failures[] = 'somcp_create_customer_group (a discount on Home, Payments by check left out): ' . json_encode([$lists, $readLists]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_customer_group (a discount on Home, Payments by check left out)');
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
-        // Whatever failed above, the group made here does not stay.
-        if ($idNewGroup > 3) {
-            $left = new Group($idNewGroup);
-            if (Validate::isLoadedObject($left)) {
-                $left->delete();
+        // Whatever failed above, the groups made here do not stay.
+        foreach ([$idNewGroup, $idListsGroup] as $idMade) {
+            if ($idMade > 3) {
+                $left = new Group($idMade);
+                if (Validate::isLoadedObject($left)) {
+                    $left->delete();
+                }
+                Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'group_reduction` WHERE `id_group` = ' . (int) $idMade);
+                Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'product_group_reduction_cache` WHERE `id_group` = ' . (int) $idMade);
             }
         }
     }

@@ -488,6 +488,7 @@ class SomcpToolUpdateCustomerGroup
      * unauthorized_modules is the other half of the read: taken only when it
      * is exactly the installed modules not in the list kept, so the read
      * given back whole passes and a contradiction is not silently dropped.
+     * Public so the creation of a group checks its list by the same rules.
      *
      * @param array<string, mixed> $arguments
      * @param array<string, mixed> $before the group as the read gives it
@@ -495,7 +496,7 @@ class SomcpToolUpdateCustomerGroup
      *
      * @return array<int, string>|null technical names keyed by module, null when not given or refused
      */
-    private static function planModules(array $arguments, array $before, array &$errors): ?array
+    public static function planModules(array $arguments, array $before, array &$errors): ?array
     {
         if (!array_key_exists('authorized_modules', $arguments) && !array_key_exists('unauthorized_modules', $arguments)) {
             return null;
@@ -560,13 +561,14 @@ class SomcpToolUpdateCustomerGroup
      * Read from hook_module for the shop of the token rather than from
      * Hook::getHookModuleExecList(), which filters by the groups of the
      * visitor of the context and would miss a payment the group still has.
+     * Public so the creation of a group names the payments it leaves out.
      *
      * @param array<int, string> $names technical names
      * @param int $idShop
      *
      * @return array<int, string> the display names, as the block lists them
      */
-    private static function paymentModules(array $names, int $idShop): array
+    public static function paymentModules(array $names, int $idShop): array
     {
         $rows = Db::getInstance()->executeS(
             'SELECT m.`name` FROM `' . _DB_PREFIX_ . 'hook_module` hm'
@@ -606,13 +608,15 @@ class SomcpToolUpdateCustomerGroup
     /**
      * The Category discount list given, checked as the form checks a row.
      *
+     * Public so the creation of a group checks its list by the same rules.
+     *
      * @param mixed $value
      * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return array<int, float>|null percents keyed by category, null when refused
      */
-    private static function planDiscounts($value, int $idShop, array &$errors): ?array
+    public static function planDiscounts($value, int $idShop, array &$errors): ?array
     {
         if (!is_array($value) || array_values($value) !== $value) {
             $errors[] = 'category_discounts: a list of {id_category, reduction}';
@@ -716,14 +720,15 @@ class SomcpToolUpdateCustomerGroup
      *
      * The rows are deleted by group, as the controller does: deleting each
      * GroupReduction object would empty the price cache of every group for
-     * the products of its category.
+     * the products of its category. Public so the creation of a group writes
+     * its list the same way.
      *
      * @param int $idGroup
      * @param array<int, float> $discounts percents keyed by category
      *
      * @return string the reason of a failure, empty when saved
      */
-    private static function writeDiscounts(int $idGroup, array $discounts): string
+    public static function writeDiscounts(int $idGroup, array $discounts): string
     {
         $db = Db::getInstance();
         if (!$db->execute('DELETE FROM `' . _DB_PREFIX_ . 'group_reduction` WHERE `id_group` = ' . (int) $idGroup)

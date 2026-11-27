@@ -38,10 +38,12 @@ read with somcp_get_customer_group and given back as it is changes nothing.
 **Create a customer group.** The new tool somcp_create_customer_group does
 what Add new group then Save do on Shop Parameters > Customer Settings >
 Groups: the name of the group in each language, its discount, its price
-display method and whether its members see prices, with every installed
-module authorized as the form leaves it. The answer is the group as
-somcp_get_customer_group reads it, and says that a new group sees the home
-category only until its other categories are given to it.
+display method, whether its members see prices, its category discounts and
+the modules it may use - every installed module unless a list is given. The
+category discounts are kept, where the back office loses those of a new
+group. The answer is the group as somcp_get_customer_group reads it, and
+says that a new group sees the home category only until its other categories
+are given to it, and which payment modules it was left without.
 
 **Change the default customer groups.** The new tool
 somcp_update_default_groups does what the Save of the card Default groups

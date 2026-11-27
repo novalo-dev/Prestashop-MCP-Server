@@ -7079,15 +7079,15 @@ the Guests group to 3, checks `default_for` of group 3 with
 **Differences between 8.0.1 and 9.0.0** - none: the same legacy controller.
 
 #### `somcp_create_customer_group`
-**State**: written · [issue #467](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/467)
+**State**: written · [issue #467](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/467), [#468](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/468)
 **Nature**: `acts(ADD, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer_group`
 
 **Does** - creates a customer group of **Shop Parameters > Customer
 Settings > Groups**, as **Add new group** then **Save** do: its name in each
-language, its **Discount**, its **Price display method**, **Show prices**, and every
-installed module authorized, as the form shows a new group. One group per
-call. **Category discount** and a chosen list of **Modules authorization**
-are part 2 (#468).
+language, its **Discount**, its **Price display method**, **Show prices**, its
+**Category discount** and its **Modules authorization**, every installed
+module authorized by default as the form shows a new group. One group per
+call.
 
 **Do not use for** - changing a group (→ `somcp_update_customer_group`);
 choosing the group of visitors, guests or customers (→
@@ -7103,45 +7103,56 @@ choosing the group of visitors, guests or customers (→
 | `reduction` | **Discount** | number | optional, 0 by default; percent as shown, 0 to 100, at most 2 decimals (`reduction: a percentage from 0 to 100`) |
 | `price_display_method` | **Price display method** | string | optional, `tax_excluded` or `tax_included`; left out, the value of `PRICE_DISPLAY_METHOD` for the shop of the token, as the form presets it |
 | `show_prices` | **Show prices** | boolean | optional, `true` by default |
+| `category_discounts` | **Category discount** | array | optional, none by default; the list of `{id_category, reduction}` of `somcp_update_customer_group`, through `SomcpToolUpdateCustomerGroup::planDiscounts()`: `id_category` from `somcp_list_categories`, of the shop, once, never the Root; `reduction` 0 to 100 |
+| `authorized_modules` | **Modules authorization** (set to Yes) | array | optional, every installed module by default; through `SomcpToolUpdateCustomerGroup::planModules()`: technical names of `somcp_list_modules`, at least one (`authorized_modules: at least one module - the back office cannot leave a group with none`) |
+| `unauthorized_modules` | | array | optional, taken only when it is exactly the installed modules left out of `authorized_modules`, so the read of a group given back to create a copy passes |
 
-`category_discounts`, `authorized_modules` and `unauthorized_modules` are
-refused until part 2: `<field>: not taken by this tool yet - create the group,
-then use somcp_update_customer_group`. Any other field of the read
-(`id_group`, `names`, `members_count`, `date_add`, `default_for`):
-`<field>: not a field of this tool` through `SomcpTool::unknownFields()`.
+Any other field of the read (`id_group`, `names`, `members_count`,
+`date_add`, `default_for`): `<field>: not a field of this tool` through
+`SomcpTool::unknownFields()`.
 
 **Then** - every check first, every mistake in one answer
 (`SomcpTool::refused('created', ...)`). `Group` filled from the plan, for the
 shop of the token only (`id_shop_list`), then `add()`, which turns
 `PS_GROUP_FEATURE_ACTIVE` on, gives the group the home category
-(`Category::setNewGroupForHome()`) and every carrier. Then every installed
-module authorized for the shop of the token
-(`Group::addModulesRestrictions()`), as the form saves a new group with
-nothing unticked; if that fails the group just created is deleted, so no
-group is left that sees no module. A refusal: `The customer group could not be
-created: <reason>.`, logged as `customer_group_create_failed`. Logged as
-`customer_group_created` with the new `id_group` only.
+(`Category::setNewGroupForHome()`) and every carrier. Then, in the same
+transaction, the category discounts through
+`SomcpToolUpdateCustomerGroup::writeDiscounts()` (each category given a
+discount is opened to the group), written to the new group where the core
+writes them with `id_group` 0 and loses them, and the modules authorized for
+the shop of the token (`Group::addModulesRestrictions()`). A failure rolls
+everything back, so no group is left without its rows: `The customer group
+could not be created: <reason>. Nothing was created.`, `The category discounts
+could not be saved: <reason>. Nothing was created.` or `The authorized modules
+could not be saved. Nothing was created.`, logged as
+`customer_group_create_failed`. Logged as `customer_group_created` with the
+new `id_group` only.
 
 **Returns** - `created: true`, `id_group`, and `group`: the answer of
 `somcp_get_customer_group` for the new group, by the same function
 (`SomcpToolGetCustomerGroup::group()`). `warning`, always `The group sees
 only the home category: give it the other categories with the groups field of
-somcp_update_category, or its members see no product of them.`, followed,
-when it applies, by the sentence of `SomcpToolGetCustomerGroup::GROUPS_DISABLED`
-(a discount while customer groups are off), the sentence of
+somcp_update_category, or its members see no product of them.` (`the home
+category and <names>` when discounts opened other categories), followed, when
+it applies, by the payment modules left out of `authorized_modules`
+(`SomcpToolUpdateCustomerGroup::paymentModules()`: `The customers of this
+group no longer see these payment modules: <names>.`), the sentence of
+`SomcpToolGetCustomerGroup::GROUPS_DISABLED` (a discount or category
+discounts while customer groups are off), the sentence of
 `somcp_update_customer_group` on prices hidden while catalog mode is off, and
 `The group was created for this shop only.` in a shop of several.
 
 **Errors** - in the envelope `Nothing was created. Correct these and call
 again:`: an unknown argument; `name` missing or empty in a language being
-filled; the rules above; `category_discounts`, `authorized_modules` or
-`unauthorized_modules` given.
+filled; the rules above, the errors of the two lists worded as in
+`somcp_update_customer_group`.
 
 **Notes** - changes the shop: the assistant asks first. Not replayable: a
 second call creates a second group; when the answer is lost, read
 `somcp_list_customer_groups` first. The shop test creates a group named in
-every active language, reads it with `somcp_get_customer_group`, and removes it
-whatever happens, so the demo data keeps its three groups.
+every active language, then one with a 10 % discount on Home and every module
+but Payments by check, reads each with `somcp_get_customer_group`, and removes
+them whatever happens, so the demo data keeps its three groups.
 
 **Differences between 8.0.1 and 9.0.0** - the multistore box reads **Shop
 association** on 8.0.1, **Store association** on 9.0.0 (the tool takes no

@@ -615,10 +615,13 @@ list, whose `default_for` says which roles a group holds: say that the
 prices and discounts a visitor or a new customer sees follow the group
 chosen.
 `somcp_create_customer_group` creates a group with its name in each
-language, its discount, its price display method and Show prices, every
-installed module authorized. Say that a new group sees the home category
-only, and give it its other categories with the groups field of
-`somcp_update_category`, or its members see no product of them.
+language, its discount, its price display method and Show prices, and takes
+on the creation both lists of the update: the category discounts and the
+authorized modules, every installed module when none is given. Say that a new
+group sees the home category (and the categories given a discount) only, and
+give it its other categories with the groups field of `somcp_update_category`,
+or its members see no product of them; name the payment modules it is left
+without.
 
 ## Changing products
 

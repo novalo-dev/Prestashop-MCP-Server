@@ -418,10 +418,11 @@ class SomcpToolUpdateCustomerGroup
      * @param array<string, mixed> $arguments
      * @param int $idShop
      * @param array<int, string> $errors
+     * @param bool $create a creation, which needs a name where a change keeps the stored one
      *
      * @return array<string, mixed>|null null when the languages cannot be read
      */
-    public static function planGroup(array $arguments, int $idShop, array &$errors): ?array
+    public static function planGroup(array $arguments, int $idShop, array &$errors, bool $create = false): ?array
     {
         $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -430,7 +431,7 @@ class SomcpToolUpdateCustomerGroup
         $plan = ['languages' => $languages];
 
         // Given, a name is never empty: the core requires it.
-        $names = SomcpToolCreateProduct::texts($arguments, 'name', 'name', $languages, $errors, array_key_exists('name', $arguments));
+        $names = SomcpToolCreateProduct::texts($arguments, 'name', 'name', $languages, $errors, $create || array_key_exists('name', $arguments));
         if ($names !== null) {
             foreach ($names as $idLang => $name) {
                 $name = trim($name);

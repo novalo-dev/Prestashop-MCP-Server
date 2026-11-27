@@ -542,6 +542,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_customer_group` | ● Get a customer group | Groups › view |
 | `somcp_update_customer_group` | ✎ Change a customer group | Groups › edit |
 | `somcp_update_default_groups` | ✎ Change the default customer groups | Groups › edit |
+| `somcp_create_customer_group` | ✎ Create a customer group | Groups › add |
 
 ### 📈 Statistics
 

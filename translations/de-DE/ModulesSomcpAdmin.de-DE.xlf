@@ -1107,6 +1107,11 @@
       <source>Change the default customer groups</source>
       <target>Die Standard-Kundengruppen ändern</target>
     </trans-unit>
+    <!-- Create a customer group -->
+    <trans-unit id="158fa2016320e92ab36a2d57ee823af7" resname="Create a customer group">
+      <source>Create a customer group</source>
+      <target>Eine Kundengruppe erstellen</target>
+    </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
       <source>List return statuses</source>

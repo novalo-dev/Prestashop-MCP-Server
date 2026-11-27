@@ -65,6 +65,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_customer_group`
 - `somcp_update_customer_group`
 - `somcp_update_default_groups`
+- `somcp_create_customer_group`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
@@ -613,6 +614,11 @@ guests and of the newly registered customers, each an `id_group` of the
 list, whose `default_for` says which roles a group holds: say that the
 prices and discounts a visitor or a new customer sees follow the group
 chosen.
+`somcp_create_customer_group` creates a group with its name in each
+language, its discount, its price display method and Show prices, every
+installed module authorized. Say that a new group sees the home category
+only, and give it its other categories with the groups field of
+`somcp_update_category`, or its members see no product of them.
 
 ## Changing products
 

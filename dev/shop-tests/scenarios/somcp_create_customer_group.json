@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "nothing given: the name is required", "arguments": {}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- name: required"]},
+    {"why": "a discount above 100 percent", "arguments": {"name": {"en": "Somcp test"}, "languages": ["en"], "reduction": 101}, "expect": "error", "contains": ["- reduction: a percentage from 0 to 100"]},
+    {"why": "a price display method that is not one of the list", "arguments": {"name": {"en": "Somcp test"}, "languages": ["en"], "price_display_method": "x"}, "expect": "error", "contains": ["price_display_method", "tax_excluded", "tax_included"]},
+    {"why": "the category discounts come with part 2: the update is named", "arguments": {"name": {"en": "Somcp test"}, "languages": ["en"], "category_discounts": []}, "expect": "error", "contains": ["- category_discounts: not taken by this tool yet - create the group, then use somcp_update_customer_group"]},
+    {"why": "an item of the list given back is not a creation", "arguments": {"name": {"en": "Somcp test"}, "languages": ["en"], "id_group": 3}, "expect": "error", "contains": ["- id_group: not a field of this tool"]}
+  ]
+}

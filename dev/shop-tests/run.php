@@ -885,6 +885,70 @@ if ($updateDefaults !== null && $listRoles !== null) {
     }
 }
 
+// A customer group created (#467): named in every active language, read back
+// with somcp_get_customer_group, every installed module authorized, then
+// removed in a finally so the demo data keeps its three groups.
+$createGroup = $registry->get('somcp_create_customer_group');
+$readGroup = $registry->get('somcp_get_customer_group');
+if ($createGroup !== null && $readGroup !== null) {
+    $calls += 2;
+    $newGroupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $idNewGroup = 0;
+    try {
+        $groupNames = [];
+        foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
+            $groupNames[(string) $language['iso_code']] = 'Somcp test group';
+        }
+        $created = $newGroupCall($createGroup, ['name' => $groupNames]);
+        $idNewGroup = (int) ($created['id_group'] ?? 0);
+        $read = $idNewGroup > 0 ? $newGroupCall($readGroup, ['id_group' => $idNewGroup]) : [];
+        $installed = array_map('strval', array_column(Module::getModulesInstalled() ?: [], 'name'));
+        sort($installed);
+        $authorized = is_array($created['group']['authorized_modules'] ?? null) ? $created['group']['authorized_modules'] : [];
+        $authorized = array_map('strval', $authorized);
+        sort($authorized);
+        if (($created['created'] ?? null) !== true || $idNewGroup <= 3
+            || strpos((string) ($created['warning'] ?? ''), 'The group sees only the home category') !== 0
+            || ($created['group']['price_display_method'] ?? null) !== 'tax_excluded'
+            || ($created['group']['show_prices'] ?? null) !== true
+            || $authorized !== $installed
+            || ($read['group']['id_group'] ?? $read['id_group'] ?? null) !== $idNewGroup) {
+            $failures[] = 'somcp_create_customer_group (a group named in every language, read back): ' . json_encode([$created, $read]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_customer_group (a group named in every language, read back)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever failed above, the group made here does not stay.
+        if ($idNewGroup > 3) {
+            $left = new Group($idNewGroup);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
 // A translation pack exported (#452): the reference answered must lead to a
 // zip whose files are the XLF of the locale, read the way somcp_download_file
 // reads it; on a shop with Hummingbird, its theme wordings export too.

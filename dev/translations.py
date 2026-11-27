@@ -878,6 +878,10 @@ T = {
  "Modifier les groupes de clients par défaut",
  "Modificar los grupos de clientes por defecto",
  "Die Standard-Kundengruppen ändern"),
+"Create a customer group": (
+ "Créer un groupe de clients",
+ "Crear un grupo de clientes",
+ "Eine Kundengruppe erstellen"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",

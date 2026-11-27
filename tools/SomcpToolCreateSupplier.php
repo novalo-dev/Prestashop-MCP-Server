@@ -432,7 +432,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $iso = $iso === null ? '' : Tools::strtoupper(trim($iso));
         $idState = Validate::isStateIsoCode($iso) ? (int) State::getIdByIso($iso, (int) $country->id) : 0;
         if ($idState <= 0) {
-            $errors[] = $path . ': ' . $country->iso_code . ' has no state with the ISO code "' . $iso . '"';
+            $errors[] = SomcpTool::notFoundOf($path, 'state', (string) $country->iso_code, $iso, 'somcp_list_states', 'ISO code');
         }
 
         return $idState;

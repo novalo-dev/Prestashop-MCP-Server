@@ -1426,8 +1426,7 @@ class SomcpToolCreateProduct
             )) {
                 // A combination belongs to its product, not to the shop: the
                 // product read with somcp_get_product lists the ones it has.
-                $errors[] = $path . '.id_product_attribute: no combination of this product has the identifier '
-                    . $idAttribute . ' - find it with somcp_get_product';
+                $errors[] = SomcpTool::notFoundOf($path . '.id_product_attribute', 'combination', 'this product', $idAttribute, 'somcp_get_product');
                 continue;
             }
             // The pack table holds one row per product and combination.

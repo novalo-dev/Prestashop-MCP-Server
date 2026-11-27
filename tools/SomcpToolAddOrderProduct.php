@@ -190,8 +190,7 @@ class SomcpToolAddOrderProduct
             if ($idCombination > 0) {
                 $combination = new Combination($idCombination);
                 if (!Validate::isLoadedObject($combination) || (int) $combination->id_product !== $idProduct) {
-                    $problems[] = 'id_product_attribute: no combination of this product has the identifier '
-                        . $idCombination . ' - read them with somcp_get_product';
+                    $problems[] = SomcpTool::notFoundOf('id_product_attribute', 'combination', 'this product', $idCombination, 'somcp_get_product');
                 }
             } elseif ($hasCombinations) {
                 $problems[] = 'id_product_attribute: this product has combinations - give one, from '

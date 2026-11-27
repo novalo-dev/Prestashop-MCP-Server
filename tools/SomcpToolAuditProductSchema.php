@@ -136,8 +136,7 @@ class SomcpToolAuditProductSchema
             $problems[] = SomcpTool::notAnIdentifier('id_product_attribute');
         } elseif ($idCombination > 0 && $product !== null
             && !SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
-            $problems[] = 'id_product_attribute: no combination of this product has the identifier '
-                . $idCombination . ' - find it with somcp_get_product';
+            $problems[] = SomcpTool::notFoundOf('id_product_attribute', 'combination', 'this product', $idCombination, 'somcp_get_product');
         }
         if ($problems !== [] || $product === null) {
             return SomcpTool::refused('fetched', $problems);

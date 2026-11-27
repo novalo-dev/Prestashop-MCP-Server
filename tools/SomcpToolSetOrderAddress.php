@@ -176,8 +176,7 @@ class SomcpToolSetOrderAddress
             if (!Validate::isLoadedObject($address)
                 || (int) $address->deleted === 1
                 || (int) $address->id_customer !== (int) $order->id_customer) {
-                $problems[] = 'id_address: no address of this customer has the identifier ' . $idAddress
-                    . ' - find it with somcp_get_customer';
+                $problems[] = SomcpTool::notFoundOf('id_address', 'address', 'this customer', $idAddress, 'somcp_get_customer');
                 $problems[] = 'addresses of this customer: '
                     . json_encode(self::customerAddresses($order), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }

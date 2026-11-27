@@ -261,8 +261,7 @@ class SomcpToolSetStockQuantity
             if (!SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
                 // A combination belongs to its product, not to the shop, as
                 // somcp_get_product words it.
-                return 'id_product_attribute: no combination of this product has the identifier ' . $idCombination
-                    . ' - find it with somcp_get_stock';
+                return SomcpTool::notFoundOf('id_product_attribute', 'combination', 'this product', $idCombination, 'somcp_get_stock');
             }
 
             return '';

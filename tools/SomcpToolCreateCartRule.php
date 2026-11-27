@@ -639,8 +639,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             if ($idCombination <= 0) {
                 $errors[] = 'gift.id_product_attribute: required, this product has combinations - find them with somcp_get_product';
             } elseif (!SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
-                $errors[] = 'gift.id_product_attribute: no combination of product ' . $idProduct . ' has the identifier ' . $idCombination
-                    . ' - find it with somcp_get_product';
+                $errors[] = SomcpTool::notFoundOf('gift.id_product_attribute', 'combination', 'product ' . $idProduct, $idCombination, 'somcp_get_product');
             }
         } elseif ($idCombination !== 0) {
             $errors[] = 'gift.id_product_attribute: this product has no combinations, give 0 or leave it out';

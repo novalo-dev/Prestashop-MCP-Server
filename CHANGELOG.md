@@ -163,6 +163,14 @@ shop e-mail address.
 
 ### Changed
 
+**A combination, an address or a state that is not the right one.** A
+combination of another product, an address of another customer or a state of
+another country is now refused in the same words by every tool, with the value
+given and the tool that lists the right ones: a state refused by the
+suppliers, brand addresses, stores, contact details and tax rules now names
+somcp_list_states, and a new order given an address of another customer names
+somcp_get_customer.
+
 **Unknown countries, currencies and customer e-mails.** An unknown country,
 currency or customer e-mail is now refused with the value given and the tool
 that lists the right ones, as every other identifier. This holds for the

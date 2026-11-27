@@ -139,8 +139,7 @@ class SomcpToolGetProduct
             // describe a combination it never read.
             // A combination belongs to its product, not to the shop, as
             // somcp_create_product words it.
-            $errors[] = 'id_product_attribute: no combination of this product has the identifier '
-                . $idCombination . ' - find it with somcp_get_product';
+            $errors[] = SomcpTool::notFoundOf('id_product_attribute', 'combination', 'this product', $idCombination, 'somcp_get_product');
         }
         if ($errors !== [] || $product === null || $language === null) {
             return SomcpTool::refused('read', $errors);

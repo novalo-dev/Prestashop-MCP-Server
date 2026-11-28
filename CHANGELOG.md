@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Change a CMS page.** The new tool somcp_update_cms_page does what Edit then
+Save do on a page of Design > Pages for its Title, Page content, Page category
+and Displayed, per language for the texts, so the delivery, legal notice and
+terms pages of a new shop can be written from the chat. The content is cleaned
+as the back office cleans it, the read given back changes nothing, and the
+answer warns when a hidden page leaves its links leading nowhere. It needs the
+new permission mcp.content.write, shown as Pages - changes on the consent
+screen; somcp_update_cms_seo now names this tool for those four fields.
+
 **Change the shop logos.** The new tool somcp_update_logos does what choosing a
 file then Save do on the Logo panel of Design > Theme & Logo: the Header logo,
 the Mail logo and the Invoice logo, each from an address or an image sent in

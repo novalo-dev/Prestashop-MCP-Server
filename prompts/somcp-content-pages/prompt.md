@@ -9,6 +9,7 @@ hidden or moved at any time.
 - `somcp_ping`
 - `somcp_list_cms_pages`
 - `somcp_get_cms_page`
+- `somcp_update_cms_page`
 
 ## Know which shop you are in
 
@@ -37,6 +38,21 @@ in mind.
    whether it is displayed. When asked what a page says, quote its content
    rather than paraphrasing it.
 
+## Changing a page
+
+`somcp_update_cms_page` changes the **Title**, the **Page content**, the
+**Page category** and **Displayed** of one page, in the languages filled,
+only what is given.
+
+- Read the page with `somcp_get_cms_page` first, then show the merchant the
+  new title or text and wait for their yes before calling: the text is saved
+  as shown.
+- A page category comes from `categories[]` of `somcp_list_cms_pages`.
+- Hiding a page (`active: false`) breaks its links in the footer and the
+  menu: say so before.
+- `changed: false` means the page already held every value: nothing was
+  written.
+
 ## What the fields mean
 
 - **Title** (`title`) is the page's title, shown on the page itself.
@@ -57,6 +73,6 @@ in mind.
 
 ## Do not use when
 
-- The merchant wants to change a page's title, meta title, meta description
-  or URL - that is `somcp_update_cms_seo`, in the prompt for auditing SEO.
+- The merchant wants to change a page's meta title, meta description, URL or
+  indexation - that is `somcp_update_cms_seo`, in the prompt for auditing SEO.
 - The merchant asks about product or category texts - that is the catalogue.

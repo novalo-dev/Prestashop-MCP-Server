@@ -4264,6 +4264,84 @@ if ($getCarrier !== null && $updateCarrier !== null) {
     }
 }
 
+// A page changed and put back (#484): the JSON scenario cannot give a read
+// back. Demo page 5 gets a new title and content in the default language,
+// then its first read is given back whole, which puts both back.
+$updateCmsPage = $registry->get('somcp_update_cms_page');
+$getCmsPage = $registry->get('somcp_get_cms_page');
+if ($updateCmsPage !== null && $getCmsPage !== null) {
+    $calls += 4;
+    $pageCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text, json_decode(trim($text), true)];
+    };
+    $pageBefore = null;
+    try {
+        [$result, , $pageBefore] = $pageCall($getCmsPage, ['id_cms' => 5]);
+        $iso = (string) ($pageBefore['language'] ?? '');
+        if (!empty($result['isError']) || $iso === '') {
+            $failures[] = 'somcp_update_cms_page (reading page 5 first): ' . excerpt($result);
+            $pageBefore = null;
+        } else {
+            [$result, $text] = $pageCall($updateCmsPage, [
+                'id_cms' => 5,
+                'languages' => [$iso],
+                'title' => [$iso => 'somcp test page'],
+                'content' => [$iso => '<p>somcp test content</p>'],
+            ]);
+            if (!empty($result['isError']) || strpos($text, '"changed": true') === false || strpos($text, '"field": "title"') === false
+                || strpos($text, '"field": "content"') === false) {
+                $failures[] = 'somcp_update_cms_page (a new title and content): expected both changed - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_page (a new title and content)');
+            }
+            [$result, $text] = $pageCall($getCmsPage, ['id_cms' => 5]);
+            if (!empty($result['isError']) || strpos($text, 'somcp test page') === false || strpos($text, 'somcp test content') === false) {
+                $failures[] = 'somcp_update_cms_page (page 5 read again): expected the new title and content - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_page (page 5 read again with its new texts)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_cms_page (a page changed): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if (is_array($pageBefore)) {
+            // seo_title follows the Title when no Meta title is set, so the
+            // read of the start no longer holds what the shop works out now.
+            $restore = $pageBefore;
+            unset($restore['seo_title']);
+            [$result] = $pageCall($updateCmsPage, $restore);
+            [, , $pageAfter] = $pageCall($getCmsPage, ['id_cms' => 5]);
+            // The content compared as text: the shop's cleaning may write the
+            // same HTML a little differently.
+            $plain = static function ($html): string {
+                return trim((string) preg_replace('/\s+/', ' ', strip_tags((string) $html)));
+            };
+            if (!empty($result['isError']) || ($pageAfter['title'] ?? null) !== $pageBefore['title']
+                || $plain($pageAfter['content'] ?? null) !== $plain($pageBefore['content'])) {
+                $failures[] = 'somcp_update_cms_page (the first read given back): expected page 5 as at the start - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_page (the first read given back, page 5 as at the start)');
+            }
+        }
+    }
+}
+
 // The mail logo changed and put back (#483): the JSON scenario cannot send
 // an image nor read the files it leaves. The header logo of the demo is never
 // touched, since the shop deletes the file a logo replaces: the mail logo,

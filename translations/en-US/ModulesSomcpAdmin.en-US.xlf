@@ -947,6 +947,11 @@
       <source>Statistics - read</source>
       <target>Statistics - read</target>
     </trans-unit>
+    <!-- Pages - changes -->
+    <trans-unit id="cfcfc41e086aff2aea7bd8f5cb23e195" resname="Pages - changes">
+      <source>Pages - changes</source>
+      <target>Pages - changes</target>
+    </trans-unit>
     <!-- Pages - read -->
     <trans-unit id="213abf6715423d2ea408dd36981f1eee" resname="Pages - read">
       <source>Pages - read</source>
@@ -2087,6 +2092,11 @@
       <source>Generate the llms.txt file</source>
       <target>Generate the llms.txt file</target>
     </trans-unit>
+    <!-- Change a CMS page -->
+    <trans-unit id="3810a7de2adbc8626ee181c2bffc0c09" resname="Change a CMS page">
+      <source>Change a CMS page</source>
+      <target>Change a CMS page</target>
+    </trans-unit>
     <!-- Change the SEO of a CMS page -->
     <trans-unit id="39a2ae54e85acae56f94b93320441737" resname="Change the SEO of a CMS page">
       <source>Change the SEO of a CMS page</source>
@@ -2116,6 +2126,11 @@
     <trans-unit id="d84c4cdf88befa8894e45a39653b1c7b" resname="List best-selling products">
       <source>List best-selling products</source>
       <target>List best-selling products</target>
+    </trans-unit>
+    <!-- Change the content pages of this shop: their titles, texts, categories and whether they are displayed -->
+    <trans-unit id="200ce8e2070f3831eab4022a9aec697c" resname="Change the content pages of this shop: their titles, texts, categories and whether they are displayed">
+      <source>Change the content pages of this shop: their titles, texts, categories and whether they are displayed</source>
+      <target>Change the content pages of this shop: their titles, texts, categories and whether they are displayed</target>
     </trans-unit>
     <!-- Read the content pages of this shop: their titles, addresses and categories, displayed or not -->
     <trans-unit id="610fc39055cd434848f7a7892e6833aa" resname="Read the content pages of this shop: their titles, addresses and categories, displayed or not">
@@ -2452,10 +2467,10 @@
       <source>Read content pages</source>
       <target>Read content pages</target>
     </trans-unit>
-    <!-- List and read the CMS pages of the PrestaShop shop. -->
-    <trans-unit id="e33bce61c60fa7091d9064f83edd80be" resname="List and read the CMS pages of the PrestaShop shop.">
-      <source>List and read the CMS pages of the PrestaShop shop.</source>
-      <target>List and read the CMS pages of the PrestaShop shop.</target>
+    <!-- List, read and change the CMS pages of the PrestaShop shop. -->
+    <trans-unit id="fed4306ceefac43fa99ef1cec211b98f" resname="List, read and change the CMS pages of the PrestaShop shop.">
+      <source>List, read and change the CMS pages of the PrestaShop shop.</source>
+      <target>List, read and change the CMS pages of the PrestaShop shop.</target>
     </trans-unit>
     <!-- Title of a page -->
     <trans-unit id="f8c68565d064bb35fafebf69ff32f56f" resname="Title of a page">

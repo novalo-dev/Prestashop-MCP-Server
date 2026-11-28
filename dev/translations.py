@@ -750,6 +750,10 @@ T = {
  "Statistiques - lecture",
  "Estadísticas - lectura",
  "Statistiken - lesen"),
+"Pages - changes": (
+ "Pages - modifications",
+ "Páginas - cambios",
+ "Seiten - Änderungen"),
 "Pages - read": (
  "Pages - lecture",
  "Páginas - lectura",
@@ -1662,6 +1666,10 @@ T = {
  "Générer le fichier llms.txt",
  "Generar el archivo llms.txt",
  "Die Datei llms.txt erzeugen"),
+"Change a CMS page": (
+ "Modifier une page CMS",
+ "Modificar una página CMS",
+ "Eine CMS-Seite ändern"),
 "Change the SEO of a CMS page": (
  "Modifier le SEO d'une page CMS",
  "Cambiar el SEO de una página CMS",
@@ -1686,6 +1694,10 @@ T = {
  "Lister les meilleures ventes",
  "Listar los productos más vendidos",
  "Meistverkaufte Produkte auflisten"),
+"Change the content pages of this shop: their titles, texts, categories and whether they are displayed": (
+ "Modifier les pages de contenu de cette boutique : leurs titres, textes, catégories et leur affichage",
+ "Cambiar las páginas de contenido de esta tienda: sus títulos, textos, categorías y si se muestran",
+ "Die Inhaltsseiten dieses Shops ändern: ihre Titel, Texte, Kategorien und ob sie angezeigt werden"),
 "Read the content pages of this shop: their titles, addresses and categories, displayed or not": (
  "Lire les pages de contenu de cette boutique : leurs titres, adresses et catégories, affichées ou non",
  "Leer las páginas de contenido de esta tienda: sus títulos, direcciones y categorías, mostradas o no",
@@ -1954,10 +1966,10 @@ T = {
  "Lire les pages de contenu",
  "Leer las páginas de contenido",
  "Inhaltsseiten lesen"),
-"List and read the CMS pages of the PrestaShop shop.": (
- "Lister et lire les pages CMS de la boutique PrestaShop.",
- "Listar y leer las páginas CMS de la tienda PrestaShop.",
- "Die CMS-Seiten des PrestaShop-Shops auflisten und lesen."),
+"List, read and change the CMS pages of the PrestaShop shop.": (
+ "Lister, lire et modifier les pages CMS de la boutique PrestaShop.",
+ "Listar, leer y modificar las páginas CMS de la tienda PrestaShop.",
+ "Die CMS-Seiten des PrestaShop-Shops auflisten, lesen und ändern."),
 "Title of a page": (
  "Titre d'une page",
  "Título de una página",

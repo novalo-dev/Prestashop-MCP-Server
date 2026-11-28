@@ -9188,6 +9188,39 @@ Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `lin
 
 **Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only (field and column `cms_lang.meta_keywords`): `meta_keywords` is `null` on 9.0.0. The content is a `longtext` column on both, returned whole.
 
+#### `somcp_update_cms_page`
+**State**: written · [issue #484](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/484)
+**Nature**: `acts(EDIT, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - changes a page of **Design > Pages**, as **Edit** then **Save** do, for the fields `somcp_update_cms_seo` leaves to the back office: **Title**, **Page content**, **Page category** and **Displayed**, per language for the texts. Only what is given changes.
+
+**Do not use for** - the **Meta title**, **Meta description**, **Friendly URL** and **Indexation** (→ `somcp_update_cms_seo`); creating or deleting a page.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cms` | | integer | yes | from `somcp_list_cms_pages`; the page loaded by `SomcpToolUpdateCmsSeo::page()` and refused with the same lines as `somcp_update_cms_seo` |
+| `languages` | | array | no | as `somcp_update_cms_seo` (`withLanguage()`, public): the languages the texts are given in |
+| `title` | **Title** | object or string | no | per language, keyed by ISO code, through `SomcpToolCreateProduct::texts()`; trimmed; empty: `title: required in the default language <iso>` (another language: `title (<iso>): a text, never empty`); `Validate::isGenericName()`: `title (<iso>): no <>={}`; 255 characters (`SomcpTool::columnSize()`) |
+| `content` | **Page content** | object or string | no | per language, keyed by ISO code; cleaned and checked by `SomcpToolCreateProduct::html($html, 'content (<iso>)', $errors)`, the rule of product descriptions; the stored HTML given back is no change; an empty text empties the page in that language |
+| `id_cms_category` | **Page category** | integer | no | an `id_cms_category` of `somcp_list_cms_pages` (`SomcpToolListCmsPages::categories()`, public): `SomcpTool::notAnIdentifier('id_cms_category')`, `SomcpTool::notFound('id_cms_category', 'page category', <id>, 'somcp_list_cms_pages')` |
+| `active` | **Displayed** | boolean | no | `active: true or false` |
+| `language` | | string | no | as `somcp_get_cms_page` returns it, as in `somcp_update_cms_seo` |
+| `meta_title`, `meta_description`, `link_rewrite`, `meta_keywords`, `indexation`, `position`, `seo_title`, `url` | as read | | no | the read of `somcp_get_cms_page` given back whole: equal to the read, taken out; different, refused through `SomcpToolUpdateCmsSeo::kept()` (public) with `<field>: not changed by this tool - change it with somcp_update_cms_seo` for the SEO fields, `the merchant changes it in Design > Pages` for `position`, `worked out by the shop ...` for `seo_title` and `url` |
+
+Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call again:` (`SomcpTool::refused('changed', $problems)`), every problem at once: `id_cms` missing or unknown, an unknown category, a field of the read that differs, the rules above. A failed save: `The page could not be changed: <reason>. Read it with somcp_get_cms_page before calling again.`, logged `cms_page_update_failed`.
+
+**Then** - a value equal to the stored one is no change; nothing to change: `changed: false`, `reason` `The page already holds every value given. Nothing was written.`, `page` (the read). Otherwise the texts set for the languages given, the others kept, `validateFields(false)` and `validateFieldsLang(false)` before `CMS::update()`, as `EditCmsPageHandler` does, for the shop of the token. A new **Page category**: the page put last of it (`CMS::getLastPosition()`), as `CMS::add()` places a new page, since the old position number could tie with a page already there, and the positions of the category it leaves cleaned (`CMS::cleanPositions()`). Logged `cms_page_updated` with the `id_cms` and the names of the fields changed, never the texts.
+
+**Returns** - `changed`, `id_cms`, `changes` (`{field, language, old, new}` for the texts, the content given as its length in characters before and after, not the HTML; `{field, old, new}` for the others), `page` (as `somcp_get_cms_page` answers it in the first language filled, after the write), and `warning`, each sentence when it applies: `active` false, `The page is no longer shown on the storefront: its links in the footer and the menu lead to a page not found.`; `content` emptied in a language, `The page shows only its title in <iso>.`; the content cleaned, `Some HTML of the content was removed by the shop's cleaning: read the page again to see what was kept.`; the shop one of several, `The texts changed for this shop only; the category and Displayed are shared by every shop of the page.`
+
+**Notes** - changes the shop: the assistant asks first, showing the new text. Replayable: a second identical call changes nothing. Needs the scope `mcp.content.write` (**Pages - changes**), the first write of the section: a client already connected accepts it at its next connection.
+
+**Differences between 8.0.1 and 9.0.0** - none for these four fields; `meta_keywords` of the read exists on 8.0.1 only, taken out like the other SEO fields.
+
 ### Modules
 
 The modules present on the shop, their state and version.
@@ -9741,7 +9774,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 **Does** - changes the meta title, meta description, friendly URL and indexing flag of one CMS page.
 
-**Do not use for** - the page's content (a Content tool), or a product, category or brand (→ their update tools).
+**Do not use for** - the page's Title, content, category or Displayed (→ `somcp_update_cms_page`), or a product, category or brand (→ their update tools).
 
 **Parameters**
 
@@ -9755,7 +9788,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `meta_keywords` | object | no | per ISO code, comma separated; the form's **Meta keywords**, PrestaShop 8 only: a value is refused on 9, which has none, and `null` is skipped |
 | `indexation` | boolean | no | whether search engines may index the page (**Indexation by search engines**) |
 | `language` | string | no | as `somcp_get_cms_page` returns it: the language its plain texts are in, read as `languages: ["<iso>"]` when `languages` is left out; next to a `languages` that does not hold it, refused as `language: not one of languages`; one the shop does not have is refused once, with the shop's languages, as every tool words it (`language: not one of the shop's languages, which are en, fr - leave language out for the shop default`) |
-| `title`, `content`, `id_cms_category`, `active`, `position`, `seo_title`, `url` | as read | no | what `somcp_get_cms_page` returns and this tool does not write, accepted unchanged so a page read there can be given back whole; a different value is refused with where it is changed (`not changed by this tool - the merchant changes it in Design > Pages > Edit`, or `worked out by the shop from the Meta title and the Title` / `from the Friendly URL`) |
+| `title`, `content`, `id_cms_category`, `active`, `position`, `seo_title`, `url` | as read | no | what `somcp_get_cms_page` returns and this tool does not write, accepted unchanged so a page read there can be given back whole; a different value is refused with where it is changed (`not changed by this tool - change it with somcp_update_cms_page` for `title`, `content`, `id_cms_category` and `active`, `not changed by this tool - the merchant changes it in Design > Pages > Edit` for `position`, or `worked out by the shop from the Meta title and the Title` / `from the Friendly URL`) |
 
 **Returns** - `changed`, `id_cms`; when something changed, `changes` (each a `field`, named `<field> (<iso>)` for a text, its `old` and `new` value, as the other update tools give them), `seo_warnings` (per ISO code) and `page` (`id_cms`, `active`, `indexation`, and per language changed its `title`, `meta_title`, `seo_title` - the title search engines read -, `meta_description`, `meta_keywords` (`null` on PrestaShop 9) and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
 
@@ -11217,11 +11250,11 @@ request: one line, stroke paths on a 24 px grid.
 
 **Title** - Read content pages
 
-**Description** - List and read the CMS pages of the PrestaShop shop.
+**Description** - List, read and change the CMS pages of the PrestaShop shop.
 
 **Arguments** - `page` (title of a page).
 
-**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`, `somcp_update_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 

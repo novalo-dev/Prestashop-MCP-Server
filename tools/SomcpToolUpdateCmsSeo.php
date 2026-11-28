@@ -66,10 +66,10 @@ class SomcpToolUpdateCmsSeo
      *                            given back as is
      */
     private const KEPT_AS_READ = [
-        'title' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
-        'content' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
-        'id_cms_category' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
-        'active' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
+        'title' => 'not changed by this tool - change it with somcp_update_cms_page',
+        'content' => 'not changed by this tool - change it with somcp_update_cms_page',
+        'id_cms_category' => 'not changed by this tool - change it with somcp_update_cms_page',
+        'active' => 'not changed by this tool - change it with somcp_update_cms_page',
         'position' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
         'seo_title' => 'worked out by the shop from the Meta title and the Title',
         'url' => 'worked out by the shop from the Friendly URL',
@@ -227,7 +227,8 @@ class SomcpToolUpdateCmsSeo
      * languages to fill, or the reason it does not fit them.
      *
      * The plain texts of that answer are in this one language, so it is what
-     * they are filled in when no languages are given.
+     * they are filled in when no languages are given. Public because
+     * somcp_update_cms_page takes the same read back the same way.
      *
      * @param array<string, mixed> $arguments
      * @param int $idShop
@@ -235,7 +236,7 @@ class SomcpToolUpdateCmsSeo
      *
      * @return array<string, mixed>
      */
-    private static function withLanguage(array $arguments, int $idShop, array &$errors): array
+    public static function withLanguage(array $arguments, int $idShop, array &$errors): array
     {
         if (!array_key_exists('language', $arguments)) {
             return $arguments;
@@ -270,17 +271,21 @@ class SomcpToolUpdateCmsSeo
      *
      * Compared with the page read exactly as somcp_get_cms_page reads it, in
      * the language it was read in, rather than a second reading of it here.
+     * Public because somcp_update_cms_page keeps the fields this tool writes
+     * the same way, with its own lines.
      *
      * @param array<string, mixed> $arguments
      * @param CMS $cms
      * @param int $idShop
      * @param array<int, string> $errors
+     * @param array<string, string>|null $kept the fields kept and where they are changed, KEPT_AS_READ by default
      *
      * @return void
      */
-    private static function kept(array $arguments, CMS $cms, int $idShop, array &$errors): void
+    public static function kept(array $arguments, CMS $cms, int $idShop, array &$errors, ?array $kept = null): void
     {
-        if (array_intersect(array_keys(self::KEPT_AS_READ), array_keys($arguments)) === []) {
+        $kept ??= self::KEPT_AS_READ;
+        if (array_intersect(array_keys($kept), array_keys($arguments)) === []) {
             return;
         }
         // The language of the answer given back; the shop default otherwise,
@@ -295,9 +300,9 @@ class SomcpToolUpdateCmsSeo
         }
         [$idLang, $iso] = $language;
         $read = SomcpToolGetCmsPage::cmsPage($cms, $idLang, $iso, $idShop);
-        foreach (self::KEPT_AS_READ as $field => $where) {
+        foreach ($kept as $field => $where) {
             // Compared as JSON, the shape both tools speak.
-            if (array_key_exists($field, $arguments) && json_encode($arguments[$field]) !== json_encode($read[$field])) {
+            if (array_key_exists($field, $arguments) && json_encode($arguments[$field]) !== json_encode($read[$field] ?? null)) {
                 $errors[] = $field . ': ' . $where;
             }
         }

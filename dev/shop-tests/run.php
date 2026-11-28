@@ -4512,6 +4512,12 @@ if ($updateLogos !== null && $getTheme !== null && function_exists('imagepng')) 
 
         return [$result, $text, json_decode(trim($text), true)];
     };
+    // What the shop held before the block, so the cleanup removes only what
+    // the test wrote: a mail logo set before it stays, file and row.
+    $filesBefore = glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: [];
+    $rowsBefore = array_map('intval', array_column(Db::getInstance()->executeS(
+        'SELECT `id_configuration` FROM `' . _DB_PREFIX_ . 'configuration` WHERE `name` = \'PS_LOGO_MAIL\''
+    ) ?: [], 'id_configuration'));
     $written = [];
     try {
         [$result, , $themeBefore] = $logoCall($getTheme, []);
@@ -4531,7 +4537,7 @@ if ($updateLogos !== null && $getTheme !== null && function_exists('imagepng')) 
             $failures[] = 'somcp_update_logos (a PNG mail logo): the PNG was not deposited - ' . $entered;
         } else {
             [$result, $text] = $logoCall($updateLogos, ['mail' => ['upload_ref' => $reference]]);
-            $written = glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: [];
+            $written = array_values(array_diff(glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: [], $filesBefore));
             if (!empty($result['isError']) || strpos($text, '"changed": true') === false || strpos($text, '"mail"') === false
                 || strpos($text, 'The e-mails now carry this logo instead of the header logo.') === false) {
                 $failures[] = 'somcp_update_logos (a PNG mail logo): expected it written, with the warning - ' . excerpt($result);
@@ -4555,10 +4561,17 @@ if ($updateLogos !== null && $getTheme !== null && function_exists('imagepng')) 
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_logos (the mail logo changed): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
-        foreach (array_merge($written, glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: []) as $file) {
+        // The files the block added, even when it stopped before reading
+        // them: those of the shop before it are never in the list.
+        foreach (array_diff(array_merge($written, glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: []), $filesBefore) as $file) {
             @unlink($file);
         }
-        Db::getInstance()->delete('configuration', '`name` = \'PS_LOGO_MAIL\'');
+        $rowsAdded = 'SELECT `id_configuration` FROM `' . _DB_PREFIX_ . 'configuration` WHERE `name` = \'PS_LOGO_MAIL\'';
+        foreach (Db::getInstance()->executeS($rowsAdded) ?: [] as $row) {
+            if (!in_array((int) $row['id_configuration'], $rowsBefore, true)) {
+                Db::getInstance()->delete('configuration', '`id_configuration` = ' . (int) $row['id_configuration']);
+            }
+        }
         Configuration::updateValue('PS_IMG_UPDATE_TIME', $timeBefore, false, $idShopGroup, $idShop);
         Configuration::resetStaticCache();
     }

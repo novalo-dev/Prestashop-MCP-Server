@@ -69,7 +69,7 @@ abstract class SomcpSettingsController extends ModuleAdminController
             $idItem = (int) Tab::getIdFromClassName(Somcp::SETTINGS_ITEM);
             $own = new Tab((int) Tab::getIdFromClassName(substr(static::class, 0, -strlen('Controller'))));
             $fromMenu = $idItem > 0 && (int) $own->id_parent === $idItem;
-            if ($fromMenu && $this->module instanceof Somcp) {
+            if ($fromMenu) {
                 $this->module->installTabs();
             }
 

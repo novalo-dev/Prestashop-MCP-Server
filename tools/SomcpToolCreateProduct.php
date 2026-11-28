@@ -3159,6 +3159,30 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * The formats the shop writes every image in, as ImageFormatConfiguration::getGenerationFormats() lists them.
+     *
+     * PrestaShop 8.1 added image formats besides JPEG, chosen in the
+     * settings; the JPEG is always made, the others when switched on. Public
+     * because somcp_update_logos writes the logos of the shop in the same
+     * formats as the thumbnails of a product.
+     *
+     * @return array<int, string>
+     */
+    public static function imageFormats(): array
+    {
+        $formats = ['jpg'];
+        if (class_exists('PrestaShop\PrestaShop\Core\Image\ImageFormatConfiguration')) {
+            foreach (explode(',', (string) Configuration::get('PS_IMAGE_FORMAT')) as $format) {
+                if (in_array($format, ['png', 'webp', 'avif'], true) && !in_array($format, $formats, true)) {
+                    $formats[] = $format;
+                }
+            }
+        }
+
+        return $formats;
+    }
+
+    /**
      * Every thumbnail of the image types of one kind of object, as the back office makes them.
      *
      * @param string $source the original, already written as JPEG
@@ -3169,16 +3193,7 @@ class SomcpToolCreateProduct
      */
     protected static function thumbnails(string $source, string $path, string $for = 'products'): void
     {
-        // PrestaShop 8.1 added image formats besides JPEG, chosen in the
-        // settings; the JPEG is always made, the others when switched on.
-        $formats = ['jpg'];
-        if (class_exists('PrestaShop\PrestaShop\Core\Image\ImageFormatConfiguration')) {
-            foreach (explode(',', (string) Configuration::get('PS_IMAGE_FORMAT')) as $format) {
-                if (in_array($format, ['png', 'webp', 'avif'], true)) {
-                    $formats[] = $format;
-                }
-            }
-        }
+        $formats = self::imageFormats();
 
         foreach (ImageType::getImagesTypes($for, true) ?: [] as $type) {
             foreach ($formats as $format) {

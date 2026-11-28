@@ -580,6 +580,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_menu_link` | ✎ Change a main menu custom link | Module Manager › edit |
 | `somcp_get_theme` | ● Get the theme and page layouts | Theme & Logo › view |
 | `somcp_update_theme_setting` | ✎ Change the layout of a page | Theme & Logo › edit |
+| `somcp_update_logos` | ✎ Change the shop logos | Theme & Logo › edit |
 
 ### ⚙️ System
 

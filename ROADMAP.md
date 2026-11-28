@@ -40,10 +40,11 @@ merchant does it:
   deleted, the search engines are read, added, changed and deleted, and the
   schema of URLs, Accented URL, the canonical redirect and the attributes in
   the product meta title are read and changed.
-- **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
-  never the parent theme or its templates, and the native modules of the
-  storefront those themes show - the slider, the home texts, the footer links,
-  the newsletter block and the like.
+- **Appearance**: the logos of the shop are read and changed. Next, the
+  `custom.css` of a child theme of Classic or Hummingbird, never the parent
+  theme or its templates, and the native modules of the storefront those
+  themes show - the slider, the home texts, the footer links, the newsletter
+  block and the like.
 - **E-mails and preferences**: the e-mail settings are read and changed, the
   SMTP password and the DKIM key staying with the merchant; the order, customer
   and product settings are read and changed, with the customer groups, also

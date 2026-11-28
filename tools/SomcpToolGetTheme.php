@@ -218,12 +218,14 @@ class SomcpToolGetTheme
      *
      * The mail and invoice logos are optional: the shop prints the header logo
      * in their place, which the answer says rather than repeating it.
+     * Public because somcp_update_logos compares what is given back with
+     * them and answers with them once it has written.
      *
      * @param int $idShop
      *
      * @return array<string, array{download_ref:string}|bool|null>
      */
-    private static function logos(int $idShop): array
+    public static function logos(int $idShop): array
     {
         $logos = [];
         foreach (array_keys(SomcpDownload::SHOP_LOGOS) as $field) {

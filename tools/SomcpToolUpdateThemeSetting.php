@@ -52,8 +52,8 @@ class SomcpToolUpdateThemeSetting
                 . 'Save. page and layout come from pages[].page and available_layouts[].layout of somcp_get_theme: '
                 . 'never guess them. Confirm the new layout with the merchant before calling. Every other page keeps '
                 . 'its setting. Not to be retried: if the answer is lost, read somcp_get_theme before anything else. '
-                . 'Do not use it to switch themes or upload a logo; for the title or URL of a page use '
-                . 'somcp_update_meta_page.',
+                . 'Do not use it to switch themes; for a logo use somcp_update_logos, for the title or URL of a '
+                . 'page somcp_update_meta_page.',
             [
                 'type' => 'object',
                 'properties' => [

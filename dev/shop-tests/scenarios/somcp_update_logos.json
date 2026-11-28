@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "no logo given changes nothing", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written."]},
+    {"why": "a logo with neither an address nor a reference is refused, naming both", "arguments": {"header": {}}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- header: the public https address of the header logo (url), or the upload_ref of a file on the shop"]},
+    {"why": "an address that is not https is refused before anything is written", "arguments": {"mail": {"url": "http://example.com/a.png"}}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- mail: only public https addresses are accepted"]},
+    {"why": "the favicon is refused, naming the screen that changes it", "arguments": {"favicon": {"url": "https://example.com/f.ico"}}, "expect": "error", "contains": ["- favicon: an .ico file, changed in Design > Theme & Logo only"]},
+    {"why": "a misspelt field is refused", "arguments": {"x": 1}, "expect": "error", "contains": ["- x: not a field of this tool"]}
+  ]
+}

@@ -9498,7 +9498,7 @@ Classic 2.0.6 on 8.0.1, 3.0.2 on 9.0.0; 9.0.0 also ships **Hummingbird** (instal
 
 **Does** - sets the layout of one page of the theme of the token's shop, as one row of **Design > Theme & Logo > Choose layouts** followed by **Save** does. Every other page keeps its setting.
 
-**Do not use for** - installing or switching themes; uploading a logo; the meta title or URL of a page (→ `somcp_update_meta_page`); reading the layouts (→ `somcp_get_theme`).
+**Do not use for** - installing or switching themes; changing a logo (→ `somcp_update_logos`); the meta title or URL of a page (→ `somcp_update_meta_page`); reading the layouts (→ `somcp_get_theme`).
 
 **Parameters**
 
@@ -9514,6 +9514,34 @@ Classic 2.0.6 on 8.0.1, 3.0.2 on 9.0.0; 9.0.0 also ships **Hummingbird** (instal
 **Notes** - the core setter `Theme::setPageLayouts()` replaces the whole of `theme_settings.layouts`, and the screen always sends every page: the tool reads `getPageLayouts()`, sets the one page and hands the whole array back, so no other page loses its setting, and a page with no stored value gets one only when it is the page asked. The theme is loaded as `somcp_get_theme` loads it (`ThemeManagerBuilder::buildRepository()` for the token's shop), saved by `ThemeManager::saveTheme()` from `ThemeManagerBuilder::build()`, which writes the token's shop's own `config/themes/<theme>/shop<id>.json` and no other shop's, then the Smarty cache is cleared, as `ThemePageLayoutsCustomizer::customize()` does. Refused in demo mode (`_PS_MODE_DEMO_`), as the back office. One page per call; not replayable: on a lost answer, read `somcp_get_theme`. Other theme settings (logos, switching or deleting themes, the `ps_themecusto` tabs) are out of scope on purpose.
 
 Same form, field names and four layouts on Classic on 8.0.1 (2.0.6) and 9.0.0 (3.0.2). The page titles differ in places (**Best sales** on 8.0.1, **Best sellers** on 9.0.0): `page` is the stable name, never the title.
+
+#### `somcp_update_logos`
+**State**: written · [issue #483](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/483)
+**Nature**: `acts(EDIT, 'AdminThemes')` · **Scope**: `mcp.appearance.write`
+
+**Does** - changes the logos of the panel **Logo** of **Design > Theme & Logo**, as choosing a file then **Save** does there: the **Header logo**, the **Mail logo** and the **Invoice logo**, each by `url` or `upload_ref`, as every image of the module is given. They are the `logos` `somcp_get_theme` reads (a `download_ref` each), so a read given back changes nothing.
+
+**Do not use for** - the logo of a carrier (→ `somcp_update_carrier`), of a brand or a supplier (→ their own tools); the **Favicon**, which takes an `.ico` file, a type the module never takes in (`SomcpUpload::typeOf()`), and an **SVG** header logo: both stay with the back office (decision of 2026-11-28).
+
+**Parameters** - all optional; none given, or only what the shop holds: `changed: false`.
+
+| Name | On screen | Type | Role |
+|---|---|---|---|
+| `header` | **Header logo** | object | `SomcpUpload::schema()`, read with `SomcpUpload::argument()`; JPEG, PNG, GIF or WebP; its own `download_ref` given back alone is no change (`SomcpUpload::same($given, 'shop_logo', 'header')`) |
+| `mail` | **Mail logo** | object | as `header`, of the mail logo; `null` given back as read is no change |
+| `invoice` | **Invoice logo** | object | as `header`, of the invoice logo; `null` given back as read is no change |
+
+`favicon`, `mail_uses_header` and `invoice_uses_header` given back as read are taken out; `favicon` with a `url` or an `upload_ref`: `favicon: an .ico file, changed in Design > Theme & Logo only`; `mail_uses_header` or `invoice_uses_header` that differs: `worked out by the shop, so it is not written here` (`SomcpTool::unknownFields()` with them in `$computed`). Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call again:` (`SomcpTool::refused('changed', $problems)`), every problem at once: an image refused or not reachable (`<field>: <reason>`, fetched through `SomcpUpload::fetchImage()` before anything is written, so no logo changes while another is refused), `favicon` given, an unknown argument. In demo mode, as the back office: `This shop runs in demo mode, where the logos cannot be changed. Nothing was changed.` A failure while writing: `SomcpToolUpdateGeneralSettings::failed($saved, '<field> could not be saved', ...)`, `The logos could not be changed: ...`, naming the logos already saved and `somcp_get_theme`, logged `logos_update_failed`.
+
+**Then** - `LogoUploader::update()` takes its file through `move_uploaded_file()`, which refuses a file the module already holds, so the tool writes the same files itself: `PS_IMG_UPDATE_TIME` set to the time of the call for the shop of the token, as `UploadLogosHandler::handle()` does on both versions, so the new files get new names; then, in the order of the screen, for each logo given, the files written in `img/` under the name of `LogoUploader::getLogoName()` (`logo`, `logo_mail` or `logo_invoice`, `-`, the time, the shop number once there are several shops), one per format of `SomcpToolCreateProduct::imageFormats()` (the JPEG always, and the formats of `PS_IMAGE_FORMAT` on 8.1 and later, as `ImageFormatConfiguration::getGenerationFormats()`), by `ImageManager::resize()`; `PS_LOGO`, `PS_LOGO_MAIL` or `PS_LOGO_INVOICE` updated for the shop of the token with the `.jpg` name; the old file removed unless another row of `configuration` (another shop, its group or the whole installation) still names it, the rule of `LogoUploader::update()`; for the header, `SHOP_LOGO_WIDTH` and `SHOP_LOGO_HEIGHT` from `getimagesize()` of the new file, as `updateHeader()` does. Logged `logos_updated` with the names of the logos changed.
+
+**Returns** - `changed`, `changes` (the names of the logos written), `logos` (as `somcp_get_theme` answers them, after the write, through the public `SomcpToolGetTheme::logos()`), and `warning`, each sentence when it applies: `mail` or `invoice` written while the header logo stood in for it, `The <e-mails / invoices> now carry this logo instead of the header logo.`; the shop one of several, `The logos changed for this shop only.`
+
+**Notes** - changes the shop: the assistant asks first, showing the image. Replayable: the read given back changes nothing.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 writes one file per format of **Image Settings**, 8.0.1 one `.jpg`; the rest is the same.
 
 ### System
 
@@ -11221,7 +11249,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - none.
 
-**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_update_theme_setting`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_update_theme_setting`, `somcp_update_logos`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 

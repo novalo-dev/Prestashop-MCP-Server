@@ -13,6 +13,7 @@ any time.
 - `somcp_update_menu_link`
 - `somcp_get_theme`
 - `somcp_update_theme_setting`
+- `somcp_update_logos`
 - `somcp_list_categories`
 - `somcp_list_cms_pages`
 
@@ -111,9 +112,19 @@ each page.
 - `logos.mail` or `logos.invoice` is `null`, with `mail_uses_header` or
   `invoice_uses_header` true, when the shop prints the header logo in its
   place: say so rather than calling the logo missing.
-- `other_themes` are installed but not used by this shop. Switching theme or
-  uploading a logo is not available from these tools: point to **Design >
-  Theme & Logo** for that.
+- `other_themes` are installed but not used by this shop. Switching theme is
+  not available from these tools: point to **Design > Theme & Logo** for that.
+
+## Changing the logos
+
+`somcp_update_logos` changes the **Header logo**, the **Mail logo** and the
+**Invoice logo**, each by `url` or `upload_ref`, only the ones given.
+
+- Show the image to the merchant and confirm which logo it replaces before
+  calling.
+- The `logos` of `somcp_get_theme` can be given back as read: they change
+  nothing.
+- The favicon takes an `.ico` file: point to **Design > Theme & Logo** for it.
 
 ## Changing the layout of a page
 

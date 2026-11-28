@@ -4264,6 +4264,89 @@ if ($getCarrier !== null && $updateCarrier !== null) {
     }
 }
 
+// The mail logo changed and put back (#483): the JSON scenario cannot send
+// an image nor read the files it leaves. The header logo of the demo is never
+// touched, since the shop deletes the file a logo replaces: the mail logo,
+// which the header logo stands in for, gets a PNG made here, then its row,
+// its files and the time of the images are put back as they were.
+$updateLogos = $registry->get('somcp_update_logos');
+$getTheme = $registry->get('somcp_get_theme');
+if ($updateLogos !== null && $getTheme !== null && function_exists('imagepng')) {
+    $calls += 3;
+    $idShop = (int) $context->shop->id;
+    $idShopGroup = (int) Shop::getGroupFromShop($idShop);
+    $timeBefore = Configuration::get('PS_IMG_UPDATE_TIME', null, $idShopGroup, $idShop);
+    $logoCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text, json_decode(trim($text), true)];
+    };
+    $written = [];
+    try {
+        [$result, , $themeBefore] = $logoCall($getTheme, []);
+        $image = imagecreatetruecolor(40, 20);
+        ob_start();
+        imagepng($image);
+        $png = (string) ob_get_clean();
+        imagedestroy($image);
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $updateLogos, 'mail');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+        $entered = $invitation === null
+            ? 'no deposit could be opened'
+            : SomcpUpload::enter($invitation, 'data', 'data:image/png;base64,' . base64_encode($png), 'mail.png');
+        if (!empty($result['isError']) || ($themeBefore['logos']['mail_uses_header'] ?? null) !== true) {
+            $failures[] = 'somcp_update_logos (the demo mail logo read first): expected the header logo standing in - ' . excerpt($result);
+        } elseif ($entered !== '') {
+            $failures[] = 'somcp_update_logos (a PNG mail logo): the PNG was not deposited - ' . $entered;
+        } else {
+            [$result, $text] = $logoCall($updateLogos, ['mail' => ['upload_ref' => $reference]]);
+            $written = glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: [];
+            if (!empty($result['isError']) || strpos($text, '"changed": true') === false || strpos($text, '"mail"') === false
+                || strpos($text, 'The e-mails now carry this logo instead of the header logo.') === false) {
+                $failures[] = 'somcp_update_logos (a PNG mail logo): expected it written, with the warning - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_logos (a PNG mail logo written)');
+            }
+            [$result, , $themeAfter] = $logoCall($getTheme, []);
+            if (!empty($result['isError']) || ($themeAfter['logos']['mail_uses_header'] ?? null) !== false
+                || ($themeAfter['logos']['header'] ?? null) === null) {
+                $failures[] = 'somcp_update_logos (the theme read after): expected a mail logo of its own and the header logo kept - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_logos (somcp_get_theme reads the mail logo of its own)');
+            }
+            [$result, $text] = $logoCall($updateLogos, $themeAfter['logos'] ?? []);
+            if (!empty($result['isError']) || strpos($text, '"changed": false') === false) {
+                $failures[] = 'somcp_update_logos (the logos read given back): expected nothing written - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_logos (the logos read given back, nothing written)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_logos (the mail logo changed): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        foreach (array_merge($written, glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: []) as $file) {
+            @unlink($file);
+        }
+        Db::getInstance()->delete('configuration', '`name` = \'PS_LOGO_MAIL\'');
+        Configuration::updateValue('PS_IMG_UPDATE_TIME', $timeBefore, false, $idShopGroup, $idShop);
+        Configuration::resetStaticCache();
+    }
+}
+
 // A carrier deleted (#321): the JSON scenario cannot read the default carrier
 // of the shop nor delete a carrier it made. The default carrier is refused,
 // then a throwaway carrier no order uses is really removed and not found again.

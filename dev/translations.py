@@ -1934,6 +1934,10 @@ T = {
  "Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal, modifier ces liens, et la mise en page de ses pages",
  "Cambiar el aspecto de la tienda: añadir entradas y enlaces personalizados a su menú principal, modificar esos enlaces, y el diseño de sus páginas",
  "Das Aussehen des Shops ändern: Einträge und eigene Links zu seinem Hauptmenü hinzufügen, diese Links ändern und das Layout seiner Seiten"),
+"Change the shop logos": (
+ "Modifier les logos de la boutique",
+ "Cambiar los logotipos de la tienda",
+ "Die Logos des Shops ändern"),
 "Change the layout of a page": (
  "Modifier la mise en page d'une page",
  "Cambiar el diseño de una página",

@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Change the shop logos.** The new tool somcp_update_logos does what choosing a
+file then Save do on the Logo panel of Design > Theme & Logo: the Header logo,
+the Mail logo and the Invoice logo, each from an address or an image sent in
+the chat, only the ones given. The logos read with somcp_get_theme given back
+change nothing, and the answer says when the e-mails or the invoices stop
+using the header logo. The favicon, an .ico file, stays with the back office.
+
 **Create a carrier.** The new tool somcp_create_carrier does what Add new
 carrier then Save (or Finish) do on Shipping > Carriers: a Carrier name and a
 Transit time, and in the same call its zones, ranges and prices per zone, logo,

@@ -26,9 +26,9 @@ declare(strict_types=1);
  * row for a server already listed is refused here all the same:
  * SearchEngine::getKeywords() takes the first row that matches the referrer,
  * so the second one would never be read and the merchant would wonder why
- * its keywords never show. The checks live in plan(), public and given the
- * row a change is made to, so a tool that changes a row refuses the same
- * values in the same words.
+ * its keywords never show. The checks live in plan(), which
+ * somcp_update_search_engine calls with the row it changes, so both refuse
+ * the same values in the same words.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -60,8 +60,8 @@ class SomcpToolCreateSearchEngine
             'Adds a search engine to Shop Parameters > Traffic & SEO > Search Engines, as Add new search engine: '
                 . 'its Server (a host name or part of one, such as google) and its GET variable (the part of the '
                 . 'address that holds the words a visitor typed), so the keyword statistics read them. One row per '
-                . 'call. Changes the shop: ask first. A server already listed is refused with the row that has it; '
-                . 'read the rows with somcp_list_search_engines.',
+                . 'call. Changes the shop: ask first. A server already listed is refused: change that row with '
+                . 'somcp_update_search_engine; read the rows with somcp_list_search_engines.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -167,7 +167,7 @@ class SomcpToolCreateSearchEngine
                 );
                 if ($other > 0) {
                     $errors[] = 'server: already the server of search engine ' . $other
-                        . ' - change that one rather than adding another';
+                        . ' - change that one with somcp_update_search_engine';
                 } else {
                     $plan['server'] = $server;
                 }

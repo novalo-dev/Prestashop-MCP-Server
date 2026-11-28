@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Change a search engine.** The new tool somcp_update_search_engine does what
+Edit then Save do on a row of Shop Parameters > Traffic & SEO > Search Engines:
+its Server or its $_GET variable, only what is given, under the same rules as
+when a search engine is created. Given back as it is read, a row changes
+nothing; a changed Server comes with a warning that the visitors of the old one
+are no longer told apart.
+
 **Create a search engine.** The new tool somcp_create_search_engine does what
 Add new search engine then Save do on Shop Parameters > Traffic & SEO > Search
 Engines: a Server with its $_GET variable, so the keyword statistics read the

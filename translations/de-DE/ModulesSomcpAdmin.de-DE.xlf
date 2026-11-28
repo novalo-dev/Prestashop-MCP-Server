@@ -1607,6 +1607,11 @@
       <source>Create a search engine</source>
       <target>Eine Suchmaschine anlegen</target>
     </trans-unit>
+    <!-- Change a search engine -->
+    <trans-unit id="96727e3cb0657e67732d9ccb4d5385f6" resname="Change a search engine">
+      <source>Change a search engine</source>
+      <target>Eine Suchmaschine ändern</target>
+    </trans-unit>
     <!-- Get the contact details of the shop -->
     <trans-unit id="0c66db3c29d38926dcde73447ee2b642" resname="Get the contact details of the shop">
       <source>Get the contact details of the shop</source>

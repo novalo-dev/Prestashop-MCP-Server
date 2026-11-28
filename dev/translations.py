@@ -1278,6 +1278,10 @@ T = {
  "Créer un moteur de recherche",
  "Crear un motor de búsqueda",
  "Eine Suchmaschine anlegen"),
+"Change a search engine": (
+ "Modifier un moteur de recherche",
+ "Modificar un motor de búsqueda",
+ "Eine Suchmaschine ändern"),
 "Get the contact details of the shop": (
  "Lire les coordonnées de la boutique",
  "Leer los datos de contacto de la tienda",

@@ -18,6 +18,7 @@
     "somcp_delete_meta_page",
     "somcp_list_search_engines",
     "somcp_create_search_engine",
+    "somcp_update_search_engine",
     "somcp_get_seo_settings",
     "somcp_get_robots_txt",
     "somcp_generate_robots_txt",

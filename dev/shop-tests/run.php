@@ -3383,19 +3383,22 @@ if ($deleteMeta !== null && $listMeta !== null) {
 }
 
 // A search engine added (#473), then read back with the Server filter of
-// somcp_list_search_engines. The JSON scenario only covers the refusals, since
-// a row left behind would change the 38 rows the list reads; the finally
-// removes it whatever happens, found by its server if the answer lost it.
+// somcp_list_search_engines, then its GET variable changed and the row given
+// back as answered (#474). The JSON scenarios only cover the refusals and the
+// calls that change nothing, since a row left behind would change the 38 rows
+// the list reads; the finally removes it whatever happens, found by its
+// server if the answer lost it.
 $createEngine = $registry->get('somcp_create_search_engine');
+$updateEngine = $registry->get('somcp_update_search_engine');
 $listEngines = $registry->get('somcp_list_search_engines');
-if ($createEngine !== null && $listEngines !== null) {
-    $calls += 1;
+if ($createEngine !== null && $updateEngine !== null && $listEngines !== null) {
+    $calls += 3;
     $engineContext = [
         'id_shop' => (int) $context->shop->id,
         'id_employee' => (int) $employee->id,
         'id_lang' => (int) $context->language->id,
         'id_client' => 0,
-        'scopes' => implode(' ', array_unique(array_merge($createEngine->getRequiredScopes(), $listEngines->getRequiredScopes()))),
+        'scopes' => implode(' ', array_unique(array_merge($createEngine->getRequiredScopes(), $updateEngine->getRequiredScopes(), $listEngines->getRequiredScopes()))),
         'responses' => [],
         'resumed' => [],
         'capabilities' => [],
@@ -3423,6 +3426,25 @@ if ($createEngine !== null && $listEngines !== null) {
                 . excerpt($created);
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_create_search_engine (a search engine added, then listed as answered)');
+        }
+        if ($idEngineAdded > 0) {
+            $changed = $updateEngine->call(['id_search_engine' => $idEngineAdded, 'get_variable' => 'query'], $engineContext);
+            $change = json_decode(trim($engineText($changed)), true);
+            $after = ['id_search_engine' => $idEngineAdded, 'server' => 'somcp-test-engine', 'get_variable' => 'query'];
+            if (!empty($changed['isError']) || ($change['changed'] ?? null) !== true
+                || ($change['fields'] ?? null) !== ['get_variable'] || ($change['search_engine'] ?? null) !== $after
+                || array_key_exists('warning', $change)) {
+                $failures[] = 'somcp_update_search_engine (the GET variable of a row changed): unexpected - ' . excerpt($changed);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_search_engine (the GET variable of a row changed)');
+            }
+            $same = $updateEngine->call($after, $engineContext);
+            $again = json_decode(trim($engineText($same)), true);
+            if (!empty($same['isError']) || ($again['changed'] ?? null) !== false || ($again['search_engine'] ?? null) !== $after) {
+                $failures[] = 'somcp_update_search_engine (the row given back as answered changes nothing): unexpected - ' . excerpt($same);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_search_engine (the row given back as answered changes nothing)');
+            }
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_search_engine: ' . get_class($e) . ' - ' . $e->getMessage();

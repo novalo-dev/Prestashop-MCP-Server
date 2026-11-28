@@ -28,7 +28,8 @@ declare(strict_types=1);
  * assistant cannot tell why a search engine brings visits but no keyword.
  *
  * The table has no shop and no language: every shop shares the same rows.
- * Nothing is written here: somcp_create_search_engine adds a row.
+ * Nothing is written here: somcp_create_search_engine adds a row and
+ * somcp_update_search_engine changes one.
  */
 
 if (!defined('_PS_VERSION_')) {

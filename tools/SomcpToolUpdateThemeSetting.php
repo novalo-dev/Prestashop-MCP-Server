@@ -100,10 +100,7 @@ class SomcpToolUpdateThemeSetting
             return SomcpToolGetTheme::themeMissing();
         }
 
-        $errors = [];
-        foreach (array_diff(array_keys($arguments), ['page', 'layout']) as $key) {
-            $errors[] = $key . ': not a field of this tool';
-        }
+        $errors = SomcpTool::unknownFields($arguments, ['page', 'layout']);
 
         $page = is_string($arguments['page'] ?? null) ? trim($arguments['page']) : '';
         if ($page === '') {

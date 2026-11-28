@@ -107,9 +107,13 @@ class SomcpToolGetCartRule
         // one go (the shape of #169).
         $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
+        // Left out, the identifier is named with where to find it; given but
+        // malformed, it is a mistake of the call, as every tool words it.
         $idCartRule = SomcpTool::id($arguments, 'id_cart_rule');
-        if ($idCartRule <= 0) {
-            $problems[] = 'id_cart_rule: a whole number above 0, the ID given by somcp_list_cart_rules';
+        if (!array_key_exists('id_cart_rule', $arguments) || $arguments['id_cart_rule'] === null) {
+            $problems[] = 'id_cart_rule: required - find it with somcp_list_cart_rules';
+        } elseif ($idCartRule <= 0) {
+            $problems[] = SomcpTool::notAnIdentifier('id_cart_rule');
         }
 
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';

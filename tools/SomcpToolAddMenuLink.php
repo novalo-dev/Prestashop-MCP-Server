@@ -217,9 +217,7 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
         }
 
         $known = array_merge(['type', 'position', 'language'], $idFields, self::LINK_FIELDS);
-        foreach (array_diff(array_keys($arguments), $known) as $key) {
-            $errors[] = $key . ': not a field of this tool';
-        }
+        $errors = array_merge($errors, SomcpTool::unknownFields($arguments, $known));
 
         $type = $arguments['type'] ?? null;
         if (!is_string($type) || !isset($prefixes[$type])) {

@@ -993,7 +993,7 @@ class SomcpToolCreateProduct
         $categories = self::ids($group['categories'] ?? [], 'id_category', 'categories.categories', $errors);
         $default = array_key_exists('id_category_default', $group) ? self::integer($group['id_category_default']) : null;
         if (array_key_exists('id_category_default', $group) && ($default === null || $default <= 0)) {
-            $errors[] = 'categories.id_category_default: a category identifier';
+            $errors[] = SomcpTool::notAnIdentifier('categories.id_category_default');
 
             return;
         }
@@ -3410,7 +3410,7 @@ class SomcpToolCreateProduct
         foreach (self::items($value, $path, $errors, false) as $item) {
             $id = self::integer(is_array($item) ? ($item[$key] ?? null) : $item);
             if ($id === null || $id <= 0) {
-                $errors[] = $path . ': every item must be an identifier, a whole number above 0';
+                $errors[] = SomcpTool::notAnIdentifier($path);
                 continue;
             }
             $ids[] = $id;

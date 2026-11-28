@@ -155,14 +155,7 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
      */
     private static function planReturnStatus(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::RETURN_STATUS_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::RETURN_STATUS_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        $errors = array_merge($errors, SomcpTool::unknownFields($arguments, self::RETURN_STATUS_ARGUMENTS, self::RETURN_STATUS_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {

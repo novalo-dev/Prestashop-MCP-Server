@@ -808,7 +808,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         if (array_key_exists('id_category_default', $group)) {
             $default = self::integer($group['id_category_default']) ?? 0;
             if ($default <= 0) {
-                $errors[] = 'categories.id_category_default: a category identifier';
+                $errors[] = SomcpTool::notAnIdentifier('categories.id_category_default');
 
                 return;
             }

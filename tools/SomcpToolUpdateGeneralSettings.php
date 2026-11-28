@@ -161,7 +161,7 @@ class SomcpToolUpdateGeneralSettings
             if (is_string($arguments[$field]) && isset($list[$arguments[$field]])) {
                 $given[$field] = $arguments[$field];
             } else {
-                $problems[] = $field . ': one of ' . implode(', ', array_keys($list));
+                $problems[] = SomcpTool::oneOf($field, array_keys($list));
             }
         }
         foreach (array_keys(self::SWITCHES) as $field) {

@@ -177,6 +177,14 @@ their identifier, so a page read twice holds the same orders. An unknown
 delivery country is refused with the code given and the tool that lists the
 countries, in the order search and in the sales summary.
 
+**A missing or malformed identifier, and a value out of its list.** A
+missing or malformed identifier, and a value out of its list, are refused in
+the same words by every tool. A cart rule read or switched on without its
+identifier, and an order address changed without the address, now name the
+tool that finds it (somcp_list_cart_rules, somcp_get_customer); a category
+given as something other than a whole number above 0 to a product, and a value
+out of its list for a cart rule or a general setting, read as everywhere else.
+
 **A combination, an address or a state that is not the right one.** A
 combination of another product, an address of another customer or a state of
 another country is now refused in the same words by every tool, with the value

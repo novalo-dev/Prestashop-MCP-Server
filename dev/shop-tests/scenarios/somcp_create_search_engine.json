@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "nothing given: both fields are required, in one answer", "arguments": {}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- server: required", "- get_variable: required"]},
+    {"why": "a server that already has its row is refused with that row and the tool that changes it", "arguments": {"server": "Google", "get_variable": "q"}, "expect": "error", "contains": ["- server: already the server of search engine 1 - change that one rather than adding another"]},
+    {"why": "a GET variable with a space is refused with its rule", "arguments": {"server": "somcp-test", "get_variable": "a b"}, "expect": "error", "contains": ["- get_variable: letters, digits, _ and - only"]},
+    {"why": "values over the sizes of the form are refused at once", "arguments": {"server": "somcp-test-a-server-name-much-longer-than-the-sixty-four-characters", "get_variable": "a-variable-too-long"}, "expect": "error", "contains": ["- server: 64 characters at most", "- get_variable: 16 characters at most"]},
+    {"why": "an empty server and a variable of the wrong kind", "arguments": {"server": " ", "get_variable": 5}, "expect": "error", "contains": ["- server: required", "- get_variable: a text"]},
+    {"why": "the identifier of a row given back is not a field of this tool", "arguments": {"server": "x", "get_variable": "q", "id_search_engine": 1}, "expect": "error", "contains": ["- id_search_engine: not a field of this tool"]}
+  ]
+}

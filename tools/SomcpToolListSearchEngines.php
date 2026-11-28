@@ -28,7 +28,7 @@ declare(strict_types=1);
  * assistant cannot tell why a search engine brings visits but no keyword.
  *
  * The table has no shop and no language: every shop shares the same rows.
- * Nothing is ever written: the rows are added and changed on that tab.
+ * Nothing is written here: somcp_create_search_engine adds a row.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -191,12 +191,7 @@ class SomcpToolListSearchEngines
 
         $engines = [];
         foreach ($db->executeS($query) ?: [] as $row) {
-            // get_variable, the word of the screen, rather than the column name.
-            $engines[] = [
-                'id_search_engine' => (int) $row['id_search_engine'],
-                'server' => (string) $row['server'],
-                'get_variable' => (string) $row['getvar'],
-            ];
+            $engines[] = self::row($row);
         }
 
         return SomcpTool::json([
@@ -206,6 +201,25 @@ class SomcpToolListSearchEngines
             'limit' => $limit,
             'offset' => $offset,
         ]);
+    }
+
+    /**
+     * A search engine as the list answers it, from its row of search_engine.
+     * Public so the tools that create and change a row answer it in the same
+     * shape, and the assistant can give it back as it is.
+     *
+     * @param array<string, mixed> $row id_search_engine, server and getvar
+     *
+     * @return array{id_search_engine: int, server: string, get_variable: string}
+     */
+    public static function row(array $row): array
+    {
+        // get_variable, the word of the screen, rather than the column name.
+        return [
+            'id_search_engine' => (int) ($row['id_search_engine'] ?? 0),
+            'server' => (string) ($row['server'] ?? ''),
+            'get_variable' => (string) ($row['getvar'] ?? ''),
+        ];
     }
 
     /**

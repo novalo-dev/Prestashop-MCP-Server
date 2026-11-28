@@ -1602,6 +1602,11 @@
       <source>List the search engines</source>
       <target>Lister les moteurs de recherche</target>
     </trans-unit>
+    <!-- Create a search engine -->
+    <trans-unit id="89ff040201f8680c9ce18c3959f11f9f" resname="Create a search engine">
+      <source>Create a search engine</source>
+      <target>Créer un moteur de recherche</target>
+    </trans-unit>
     <!-- Get the contact details of the shop -->
     <trans-unit id="0c66db3c29d38926dcde73447ee2b642" resname="Get the contact details of the shop">
       <source>Get the contact details of the shop</source>

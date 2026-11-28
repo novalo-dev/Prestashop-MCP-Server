@@ -37,7 +37,7 @@ merchant does it:
   changed, module by module. The payment modules themselves,
   their accounts and keys, stay with the merchant.
 - **Traffic & SEO**: the shop's own pages are read, created, changed and
-  deleted, and the search engines are read; adding and changing a search
+  deleted, and the search engines are read and added; changing a search
   engine comes next.
 - **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
   never the parent theme or its templates, and the native modules of the

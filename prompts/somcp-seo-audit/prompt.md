@@ -17,6 +17,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_create_meta_page`
 - `somcp_delete_meta_page`
 - `somcp_list_search_engines`
+- `somcp_create_search_engine`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
@@ -88,7 +89,9 @@ installation has its own titles, descriptions and URLs.
    When visits come from a search engine but no keyword shows in the
    statistics, read `somcp_list_search_engines`: each row gives the Server
    whose visitors' keywords are kept and the GET variable of its address that
-   holds them.
+   holds them. A search engine missing from that list is added with
+   `somcp_create_search_engine`, its Server and its GET variable, so the words
+   its visitors typed reach the statistics: ask first.
 6. **Check the public page.** A value in the database is not proof of what
    the theme prints: call `somcp_audit_page` with the address or the path of
    the page (`/` for the home page) to see the title, description, headings,

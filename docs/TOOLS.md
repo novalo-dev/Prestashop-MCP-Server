@@ -9914,6 +9914,49 @@ get_variable}`, the words of the screen (`get_variable` is the column
 - Read only, replayable. No difference between 8.0 and 9.0: the same grid,
   form and table.
 
+#### `somcp_create_search_engine`
+**State**: written · [issue #473](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/473)
+**Nature**: `acts(ADD, 'AdminSearchEngines')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - creates a search engine of **Shop Parameters > Traffic & SEO >
+Search Engines**, as **Add new search engine** then **Save** do: its
+**Server** and its **$_GET variable**, so the statistics read the keywords of
+the visitors it sends. One row per call.
+
+**Do not use for** - changing a row, which stays on the tab for now.
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `server` | **Server** | string | required (`server: required`); trimmed, kept in lower case as the list shows them; 64 characters at most (`server: 64 characters at most`); `Validate::isUrl()` (`server: a host name or a part of one, such as google or search.yahoo`); not already the server of another row (`server: already the server of search engine <id> - change that one rather than adding another`) |
+| `get_variable` | **$_GET variable** | string | required (`get_variable: required`); trimmed; 16 characters at most (`get_variable: 16 characters at most`); `Validate::isModuleName()` (`get_variable: letters, digits, _ and - only`) |
+
+The checks are in one public function,
+`SomcpToolCreateSearchEngine::plan(array $arguments, ?int $idSearchEngine,
+array &$errors): array`, which a change calls with the row it changes, so it
+refuses the same values with the same words. Unknown arguments
+through `SomcpTool::unknownFields()`: `id_search_engine` answers
+`- id_search_engine: not a field of this tool`. Every mistake in one answer,
+in the envelope `Nothing was created. Correct these and call again:`.
+
+**Returns** - `created: true`, `id_search_engine`, and `search_engine`: the
+row read back, as `somcp_list_search_engines` answers it
+(`{id_search_engine, server, get_variable}`, by
+`SomcpToolListSearchEngines::row()`).
+
+**Notes**
+- `SearchEngine` filled, `validateFields()`, `add()`, as
+  `AddSearchEngineHandler`; a `false` or an exception answers `The search
+  engine could not be created: <reason>.`.
+- The back office accepts two rows for one server; this tool does not:
+  `SearchEngine::getKeywords()` takes the first row that matches the
+  referrer, so the second would never be read.
+- Logged as `search_engine_created` with the identifier and the server.
+- Changes the shop: the assistant asks first. Not replayable: a second call
+  is refused (`already the server of search engine <id>`).
+- No difference between 8.0 and 9.0: the same form and table.
+
 #### `somcp_get_seo_settings`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`

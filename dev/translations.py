@@ -1274,6 +1274,10 @@ T = {
  "Lister les moteurs de recherche",
  "Listar los motores de búsqueda",
  "Die Suchmaschinen auflisten"),
+"Create a search engine": (
+ "Créer un moteur de recherche",
+ "Crear un motor de búsqueda",
+ "Eine Suchmaschine anlegen"),
 "Get the contact details of the shop": (
  "Lire les coordonnées de la boutique",
  "Leer los datos de contacto de la tienda",

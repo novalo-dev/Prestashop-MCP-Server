@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Create a search engine.** The new tool somcp_create_search_engine does what
+Add new search engine then Save do on Shop Parameters > Traffic & SEO > Search
+Engines: a Server with its $_GET variable, so the keyword statistics read the
+words typed by the visitors that search engine sends. A server that already has
+its row is refused with the number of that row, since the shop would only ever
+read the first one.
+
 **List the search engines.** The new tool somcp_list_search_engines reads
 Shop Parameters > Traffic & SEO > Search Engines as its list shows it: each
 Server with its GET variable, the part of a visitor's address that holds the

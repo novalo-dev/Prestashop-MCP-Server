@@ -3382,6 +3382,63 @@ if ($deleteMeta !== null && $listMeta !== null) {
     }
 }
 
+// A search engine added (#473), then read back with the Server filter of
+// somcp_list_search_engines. The JSON scenario only covers the refusals, since
+// a row left behind would change the 38 rows the list reads; the finally
+// removes it whatever happens, found by its server if the answer lost it.
+$createEngine = $registry->get('somcp_create_search_engine');
+$listEngines = $registry->get('somcp_list_search_engines');
+if ($createEngine !== null && $listEngines !== null) {
+    $calls += 1;
+    $engineContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($createEngine->getRequiredScopes(), $listEngines->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $engineText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idEngineAdded = 0;
+    try {
+        $created = $createEngine->call(['server' => 'somcp-test-engine', 'get_variable' => 'q'], $engineContext);
+        $answer = json_decode(trim($engineText($created)), true);
+        $idEngineAdded = (int) ($answer['id_search_engine'] ?? 0);
+        $listed = json_decode(trim($engineText($listEngines->call(['server' => 'somcp-test-engine'], $engineContext))), true);
+        $rows = is_array($listed['search_engines'] ?? null) ? $listed['search_engines'] : [];
+        $expected = ['id_search_engine' => $idEngineAdded, 'server' => 'somcp-test-engine', 'get_variable' => 'q'];
+        if (!empty($created['isError']) || ($answer['created'] ?? null) !== true || $idEngineAdded <= 0
+            || ($answer['search_engine'] ?? null) !== $expected || $rows !== [$expected]) {
+            $failures[] = 'somcp_create_search_engine (a search engine added, then listed as answered): unexpected - '
+                . excerpt($created);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_search_engine (a search engine added, then listed as answered)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_search_engine: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idEngineAdded <= 0) {
+            $idEngineAdded = (int) Db::getInstance()->getValue('SELECT `id_search_engine` FROM `' . _DB_PREFIX_ . 'search_engine` WHERE `server` = \'somcp-test-engine\'');
+        }
+        if ($idEngineAdded > 0) {
+            $added = new SearchEngine($idEngineAdded);
+            if (Validate::isLoadedObject($added)) {
+                $added->delete();
+            }
+        }
+    }
+}
+
 // A customer group restriction set on a cart rule, read back, then lifted
 // (#406), and the same for Product selection (#433): the JSON scenario only
 // covers the refusals, since a restriction left on a demo rule would change

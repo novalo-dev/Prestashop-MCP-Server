@@ -12,6 +12,7 @@ hidden or moved at any time.
 - `somcp_get_cms_category`
 - `somcp_create_cms_page`
 - `somcp_update_cms_page`
+- `somcp_create_cms_category`
 - `somcp_update_cms_category`
 - `somcp_delete_cms_page`
 
@@ -72,6 +73,17 @@ only what is given.
   menu: say so before.
 - `changed: false` means the page already held every value: nothing was
   written.
+
+## Creating a page category
+
+`somcp_create_cms_category` adds one page category, as **Add new page
+category** then **Save** do. Only the `name` is required.
+
+- Show the merchant the name and the parent and wait for their yes before
+  calling. A second call creates a second category: when an answer is lost,
+  look for it in `categories[]` of `somcp_list_cms_pages` before calling again.
+- Left out, the parent is **Home** and the **Friendly URL** is made from the
+  name: pass on the `warning` that gives it.
 
 ## Changing a page category
 

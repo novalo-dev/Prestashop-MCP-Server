@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Create a CMS page category.** The new tool somcp_create_cms_category does
+what Add new page category then Save do on Design > Pages, so the pages of a
+shop can be sorted, for example a Help category under Home. Only the Name is
+needed: the Friendly URL is then made from it, and the category is displayed
+under Home, as the form opens. Every field is checked as the tool that
+changes a category checks it.
+
 **Change a CMS page category.** The new tool somcp_update_cms_category does
 what Edit then Save do on a page category of Design > Pages: the Name,
 Displayed, Parent category and Description, with the Meta title, meta

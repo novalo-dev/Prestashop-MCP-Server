@@ -2167,6 +2167,11 @@
       <source>Update a CMS page category</source>
       <target>Eine CMS-Seitenkategorie ändern</target>
     </trans-unit>
+    <!-- Create a CMS page category -->
+    <trans-unit id="57b284948158dc3c9d713f64949d8263" resname="Create a CMS page category">
+      <source>Create a CMS page category</source>
+      <target>Eine CMS-Seitenkategorie erstellen</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

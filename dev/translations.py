@@ -1726,6 +1726,10 @@ T = {
  "Modifier une catégorie de pages CMS",
  "Modificar una categoría de páginas CMS",
  "Eine CMS-Seitenkategorie ändern"),
+"Create a CMS page category": (
+ "Créer une catégorie de pages CMS",
+ "Crear una categoría de páginas CMS",
+ "Eine CMS-Seitenkategorie erstellen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",

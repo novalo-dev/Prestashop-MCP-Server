@@ -4481,6 +4481,84 @@ if ($createCmsPage !== null && $deleteCmsPage !== null) {
     }
 }
 
+// A page category created then changed (#490, #489): the JSON scenarios
+// write nothing, since a category left behind would change what the other
+// calls read. Made with a name only, it gets its Friendly URL from the name,
+// is displayed and goes last of Home, one level under it; its name is then
+// changed by somcp_update_cms_category, and the core deletes it whatever
+// the tools did.
+$createCmsCategory = $registry->get('somcp_create_cms_category');
+$updateCmsCategory = $registry->get('somcp_update_cms_category');
+if ($createCmsCategory !== null && $updateCmsCategory !== null) {
+    $calls += 2;
+    $categoryCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $idCategoryCreated = 0;
+    try {
+        $iso = (string) Language::getIsoById((int) Configuration::get('PS_LANG_DEFAULT'));
+        // Read before the call, so the check holds whatever the earlier
+        // blocks left under Home.
+        $expectedPosition = (int) CMSCategory::getLastPosition(1);
+        [$result, $text] = $categoryCall($createCmsCategory, [
+            'languages' => [$iso],
+            'name' => [$iso => 'somcp test category'],
+        ]);
+        if (preg_match('/"id_cms_category": (\d+)/', $text, $match) === 1) {
+            $idCategoryCreated = (int) $match[1];
+        }
+        if (!empty($result['isError']) || $idCategoryCreated <= 1 || strpos($text, '"created": true') === false
+            || strpos($text, '"link_rewrite": "somcp-test-category"') === false || strpos($text, '"active": true') === false
+            || strpos($text, '"level_depth": 2') === false || strpos($text, '"id_parent": 1') === false
+            || strpos($text, '"position": ' . $expectedPosition) === false) {
+            $failures[] = 'somcp_create_cms_category (a category made from its name, displayed, last under Home): unexpected - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_cms_category (a category made from its name, displayed, last under Home)');
+        }
+        if ($idCategoryCreated > 1) {
+            [$result, $text] = $categoryCall($updateCmsCategory, [
+                'id_cms_category' => $idCategoryCreated,
+                'languages' => [$iso],
+                'name' => [$iso => 'somcp test category changed'],
+                'meta_title' => [$iso => 'somcp test category'],
+            ]);
+            if (!empty($result['isError']) || strpos($text, '"changed": true') === false
+                || strpos($text, '"name": "somcp test category changed"') === false
+                || strpos($text, '"meta_title": "somcp test category"') === false) {
+                $failures[] = 'somcp_update_cms_category (the category created is renamed): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_category (the category created is renamed)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_cms_category (a category created): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // The category made here never outlives the test, whatever the tools did.
+        if ($idCategoryCreated > 1) {
+            $left = new CMSCategory($idCategoryCreated);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
 // The mail logo changed and put back (#483): the JSON scenario cannot send
 // an image nor read the files it leaves. The header logo of the demo is never
 // touched, since the shop deletes the file a logo replaces: the mail logo,

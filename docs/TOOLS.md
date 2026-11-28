@@ -9211,6 +9211,35 @@ Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `lin
 
 **Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only: `meta_keywords` is absent from the answer on 9.0.0. **Name** and **Friendly URL** take 64 characters on 8.0.1 and 128 on 9.0.0.
 
+#### `somcp_create_cms_category`
+**State**: written · [issue #490](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/490)
+**Nature**: `acts(ADD, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - creates a page category of **Design > Pages**, as **Add new page category** then **Save** do, so the pages of a shop can be sorted (for example a **Help** category under **Home**).
+
+**Do not use for** - a page (→ `somcp_create_cms_page`); changing a category (→ `somcp_update_cms_category`).
+
+**Parameters** - the fields of `somcp_update_cms_category`, under the same names and checked by its plan run on a category not saved yet (`SomcpToolUpdateCmsCategory::plan()`, public), never copied:
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages`, `language` | | array, string | no | the languages the texts are given in, all active ones by default; the other languages take the text of the default one, as the back office saves a field left empty |
+| `name` | **Name** | object or string | yes | per language; missing: `name: required, one text per language (<isos>)` (`SomcpToolCreateProduct::texts(..., true)`); otherwise the rule of `somcp_update_cms_category` |
+| `description`, `meta_title`, `meta_description`, `meta_keywords`, `active`, `id_parent` | **Description**, **Meta title**, **Meta description**, **Meta keywords**, **Displayed**, **Parent category** | | no | the rules of `somcp_update_cms_category`; `active` **true** when left out, as the switch of this form opens; `id_parent` **1** (Home) when left out, as the tree of the form opens on it |
+| `link_rewrite` | **Friendly URL** | object or string | no | the rule of `somcp_update_cms_category`; left out, made from the **Name** of each language filled with the same rule (`SomcpToolUpdateCmsSeo::checked()`): `link_rewrite (<iso>), made from the name: ...` when it cannot be |
+
+`id_cms_category` and the fields the read works out: `<key>: not a field of this tool`, as any other key, through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call again:` (`SomcpTool::refused('created', $problems)`), every problem at once. A failed save: `The page category could not be created: <reason>.`, logged `cms_category_create_failed`.
+
+**Then** - `new CMSCategory()`, the fields set for every language, `validateFields(false)` and `validateFieldsLang(false)`, then `CMSCategory::add()` for the shop of the token (`id_shop_list`), as `AddCmsPageCategoryHandler` does: last of its parent (`getLastPosition()`), its level worked out. Logged `cms_category_created` with the new `id_cms_category`, never the texts.
+
+**Returns** - `created: true`, `id_cms_category`, `category` (as `somcp_get_cms_category` answers it in the first language filled), and `warning`, each sentence when it applies: the Friendly URL made from the name, `Its Friendly URL was made from the name: <url> (<iso>), ...`; the shop one of several, `The page category was created for this shop only.`
+
+**Notes** - changes the shop: the assistant asks first, showing the name and the parent. Not replayable: a second call creates a second category; when the answer is lost, read `somcp_list_cms_pages` first.
+
+**Differences between 8.0.1 and 9.0.0** - as `somcp_update_cms_category`.
+
 #### `somcp_update_cms_category`
 **State**: written · [issue #489](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/489)
 **Nature**: `acts(EDIT, 'AdminCmsContent')` · **Scope**: `mcp.content.write`

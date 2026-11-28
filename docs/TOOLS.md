@@ -10000,6 +10000,51 @@ their keywords are not read any more.`
   call changes nothing.
 - No difference between 8.0 and 9.0: the same form and table.
 
+#### `somcp_delete_search_engine`
+**State**: written · [issue #479](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/479)
+**Nature**: `acts(DELETE, 'AdminSearchEngines')` · **Scope**: `mcp.seo.write`, as `somcp_update_search_engine`
+
+**Does** - deletes a search engine of **Shop Parameters > Traffic & SEO >
+Search Engines**, as the row action **Delete** and the bulk action **Delete
+selected** do, one row per call: the statistics stop reading the keywords of
+the visitors sent by its **Server**.
+
+**Do not use for** - correcting a Server or a GET variable
+(`somcp_update_search_engine`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_search_engine` | | integer | required, from `somcp_list_search_engines`: `id_search_engine: required - find it with somcp_list_search_engines`, `SomcpTool::notAnIdentifier('id_search_engine')`, `SomcpTool::notFound('id_search_engine', 'search engine', <id>, 'somcp_list_search_engines')`, as `somcp_update_search_engine` |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Every mistake in one
+answer, in the envelope `Nothing was deleted. Correct these and call again:`.
+
+**Returns** - `deleted: true`, `id_search_engine`, and `search_engine`: the
+row it was (`{id_search_engine, server, get_variable}`, as
+`somcp_list_search_engines` answers it, read with
+`SomcpToolCreateSearchEngine::stored()` before the deletion), so it can be
+added again with `somcp_create_search_engine`. `warning`: `Visitors sent by
+<server> are no longer told apart: their keywords are not read any more. The
+keywords already read stay in the statistics.`, ending with `Their visits are
+now read with search engine <id> (<server>).` when another row's Server is
+part of the deleted one (`yahoo` for `search.yahoo`; the lowest identifier
+when several are), since `SearchEngine::getKeywords()` takes the first row
+whose Server is part of the referrer's host.
+
+**Notes**
+- `(new SearchEngine($id))->delete()`, as `DeleteSearchEngineHandler`: the
+  table has no shop and no language, and no other table holds an
+  `id_search_engine`; `connections_source.keywords` keeps the words already
+  read. A `false` or an exception answers `The search engine could not be
+  deleted: <reason>.`.
+- Logged as `search_engine_deleted` with the identifier and the server.
+- Changes the shop and cannot be undone except by adding the row again: the
+  assistant asks first, naming the Server and its GET variable. Not
+  replayable: a second call answers the row unknown.
+- No difference between 8.0 and 9.0: the same list and table.
+
 #### `somcp_get_seo_settings`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`

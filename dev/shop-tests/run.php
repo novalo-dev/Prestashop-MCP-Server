@@ -3384,21 +3384,22 @@ if ($deleteMeta !== null && $listMeta !== null) {
 
 // A search engine added (#473), then read back with the Server filter of
 // somcp_list_search_engines, then its GET variable changed and the row given
-// back as answered (#474). The JSON scenarios only cover the refusals and the
-// calls that change nothing, since a row left behind would change the 38 rows
-// the list reads; the finally removes it whatever happens, found by its
-// server if the answer lost it.
+// back as answered (#474), then deleted and asked for again (#479). The JSON
+// scenarios only cover the refusals and the calls that change nothing, since a
+// row left behind would change the 38 rows the list reads; the finally
+// removes it whatever happens, found by its server if the answer lost it.
 $createEngine = $registry->get('somcp_create_search_engine');
 $updateEngine = $registry->get('somcp_update_search_engine');
+$deleteEngine = $registry->get('somcp_delete_search_engine');
 $listEngines = $registry->get('somcp_list_search_engines');
-if ($createEngine !== null && $updateEngine !== null && $listEngines !== null) {
-    $calls += 3;
+if ($createEngine !== null && $updateEngine !== null && $deleteEngine !== null && $listEngines !== null) {
+    $calls += 5;
     $engineContext = [
         'id_shop' => (int) $context->shop->id,
         'id_employee' => (int) $employee->id,
         'id_lang' => (int) $context->language->id,
         'id_client' => 0,
-        'scopes' => implode(' ', array_unique(array_merge($createEngine->getRequiredScopes(), $updateEngine->getRequiredScopes(), $listEngines->getRequiredScopes()))),
+        'scopes' => implode(' ', array_unique(array_merge($createEngine->getRequiredScopes(), $updateEngine->getRequiredScopes(), $deleteEngine->getRequiredScopes(), $listEngines->getRequiredScopes()))),
         'responses' => [],
         'resumed' => [],
         'capabilities' => [],
@@ -3444,6 +3445,23 @@ if ($createEngine !== null && $updateEngine !== null && $listEngines !== null) {
                 $failures[] = 'somcp_update_search_engine (the row given back as answered changes nothing): unexpected - ' . excerpt($same);
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_search_engine (the row given back as answered changes nothing)');
+            }
+            $deleted = $deleteEngine->call(['id_search_engine' => $idEngineAdded], $engineContext);
+            $removal = json_decode(trim($engineText($deleted)), true);
+            $left = json_decode(trim($engineText($listEngines->call(['server' => 'somcp-test-engine'], $engineContext))), true);
+            if (!empty($deleted['isError']) || ($removal['deleted'] ?? null) !== true
+                || ($removal['id_search_engine'] ?? null) !== $idEngineAdded || ($removal['search_engine'] ?? null) !== $after
+                || strpos((string) ($removal['warning'] ?? ''), 'Visitors sent by somcp-test-engine are no longer told apart') !== 0
+                || ($left['search_engines'] ?? null) !== []) {
+                $failures[] = 'somcp_delete_search_engine (a row deleted, then no longer listed): unexpected - ' . excerpt($deleted);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_search_engine (a row deleted, then no longer listed)');
+            }
+            $twice = $deleteEngine->call(['id_search_engine' => $idEngineAdded], $engineContext);
+            if (empty($twice['isError']) || strpos($engineText($twice), 'no search engine of this shop has the identifier ' . $idEngineAdded) === false) {
+                $failures[] = 'somcp_delete_search_engine (a row deleted twice is unknown the second time): unexpected - ' . excerpt($twice);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_search_engine (a row deleted twice is unknown the second time)');
             }
         }
     } catch (Throwable $e) {

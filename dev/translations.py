@@ -1282,6 +1282,10 @@ T = {
  "Modifier un moteur de recherche",
  "Modificar un motor de búsqueda",
  "Eine Suchmaschine ändern"),
+"Delete a search engine": (
+ "Supprimer un moteur de recherche",
+ "Eliminar un motor de búsqueda",
+ "Eine Suchmaschine löschen"),
 "Get the contact details of the shop": (
  "Lire les coordonnées de la boutique",
  "Leer los datos de contacto de la tienda",

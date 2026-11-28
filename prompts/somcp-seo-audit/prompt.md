@@ -19,6 +19,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_list_search_engines`
 - `somcp_create_search_engine`
 - `somcp_update_search_engine`
+- `somcp_delete_search_engine`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
@@ -94,7 +95,10 @@ installation has its own titles, descriptions and URLs.
    `somcp_create_search_engine`, its Server and its GET variable, so the words
    its visitors typed reach the statistics: ask first. A row whose GET
    variable the search engine no longer uses is corrected with
-   `somcp_update_search_engine`, only the field that changes: ask first.
+   `somcp_update_search_engine`, only the field that changes: ask first. A
+   row deleted with `somcp_delete_search_engine` stops the keywords of its
+   Server being read, those already read staying: ask first, naming the Server
+   and its GET variable.
 6. **Check the public page.** A value in the database is not proof of what
    the theme prints: call `somcp_audit_page` with the address or the path of
    the page (`/` for the home page) to see the title, description, headings,

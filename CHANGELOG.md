@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Delete a search engine.** The new tool somcp_delete_search_engine does what
+Delete does on a row of Shop Parameters > Traffic & SEO > Search Engines, one
+row per call. It answers the row it was, so it can be added again, and warns
+that the keywords of its visitors are no longer read, those already read
+staying in the statistics, naming the row that reads their visits from now on
+when a shorter Server still matches.
+
 **Change a search engine.** The new tool somcp_update_search_engine does what
 Edit then Save do on a row of Shop Parameters > Traffic & SEO > Search Engines:
 its Server or its $_GET variable, only what is given, under the same rules as

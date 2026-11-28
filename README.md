@@ -607,6 +607,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_search_engines` | ● List the search engines | Search Engines › view |
 | `somcp_create_search_engine` | ✎ Create a search engine | Search Engines › add |
 | `somcp_update_search_engine` | ✎ Change a search engine | Search Engines › edit |
+| `somcp_delete_search_engine` | ✎ Delete a search engine | Search Engines › delete |
 | `somcp_get_robots_txt` | ● Read the robots.txt file | SEO & URLs › view |
 | `somcp_generate_robots_txt` | ✎ Generate the robots.txt file | SEO & URLs › add, edit, delete |
 

@@ -1612,6 +1612,11 @@
       <source>Change a search engine</source>
       <target>Modifier un moteur de recherche</target>
     </trans-unit>
+    <!-- Delete a search engine -->
+    <trans-unit id="5847e8447485017cfc3c0ead2f32a6c3" resname="Delete a search engine">
+      <source>Delete a search engine</source>
+      <target>Supprimer un moteur de recherche</target>
+    </trans-unit>
     <!-- Get the contact details of the shop -->
     <trans-unit id="0c66db3c29d38926dcde73447ee2b642" resname="Get the contact details of the shop">
       <source>Get the contact details of the shop</source>

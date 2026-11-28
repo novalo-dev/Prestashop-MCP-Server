@@ -750,6 +750,10 @@ T = {
  "Statistiques - lecture",
  "Estadísticas - lectura",
  "Statistiken - lesen"),
+"Pages - changes": (
+ "Pages - modifications",
+ "Páginas - cambios",
+ "Seiten - Änderungen"),
 "Pages - read": (
  "Pages - lecture",
  "Páginas - lectura",
@@ -874,6 +878,18 @@ T = {
  "Modifier un groupe de clients",
  "Modificar un grupo de clientes",
  "Eine Kundengruppe ändern"),
+"Change the default customer groups": (
+ "Modifier les groupes de clients par défaut",
+ "Modificar los grupos de clientes por defecto",
+ "Die Standard-Kundengruppen ändern"),
+"Create a customer group": (
+ "Créer un groupe de clients",
+ "Crear un grupo de clientes",
+ "Eine Kundengruppe erstellen"),
+"Delete a customer group": (
+ "Supprimer un groupe de clients",
+ "Eliminar un grupo de clientes",
+ "Eine Kundengruppe löschen"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",
@@ -886,6 +902,10 @@ T = {
  "Lire un transporteur",
  "Leer un transportista",
  "Einen Versanddienst lesen"),
+"Create a carrier": (
+ "Créer un transporteur",
+ "Crear un transportista",
+ "Einen Versanddienst anlegen"),
 "Change a carrier": (
  "Modifier un transporteur",
  "Modificar un transportista",
@@ -1234,6 +1254,54 @@ T = {
  "Lister les contacts",
  "Listar los contactos",
  "Die Kontakte auflisten"),
+"List the stores": (
+ "Lister les magasins",
+ "Listar las tiendas",
+ "Die Geschäfte auflisten"),
+"Create a store": (
+ "Créer un magasin",
+ "Crear una tienda",
+ "Ein Geschäft anlegen"),
+"Change a store": (
+ "Modifier un magasin",
+ "Modificar una tienda",
+ "Ein Geschäft ändern"),
+"Delete a store": (
+ "Supprimer un magasin",
+ "Eliminar una tienda",
+ "Ein Geschäft löschen"),
+"Add a shop page to SEO & URLs": (
+ "Ajouter une page de la boutique dans SEO et URL",
+ "Añadir una página de la tienda en SEO y URL",
+ "Eine Shop-Seite in SEO und URL hinzufügen"),
+"Delete a shop page from SEO & URLs": (
+ "Supprimer une page de la boutique dans SEO et URL",
+ "Eliminar una página de la tienda en SEO y URL",
+ "Eine Shop-Seite aus SEO und URL löschen"),
+"List the search engines": (
+ "Lister les moteurs de recherche",
+ "Listar los motores de búsqueda",
+ "Die Suchmaschinen auflisten"),
+"Create a search engine": (
+ "Créer un moteur de recherche",
+ "Crear un motor de búsqueda",
+ "Eine Suchmaschine anlegen"),
+"Change a search engine": (
+ "Modifier un moteur de recherche",
+ "Modificar un motor de búsqueda",
+ "Eine Suchmaschine ändern"),
+"Delete a search engine": (
+ "Supprimer un moteur de recherche",
+ "Eliminar un motor de búsqueda",
+ "Eine Suchmaschine löschen"),
+"Get the contact details of the shop": (
+ "Lire les coordonnées de la boutique",
+ "Leer los datos de contacto de la tienda",
+ "Die Kontaktdaten des Shops lesen"),
+"Change the contact details of the shop": (
+ "Modifier les coordonnées de la boutique",
+ "Modificar los datos de contacto de la tienda",
+ "Die Kontaktdaten des Shops ändern"),
 "Create a contact": (
  "Créer un contact",
  "Crear un contacto",
@@ -1286,6 +1354,18 @@ T = {
  "Ajouter ou mettre à jour une langue depuis PrestaShop",
  "Añadir o actualizar un idioma desde PrestaShop",
  "Eine Sprache von PrestaShop hinzufügen oder aktualisieren"),
+"List the translations of a language": (
+ "Lister les traductions d'une langue",
+ "Listar las traducciones de un idioma",
+ "Die Übersetzungen einer Sprache auflisten"),
+"Change a translation of a language": (
+ "Modifier une traduction d'une langue",
+ "Cambiar una traducción de un idioma",
+ "Eine Übersetzung einer Sprache ändern"),
+"Export the translations of a language": (
+ "Exporter les traductions d'une langue",
+ "Exportar las traducciones de un idioma",
+ "Die Übersetzungen einer Sprache exportieren"),
 "Add a language": (
  "Ajouter une langue",
  "Añadir un idioma",
@@ -1534,6 +1614,14 @@ T = {
  "Lire les réglages SEO et URL",
  "Leer los ajustes de SEO y URL",
  "Die SEO- und URL-Einstellungen lesen"),
+"Change the schema of URLs": (
+ "Modifier le schéma des URL",
+ "Modificar el esquema de las URL",
+ "Das URL-Schema ändern"),
+"Change the SEO and URL settings": (
+ "Modifier les réglages SEO et URL",
+ "Modificar los ajustes de SEO y URL",
+ "Die SEO- und URL-Einstellungen ändern"),
 "Read the robots.txt file": (
  "Lire le fichier robots.txt",
  "Leer el archivo robots.txt",
@@ -1578,6 +1666,18 @@ T = {
  "Générer le fichier llms.txt",
  "Generar el archivo llms.txt",
  "Die Datei llms.txt erzeugen"),
+"Create a CMS page": (
+ "Créer une page CMS",
+ "Crear una página CMS",
+ "Eine CMS-Seite erstellen"),
+"Change a CMS page": (
+ "Modifier une page CMS",
+ "Modificar una página CMS",
+ "Eine CMS-Seite ändern"),
+"Delete a CMS page": (
+ "Supprimer une page CMS",
+ "Eliminar una página CMS",
+ "Eine CMS-Seite löschen"),
 "Change the SEO of a CMS page": (
  "Modifier le SEO d'une page CMS",
  "Cambiar el SEO de una página CMS",
@@ -1602,6 +1702,10 @@ T = {
  "Lister les meilleures ventes",
  "Listar los productos más vendidos",
  "Meistverkaufte Produkte auflisten"),
+"Change the content pages of this shop: their titles, texts, categories and whether they are displayed": (
+ "Modifier les pages de contenu de cette boutique : leurs titres, textes, catégories et leur affichage",
+ "Cambiar las páginas de contenido de esta tienda: sus títulos, textos, categorías y si se muestran",
+ "Die Inhaltsseiten dieses Shops ändern: ihre Titel, Texte, Kategorien und ob sie angezeigt werden"),
 "Read the content pages of this shop: their titles, addresses and categories, displayed or not": (
  "Lire les pages de contenu de cette boutique : leurs titres, adresses et catégories, affichées ou non",
  "Leer las páginas de contenido de esta tienda: sus títulos, direcciones y categorías, mostradas o no",
@@ -1614,6 +1718,18 @@ T = {
  "Lire une page de contenu",
  "Leer una página de contenido",
  "Eine Inhaltsseite abrufen"),
+"Read a CMS page category": (
+ "Lire une catégorie de pages CMS",
+ "Leer una categoría de páginas CMS",
+ "Eine CMS-Seitenkategorie lesen"),
+"Update a CMS page category": (
+ "Modifier une catégorie de pages CMS",
+ "Modificar una categoría de páginas CMS",
+ "Eine CMS-Seitenkategorie ändern"),
+"Create a CMS page category": (
+ "Créer une catégorie de pages CMS",
+ "Crear una categoría de páginas CMS",
+ "Eine CMS-Seitenkategorie erstellen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",
@@ -1850,6 +1966,10 @@ T = {
  "Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal, modifier ces liens, et la mise en page de ses pages",
  "Cambiar el aspecto de la tienda: añadir entradas y enlaces personalizados a su menú principal, modificar esos enlaces, y el diseño de sus páginas",
  "Das Aussehen des Shops ändern: Einträge und eigene Links zu seinem Hauptmenü hinzufügen, diese Links ändern und das Layout seiner Seiten"),
+"Change the shop logos": (
+ "Modifier les logos de la boutique",
+ "Cambiar los logotipos de la tienda",
+ "Die Logos des Shops ändern"),
 "Change the layout of a page": (
  "Modifier la mise en page d'une page",
  "Cambiar el diseño de una página",
@@ -1866,10 +1986,10 @@ T = {
  "Lire les pages de contenu",
  "Leer las páginas de contenido",
  "Inhaltsseiten lesen"),
-"List and read the CMS pages of the PrestaShop shop.": (
- "Lister et lire les pages CMS de la boutique PrestaShop.",
- "Listar y leer las páginas CMS de la tienda PrestaShop.",
- "Die CMS-Seiten des PrestaShop-Shops auflisten und lesen."),
+"List, read and change the CMS pages of the PrestaShop shop.": (
+ "Lister, lire et modifier les pages CMS de la boutique PrestaShop.",
+ "Listar, leer y modificar las páginas CMS de la tienda PrestaShop.",
+ "Die CMS-Seiten des PrestaShop-Shops auflisten, lesen und ändern."),
 "Title of a page": (
  "Titre d'une page",
  "Título de una página",
@@ -3023,6 +3143,10 @@ T = {
  "Activer ou désactiver une règle panier",
  "Activar o desactivar una regla de carrito",
  "Eine Warenkorbregel aktivieren oder deaktivieren"),
+"Delete a cart rule": (
+ "Supprimer une règle panier",
+ "Eliminar una regla de carrito",
+ "Eine Warenkorbregel löschen"),
 "Sales - changes": (
  "Ventes - modifications",
  "Ventas - cambios",
@@ -3043,6 +3167,34 @@ T = {
  "Nombre de jours à remonter, 30 par défaut",
  "Número de días hacia atrás, 30 por defecto",
  "Anzahl der Tage zurück, standardmäßig 30"),
+"Turn the server on, copy its address and check your setup.": (
+ "Activer le serveur, copier son adresse et vérifier votre installation.",
+ "Activar el servidor, copiar su dirección y comprobar su instalación.",
+ "Den Server einschalten, seine Adresse kopieren und Ihre Einrichtung prüfen."),
+"The tools and prompts an assistant may use on this shop.": (
+ "Les outils et les prompts qu'un assistant peut utiliser sur cette boutique.",
+ "Las herramientas y los prompts que un asistente puede usar en esta tienda.",
+ "Die Tools und Prompts, die ein Assistent in diesem Shop nutzen darf."),
+"Who may connect, how they sign in and what is kept.": (
+ "Qui peut se connecter, comment, et ce qui est conservé.",
+ "Quién puede conectarse, cómo, y qué se conserva.",
+ "Wer sich verbinden darf, wie, und was aufbewahrt wird."),
+"The assistants connected to this shop, and how to disconnect one.": (
+ "Les assistants connectés à cette boutique, et comment en déconnecter un.",
+ "Los asistentes conectados a esta tienda, y cómo desconectar uno.",
+ "Die mit diesem Shop verbundenen Assistenten, und wie man einen trennt."),
+"The assistant inside your back office and the models it uses.": (
+ "L'assistant de votre back-office et les modèles qu'il utilise.",
+ "El asistente de su back office y los modelos que utiliza.",
+ "Der Assistent in Ihrem Back Office und die Modelle, die er nutzt."),
+"What the assistants did on this shop, and when.": (
+ "Ce que les assistants ont fait sur cette boutique, et quand.",
+ "Lo que los asistentes han hecho en esta tienda, y cuándo.",
+ "Was die Assistenten in diesem Shop getan haben, und wann."),
+"The guide, the updates of the module and how to reach us.": (
+ "Le guide, les mises à jour du module et comment nous joindre.",
+ "La guía, las actualizaciones del módulo y cómo contactarnos.",
+ "Die Anleitung, die Updates des Moduls und wie Sie uns erreichen."),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

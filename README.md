@@ -330,6 +330,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_return_statuses` | ● List return statuses | Statuses › view |
 | `somcp_list_carriers` | ● List carriers | Carriers › view |
 | `somcp_get_carrier` | ● Read a carrier | Carriers › view |
+| `somcp_create_carrier` | ✎ Create a carrier | Carriers › add |
 | `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
 | `somcp_delete_carrier` | ✎ Delete a carrier | Carriers › delete |
 | `somcp_get_shipping_preferences` | ● Read the shipping preferences | Shipping preferences › view |
@@ -356,6 +357,12 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_contact` | ✎ Create a contact | Contacts › add |
 | `somcp_update_contact` | ✎ Change a contact | Contacts › edit |
 | `somcp_delete_contact` | ✎ Delete a contact | Contacts › delete |
+| `somcp_list_stores` | ● List the stores | Stores › view |
+| `somcp_create_store` | ✎ Create a store | Stores › add |
+| `somcp_update_store` | ✎ Change a store | Stores › edit |
+| `somcp_delete_store` | ✎ Delete a store | Stores › delete |
+| `somcp_get_contact_details` | ● Get the contact details of the shop | Stores › view |
+| `somcp_update_contact_details` | ✎ Change the contact details of the shop | Stores › edit |
 | `somcp_list_zones` | ● List zones | Zones › view |
 | `somcp_create_zone` | ✎ Create a zone | Zones › add |
 | `somcp_update_zone` | ✎ Change a zone | Zones › edit |
@@ -487,6 +494,9 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_language` | ✎ Change a language | Languages › edit |
 | `somcp_delete_language` | ✎ Delete a language | Languages › delete |
 | `somcp_install_language_pack` | ✎ Add or update a language from PrestaShop | Translations › add / update a language |
+| `somcp_export_translations` | ✎ Export the translations of a language | Translations › add |
+| `somcp_list_translations` | ● List the translations of a language | Translations › view |
+| `somcp_update_translation` | ✎ Change a translation of a language | Translations › edit |
 | `somcp_get_localization_settings` | ● Read the localization settings | Localization › view |
 | `somcp_update_localization_settings` | ✎ Change the localization settings | Localization › edit |
 | `somcp_import_localization_pack` | ✎ Import a localization pack | Localization › edit |
@@ -532,6 +542,9 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_customer_groups` | ● List customer groups | Groups › view |
 | `somcp_get_customer_group` | ● Get a customer group | Groups › view |
 | `somcp_update_customer_group` | ✎ Change a customer group | Groups › edit |
+| `somcp_update_default_groups` | ✎ Change the default customer groups | Groups › edit |
+| `somcp_create_customer_group` | ✎ Create a customer group | Groups › add |
+| `somcp_delete_customer_group` | ✎ Delete a customer group | Groups › delete |
 
 ### 📈 Statistics
 
@@ -546,6 +559,9 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_list_cms_pages` | ● List content pages | Pages › view |
 | `somcp_get_cms_page` | ● Get a content page | Pages › view |
+| `somcp_get_cms_category` | ● Read a CMS page category | Pages › view |
+| `somcp_create_cms_category` | ✎ Create a CMS page category | Pages › add |
+| `somcp_update_cms_category` | ✎ Update a CMS page category | Pages › edit |
 
 ### 🧩 Modules
 
@@ -567,6 +583,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_menu_link` | ✎ Change a main menu custom link | Module Manager › edit |
 | `somcp_get_theme` | ● Get the theme and page layouts | Theme & Logo › view |
 | `somcp_update_theme_setting` | ✎ Change the layout of a page | Theme & Logo › edit |
+| `somcp_update_logos` | ✎ Change the shop logos | Theme & Logo › edit |
 
 ### ⚙️ System
 
@@ -580,6 +597,8 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | Tool | What it does | Needs, in Team › Permissions |
 |---|---|---|
 | `somcp_get_seo_settings` | ● Read the SEO and URL settings | SEO & URLs › view |
+| `somcp_update_seo_settings` | ✎ Change the SEO and URL settings | SEO & URLs › edit |
+| `somcp_update_url_schema` | ✎ Change the schema of URLs | SEO & URLs › edit |
 | `somcp_list_meta_pages` | ● List the shop pages and their SEO | SEO & URLs › view |
 | `somcp_audit_page` | ● Audit a public page of the shop | SEO & URLs › view |
 | `somcp_check_links` | ● Check the links of the shop's public pages | SEO & URLs › view |
@@ -588,8 +607,17 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_audit_category_seo` | ● Audit the SEO of categories | Categories › view |
 | `somcp_audit_cms_seo` | ● Audit the SEO of CMS pages | Pages › view |
 | `somcp_audit_brand_seo` | ● Audit the SEO of brands | Brands › view |
+| `somcp_create_cms_page` | ✎ Create a CMS page | Pages › add |
+| `somcp_update_cms_page` | ✎ Change a CMS page | Pages › edit |
+| `somcp_delete_cms_page` | ✎ Delete a CMS page | Pages › delete |
 | `somcp_update_cms_seo` | ✎ Change the SEO of a CMS page | Pages › edit |
 | `somcp_update_meta_page` | ✎ Change the SEO of a shop page | SEO & URLs › edit |
+| `somcp_create_meta_page` | ✎ Add a shop page to SEO & URLs | SEO & URLs › add |
+| `somcp_delete_meta_page` | ✎ Delete a shop page from SEO & URLs | SEO & URLs › delete |
+| `somcp_list_search_engines` | ● List the search engines | Search Engines › view |
+| `somcp_create_search_engine` | ✎ Create a search engine | Search Engines › add |
+| `somcp_update_search_engine` | ✎ Change a search engine | Search Engines › edit |
+| `somcp_delete_search_engine` | ✎ Delete a search engine | Search Engines › delete |
 | `somcp_get_robots_txt` | ● Read the robots.txt file | SEO & URLs › view |
 | `somcp_generate_robots_txt` | ✎ Generate the robots.txt file | SEO & URLs › add, edit, delete |
 
@@ -617,6 +645,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_cart_rule` | ✎ Create a cart rule | Cart Rules › add |
 | `somcp_update_cart_rule` | ✎ Change a cart rule | Cart Rules › edit |
 | `somcp_set_cart_rule_active` | ✎ Switch a cart rule on or off | Cart Rules › edit |
+| `somcp_delete_cart_rule` | ✎ Delete a cart rule | Cart Rules › delete |
 | `somcp_list_catalog_price_rules` | ● List catalogue price rules | Catalog Price Rules › view |
 | `somcp_create_catalog_price_rule` | ✎ Create a catalogue price rule | Catalog Price Rules › add |
 

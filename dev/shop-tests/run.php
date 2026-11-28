@@ -553,13 +553,162 @@ if ($createTitle !== null && $listTitles !== null) {
     }
 }
 
-// A customer group changed and put back (#443): the read of group 3 given
-// back whole changes nothing, then Discount and Show prices are changed and
-// restored, in a finally so the demo group is left as it was.
+// The filters and orders of the list of groups (#447): a Discount of 5 on
+// group 2, read back by reduction_min; group 1, Visitor, has no member in the
+// demo data; the Discount is set back in a finally.
+$listGroups = $registry->get('somcp_list_customer_groups');
+if ($listGroups !== null) {
+    $calls += 3;
+    $listCall = static function (array $arguments) use ($listGroups, $context, $employee): array {
+        $result = $listGroups->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $listGroups->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $guest = new Group(2);
+    $guestReduction = (float) $guest->reduction;
+    try {
+        $guest->reduction = 5;
+        $guest->update();
+        // Compared with the whole list rather than fixed numbers: another test
+        // may have left a customer in a group, or a group of its own.
+        $all = $listCall([])['groups'] ?? [];
+        $ids = static function (array $groups): array {
+            return array_map('intval', array_column($groups, 'id_group'));
+        };
+        $expectDiscounted = $ids(array_filter($all, static function (array $g): bool { return (float) $g['reduction'] >= 0.01; }));
+        $expectEmpty = $ids(array_filter($all, static function (array $g): bool { return (int) $g['members_count'] === 0; }));
+        $discounted = $ids($listCall(['reduction_min' => 0.01])['groups'] ?? []);
+        $empty = $ids($listCall(['members_max' => 0])['groups'] ?? []);
+        $byMembers = array_map('intval', array_column($listCall(['sort' => 'members_desc'])['groups'] ?? [], 'members_count'));
+        $descending = $byMembers;
+        rsort($descending);
+        if (!in_array(2, $discounted, true) || $discounted !== $expectDiscounted) {
+            $failures[] = 'somcp_list_customer_groups (reduction_min 0.01): expected ' . json_encode($expectDiscounted) . ', group 2 among them - ' . json_encode($discounted);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_customer_groups (the groups that give a discount)');
+        }
+        if ($empty !== $expectEmpty) {
+            $failures[] = 'somcp_list_customer_groups (members_max 0): expected ' . json_encode($expectEmpty) . ' - ' . json_encode($empty);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_customer_groups (the groups nobody is in)');
+        }
+        if ($byMembers === [] || $byMembers !== $descending || count($byMembers) !== count($all)) {
+            $failures[] = 'somcp_list_customer_groups (members_desc): expected the most members first - ' . json_encode($byMembers);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_customer_groups (sorted by members, most first)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_list_customer_groups (filters): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $guest = new Group(2);
+        if ((float) $guest->reduction !== $guestReduction) {
+            $guest->reduction = $guestReduction;
+            $guest->update();
+        }
+    }
+}
+
+// The members of a group (#446): customer 1 is put in group 2 (Guest) if it
+// is not already, then id_group must list exactly the rows of customer_group,
+// as the View page of the group does, and id_default_group exactly the
+// customers whose default group is 2. Both are read from the database rather
+// than assumed from the demo data: the scenarios run before this check change
+// the groups of the demo customers. The row is removed in a finally only when
+// this check added it, so the shop is left as it was.
+$searchCustomers = $registry->get('somcp_search_customers');
+if ($searchCustomers !== null) {
+    $calls += 2;
+    $searchCall = static function (array $arguments) use ($searchCustomers, $context, $employee): array {
+        $result = $searchCustomers->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $searchCustomers->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $ids = static function (array $answer): array {
+        $found = array_map('intval', array_column($answer['customers'] ?? [], 'id_customer'));
+        sort($found);
+
+        return $found;
+    };
+    $db = Db::getInstance();
+    $idShop = (int) $context->shop->id;
+    $column = static function (string $sql) use ($db): array {
+        $found = array_map('intval', array_column($db->executeS($sql) ?: [], 'id_customer'));
+        sort($found);
+
+        return $found;
+    };
+    $added = false;
+    try {
+        if (!$db->getValue('SELECT 1 FROM `' . _DB_PREFIX_ . 'customer_group` WHERE `id_customer` = 1 AND `id_group` = 2')) {
+            (new Customer(1))->addGroups([2]);
+            $added = true;
+        }
+        $members = $searchCall(['id_group' => 2, 'limit' => 100]);
+        $defaults = $searchCall(['id_default_group' => 2, 'limit' => 100]);
+        $expectedMembers = $column('SELECT c.`id_customer` FROM `' . _DB_PREFIX_ . 'customer` c'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'customer_group` cg ON cg.`id_customer` = c.`id_customer` AND cg.`id_group` = 2'
+            . ' WHERE c.`id_shop` = ' . $idShop . ' AND c.`deleted` = 0');
+        $expectedDefaults = $column('SELECT `id_customer` FROM `' . _DB_PREFIX_ . 'customer`'
+            . ' WHERE `id_default_group` = 2 AND `id_shop` = ' . $idShop . ' AND `deleted` = 0');
+        if ($ids($members) !== $expectedMembers || (int) ($members['total_count'] ?? 0) !== count($expectedMembers) || !in_array(1, $ids($members), true)) {
+            $failures[] = 'somcp_search_customers (the members of group 2): expected ' . json_encode($expectedMembers) . ' - ' . json_encode($ids($members));
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_search_customers (the members of group 2)');
+        }
+        if ($ids($defaults) !== $expectedDefaults || (int) ($defaults['total_count'] ?? 0) !== count($expectedDefaults)) {
+            $failures[] = 'somcp_search_customers (the default group 2): expected ' . json_encode($expectedDefaults) . ' - ' . json_encode($ids($defaults));
+        } elseif ((int) (new Customer(1))->id_default_group !== 2 && in_array(1, $ids($defaults), true)) {
+            $failures[] = 'somcp_search_customers (the default group 2): customer 1 is a member of group 2, not its default one - ' . json_encode($ids($defaults));
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_search_customers (the default group 2, not its other members)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_search_customers (members of a group): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($added) {
+            $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'customer_group` WHERE `id_customer` = 1 AND `id_group` = 2');
+        }
+    }
+}
+
+// A customer group changed and put back (#443, #444, #445): the read of
+// group 3 given back whole changes nothing, then Discount, Show prices, the
+// category discounts and the authorized modules are changed and restored, in
+// a finally so the demo group is left as it was.
 $getGroup = $registry->get('somcp_get_customer_group');
 $updateGroup = $registry->get('somcp_update_customer_group');
 if ($getGroup !== null && $updateGroup !== null) {
-    $calls += 4;
+    $calls += 11;
     $groupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
         $result = $tool->call($arguments, [
             'id_shop' => (int) $context->shop->id,
@@ -583,6 +732,8 @@ if ($getGroup !== null && $updateGroup !== null) {
     $stored = new Group(3);
     $storedReduction = (float) $stored->reduction;
     $storedShowPrices = (bool) $stored->show_prices;
+    $storedModules = array_map('intval', array_column(Module::getAuthorizedModules(3, [(int) $context->shop->id]) ?: [], 'id_module'));
+    sort($storedModules);
     try {
         $read = $groupCall($getGroup, ['id_group' => 3]);
         $same = isset($read['group']) ? $groupCall($updateGroup, $read['group']) : [];
@@ -607,14 +758,675 @@ if ($getGroup !== null && $updateGroup !== null) {
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (Show prices off then on)');
         }
+        $set = $groupCall($updateGroup, ['id_group' => 3, 'category_discounts' => [['id_category' => 3, 'reduction' => 10]]]);
+        $readBack = $groupCall($getGroup, ['id_group' => 3]);
+        $rows = $readBack['group']['category_discounts'] ?? null;
+        $kept = $groupCall($updateGroup, ['id_group' => 3, 'category_discounts' => is_array($rows) ? $rows : []]);
+        $cleared = $groupCall($updateGroup, ['id_group' => 3, 'category_discounts' => []]);
+        if (empty($set['changed'])
+            || !is_array($rows) || count($rows) !== 1 || (int) ($rows[0]['id_category'] ?? 0) !== 3
+            || ($rows[0]['category'] ?? null) !== 'Clothes' || (float) ($rows[0]['reduction'] ?? -1) !== 10.0
+            || ($kept['changed'] ?? null) !== false
+            || empty($cleared['changed']) || ($cleared['group']['category_discounts'] ?? null) !== []) {
+            $failures[] = 'somcp_update_customer_group (10 % on Clothes, given back, then none): unexpected - '
+                . json_encode([$set, $rows, $kept, $cleared]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (10 % on Clothes, given back, then none)');
+        }
+        $modules = $groupCall($getGroup, ['id_group' => 3])['group']['authorized_modules'] ?? null;
+        $sameModules = $groupCall($updateGroup, ['id_group' => 3, 'authorized_modules' => is_array($modules) ? $modules : []]);
+        if (!is_array($modules) || ($sameModules['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_customer_group (the authorized modules given back): expected no change - ' . json_encode($sameModules);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (the authorized modules given back, no change)');
+        }
+        // Payments by check is installed and hooked to the payment step by a
+        // standard install; a shop without it skips the payment check.
+        if (is_array($modules) && in_array('ps_checkpayment', $modules, true)) {
+            $without = $groupCall($updateGroup, ['id_group' => 3, 'authorized_modules' => array_values(array_diff($modules, ['ps_checkpayment']))]);
+            $again = $groupCall($updateGroup, ['id_group' => 3, 'authorized_modules' => $modules]);
+            $hooked = (bool) Db::getInstance()->getValue('SELECT 1 FROM `' . _DB_PREFIX_ . 'hook_module` hm'
+                . ' INNER JOIN `' . _DB_PREFIX_ . 'hook` h ON h.`id_hook` = hm.`id_hook`'
+                . ' INNER JOIN `' . _DB_PREFIX_ . 'module` m ON m.`id_module` = hm.`id_module`'
+                . " WHERE h.`name` = 'paymentOptions' AND m.`name` = 'ps_checkpayment' AND hm.`id_shop` = " . (int) $context->shop->id);
+            if (empty($without['changed']) || in_array('ps_checkpayment', $without['group']['authorized_modules'] ?? ['ps_checkpayment'], true)
+                || !in_array('ps_checkpayment', $without['group']['unauthorized_modules'] ?? [], true)
+                || ($hooked && strpos((string) ($without['warning'] ?? ''), 'no longer see these payment modules') === false)
+                || empty($again['changed']) || ($again['group']['authorized_modules'] ?? null) !== $modules) {
+                $failures[] = 'somcp_update_customer_group (Payments by check set to No, then Yes): unexpected - '
+                    . json_encode([$without['changes'] ?? $without, $without['warning'] ?? null, $again['changed'] ?? $again]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_customer_group (Payments by check set to No, then Yes)');
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
+        // The demo group has no category discount: whatever the test left is removed.
+        Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'group_reduction` WHERE `id_group` = 3');
+        Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'product_group_reduction_cache` WHERE `id_group` = 3');
         $left = new Group(3);
         if ((float) $left->reduction !== $storedReduction || (bool) $left->show_prices !== $storedShowPrices) {
             $left->reduction = $storedReduction;
             $left->show_prices = $storedShowPrices;
             $left->update();
+        }
+        $leftModules = array_map('intval', array_column(Module::getAuthorizedModules(3, [(int) $context->shop->id]) ?: [], 'id_module'));
+        sort($leftModules);
+        if ($leftModules !== $storedModules && $storedModules !== []) {
+            Group::addModulesRestrictions(3, $storedModules, [(int) $context->shop->id]);
+            Cache::clean(Hook::MODULE_LIST_BY_HOOK_KEY . '*');
+        }
+    }
+}
+
+// The default groups changed and put back (#465): the Guests group set to
+// Customer, read back through default_for of the list, then Guest again in a
+// finally, so the demo roles are left as they were.
+$updateDefaults = $registry->get('somcp_update_default_groups');
+$listRoles = $registry->get('somcp_list_customer_groups');
+if ($updateDefaults !== null && $listRoles !== null) {
+    $calls += 2;
+    $rolesCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $rolesOf = static function (int $idGroup) use ($rolesCall, $listRoles): ?array {
+        foreach ($rolesCall($listRoles, [])['groups'] ?? [] as $group) {
+            if ((int) ($group['id_group'] ?? 0) === $idGroup) {
+                return $group['default_for'] ?? null;
+            }
+        }
+
+        return null;
+    };
+    $storedGuests = (int) Configuration::get('PS_GUEST_GROUP', null, (int) Shop::getGroupFromShop((int) $context->shop->id), (int) $context->shop->id);
+    try {
+        $set = $rolesCall($updateDefaults, ['guests_group' => 3]);
+        $roles = $rolesOf(3);
+        if (empty($set['changed']) || count($set['changes'] ?? []) !== 1
+            || ($set['default_groups']['guests_group'] ?? null) !== 3 || $roles !== ['guests', 'customers']) {
+            $failures[] = 'somcp_update_default_groups (the Guests group set to 3): unexpected - ' . json_encode([$set, $roles]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_default_groups (the Guests group set to 3)');
+        }
+        $back = $rolesCall($updateDefaults, ['guests_group' => 2]);
+        $roles = $rolesOf(2);
+        if (empty($back['changed']) || $roles !== ['guests']) {
+            $failures[] = 'somcp_update_default_groups (the Guests group given back to 2): unexpected - ' . json_encode([$back, $roles]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_default_groups (the Guests group given back to 2)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_default_groups: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Written where the tool writes, so the shop's own value is the demo one again.
+        $rolesShop = (int) $context->shop->id;
+        $rolesShopGroup = (int) Shop::getGroupFromShop($rolesShop);
+        if ((int) Configuration::get('PS_GUEST_GROUP', null, $rolesShopGroup, $rolesShop) !== $storedGuests) {
+            Configuration::updateValue('PS_GUEST_GROUP', $storedGuests, false, $rolesShopGroup, $rolesShop);
+        }
+    }
+}
+
+// A customer group created (#467, #468): named in every active language, read
+// back with somcp_get_customer_group, every installed module authorized; then
+// one with a category discount on Home and every module but Payments by check,
+// whose payment is named in the warning. The first is then deleted with
+// somcp_delete_customer_group (#469) and read back unknown; whatever is left is
+// removed in a finally so the demo data keeps its three groups.
+$createGroup = $registry->get('somcp_create_customer_group');
+$readGroup = $registry->get('somcp_get_customer_group');
+if ($createGroup !== null && $readGroup !== null) {
+    $calls += 4;
+    $deleteGroup = $registry->get('somcp_delete_customer_group');
+    $newGroupCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $idNewGroup = 0;
+    $idListsGroup = 0;
+    try {
+        $groupNames = [];
+        foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
+            $groupNames[(string) $language['iso_code']] = 'Somcp test group';
+        }
+        // Left out, the method is the one of the shop, as the form presets
+        // it: read from the shop rather than assumed from the demo data.
+        $shopMethod = (int) Configuration::get('PRICE_DISPLAY_METHOD', null, (int) $context->shop->id_shop_group, (int) $context->shop->id) === 0
+            ? 'tax_included' : 'tax_excluded';
+        $created = $newGroupCall($createGroup, ['name' => $groupNames]);
+        $idNewGroup = (int) ($created['id_group'] ?? 0);
+        $read = $idNewGroup > 0 ? $newGroupCall($readGroup, ['id_group' => $idNewGroup]) : [];
+        $installed = array_map('strval', array_column(Module::getModulesInstalled() ?: [], 'name'));
+        sort($installed);
+        $authorized = is_array($created['group']['authorized_modules'] ?? null) ? $created['group']['authorized_modules'] : [];
+        $authorized = array_map('strval', $authorized);
+        sort($authorized);
+        if (($created['created'] ?? null) !== true || $idNewGroup <= 3
+            || strpos((string) ($created['warning'] ?? ''), 'The group sees only the home category') !== 0
+            || ($created['group']['price_display_method'] ?? null) !== $shopMethod
+            || ($created['group']['show_prices'] ?? null) !== true
+            || $authorized !== $installed
+            || ($read['group']['id_group'] ?? $read['id_group'] ?? null) !== $idNewGroup) {
+            $failures[] = 'somcp_create_customer_group (a group named in every language, read back): ' . json_encode([$created, $read]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_customer_group (a group named in every language, read back)');
+        }
+        if (in_array('ps_checkpayment', $installed, true)) {
+            $home = (int) Configuration::get('PS_HOME_CATEGORY');
+            $lists = $newGroupCall($createGroup, [
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp test lists'],
+                'category_discounts' => [['id_category' => $home, 'reduction' => 10]],
+                'authorized_modules' => array_values(array_diff($installed, ['ps_checkpayment'])),
+            ]);
+            $idListsGroup = (int) ($lists['id_group'] ?? 0);
+            $readLists = $idListsGroup > 0 ? $newGroupCall($readGroup, ['id_group' => $idListsGroup]) : [];
+            $rows = $readLists['group']['category_discounts'] ?? [];
+            if (($lists['created'] ?? null) !== true || $idListsGroup <= 3
+                || count($rows) !== 1 || (int) ($rows[0]['id_category'] ?? 0) !== $home || (float) ($rows[0]['reduction'] ?? 0) !== 10.0
+                || ($readLists['group']['unauthorized_modules'] ?? null) !== ['ps_checkpayment']
+                || strpos((string) ($lists['warning'] ?? ''), 'no longer see these payment modules') === false) {
+                $failures[] = 'somcp_create_customer_group (a discount on Home, Payments by check left out): ' . json_encode([$lists, $readLists]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_customer_group (a discount on Home, Payments by check left out)');
+            }
+        }
+        if ($deleteGroup !== null && $idNewGroup > 3) {
+            $calls += 2;
+            $deleted = $newGroupCall($deleteGroup, ['id_group' => $idNewGroup]);
+            $gone = $newGroupCall($readGroup, ['id_group' => $idNewGroup]);
+            if (($deleted['deleted'] ?? null) !== true || ($deleted['id_group'] ?? null) !== $idNewGroup
+                || ($deleted['group']['id_group'] ?? null) !== $idNewGroup
+                || strpos((string) ($gone['error'] ?? ''), 'no customer group of this shop has the identifier ' . $idNewGroup) === false) {
+                $failures[] = 'somcp_delete_customer_group (the group just created, then read unknown): ' . json_encode([$deleted, $gone]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_customer_group (the group just created, then read unknown)');
+                $idNewGroup = 0;
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_customer_group: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever failed above, the groups made here do not stay.
+        foreach ([$idNewGroup, $idListsGroup] as $idMade) {
+            if ($idMade > 3) {
+                $left = new Group($idMade);
+                if (Validate::isLoadedObject($left)) {
+                    $left->delete();
+                }
+                Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'group_reduction` WHERE `id_group` = ' . (int) $idMade);
+                Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'product_group_reduction_cache` WHERE `id_group` = ' . (int) $idMade);
+            }
+        }
+    }
+}
+
+// A translation pack exported (#452): the reference answered must lead to a
+// zip whose files are the XLF of the locale, read the way somcp_download_file
+// reads it; on a shop with Hummingbird, its theme wordings export too.
+$exportTranslations = $registry->get('somcp_export_translations');
+if ($exportTranslations !== null) {
+    $calls += 2;
+    $exportCall = static function (array $arguments) use ($exportTranslations, $context, $employee): array {
+        $result = $exportTranslations->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $exportTranslations->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    try {
+        $pack = $exportCall(['language' => 'en', 'core' => ['email']]);
+        $query = SomcpDownload::query((string) ($pack['file'][SomcpDownload::ARG_REF] ?? ''));
+        $file = SomcpDownload::check($query, (int) $employee->id, (int) $context->shop->id) === ''
+            ? SomcpDownload::file($query['kind'], $query['id'], (int) $context->shop->id)
+            : 'refused';
+        // A zip keeps the names of its files uncompressed, so the locale of
+        // the XLF files is read without unpacking it.
+        if (!is_array($file) || strncmp($file['bytes'], 'PK', 2) !== 0 || strpos($file['bytes'], '.en-US.xlf') === false) {
+            $failures[] = 'somcp_export_translations (the e-mails of en, downloaded): expected a zip of en-US XLF files - '
+                . json_encode(is_array($file) ? ['name' => $file['name'], 'bytes' => strlen($file['bytes'])] : [$file, $pack]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_export_translations (the e-mails of en, downloaded)');
+        }
+
+        if (in_array('hummingbird', SomcpToolExportTranslations::installedThemes(), true)) {
+            $themePack = $exportCall(['language' => 'en', 'theme' => 'hummingbird']);
+            if (($themePack['exported'] ?? null) !== true || ($themePack['parts'] ?? []) !== ['theme hummingbird']) {
+                $failures[] = 'somcp_export_translations (the theme hummingbird): expected exported - ' . json_encode($themePack);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_export_translations (the theme hummingbird)');
+            }
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_export_translations (no hummingbird theme on this version, not called)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_export_translations: ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
+// A wording read with somcp_list_translations and given back whole changes
+// nothing (#458): file_translation is what the XLF files of the shop hold,
+// which a JSON scenario cannot know, so it is read first, then given back.
+// The reset runs whatever failed, so the shop keeps no translation of its own.
+$updateTranslation = $registry->get('somcp_update_translation');
+$listTranslations = $registry->get('somcp_list_translations');
+if ($updateTranslation !== null && $listTranslations !== null) {
+    $translationCall = static function ($tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $wording = ['language' => 'en', 'type' => 'back_office', 'domain' => 'AdminActions'];
+    try {
+        $calls += 3;
+        $saved = $translationCall($updateTranslation, $wording + ['source' => 'Save', 'translation' => 'Save now']);
+        if (($saved['changed'] ?? null) !== true) {
+            $failures[] = 'somcp_update_translation (the wording given back whole): the save answered ' . json_encode($saved);
+        } else {
+            $read = $translationCall($listTranslations, $wording + ['search' => 'Save', 'limit' => 100]);
+            $rows = array_values(array_filter(
+                is_array($read['translations'] ?? null) ? $read['translations'] : [],
+                static function ($row): bool {
+                    return is_array($row) && ($row['source'] ?? null) === 'Save';
+                }
+            ));
+            if (count($rows) !== 1 || ($rows[0]['shop_translation'] ?? null) !== 'Save now') {
+                $failures[] = 'somcp_update_translation (the wording given back whole): expected one row Save with Save now - '
+                    . json_encode($read);
+            } else {
+                $row = $rows[0];
+                $again = $translationCall($updateTranslation, $wording + [
+                    'source' => $row['source'],
+                    'file_translation' => $row['file_translation'],
+                    'shop_translation' => $row['shop_translation'],
+                    'shown' => $row['shown'],
+                    'translation' => $row['shop_translation'],
+                ]);
+                if (($again['changed'] ?? null) !== false || array_key_exists('changes', $again)) {
+                    $failures[] = 'somcp_update_translation (the wording given back whole): expected changed false and no changes - '
+                        . json_encode($again);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_translation (the wording given back whole)');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_translation (the wording given back whole): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        ++$calls;
+        try {
+            $translationCall($updateTranslation, $wording + ['source' => 'Save', 'reset' => true]);
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_update_translation (the reset after the wording given back whole): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
+// The demo stores read (#455): store 1 is Dade County with its Monday hours
+// as the shop keeps them, a list rather than the joined text of the form; its
+// picture, when the shop has the file, leads to the JPEG through the reference.
+$listStores = $registry->get('somcp_list_stores');
+if ($listStores !== null) {
+    ++$calls;
+    try {
+        $result = $listStores->call([], [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $listStores->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => [],
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $stores = json_decode(trim($text), true);
+        $first = is_array($stores) ? ($stores['stores'][0] ?? []) : [];
+        if (($first['id_store'] ?? null) !== 1 || ($first['name'] ?? null) !== 'Dade County'
+            || ($first['hours']['monday'] ?? null) !== ['09:00AM - 07:00PM']) {
+            $failures[] = 'somcp_list_stores (store 1 and its Monday hours): expected Dade County, ["09:00AM - 07:00PM"] - ' . $text;
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_stores (store 1 and its Monday hours)');
+        }
+
+        $picture = is_array($first['image'] ?? null) ? (string) ($first['image'][SomcpDownload::ARG_REF] ?? '') : '';
+        if ($picture !== '') {
+            $query = SomcpDownload::query($picture);
+            $file = SomcpDownload::check($query, (int) $employee->id, (int) $context->shop->id) === ''
+                ? SomcpDownload::file($query['kind'], $query['id'], (int) $context->shop->id)
+                : 'refused';
+            if (!is_array($file) || strncmp($file['bytes'], "\xFF\xD8", 2) !== 0) {
+                $failures[] = 'somcp_list_stores (the picture of store 1, downloaded): expected a JPEG - '
+                    . json_encode(is_array($file) ? ['name' => $file['name'], 'bytes' => strlen($file['bytes'])] : $file);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_list_stores (the picture of store 1, downloaded)');
+            }
+        } elseif (is_file(_PS_STORE_IMG_DIR_ . '1.jpg')) {
+            $failures[] = 'somcp_list_stores (the picture of store 1): the shop has img/st/1.jpg, the answer no image';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_list_stores (no picture for store 1 on this shop, not downloaded)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_list_stores: ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
+// The contact details read and given back whole change nothing (#457), then a
+// city, a country and its state are saved and read again. The demo shops keep
+// no country nor state, and the tool cannot empty them as the screen cannot,
+// so the finally puts the city back and deletes those four keys.
+$updateContactDetails = $registry->get('somcp_update_contact_details');
+$getContactDetails = $registry->get('somcp_get_contact_details');
+if ($updateContactDetails !== null && $getContactDetails !== null) {
+    $contactCall = static function ($tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $city = null;
+    try {
+        $calls += 4;
+        $read = $contactCall($getContactDetails, []);
+        $card = is_array($read['contact_details'] ?? null) ? $read['contact_details'] : null;
+        if ($card === null) {
+            $failures[] = 'somcp_update_contact_details (the read): ' . json_encode($read);
+        } else {
+            $city = (string) $card['city'];
+            $again = $contactCall($updateContactDetails, $read);
+            if (($again['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_contact_details (the read given back whole): expected changed false - ' . json_encode($again);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (the read given back whole)');
+            }
+            // The country and the state by ISO code (#459), as every other
+            // tool takes them: US is country 21 and FL state 12 of the demo.
+            $saved = $contactCall($updateContactDetails, ['contact_details' => ['city' => 'Miami', 'country' => 'US', 'state' => 'FL']]);
+            $fields = array_column(is_array($saved['changes'] ?? null) ? $saved['changes'] : [], 'field');
+            $readAgain = $contactCall($getContactDetails, []);
+            $after = $readAgain['contact_details'] ?? [];
+            if (($saved['changed'] ?? null) !== true || $fields !== ['city', 'country', 'state']
+                || ($after['city'] ?? null) !== 'Miami' || ($after['country'] ?? null) !== 'US' || ($after['state'] ?? null) !== 'FL'
+                || ($after['id_country'] ?? null) !== 21 || ($after['id_state'] ?? null) !== 12
+                || (int) Configuration::get('PS_SHOP_COUNTRY_ID') !== 21 || (string) Configuration::get('PS_SHOP_STATE') === '') {
+                $failures[] = 'somcp_update_contact_details (a city, a country and its state): ' . json_encode($saved) . ' - read again ' . json_encode($after);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (a city, a country and its state, read again)');
+            }
+            $calls += 1;
+            $same = $contactCall($updateContactDetails, $readAgain);
+            if (($same['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_contact_details (the saved country and state given back whole): expected changed false - ' . json_encode($same);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_contact_details (the saved country and state given back whole)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_contact_details: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        try {
+            if ($city !== null) {
+                $contactCall($updateContactDetails, ['contact_details' => ['city' => $city]]);
+            }
+            foreach (['PS_SHOP_COUNTRY_ID', 'PS_SHOP_COUNTRY', 'PS_SHOP_STATE_ID', 'PS_SHOP_STATE'] as $key) {
+                Configuration::deleteByName($key);
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_update_contact_details (the reset): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
+// A store created (#461), then read in the list as the merchant sees it:
+// the hours of each day, the country and state by ISO code, no picture.
+// Stores 1 to 5 are the demo's and never touched; the store made here is
+// deleted by somcp_delete_store, and the finally falls back to the object
+// only when that tool failed.
+$createStore = $registry->get('somcp_create_store');
+$listStoresAgain = $registry->get('somcp_list_stores');
+if ($createStore !== null && $listStoresAgain !== null) {
+    $storeCall = static function ($tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : ['error' => $text];
+    };
+    $idNewStore = 0;
+    try {
+        $calls += 2;
+        $created = $storeCall($createStore, [
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp test store'],
+            'address1' => ['en' => '1 Test Street'],
+            'city' => 'Miami',
+            'postcode' => '33135',
+            'country' => 'US',
+            'state' => 'FL',
+            'latitude' => 25.765005,
+            'longitude' => -80.243797,
+            'hours' => ['monday' => ['09:00AM - 07:00PM']],
+        ]);
+        $idNewStore = (int) ($created['store']['id_store'] ?? 0);
+        $listed = $storeCall($listStoresAgain, ['name' => 'Somcp test store']);
+        $item = $listed['stores'][0] ?? [];
+        if (($created['created'] ?? null) !== true || $idNewStore <= 5
+            || ($item['id_store'] ?? null) !== $idNewStore
+            || ($item['hours']['monday'] ?? null) !== ['09:00AM - 07:00PM'] || ($item['hours']['tuesday'] ?? null) !== []
+            || ($item['country'] ?? null) !== 'US' || ($item['state'] ?? null) !== 'FL'
+            || ($item['latitude'] ?? null) !== 25.765005 || array_key_exists('image', $item) === false || $item['image'] !== null
+            || ($item['active'] ?? null) !== true) {
+            $failures[] = 'somcp_create_store (a store in Miami, read in the list): ' . json_encode($created) . ' - listed ' . json_encode($listed);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_store (a store in Miami, read in the list)');
+        }
+
+        // The update (#462): store 1 given back whole changes nothing; the
+        // store made above gets a phone and Monday hours, then is switched
+        // off and read back off. Stores 1 to 5 are never written.
+        $updateStore = $registry->get('somcp_update_store');
+        if ($updateStore !== null && $idNewStore > 5) {
+            $calls += 5;
+            $first = $storeCall($listStoresAgain, ['limit' => 1]);
+            $again = $storeCall($updateStore, is_array($first['stores'][0] ?? null) ? $first['stores'][0] : ['id_store' => 1]);
+            if (($again['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_store (store 1 given back whole): expected changed false - ' . json_encode($again);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (store 1 given back whole)');
+            }
+            $saved = $storeCall($updateStore, [
+                'id_store' => $idNewStore,
+                'phone' => '0102030405',
+                'hours' => ['en' => ['monday' => ['10:00AM - 06:00PM']]],
+                'languages' => ['en'],
+            ]);
+            $fields = array_column(is_array($saved['changes'] ?? null) ? $saved['changes'] : [], 'field');
+            if (($saved['changed'] ?? null) !== true || $fields !== ['phone', 'hours (en)']
+                || ($saved['store']['phone'] ?? null) !== '0102030405') {
+                $failures[] = 'somcp_update_store (a phone and the Monday hours): ' . json_encode($saved);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (a phone and the Monday hours)');
+            }
+            $off = $storeCall($updateStore, ['id_store' => $idNewStore, 'active' => false]);
+            $listedOff = $storeCall($listStoresAgain, ['name' => 'Somcp test store', 'active' => false]);
+            if (($off['changed'] ?? null) !== true || ($listedOff['stores'][0]['id_store'] ?? null) !== $idNewStore
+                || ($listedOff['stores'][0]['active'] ?? null) !== false) {
+                $failures[] = 'somcp_update_store (switched off, read back): ' . json_encode($off) . ' - listed ' . json_encode($listedOff);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (switched off, read back)');
+            }
+            $twice = $storeCall($updateStore, ['id_store' => $idNewStore, 'active' => false]);
+            if (($twice['changed'] ?? null) !== false) {
+                $failures[] = 'somcp_update_store (the same call twice): expected changed false - ' . json_encode($twice);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (the same call twice)');
+            }
+
+            // The picture (#463): a GIF deposited is stored with its
+            // thumbnail, the item given back with its download_ref changes
+            // nothing, and null is refused as the screen cannot remove one.
+            $calls += 4;
+            $reference = SomcpUpload::inviteFor((int) $employee->id, $updateStore, 'image');
+            $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+            $entered = $invitation === null
+                ? 'no deposit could be opened'
+                : SomcpUpload::enter($invitation, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'store.gif');
+            $pictured = $entered === '' ? $storeCall($updateStore, ['id_store' => $idNewStore, 'image' => ['upload_ref' => $reference]]) : [];
+            $fields = array_column(is_array($pictured['changes'] ?? null) ? $pictured['changes'] : [], 'field');
+            if ($entered !== '' || ($pictured['changed'] ?? null) !== true || $fields !== ['image']
+                || ($pictured['image']['stored'] ?? null) !== true || empty($pictured['store']['image'])
+                || !is_file(_PS_STORE_IMG_DIR_ . $idNewStore . '.jpg')
+                || !is_file(_PS_STORE_IMG_DIR_ . $idNewStore . '-stores_default.jpg')) {
+                $failures[] = 'somcp_update_store (a GIF picture deposited): ' . $entered . ' ' . json_encode($pictured);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_store (a GIF picture deposited, with its thumbnail)');
+                $back = $storeCall($updateStore, $pictured['store']);
+                if (($back['changed'] ?? null) !== false) {
+                    $failures[] = 'somcp_update_store (the item with its picture given back whole): expected changed false - ' . json_encode($back);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_store (the item with its picture given back whole)');
+                }
+                $removed = $storeCall($updateStore, ['id_store' => $idNewStore, 'image' => null]);
+                if (strpos((string) ($removed['error'] ?? ''), "- image: the back office cannot remove a store's picture") === false) {
+                    $failures[] = 'somcp_update_store (the picture set to null): expected the refusal - ' . json_encode($removed);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_store (the picture set to null, refused)');
+                }
+            }
+        }
+
+        // The deletion (#464): the store made above goes with its picture,
+        // which the back office would leave on disk.
+        $deleteStore = $registry->get('somcp_delete_store');
+        if ($deleteStore !== null && $idNewStore > 5) {
+            $calls += 3;
+            $deleted = $storeCall($deleteStore, ['id_store' => $idNewStore]);
+            $listedGone = $storeCall($listStoresAgain, ['name' => 'Somcp test store']);
+            $files = glob(_PS_STORE_IMG_DIR_ . $idNewStore . '[.-]*') ?: [];
+            if (($deleted['deleted'] ?? null) !== true || ($deleted['store']['id_store'] ?? null) !== $idNewStore
+                || ($listedGone['total_count'] ?? null) !== 0 || $files !== []) {
+                $failures[] = 'somcp_delete_store (the store made above, with its picture): ' . json_encode($deleted)
+                    . ' - listed ' . json_encode($listedGone) . ' - files left ' . json_encode($files);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_store (the store made above, with its picture)');
+            }
+            $again = $storeCall($deleteStore, ['id_store' => $idNewStore]);
+            if (strpos((string) ($again['error'] ?? ''), 'somcp_list_stores') === false) {
+                $failures[] = 'somcp_delete_store (deleted twice): expected the store unknown - ' . json_encode($again);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_store (deleted twice, answered unknown)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_store: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        try {
+            // Any store of this name, should the answer have lost its id.
+            $leftovers = Db::getInstance()->executeS('SELECT DISTINCT `id_store` FROM `' . _DB_PREFIX_ . 'store_lang` WHERE `name` = \'Somcp test store\'') ?: [];
+            foreach ($leftovers as $row) {
+                if ((int) $row['id_store'] > 5) {
+                    (new Store((int) $row['id_store']))->delete();
+                    // Store::delete() leaves the picture and its thumbnails.
+                    foreach (glob(_PS_STORE_IMG_DIR_ . (int) $row['id_store'] . '[.-]*') ?: [] as $file) {
+                        @unlink($file);
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_store (the clean up): ' . get_class($e) . ' - ' . $e->getMessage();
         }
     }
 }
@@ -2325,6 +3137,466 @@ if ($listRules !== null) {
     }
 }
 
+// A cart rule deleted (#466): created for that alone, deleted with the tool,
+// then read as unknown; PS_CART_RULE_FEATURE_ACTIVE must be what the active
+// rules left say, with the warning when it went off. The demo rule
+// is never touched, and the finally deletes the rule and puts the key back
+// whatever happens.
+$deleteRule = $registry->get('somcp_delete_cart_rule');
+$createForDelete = $registry->get('somcp_create_cart_rule');
+$getForDelete = $registry->get('somcp_get_cart_rule');
+if ($deleteRule !== null && $createForDelete !== null && $getForDelete !== null) {
+    $calls += 1;
+    $deleteContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge(
+            $deleteRule->getRequiredScopes(),
+            $createForDelete->getRequiredScopes(),
+            $getForDelete->getRequiredScopes()
+        ))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $deleteText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $featureBefore = (string) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE');
+    $idDeleted = 0;
+    try {
+        $created = $createForDelete->call([
+            'languages' => ['en'],
+            'name' => ['en' => 'Somcp deleted'],
+            'code' => 'SOMCPDELETE',
+            'free_shipping' => true,
+        ], $deleteContext);
+        $idDeleted = (int) (json_decode(trim($deleteText($created)), true)['id_cart_rule'] ?? 0);
+        $featureOn = (bool) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE');
+        $deleted = $idDeleted > 0 ? $deleteRule->call(['id_cart_rule' => $idDeleted], $deleteContext) : $created;
+        $text = $deleteText($deleted);
+        $read = $idDeleted > 0 ? $getForDelete->call(['id_cart_rule' => $idDeleted], $deleteContext) : [];
+        // The core sets the key again from the active rules left, so it is
+        // compared with what they say rather than with its value before: a
+        // creation turns it on even for a rule created off.
+        $featureAfter = (bool) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE');
+        $featureExpected = (bool) CartRule::isCurrentlyUsed('cart_rule', true);
+        $missing = array_filter(['"deleted": true', '"id_cart_rule": ' . $idDeleted, '"name": {', 'Somcp deleted', '"code": "SOMCPDELETE"'], static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        });
+        if ($idDeleted <= 0 || !empty($deleted['isError']) || $missing !== []
+            || empty($read['isError']) || strpos($deleteText($read), 'no cart rule of this shop has the identifier ' . $idDeleted) === false
+            || $featureAfter !== $featureExpected
+            || (strpos($text, 'No cart rule is active any more') !== false) !== ($featureOn && !$featureExpected)) {
+            $failures[] = 'somcp_delete_cart_rule (a rule created, deleted, then unknown): unexpected - '
+                . json_encode([excerpt($deleted), $missing, excerpt($read), $featureAfter, $featureExpected]);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_cart_rule (a rule created, deleted, then unknown)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_cart_rule: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idDeleted > 0) {
+            $left = new CartRule($idDeleted);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+        if ((string) Configuration::getGlobalValue('PS_CART_RULE_FEATURE_ACTIVE') !== $featureBefore) {
+            Configuration::updateGlobalValue('PS_CART_RULE_FEATURE_ACTIVE', $featureBefore);
+        }
+    }
+}
+
+// A shop page added (#471): the first module page of addable_pages that is
+// not one of somcp, first with a Rewritten URL the form refuses, then with
+// one in every active language; listed afterwards and no longer offered. The
+// finally removes it whatever happens, so the demo pages stay as they were.
+$createMeta = $registry->get('somcp_create_meta_page');
+$listMetaPages = $registry->get('somcp_list_meta_pages');
+if ($createMeta !== null && $listMetaPages !== null) {
+    $calls += 3;
+    $addContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($createMeta->getRequiredScopes(), $listMetaPages->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $addText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idMetaAdded = 0;
+    $addPage = '';
+    try {
+        $before = json_decode(trim($addText($listMetaPages->call([], $addContext))), true);
+        foreach (is_array($before['addable_pages'] ?? null) ? $before['addable_pages'] : [] as $candidate) {
+            $value = (string) ($candidate['page'] ?? '');
+            if (strpos($value, 'module-') === 0 && strpos($value, 'module-somcp-') !== 0) {
+                $addPage = $value;
+                break;
+            }
+        }
+        if ($addPage === '') {
+            $failures[] = 'somcp_create_meta_page: no module page in addable_pages of somcp_list_meta_pages';
+        } else {
+            $isos = [];
+            foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
+                $isos[] = Tools::strtolower((string) $language['iso_code']);
+            }
+            $bad = $createMeta->call(['page' => $addPage, 'link_rewrite' => array_fill_keys($isos, 'a b')], $addContext);
+            $badText = $addText($bad);
+            if (empty($bad['isError']) || strpos($badText, '"Only letters and hyphens are allowed."') === false
+                || (int) Db::getInstance()->getValue('SELECT `id_meta` FROM `' . _DB_PREFIX_ . 'meta` WHERE `page` = \'' . pSQL($addPage) . '\'') > 0) {
+                $failures[] = 'somcp_create_meta_page (a Rewritten URL with a space, refused, nothing created): unexpected - ' . excerpt($bad);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_meta_page (a Rewritten URL with a space, refused, nothing created)');
+            }
+            $created = $createMeta->call(['page' => $addPage, 'link_rewrite' => array_fill_keys($isos, 'somcp-test-page')], $addContext);
+            $answer = json_decode(trim($addText($created)), true);
+            $idMetaAdded = (int) ($answer['id_meta'] ?? 0);
+            $after = json_decode(trim($addText($listMetaPages->call([], $addContext))), true);
+            $listedIds = array_map('intval', array_column(is_array($after['pages'] ?? null) ? $after['pages'] : [], 'id_meta'));
+            $offered = array_column(is_array($after['addable_pages'] ?? null) ? $after['addable_pages'] : [], 'page');
+            if (!empty($created['isError']) || ($answer['created'] ?? null) !== true || $idMetaAdded <= 0
+                || ($answer['page'] ?? null) !== $addPage || ($answer['link_rewrite'] ?? null) !== 'somcp-test-page'
+                || !in_array($idMetaAdded, $listedIds, true) || in_array($addPage, $offered, true)) {
+                $failures[] = 'somcp_create_meta_page (a module page added, then listed and no longer offered): unexpected - '
+                    . json_encode([excerpt($created), $addPage]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_meta_page (a module page added, then listed and no longer offered)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_meta_page: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Found by its name as well: an answer that lost the identifier must
+        // not leave the page behind.
+        if ($idMetaAdded <= 0 && $addPage !== '') {
+            $idMetaAdded = (int) Db::getInstance()->getValue('SELECT `id_meta` FROM `' . _DB_PREFIX_ . 'meta` WHERE `page` = \'' . pSQL($addPage) . '\'');
+        }
+        if ($idMetaAdded > 0) {
+            $added = new Meta($idMetaAdded);
+            if (Validate::isLoadedObject($added)) {
+                $added->delete();
+            }
+        }
+    }
+}
+
+// A shop page deleted (#470): a page made for that alone, for a module front
+// controller that has none and is never one of somcp, with a Rewritten URL in
+// every language; deleted with the tool, then gone from somcp_list_meta_pages.
+// The demo pages are never deleted, and the finally removes the page whatever
+// happens.
+$deleteMeta = $registry->get('somcp_delete_meta_page');
+$listMeta = $registry->get('somcp_list_meta_pages');
+if ($deleteMeta !== null && $listMeta !== null) {
+    $calls += 2;
+    $metaContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($deleteMeta->getRequiredScopes(), $listMeta->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $metaText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idMetaMade = 0;
+    try {
+        $free = '';
+        foreach (Meta::getPages(true) as $candidate) {
+            if (strpos((string) $candidate, 'module-') === 0 && strpos((string) $candidate, 'module-somcp-') !== 0) {
+                $free = (string) $candidate;
+                break;
+            }
+        }
+        if ($free === '') {
+            $failures[] = 'somcp_delete_meta_page: no module page without its row to create one';
+        } else {
+            $made = new Meta();
+            $made->page = $free;
+            // An unsigned integer in the definition of Meta on 8 and 9: a
+            // boolean fails its isUnsignedInt check on add().
+            $made->configurable = 1;
+            $made->url_rewrite = [];
+            foreach (Language::getLanguages(false) as $language) {
+                $made->url_rewrite[(int) $language['id_lang']] = 'somcp-test-page';
+            }
+            $made->add();
+            $idMetaMade = (int) $made->id;
+            $deleted = $idMetaMade > 0 ? $deleteMeta->call(['id_meta' => $idMetaMade], $metaContext) : [];
+            $text = $metaText($deleted);
+            $listed = $metaText($listMeta->call([], $metaContext));
+            $answer = json_decode(trim($text), true);
+            $listedPages = json_decode(trim($listed), true)['pages'] ?? null;
+            $isos = array_keys(is_array($answer['texts'] ?? null) ? $answer['texts'] : []);
+            if ($idMetaMade <= 0 || !empty($deleted['isError']) || ($answer['deleted'] ?? null) !== true
+                || ($answer['id_meta'] ?? null) !== $idMetaMade || ($answer['page'] ?? null) !== $free
+                || $isos === [] || ($answer['texts'][$isos[0]]['link_rewrite'] ?? null) !== 'somcp-test-page'
+                || !is_array($listedPages) || in_array($idMetaMade, array_map('intval', array_column($listedPages, 'id_meta')), true)
+                || Validate::isLoadedObject(new Meta($idMetaMade))) {
+                $failures[] = 'somcp_delete_meta_page (a page made for a module, deleted, then gone from the list): unexpected - '
+                    . json_encode([excerpt($deleted), $free]);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_meta_page (a page made for a module, deleted, then gone from the list)');
+                $idMetaMade = 0;
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_meta_page: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idMetaMade > 0) {
+            $left = new Meta($idMetaMade);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
+// A search engine added (#473), then read back with the Server filter of
+// somcp_list_search_engines, then its GET variable changed and the row given
+// back as answered (#474), then deleted and asked for again (#479). The JSON
+// scenarios only cover the refusals and the calls that change nothing, since a
+// row left behind would change the 38 rows the list reads; the finally
+// removes it whatever happens, found by its server if the answer lost it.
+$createEngine = $registry->get('somcp_create_search_engine');
+$updateEngine = $registry->get('somcp_update_search_engine');
+$deleteEngine = $registry->get('somcp_delete_search_engine');
+$listEngines = $registry->get('somcp_list_search_engines');
+if ($createEngine !== null && $updateEngine !== null && $deleteEngine !== null && $listEngines !== null) {
+    $calls += 5;
+    $engineContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($createEngine->getRequiredScopes(), $updateEngine->getRequiredScopes(), $deleteEngine->getRequiredScopes(), $listEngines->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $engineText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $idEngineAdded = 0;
+    try {
+        $created = $createEngine->call(['server' => 'somcp-test-engine', 'get_variable' => 'q'], $engineContext);
+        $answer = json_decode(trim($engineText($created)), true);
+        $idEngineAdded = (int) ($answer['id_search_engine'] ?? 0);
+        $listed = json_decode(trim($engineText($listEngines->call(['server' => 'somcp-test-engine'], $engineContext))), true);
+        $rows = is_array($listed['search_engines'] ?? null) ? $listed['search_engines'] : [];
+        $expected = ['id_search_engine' => $idEngineAdded, 'server' => 'somcp-test-engine', 'get_variable' => 'q'];
+        if (!empty($created['isError']) || ($answer['created'] ?? null) !== true || $idEngineAdded <= 0
+            || ($answer['search_engine'] ?? null) !== $expected || $rows !== [$expected]) {
+            $failures[] = 'somcp_create_search_engine (a search engine added, then listed as answered): unexpected - '
+                . excerpt($created);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_search_engine (a search engine added, then listed as answered)');
+        }
+        if ($idEngineAdded > 0) {
+            $changed = $updateEngine->call(['id_search_engine' => $idEngineAdded, 'get_variable' => 'query'], $engineContext);
+            $change = json_decode(trim($engineText($changed)), true);
+            $after = ['id_search_engine' => $idEngineAdded, 'server' => 'somcp-test-engine', 'get_variable' => 'query'];
+            if (!empty($changed['isError']) || ($change['changed'] ?? null) !== true
+                || ($change['fields'] ?? null) !== ['get_variable'] || ($change['search_engine'] ?? null) !== $after
+                || array_key_exists('warning', $change)) {
+                $failures[] = 'somcp_update_search_engine (the GET variable of a row changed): unexpected - ' . excerpt($changed);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_search_engine (the GET variable of a row changed)');
+            }
+            $same = $updateEngine->call($after, $engineContext);
+            $again = json_decode(trim($engineText($same)), true);
+            if (!empty($same['isError']) || ($again['changed'] ?? null) !== false || ($again['search_engine'] ?? null) !== $after) {
+                $failures[] = 'somcp_update_search_engine (the row given back as answered changes nothing): unexpected - ' . excerpt($same);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_search_engine (the row given back as answered changes nothing)');
+            }
+            $deleted = $deleteEngine->call(['id_search_engine' => $idEngineAdded], $engineContext);
+            $removal = json_decode(trim($engineText($deleted)), true);
+            $left = json_decode(trim($engineText($listEngines->call(['server' => 'somcp-test-engine'], $engineContext))), true);
+            if (!empty($deleted['isError']) || ($removal['deleted'] ?? null) !== true
+                || ($removal['id_search_engine'] ?? null) !== $idEngineAdded || ($removal['search_engine'] ?? null) !== $after
+                || strpos((string) ($removal['warning'] ?? ''), 'Visitors sent by somcp-test-engine are no longer told apart') !== 0
+                || ($left['search_engines'] ?? null) !== []) {
+                $failures[] = 'somcp_delete_search_engine (a row deleted, then no longer listed): unexpected - ' . excerpt($deleted);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_search_engine (a row deleted, then no longer listed)');
+            }
+            $twice = $deleteEngine->call(['id_search_engine' => $idEngineAdded], $engineContext);
+            if (empty($twice['isError']) || strpos($engineText($twice), 'no search engine of this shop has the identifier ' . $idEngineAdded) === false) {
+                $failures[] = 'somcp_delete_search_engine (a row deleted twice is unknown the second time): unexpected - ' . excerpt($twice);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_search_engine (a row deleted twice is unknown the second time)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_search_engine: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idEngineAdded <= 0) {
+            $idEngineAdded = (int) Db::getInstance()->getValue('SELECT `id_search_engine` FROM `' . _DB_PREFIX_ . 'search_engine` WHERE `server` = \'somcp-test-engine\'');
+        }
+        if ($idEngineAdded > 0) {
+            $added = new SearchEngine($idEngineAdded);
+            if (Validate::isLoadedObject($added)) {
+                $added->delete();
+            }
+        }
+    }
+}
+
+// The route of the suppliers changed, read back customized, then given its
+// default back (#480). The JSON scenario only covers the refusals and the call
+// that changes nothing, since a pattern left behind would move the supplier
+// addresses the tools after it read; the finally puts the default back
+// whatever happens.
+$updateSchema = $registry->get('somcp_update_url_schema');
+$getSeo = $registry->get('somcp_get_seo_settings');
+if ($updateSchema !== null && $getSeo !== null) {
+    $calls += 2;
+    $schemaContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($updateSchema->getRequiredScopes(), $getSeo->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $schemaText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $seoBefore = json_decode(trim($schemaText($getSeo->call([], $schemaContext))), true);
+    $supplierDefault = (string) ($seoBefore['routes']['supplier']['pattern'] ?? '');
+    try {
+        $moved = $updateSchema->call(['routes' => ['supplier' => ['pattern' => 'suppliers/{id}-{rewrite}']]], $schemaContext);
+        $move = json_decode(trim($schemaText($moved)), true);
+        $seoAfter = json_decode(trim($schemaText($getSeo->call([], $schemaContext))), true);
+        $expected = ['pattern' => 'suppliers/{id}-{rewrite}', 'customized' => true];
+        if (!empty($moved['isError']) || ($move['changed'] ?? null) !== true
+            || ($move['changes'] ?? null) !== [['route' => 'supplier', 'old' => $supplierDefault, 'new' => 'suppliers/{id}-{rewrite}']]
+            || ($move['routes']['supplier'] ?? null) !== $expected || ($seoAfter['routes']['supplier'] ?? null) !== $expected
+            || strpos((string) ($move['warning'] ?? ''), 'The addresses of all suppliers change') !== 0) {
+            $failures[] = 'somcp_update_url_schema (the route of the suppliers changed, then read customized): unexpected - ' . excerpt($moved);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_url_schema (the route of the suppliers changed, then read customized)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_url_schema: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $back = $updateSchema->call(['routes' => ['supplier' => ['pattern' => $supplierDefault]]], $schemaContext);
+        $restored = json_decode(trim($schemaText($back)), true);
+        if (!empty($back['isError']) || ($restored['routes']['supplier'] ?? null) !== ['pattern' => $supplierDefault, 'customized' => false]
+            || (string) Configuration::get('PS_ROUTE_supplier_rule', null, null, (int) $context->shop->id) !== '') {
+            $failures[] = 'somcp_update_url_schema (the default pattern given back restores the default): unexpected - ' . excerpt($back);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_url_schema (the default pattern given back restores the default)');
+        }
+    }
+}
+
+// Display attributes in the product meta title switched, read back, then the
+// first read given back whole (#481). The JSON scenario only covers the
+// refusals and the call that changes nothing, since the demo values differ
+// between versions; the finally gives the first read back whatever happens.
+$updateSeo = $registry->get('somcp_update_seo_settings');
+$readSeo = $registry->get('somcp_get_seo_settings');
+if ($updateSeo !== null && $readSeo !== null) {
+    $calls += 2;
+    $seoContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($updateSeo->getRequiredScopes(), $readSeo->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $seoText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $firstRead = json_decode(trim($seoText($readSeo->call([], $seoContext))), true);
+    $firstRead = is_array($firstRead) ? $firstRead : [];
+    $wasShown = ($firstRead['product_attributes_in_title'] ?? null) === true;
+    $switched = false;
+    try {
+        $toggled = $updateSeo->call(['product_attributes_in_title' => !$wasShown], $seoContext);
+        $toggle = json_decode(trim($seoText($toggled)), true);
+        $switched = ($toggle['changed'] ?? null) === true;
+        $secondRead = json_decode(trim($seoText($readSeo->call([], $seoContext))), true);
+        if (!empty($toggled['isError']) || !$switched
+            || ($toggle['changes'] ?? null) !== [['field' => 'product_attributes_in_title', 'old' => $wasShown, 'new' => !$wasShown]]
+            || ($toggle['settings']['product_attributes_in_title'] ?? null) !== !$wasShown
+            || ($secondRead['product_attributes_in_title'] ?? null) !== !$wasShown
+            || strpos((string) ($toggle['warning'] ?? ''), 'The meta title of a product page with a combination now') !== 0) {
+            $failures[] = 'somcp_update_seo_settings (the attributes in the product meta title switched, then read back): unexpected - ' . excerpt($toggled);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_seo_settings (the attributes in the product meta title switched, then read back)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_seo_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($firstRead !== []) {
+            $back = $updateSeo->call($firstRead, $seoContext);
+            $restored = json_decode(trim($seoText($back)), true);
+            if (!empty($back['isError']) || ($restored['changed'] ?? null) !== $switched
+                || ($restored['settings']['product_attributes_in_title'] ?? null) !== $wasShown) {
+                $failures[] = 'somcp_update_seo_settings (the first read given back whole puts it back): unexpected - ' . excerpt($back);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_seo_settings (the first read given back whole puts it back)');
+            }
+        }
+    }
+}
+
 // A customer group restriction set on a cart rule, read back, then lifted
 // (#406), and the same for Product selection (#433): the JSON scenario only
 // covers the refusals, since a restriction left on a demo rule would change
@@ -2938,6 +4210,448 @@ if ($getCarrier !== null && $updateCarrier !== null) {
         }
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_carrier (a carrier logo changed): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+
+    // A carrier created, read and deleted again (#482): the JSON scenario
+    // cannot give the new identifier to the next call. It is created billed by
+    // weight in the first zone, with one priced range, and always deleted, so
+    // the demo data keeps its four carriers for the tools after it.
+    $createCarrier = $registry->get('somcp_create_carrier');
+    $deleteCarrier = $registry->get('somcp_delete_carrier');
+    $listZones = $registry->get('somcp_list_zones');
+    if ($createCarrier !== null && $deleteCarrier !== null && $listZones !== null) {
+        $calls += 4;
+        $idCreated = 0;
+        try {
+            [, , $zoneList] = $carrierCall($listZones, []);
+            $idZone = (int) ($zoneList['zones'][0]['id_zone'] ?? 0);
+            $delay = [];
+            foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
+                $delay[Tools::strtolower((string) $language['iso_code'])] = '2 to 3 days';
+            }
+            [$result, $text, $created] = $carrierCall($createCarrier, [
+                'name' => 'somcp-test-carrier',
+                'delay' => $delay,
+                'zones' => [$idZone],
+                'billing' => 'weight',
+                'ranges' => [['from' => 0, 'to' => 10, 'prices' => [['id_zone' => $idZone, 'price_tax_excl' => 4.5]]]],
+            ]);
+            $idCreated = (int) ($created['id_carrier'] ?? 0);
+            $price = $created['carrier']['ranges'][0]['prices'][0]['price_tax_excl'] ?? null;
+            if (!empty($result['isError']) || $idZone === 0 || $idCreated === 0 || ($created['created'] ?? null) !== true
+                || ($created['carrier']['active'] ?? null) !== false || (float) $price !== 4.5
+                || strpos($text, 'The carrier is off') === false) {
+                $failures[] = 'somcp_create_carrier (a carrier with a zone and a priced range): expected it created off, its price read back - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_carrier (a carrier with a zone and a priced range, created off)');
+            }
+            [$result, $text] = $carrierCall($getCarrier, ['id_carrier' => $idCreated]);
+            if (!empty($result['isError']) || strpos($text, '"name": "somcp-test-carrier"') === false) {
+                $failures[] = 'somcp_create_carrier (the new carrier read): expected it under its new identifier - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_carrier (the new carrier read with somcp_get_carrier)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_carrier (a carrier created and deleted): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idCreated > 0) {
+                [$result] = $carrierCall($deleteCarrier, ['id_carrier' => $idCreated]);
+                if (!empty($result['isError'])) {
+                    $failures[] = 'somcp_create_carrier (the new carrier deleted again): ' . excerpt($result);
+                }
+            }
+        }
+    }
+}
+
+// A page changed and put back (#484): the JSON scenario cannot give a read
+// back. Demo page 5 gets a new title and content in the default language,
+// then its first read is given back whole, which puts both back.
+$updateCmsPage = $registry->get('somcp_update_cms_page');
+$getCmsPage = $registry->get('somcp_get_cms_page');
+if ($updateCmsPage !== null && $getCmsPage !== null) {
+    $calls += 4;
+    $pageCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text, json_decode(trim($text), true)];
+    };
+    $pageBefore = null;
+    try {
+        [$result, , $pageBefore] = $pageCall($getCmsPage, ['id_cms' => 5]);
+        $iso = (string) ($pageBefore['language'] ?? '');
+        if (!empty($result['isError']) || $iso === '') {
+            $failures[] = 'somcp_update_cms_page (reading page 5 first): ' . excerpt($result);
+            $pageBefore = null;
+        } else {
+            [$result, $text] = $pageCall($updateCmsPage, [
+                'id_cms' => 5,
+                'languages' => [$iso],
+                'title' => [$iso => 'somcp test page'],
+                'content' => [$iso => '<p>somcp test content</p>'],
+            ]);
+            if (!empty($result['isError']) || strpos($text, '"changed": true') === false || strpos($text, '"field": "title"') === false
+                || strpos($text, '"field": "content"') === false) {
+                $failures[] = 'somcp_update_cms_page (a new title and content): expected both changed - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_page (a new title and content)');
+            }
+            [$result, $text] = $pageCall($getCmsPage, ['id_cms' => 5]);
+            if (!empty($result['isError']) || strpos($text, 'somcp test page') === false || strpos($text, 'somcp test content') === false) {
+                $failures[] = 'somcp_update_cms_page (page 5 read again): expected the new title and content - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_page (page 5 read again with its new texts)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_cms_page (a page changed): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if (is_array($pageBefore)) {
+            // seo_title follows the Title when no Meta title is set, so the
+            // read of the start no longer holds what the shop works out now.
+            $restore = $pageBefore;
+            unset($restore['seo_title']);
+            [$result] = $pageCall($updateCmsPage, $restore);
+            [, , $pageAfter] = $pageCall($getCmsPage, ['id_cms' => 5]);
+            // The content compared as text: the shop's cleaning may write the
+            // same HTML a little differently.
+            $plain = static function ($html): string {
+                return trim((string) preg_replace('/\s+/', ' ', strip_tags((string) $html)));
+            };
+            if (!empty($result['isError']) || ($pageAfter['title'] ?? null) !== $pageBefore['title']
+                || $plain($pageAfter['content'] ?? null) !== $plain($pageBefore['content'])) {
+                $failures[] = 'somcp_update_cms_page (the first read given back): expected page 5 as at the start - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_page (the first read given back, page 5 as at the start)');
+            }
+        }
+    }
+}
+
+// A page deleted (#485): the JSON scenario never deletes a page of the
+// install. A page made here in category 1 is deleted by the tool, then is
+// no longer listed, and a second deletion answers it unknown.
+$deleteCmsPage = $registry->get('somcp_delete_cms_page');
+$listCmsPages = $registry->get('somcp_list_cms_pages');
+if ($deleteCmsPage !== null && $listCmsPages !== null) {
+    $calls += 3;
+    $cmsCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $testPage = null;
+    try {
+        $testPage = new CMS();
+        $testPage->id_cms_category = 1;
+        $testPage->active = true;
+        $testPage->indexation = false;
+        foreach (Language::getIDs(false) as $idLang) {
+            $testPage->meta_title[(int) $idLang] = 'somcp test page';
+            $testPage->link_rewrite[(int) $idLang] = 'somcp-test-page';
+            $testPage->content[(int) $idLang] = '<p>somcp test page</p>';
+        }
+        if (!$testPage->add()) {
+            $failures[] = 'somcp_delete_cms_page (a page made for the test): the shop refused to add it';
+            $testPage = null;
+        } else {
+            $idTestPage = (int) $testPage->id;
+            [$result, $text] = $cmsCall($deleteCmsPage, ['id_cms' => $idTestPage]);
+            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false || strpos($text, 'somcp test page') === false) {
+                $failures[] = 'somcp_delete_cms_page (a page deleted, answered as it was): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_cms_page (a page deleted, answered as it was)');
+            }
+            [$result, $text] = $cmsCall($listCmsPages, []);
+            if (!empty($result['isError']) || preg_match('/"id_cms": ' . $idTestPage . '\b/', $text) === 1) {
+                $failures[] = 'somcp_delete_cms_page (the page no longer listed): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_cms_page (the page no longer listed)');
+            }
+            [$result, $text] = $cmsCall($deleteCmsPage, ['id_cms' => $idTestPage]);
+            if (empty($result['isError']) || strpos($text, 'no CMS page of this shop has the identifier ' . $idTestPage) === false) {
+                $failures[] = 'somcp_delete_cms_page (a page deleted twice is unknown the second time): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_cms_page (a page deleted twice is unknown the second time)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_cms_page (a page deleted): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // The page made here never outlives the test, whatever the tool did.
+        if ($testPage !== null && Validate::isLoadedObject(new CMS((int) $testPage->id))) {
+            $testPage->delete();
+        }
+    }
+}
+
+// A page created (#486): the JSON scenario never creates a page of the
+// install. A page made by the tool with a title only gets its Friendly URL
+// from the title, stays hidden and goes last of the root category; it is
+// then deleted with somcp_delete_cms_page, and by the core if that failed.
+$createCmsPage = $registry->get('somcp_create_cms_page');
+if ($createCmsPage !== null && $deleteCmsPage !== null) {
+    $calls += 2;
+    $cmsCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $idCreated = 0;
+    try {
+        $iso = (string) Language::getIsoById((int) Configuration::get('PS_LANG_DEFAULT'));
+        // Read before the call, so the check holds whatever the earlier
+        // blocks left in the category.
+        $expectedPosition = (int) CMS::getLastPosition(1);
+        [$result, $text] = $cmsCall($createCmsPage, [
+            'languages' => [$iso],
+            'title' => [$iso => 'somcp test page'],
+            'content' => [$iso => '<p>somcp test page</p>'],
+        ]);
+        if (preg_match('/"id_cms": (\d+)/', $text, $match) === 1) {
+            $idCreated = (int) $match[1];
+        }
+        if (!empty($result['isError']) || $idCreated <= 0 || strpos($text, '"created": true') === false
+            || strpos($text, '"link_rewrite": "somcp-test-page"') === false || strpos($text, '"active": false') === false
+            || strpos($text, '"position": ' . $expectedPosition) === false) {
+            $failures[] = 'somcp_create_cms_page (a page made from its title, hidden, last of its category): unexpected - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_cms_page (a page made from its title, hidden, last of its category)');
+        }
+        if ($idCreated > 0) {
+            [$result, $text] = $cmsCall($deleteCmsPage, ['id_cms' => $idCreated]);
+            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false) {
+                $failures[] = 'somcp_create_cms_page (the page created is deleted by somcp_delete_cms_page): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cms_page (the page created is deleted by somcp_delete_cms_page)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_cms_page (a page created): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // The page made here never outlives the test, whatever the tools did.
+        if ($idCreated > 0) {
+            $left = new CMS($idCreated);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
+// A page category created then changed (#490, #489): the JSON scenarios
+// write nothing, since a category left behind would change what the other
+// calls read. Made with a name only, it gets its Friendly URL from the name,
+// is displayed and goes last of Home, one level under it; its name is then
+// changed by somcp_update_cms_category, and the core deletes it whatever
+// the tools did.
+$createCmsCategory = $registry->get('somcp_create_cms_category');
+$updateCmsCategory = $registry->get('somcp_update_cms_category');
+if ($createCmsCategory !== null && $updateCmsCategory !== null) {
+    $calls += 2;
+    $categoryCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $idCategoryCreated = 0;
+    try {
+        $iso = (string) Language::getIsoById((int) Configuration::get('PS_LANG_DEFAULT'));
+        // Read before the call, so the check holds whatever the earlier
+        // blocks left under Home.
+        $expectedPosition = (int) CMSCategory::getLastPosition(1);
+        [$result, $text] = $categoryCall($createCmsCategory, [
+            'languages' => [$iso],
+            'name' => [$iso => 'somcp test category'],
+        ]);
+        if (preg_match('/"id_cms_category": (\d+)/', $text, $match) === 1) {
+            $idCategoryCreated = (int) $match[1];
+        }
+        if (!empty($result['isError']) || $idCategoryCreated <= 1 || strpos($text, '"created": true') === false
+            || strpos($text, '"link_rewrite": "somcp-test-category"') === false || strpos($text, '"active": true') === false
+            || strpos($text, '"level_depth": 2') === false || strpos($text, '"id_parent": 1') === false
+            || strpos($text, '"position": ' . $expectedPosition) === false) {
+            $failures[] = 'somcp_create_cms_category (a category made from its name, displayed, last under Home): unexpected - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_cms_category (a category made from its name, displayed, last under Home)');
+        }
+        if ($idCategoryCreated > 1) {
+            [$result, $text] = $categoryCall($updateCmsCategory, [
+                'id_cms_category' => $idCategoryCreated,
+                'languages' => [$iso],
+                'name' => [$iso => 'somcp test category changed'],
+                'meta_title' => [$iso => 'somcp test category'],
+            ]);
+            if (!empty($result['isError']) || strpos($text, '"changed": true') === false
+                || strpos($text, '"name": "somcp test category changed"') === false
+                || strpos($text, '"meta_title": "somcp test category"') === false) {
+                $failures[] = 'somcp_update_cms_category (the category created is renamed): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_cms_category (the category created is renamed)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_cms_category (a category created): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // The category made here never outlives the test, whatever the tools did.
+        if ($idCategoryCreated > 1) {
+            $left = new CMSCategory($idCategoryCreated);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
+// The mail logo changed and put back (#483): the JSON scenario cannot send
+// an image nor read the files it leaves. The header logo of the demo is never
+// touched, since the shop deletes the file a logo replaces: the mail logo,
+// which the header logo stands in for, gets a PNG made here, then its row,
+// its files and the time of the images are put back as they were.
+$updateLogos = $registry->get('somcp_update_logos');
+$getTheme = $registry->get('somcp_get_theme');
+if ($updateLogos !== null && $getTheme !== null && function_exists('imagepng')) {
+    $calls += 3;
+    $idShop = (int) $context->shop->id;
+    $idShopGroup = (int) Shop::getGroupFromShop($idShop);
+    $timeBefore = Configuration::get('PS_IMG_UPDATE_TIME', null, $idShopGroup, $idShop);
+    $logoCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text, json_decode(trim($text), true)];
+    };
+    // What the shop held before the block, so the cleanup removes only what
+    // the test wrote: a mail logo set before it stays, file and row.
+    $filesBefore = glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: [];
+    $rowsBefore = array_map('intval', array_column(Db::getInstance()->executeS(
+        'SELECT `id_configuration` FROM `' . _DB_PREFIX_ . 'configuration` WHERE `name` = \'PS_LOGO_MAIL\''
+    ) ?: [], 'id_configuration'));
+    $written = [];
+    try {
+        [$result, , $themeBefore] = $logoCall($getTheme, []);
+        $image = imagecreatetruecolor(40, 20);
+        ob_start();
+        imagepng($image);
+        $png = (string) ob_get_clean();
+        imagedestroy($image);
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $updateLogos, 'mail');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+        $entered = $invitation === null
+            ? 'no deposit could be opened'
+            : SomcpUpload::enter($invitation, 'data', 'data:image/png;base64,' . base64_encode($png), 'mail.png');
+        if (!empty($result['isError']) || ($themeBefore['logos']['mail_uses_header'] ?? null) !== true) {
+            $failures[] = 'somcp_update_logos (the demo mail logo read first): expected the header logo standing in - ' . excerpt($result);
+        } elseif ($entered !== '') {
+            $failures[] = 'somcp_update_logos (a PNG mail logo): the PNG was not deposited - ' . $entered;
+        } else {
+            [$result, $text] = $logoCall($updateLogos, ['mail' => ['upload_ref' => $reference]]);
+            $written = array_values(array_diff(glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: [], $filesBefore));
+            if (!empty($result['isError']) || strpos($text, '"changed": true') === false || strpos($text, '"mail"') === false
+                || strpos($text, 'The e-mails now carry this logo instead of the header logo.') === false) {
+                $failures[] = 'somcp_update_logos (a PNG mail logo): expected it written, with the warning - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_logos (a PNG mail logo written)');
+            }
+            [$result, , $themeAfter] = $logoCall($getTheme, []);
+            if (!empty($result['isError']) || ($themeAfter['logos']['mail_uses_header'] ?? null) !== false
+                || ($themeAfter['logos']['header'] ?? null) === null) {
+                $failures[] = 'somcp_update_logos (the theme read after): expected a mail logo of its own and the header logo kept - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_logos (somcp_get_theme reads the mail logo of its own)');
+            }
+            [$result, $text] = $logoCall($updateLogos, $themeAfter['logos'] ?? []);
+            if (!empty($result['isError']) || strpos($text, '"changed": false') === false) {
+                $failures[] = 'somcp_update_logos (the logos read given back): expected nothing written - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_logos (the logos read given back, nothing written)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_logos (the mail logo changed): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // The files the block added, even when it stopped before reading
+        // them: those of the shop before it are never in the list.
+        foreach (array_diff(array_merge($written, glob(_PS_IMG_DIR_ . 'logo_mail-*') ?: []), $filesBefore) as $file) {
+            @unlink($file);
+        }
+        $rowsAdded = 'SELECT `id_configuration` FROM `' . _DB_PREFIX_ . 'configuration` WHERE `name` = \'PS_LOGO_MAIL\'';
+        foreach (Db::getInstance()->executeS($rowsAdded) ?: [] as $row) {
+            if (!in_array((int) $row['id_configuration'], $rowsBefore, true)) {
+                Db::getInstance()->delete('configuration', '`id_configuration` = ' . (int) $row['id_configuration']);
+            }
+        }
+        Configuration::updateValue('PS_IMG_UPDATE_TIME', $timeBefore, false, $idShopGroup, $idShop);
+        Configuration::resetStaticCache();
     }
 }
 

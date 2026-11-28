@@ -16,6 +16,326 @@ are:
 
 ## Unreleased
 
+## 2.1.0 - 2026-11-28
+
+### Added
+
+**Create a CMS page category.** The new tool somcp_create_cms_category does
+what Add new page category then Save do on Design > Pages, so the pages of a
+shop can be sorted, for example a Help category under Home. Only the Name is
+needed: the Friendly URL is then made from it, and the category is displayed
+under Home, as the form opens. Every field is checked as the tool that
+changes a category checks it.
+
+**Change a CMS page category.** The new tool somcp_update_cms_category does
+what Edit then Save do on a page category of Design > Pages: the Name,
+Displayed, Parent category and Description, with the Meta title, meta
+description, Friendly URL and, on PrestaShop 8, the Meta keywords, per
+language for the texts. The texts are checked by the rules of the page tools,
+a category cannot be moved under one of its own, and the category read
+given back changes nothing.
+
+**Read a CMS page category.** The new tool somcp_get_cms_category reads one
+page category of Design > Pages as its Edit form shows it: the Name,
+Displayed, Parent category and Description, with the Meta title, meta
+description, Friendly URL and, on PrestaShop 8, the Meta keywords, and how
+many pages and categories it holds. Until now the SEO texts of a category
+were read nowhere.
+
+**Create a CMS page.** The new tool somcp_create_cms_page does what Add new
+page then Save do on Design > Pages: the Title, Page content, Page category
+and Displayed, with the Meta title, meta description, Friendly URL and
+Indexation, per language for the texts. Only the Title is needed: the
+Friendly URL is then made from it, as the form does, and the page is created
+hidden until the merchant switches it on. Every field is checked as the tools
+that change a page check it.
+
+**Delete a CMS page.** The new tool somcp_delete_cms_page does what Delete
+does on a row of Design > Pages: the page goes with its texts, and the pages
+after it in its category move up one place. The page answered is the page it
+was. The page customers accept at checkout is refused until another one is
+chosen with somcp_update_order_settings, and the answer names the footer link
+blocks that still list the deleted page.
+
+**Change a CMS page.** The new tool somcp_update_cms_page does what Edit then
+Save do on a page of Design > Pages for its Title, Page content, Page category
+and Displayed, per language for the texts, so the delivery, legal notice and
+terms pages of a new shop can be written from the chat. The content is cleaned
+as the back office cleans it, the read given back changes nothing, and the
+answer warns when a hidden page leaves its links leading nowhere. It needs the
+new permission mcp.content.write, shown as Pages - changes on the consent
+screen; somcp_update_cms_seo now names this tool for those four fields.
+
+**Change the shop logos.** The new tool somcp_update_logos does what choosing a
+file then Save do on the Logo panel of Design > Theme & Logo: the Header logo,
+the Mail logo and the Invoice logo, each from an address or an image sent in
+the chat, only the ones given. The logos read with somcp_get_theme given back
+change nothing, and the answer says when the e-mails or the invoices stop
+using the header logo. The favicon, an .ico file, stays with the back office.
+
+**Create a carrier.** The new tool somcp_create_carrier does what Add new
+carrier then Save (or Finish) do on Shipping > Carriers: a Carrier name and a
+Transit time, and in the same call its zones, ranges and prices per zone, logo,
+tracking URL, customer groups, free shipping, handling costs, billing, tax,
+out-of-range behavior and size and weight limits, under the same rules as when
+a carrier is changed. The carrier is created off unless the merchant asks for
+it on, with every customer group when none is given, and the answer says when
+it serves no zone yet or a zone has no price. Every mistake is told before
+anything is written, and a carrier that cannot be saved whole is not kept.
+
+**Change the SEO and URL settings.** The new tool somcp_update_seo_settings
+does what Save does on the cards Set up URLs and SEO options of Shop Parameters
+> Traffic & SEO > SEO & URLs for three settings: Accented URL, Redirect to the
+canonical URL and Display attributes in the product meta title, so the warning
+of somcp_get_seo_settings about a missing canonical redirection can be acted
+on. The read given back whole changes nothing. Friendly URL, the language
+prefix, the Apache options and the shop URL stay with the back office, since
+they move the address the assistant is connected through.
+
+**Change the schema of URLs.** The new tool somcp_update_url_schema does what
+Save does on the card Schema of URLs of Shop Parameters > Traffic & SEO > SEO &
+URLs: the pattern of the addresses of the products, categories, suppliers,
+brands, pages and page categories, checked as the back office checks it, and
+an unknown keyword refused where the back office would let the storefront
+write it as nothing. The default pattern of the version restores the default.
+The answer warns that the old addresses lead to a page not found, and when two
+routes end with addresses of the same shape. The route to modules stays with
+the back office, since it carries the address the assistant is connected
+through. somcp_get_seo_settings now names this tool for the patterns.
+
+**Delete a search engine.** The new tool somcp_delete_search_engine does what
+Delete does on a row of Shop Parameters > Traffic & SEO > Search Engines, one
+row per call. It answers the row it was, so it can be added again, and warns
+that the keywords of its visitors are no longer read, those already read
+staying in the statistics, naming the row that reads their visits from now on
+when a shorter Server still matches.
+
+**Change a search engine.** The new tool somcp_update_search_engine does what
+Edit then Save do on a row of Shop Parameters > Traffic & SEO > Search Engines:
+its Server or its $_GET variable, only what is given, under the same rules as
+when a search engine is created. Given back as it is read, a row changes
+nothing; a changed Server comes with a warning that the visitors of the old one
+are no longer told apart.
+
+**Create a search engine.** The new tool somcp_create_search_engine does what
+Add new search engine then Save do on Shop Parameters > Traffic & SEO > Search
+Engines: a Server with its $_GET variable, so the keyword statistics read the
+words typed by the visitors that search engine sends. A server that already has
+its row is refused with the number of that row, since the shop would only ever
+read the first one.
+
+**List the search engines.** The new tool somcp_list_search_engines reads
+Shop Parameters > Traffic & SEO > Search Engines as its list shows it: each
+Server with its GET variable, the part of a visitor's address that holds the
+words he typed, which the keyword statistics are built from. It takes the
+filters, the sort and the paging of the list.
+
+**Add a shop page to SEO & URLs.** The new tool somcp_create_meta_page does
+what Add new page then Save do on Shop Parameters > Traffic & SEO > SEO & URLs:
+a page of the shop or of a module that has none yet gets its Page title, Meta
+description and Rewritten URL, under the same rules as when a page is changed,
+the Rewritten URL being required in the default language. somcp_list_meta_pages
+now also gives the pages that can be added, as the Page name list of the form
+shows them, so the assistant never guesses a page name.
+
+**Delete a shop page from SEO & URLs.** The new tool somcp_delete_meta_page
+does what Delete does on a row of Shop Parameters > Traffic & SEO > SEO &
+URLs: the page loses its Page title, Meta description and Rewritten URL in
+every language, and comes back to the list of pages Add new page offers. The
+product, category and CMS templates, which the list does not show, are
+refused. The answer holds the texts the page had, to create it again, and
+says when a page of the shop now answers at its plain address.
+
+**Discounts by category for a customer group.** somcp_update_customer_group
+now changes the Category discount block of a group, as Add a category discount
+then Save do on Shop Parameters > Customer Settings > Groups: the whole list is
+given, a category with its percent per row, and an empty list removes them all.
+The group is given access to each category, as the back office does, and the
+answer warns that such a discount replaces the group Discount for the products
+of that category. The list read with somcp_get_customer_group and given back as
+it is changes nothing.
+
+**Authorized modules of a customer group.** somcp_update_customer_group now
+changes the Authorized modules block of a group, as its Yes and No then Save
+do on Shop Parameters > Customer Settings > Groups: the whole list of the
+modules set to Yes is given, and every module left out is set to No, on the
+current shop only. A group cannot be left with no module, as on screen, and
+the answer names the payment modules its customers no longer see. The list
+read with somcp_get_customer_group and given back as it is changes nothing.
+
+**Create a customer group.** The new tool somcp_create_customer_group does
+what Add new group then Save do on Shop Parameters > Customer Settings >
+Groups: the name of the group in each language, its discount, its price
+display method, whether its members see prices, its category discounts and
+the modules it may use - every installed module unless a list is given. The
+category discounts are kept, where the back office loses those of a new
+group. The answer is the group as somcp_get_customer_group reads it, and
+says that a new group sees the home category only until its other categories
+are given to it, and which payment modules it was left without.
+
+**Delete a customer group.** The new tool somcp_delete_customer_group does
+what Delete does on a row of Shop Parameters > Customer Settings > Groups. The
+groups of visitors, guests and customers cannot be deleted, as on screen. Its
+members keep their other groups and those left in none go to the Customers
+group; the answer holds the group as it was and counts its members, the
+customers who had it as default group, the cart rules kept to it and its
+specific prices.
+
+**Change the default customer groups.** The new tool
+somcp_update_default_groups does what the Save of the card Default groups
+options does on Shop Parameters > Customer Settings > Groups: it chooses the
+group of the visitors, of the guests and of the newly registered customers,
+which decides the prices and discounts they see. Only the groups given change,
+and giving back the groups already chosen changes nothing.
+
+**Delete a cart rule.** The new tool somcp_delete_cart_rule does what Delete
+does on Catalog > Discounts > Cart Rules: the voucher or discount goes with all
+its conditions, and leaves the carts in progress, while the orders that used
+it keep their discount. The answer gives the rule as it was, and says when no
+active rule is left, since the voucher field then disappears from checkout.
+
+**Export the translations of a language.** The new tool
+somcp_export_translations does what the card Export a language of
+International > Translations does: the translation pack of one language - the
+back office, the storefront, the e-mails, the other wordings, a theme or a
+module, any of them together - is built as a zip of XLF files, with the shop's
+own changes to the wordings in it. The assistant hands the zip over as a file,
+kept 15 minutes; nothing of the shop is changed. It is the pack another shop
+imports with Add / Update a language.
+
+**Read the translations of a language.** The new tool somcp_list_translations
+reads what the card Modify translations of International > Translations shows:
+the domains of the back office, the storefront (core or a theme), a module,
+the e-mail subjects or bodies, or the other wordings, with how many wordings
+each holds and how many are not translated; then the wordings of one domain,
+each with its source, the translation that comes with the files and the
+shop's own change, searched by words and page by page.
+
+**Change a translation of a language.** The new tool somcp_update_translation
+does what Save and Reset do on the card Modify translations of International >
+Translations: the shop's own translation of one wording is saved, or removed so
+the translation that comes with the files shows again. A translation that
+drops or adds a placeholder of the source (%s, %d) is refused, as on screen,
+and a change in the wordings of the back office menu translates the menu again.
+
+**List the stores.** The new tool somcp_list_stores lists the stores of Shop
+Parameters > Contact, tab Stores, the ones the storefront page of the stores
+shows: each with every field of its Edit form - name, address, country and
+state, latitude and longitude, phone, e-mail address, note, whether it is
+shown, the opening hours of each day and its picture, which the assistant can
+download. It filters on the name, the city, the postcode, the country and
+whether the store is shown, as the list does. The country and the state are
+given by ISO code, with their names beside them, as every other tool gives
+them.
+
+**Create a store.** The new tool somcp_create_store does what Add new store
+then Save do on Shop Parameters > Contact, tab Stores: a store gets its name,
+address, country and state, latitude and longitude, phone, e-mail address,
+note, opening hours of each day, whether it is shown and its picture, each
+checked as on screen - a state for a country that has states, the postcode in the format of
+the country, coordinates that are not 0. The answer is the store as the list
+of the stores gives it.
+
+**Change a store.** The new tool somcp_update_store does what Edit then Save
+do on a store of Shop Parameters > Contact, tab Stores, and what its Enabled
+switch does: only the fields given change, the picture included, each
+checked as when creating a store, a new country checked with its state and postcode. A value the store
+already holds is never refused, and a store given back as the list reads it
+changes nothing.
+
+**Delete a store.** The new tool somcp_delete_store does what the Delete
+action does on a store of Shop Parameters > Contact, tab Stores, one store per
+call, and answers the store as it was. Its picture is deleted with it, where
+the back office leaves the files on the server.
+
+**Read the contact details of the shop.** The new tool
+somcp_get_contact_details reads the card Contact details of Shop Parameters >
+Contact, tab Stores: the shop name, e-mail address, registration number,
+address, country, state, phone and fax that the e-mails, the invoices and the
+page titles print, the country and the state by ISO code with their names
+beside them. When no country is saved, the answer says so instead of giving
+the country the screen preselects.
+
+**Change the contact details of the shop.** The new tool
+somcp_update_contact_details does what Save does on the card Contact details
+of Shop Parameters > Contact, tab Stores: the shop name, e-mail address,
+registration number, address, country, state, phone and fax change, each
+checked as on screen, and only the fields given. The country and the state
+are given by ISO code, as every other tool takes them. The details read with
+somcp_get_contact_details and given back as they are change nothing. A state
+must be one of the country, a saved country or state cannot be emptied, as on
+screen, and the answer warns that the shop's e-mails are now sent from a new
+shop e-mail address.
+
+### Changed
+
+**The settings open on one card per page.** MCP server, under Shop
+Parameters, showed its seven pages as tabs under the page title, where the
+last ones no longer held on a narrow screen. It now opens on a card for each
+page - Configuration, Tools and prompts, Access and security, Connected
+assistants, Built-in assistant, Security log, Help and updates - with a line
+on what is set there, and each page ends on a button back to the cards. The
+address of a page kept in a bookmark still leads to it.
+
+**Sort the orders on every column.** The order search sorts, each way, on
+every column of the Orders list: ID, Reference, Delivery, Customer, Company,
+Total, Payment, Status and Date. Orders with the same value keep the order of
+their identifier, so a page read twice holds the same orders. An unknown
+delivery country is refused with the code given and the tool that lists the
+countries, in the order search and in the sales summary.
+
+**A missing or malformed identifier, and a value out of its list.** A
+missing or malformed identifier, and a value out of its list, are refused in
+the same words by every tool. A cart rule read or switched on without its
+identifier, and an order address changed without the address, now name the
+tool that finds it (somcp_list_cart_rules, somcp_get_customer); a category
+given as something other than a whole number above 0 to a product, and a value
+out of its list for a cart rule or a general setting, read as everywhere else.
+
+**A combination, an address or a state that is not the right one.** A
+combination of another product, an address of another customer or a state of
+another country is now refused in the same words by every tool, with the value
+given and the tool that lists the right ones: a state refused by the
+suppliers, brand addresses, stores, contact details and tax rules now names
+somcp_list_states, and a new order given an address of another customer names
+somcp_get_customer.
+
+**Unknown countries, currencies and customer e-mails.** An unknown country,
+currency or customer e-mail is now refused with the value given and the tool
+that lists the right ones, as every other identifier. This holds for the
+suppliers, brand addresses, stores, contact details and tax rules, for the
+specific prices of products and catalog price rules, for cart rules and new
+orders, for the currency of an order, and for the customer read by e-mail.
+
+**The country and the state of an address come as their codes.** The
+addresses of an order, of a customer and of a change of address, and the
+delivery country of the order search, now give the country and the state by
+their ISO codes (US, FL), with their names beside them, as the tools that take
+a country or a state want them. An assistant can give the country of one order
+back to the search of orders, or to any tool that takes a country, without
+looking it up again. The names stay in the answer, and the codes the answers
+already carried keep their place.
+
+**The members of a customer group.** The search of customers can list the
+members of a group, as the View page of Customer Settings > Groups, and not
+only the customers whose default group it is: a customer who belongs to the
+group with another default group is now found, and the list agrees with the
+Members count of the groups.
+
+**Customer groups by discount, members and date.** The list of customer
+groups can be filtered by discount, number of members and creation date, and
+sorted as the back office list: the groups that give a discount, or those
+nobody is in, no longer need the back office.
+
+### Fixed
+
+**A carrier given back as it was, after a customer group was deleted.** The
+customer groups of a carrier read with somcp_get_carrier and given back as
+they are to somcp_update_carrier changed nothing, except on a shop where a
+customer group had been deleted: PrestaShop keeps the deleted group on its
+carriers, and the change answered a list one group shorter. The groups
+compared are now those of the shop only, as the read gives them.
+
 ## 2.0.6 - 2026-11-26
 
 ### Added

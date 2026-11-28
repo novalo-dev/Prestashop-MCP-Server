@@ -408,8 +408,7 @@ class SomcpToolCreateOrder
                 // Checked against the token's shop like the product: a
                 // combination not sold in this shop would be ordered anyway.
                 if (!SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
-                    $problems[] = $path . '.id_product_attribute: no combination of this product has the '
-                        . 'identifier ' . $idCombination . ' - read them with somcp_get_product';
+                    $problems[] = SomcpTool::notFoundOf($path . '.id_product_attribute', 'combination', 'this product', $idCombination, 'somcp_get_product');
                     continue;
                 }
                 $minimal = (int) (new Combination($idCombination))->minimal_quantity;
@@ -498,9 +497,9 @@ class SomcpToolCreateOrder
         $address = $idAddress > 0 ? new Address($idAddress) : null;
         if ($address === null || !Validate::isLoadedObject($address) || (int) $address->deleted === 1
             || (int) $address->id_customer !== (int) $customer->id) {
-            $problems[] = $key . ': ' . ($idAddress > 0
-                ? 'no address of this customer has the identifier ' . $idAddress
-                : 'give an address of this customer')
+            $problems[] = ($idAddress > 0
+                ? SomcpTool::notFoundOf($key, 'address', 'this customer', $idAddress, 'somcp_get_customer')
+                : $key . ': give an address of this customer')
                 . ' - the addresses of this customer: '
                 . json_encode(SomcpToolSetOrderAddress::addressesOf((int) $customer->id, $idLang), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 

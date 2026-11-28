@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "nothing given: the page is required", "arguments": {}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- page: required - take one of addable_pages of somcp_list_meta_pages"]},
+    {"why": "a page name the shop does not offer", "arguments": {"page": "nothing-here"}, "expect": "error", "contains": ["- page: not a page that can be added - take one of addable_pages of somcp_list_meta_pages"]},
+    {"why": "a page that already has its row is changed with the other tool", "arguments": {"page": "contact", "link_rewrite": {"en": "x"}}, "expect": "error", "contains": ["- page: contact already has its page - change it with somcp_update_meta_page (id_meta "]},
+    {"why": "a field of the list is not a field of this tool, reported with the page in one answer", "arguments": {"page": "contact", "id_meta": 1}, "expect": "error", "contains": ["- id_meta: not a field of this tool", "- page: contact already has its page"]},
+    {"why": "a page name given as a number", "arguments": {"page": 12}, "expect": "error", "contains": ["- page: not a page that can be added"]}
+  ]
+}

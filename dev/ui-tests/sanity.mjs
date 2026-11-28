@@ -40,15 +40,17 @@ if (!adminUrl || !email || !password) {
     process.exit(2);
 }
 
-// The settings pages, as somcp.php names them in settingsPages().
+// The menu item of the settings, and the pages its cards open, as somcp.php
+// names them in settingsPages().
+const ITEM = 'AdminSomcpSettings';
 const PAGES = {
-    config: 'AdminSomcpConfig',
-    tools: 'AdminSomcpTools',
-    access: 'AdminSomcpAccess',
-    assistants: 'AdminSomcpConnected',
-    assistant: 'AdminSomcpBuiltin',
-    log: 'AdminSomcpLog',
-    help: 'AdminSomcpHelp',
+    config: 'config',
+    tools: 'tools',
+    access: 'access',
+    assistants: 'assistants',
+    assistant: 'assistant',
+    log: 'log',
+    help: 'help',
 };
 
 // What a page shows when PHP printed an error into it.
@@ -110,14 +112,20 @@ const noPhpMessage = async () => {
 // A page of the module is reached through the links PrestaShop draws, which
 // carry the employee's token: a hand-built address would stop at the
 // invalid token screen.
-const openPane = async (controller) => {
-    const link = page.locator(`a[href*="controller=${controller}"]`).first();
-    const href = await link.getAttribute('href', { timeout: 15000 });
+const follow = async (selector) => {
+    const href = await page.locator(selector).first().getAttribute('href', { timeout: 15000 });
     const response = await page.goto(new URL(href, page.url()).toString());
     if (!response || response.status() >= 400) {
         throw new Error(`answered ${response ? response.status() : 'nothing'}`);
     }
     await noPhpMessage();
+};
+
+// The settings open on one card per page: the menu leads to the cards, and
+// the card of a page leads to it, as a merchant goes.
+const openPane = async (pane) => {
+    await follow(`a[href*="controller=${ITEM}"]`);
+    await follow(`#somcp-card-${pane}`);
 };
 
 const signedIn = await check('sign in to the back office', async () => {
@@ -130,16 +138,25 @@ const signedIn = await check('sign in to the back office', async () => {
         page.waitForLoadState('load'),
         page.locator('form:has(input[type="password"]) button[type="submit"]').first().click(),
     ]);
-    await page.locator(`a[href*="controller=${PAGES.config}"]`).first().waitFor({ state: 'attached', timeout: 30000 });
+    await page.locator(`a[href*="controller=${ITEM}"]`).first().waitFor({ state: 'attached', timeout: 30000 });
 });
 
 if (signedIn) {
     await check('open Configuration', () => openPane(PAGES.config));
 
-    for (const [pane, controller] of Object.entries(PAGES)) {
-        await check(`page ${pane} shows its pane`, async () => {
-            await openPane(controller);
+    await check('the settings open on one card per page', async () => {
+        await follow(`a[href*="controller=${ITEM}"]`);
+        const cards = await page.locator('.nv-cards .nv-card').count();
+        if (cards !== Object.keys(PAGES).length) {
+            throw new Error(`${cards} cards for ${Object.keys(PAGES).length} pages`);
+        }
+    });
+
+    for (const pane of Object.values(PAGES)) {
+        await check(`page ${pane} shows its pane and the way back`, async () => {
+            await openPane(pane);
             await page.locator(`#somcp-pane-${pane}`).waitFor({ state: 'visible', timeout: 15000 });
+            await page.locator('#somcp-back').waitFor({ state: 'visible', timeout: 15000 });
         });
     }
 

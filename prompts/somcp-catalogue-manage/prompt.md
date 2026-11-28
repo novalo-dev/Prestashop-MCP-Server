@@ -34,6 +34,9 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_language`
 - `somcp_delete_language`
 - `somcp_install_language_pack`
+- `somcp_export_translations`
+- `somcp_list_translations`
+- `somcp_update_translation`
 - `somcp_get_localization_settings`
 - `somcp_update_localization_settings`
 - `somcp_import_localization_pack`
@@ -61,6 +64,9 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_customer_groups`
 - `somcp_get_customer_group`
 - `somcp_update_customer_group`
+- `somcp_update_default_groups`
+- `somcp_create_customer_group`
+- `somcp_delete_customer_group`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_get_shipping_preferences`
@@ -71,6 +77,12 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_contact`
 - `somcp_update_contact`
 - `somcp_delete_contact`
+- `somcp_list_stores`
+- `somcp_create_store`
+- `somcp_update_store`
+- `somcp_delete_store`
+- `somcp_get_contact_details`
+- `somcp_update_contact_details`
 - `somcp_get_email_settings`
 - `somcp_update_email_settings`
 - `somcp_list_email_logs`
@@ -100,6 +112,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_state`
 - `somcp_update_state`
 - `somcp_delete_state`
+- `somcp_create_carrier`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_product`
@@ -293,6 +306,23 @@ chosen with `somcp_update_email_settings`, not here.
 `somcp_delete_contact` deletes a contact for good: ask the merchant first, and
 keep its answer, which holds what it takes to create it again. The contact that
 receives the customers' messages is refused: choose another receiver first.
+`somcp_list_stores` lists the stores shown on the storefront page of the stores,
+with their address, coordinates, hours of each day and picture: read it before
+telling a customer when a store is open, and give its id_store as it is.
+`somcp_create_store` adds a store: read the list first, as two stores may
+share a name, give the country and the state by ISO code and the latitude and
+longitude, and ask the merchant first; a second call makes a second store.
+`somcp_update_store` changes a store or switches it off: give back the item of
+the list with the change, and ask the merchant first.
+`somcp_delete_store` deletes a store for good, its picture with it: ask the
+merchant first, offer to switch it off instead, and keep its answer, which
+holds what it takes to create it again.
+`somcp_get_contact_details` reads the shop's own name, e-mail address,
+registration number and address, which the e-mails and the invoices print:
+read it before telling a merchant why an invoice shows the wrong address.
+`somcp_update_contact_details` changes them; give back the read with the
+change. The shop e-mail is the sender of every e-mail of the shop: change it
+only when the merchant asks, and a saved country or state cannot be emptied.
 `somcp_get_email_settings` says how the shop sends its e-mails (sendmail, SMTP
 or never) and where customer messages go: read it before telling a merchant
 why a customer got no order confirmation. It says whether the SMTP password
@@ -373,6 +403,10 @@ changes its ISO code or zone, or switches it off so the address form stops
 offering it; a state used by addresses or tax rule rows keeps its country.
 `somcp_delete_state` deletes a state no address and no tax rule row uses;
 give its rows to `somcp_delete_country_rule` first, and tell the merchant.
+To add a carrier, confirm with the merchant its name, its zones and its
+prices, then use `somcp_create_carrier`: it is created off unless the
+merchant wants it offered at once, and a second call would create a second
+carrier, so when an answer is lost read `somcp_list_carriers` first.
 To rename a carrier, change its transit time, speed grade, logo, tracking URL,
 status, customer groups, zones, ranges and their prices per zone, place in the
 list, free shipping, handling costs, billing, tax, out-of-range behavior or size and weight limits, use
@@ -492,6 +526,19 @@ or those translations of an installed one replaced, with
 `somcp_install_language_pack`: it reaches PrestaShop's server and can take two
 minutes, and an update replaces the texts PrestaShop ships (order statuses,
 page titles) in that language: confirm with the merchant first.
+`somcp_export_translations` builds the translation pack of a language - the
+core parts, a theme, a module - as a zip of XLF files, as Export a language
+does, and answers a `download_ref` for `somcp_download_file`, kept 15 minutes:
+it changes nothing, and the pack is what another shop imports.
+`somcp_list_translations` reads the wordings as Modify translations shows
+them: without `domain`, the domains of a type with their counts; with one, its
+wordings, each with its `source`, the translation of the files and the shop's
+own (`shop_translation`, `null` when the shop has none).
+`somcp_update_translation` saves the shop's own translation of one wording, or
+removes it with `reset` so the translation of the files shows again, as Save
+and Reset of the same card: give the `domain` and the `source` the list
+answered, keep the placeholders (`%s`, `%d`) of the source, and remember the
+change reaches every shop.
 `somcp_get_localization_settings` says which language, country and currency
 the shop starts from, its time zone, and the weight, distance, volume and
 dimension units every product weight and carrier range is read in: read it
@@ -557,9 +604,34 @@ ignores groups for prices: say so before writing a price for one group.
 language, its discounts by category (a percent that replaces the group
 discount for the products whose default category it is) and the modules its
 members may use. `somcp_update_customer_group` changes its name, Discount (a
-percent, 5 for 5 %), Price display method and Show prices: give back the read
-with only the fields to change, and say when the group is a default one, since
-the change then reaches every visitor, guest or customer.
+percent, 5 for 5 %), Price display method, Show prices, its category
+discounts and its authorized modules: give back the read with only the fields to change, and say when the
+group is a default one, since the change then reaches every visitor, guest or
+customer. The category discounts are always the whole list: read it, add or
+remove a row, and give the whole list back, since a row left out is removed.
+Take each `id_category` from `somcp_list_categories`, and say that a category
+discount replaces the group Discount for those products, and that the group
+can then see the category. The authorized modules are the whole list of the
+modules set to Yes, by the technical name of `somcp_list_modules`: every
+module left out is set to No, and at least one must stay. Say which payment
+modules the group loses, since its members can no longer pay with them.
+`somcp_update_default_groups` chooses the group of the visitors, of the
+guests and of the newly registered customers, each an `id_group` of the
+list, whose `default_for` says which roles a group holds: say that the
+prices and discounts a visitor or a new customer sees follow the group
+chosen.
+`somcp_create_customer_group` creates a group with its name in each
+language, its discount, its price display method and Show prices, and takes
+on the creation both lists of the update: the category discounts and the
+authorized modules, every installed module when none is given. Say that a new
+group sees the home category (and the categories given a discount) only, and
+give it its other categories with the groups field of `somcp_update_category`,
+or its members see no product of them; name the payment modules it is left
+without. `somcp_delete_customer_group` deletes a group for good: the groups
+of visitors, guests and customers cannot be deleted (choose another one with
+`somcp_update_default_groups` first). Count its members with
+`somcp_list_customer_groups` and name them before asking, since those left
+in no group go to the Customers group.
 
 ## Changing products
 

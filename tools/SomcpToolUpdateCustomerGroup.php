@@ -22,10 +22,13 @@ declare(strict_types=1);
  *
  * The same legacy AdminGroupsController on 8.0 and 9.0 checks the Discount
  * with validateDiscount(), then saves the Group object. The page always
- * sends every field; the tool changes only those given, and leaves the
- * category discounts and the authorized modules as they are: they are read
- * back unchanged, so the answer of somcp_get_customer_group can be given
- * back whole.
+ * sends every field; the tool changes only those given, so the answer of
+ * somcp_get_customer_group can be given back whole.
+ *
+ * The Category discount block is saved as updateCategoryReduction() saves
+ * it: the whole list replaced, in the same transaction as the group. The
+ * Authorized modules block is saved as updateRestrictions() saves it, through
+ * Group::addModulesRestrictions(), for the shop of the token only.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -36,6 +39,8 @@ if (!defined('_PS_VERSION_')) {
 require_once __DIR__ . '/SomcpToolCreateProduct.php';
 // The answer is the group as the read gives it.
 require_once __DIR__ . '/SomcpToolGetCustomerGroup.php';
+// The category of a discount is checked as somcp_update_category checks one.
+require_once __DIR__ . '/SomcpToolUpdateCategory.php';
 
 class SomcpToolUpdateCustomerGroup
 {
@@ -50,10 +55,10 @@ class SomcpToolUpdateCustomerGroup
         'members_count' => 'read only',
         'date_add' => 'read only',
         'default_for' => 'chosen in Customer Settings > Groups, Default groups options',
-        'category_discounts' => 'not changed by this tool yet',
-        'authorized_modules' => 'not changed by this tool yet',
-        'unauthorized_modules' => 'not changed by this tool yet',
     ];
+
+    /** The hook of the payment step: a module on it set to No leaves the group without that payment. */
+    private const PAYMENT_HOOK = 'paymentOptions';
 
     /**
      * @return SomcpTool
@@ -74,7 +79,8 @@ class SomcpToolUpdateCustomerGroup
             'Changes a customer group of Shop Parameters > Customer Settings > Groups, as Edit then Save: its '
                 . 'name per language, its Discount, its Price display method and Show prices. Only the fields '
                 . 'given change, a language left out keeping its text; the group of somcp_get_customer_group given '
-                . 'back as it is changes nothing. Category discounts and authorized modules are not changed here. '
+                . 'back as it is changes nothing. Category discount takes the whole list, as the form saves it. '
+                . 'Authorized modules take the whole list of the modules set to Yes, as the form saves it. '
                 . 'For the groups of one customer use somcp_update_customer.',
             [
                 'type' => 'object',
@@ -119,9 +125,35 @@ class SomcpToolUpdateCustomerGroup
                     'members_count' => $readBack('integer', 'Read only.'),
                     'date_add' => $readBack('string', 'Read only.'),
                     'default_for' => $readBack('array', 'Chosen in Default groups options.'),
-                    'category_discounts' => $readBack('array', 'Not changed by this tool.'),
-                    'authorized_modules' => $readBack('array', 'Not changed by this tool.'),
-                    'unauthorized_modules' => $readBack('array', 'Not changed by this tool.'),
+                    'category_discounts' => [
+                        'type' => 'array',
+                        'description' => 'Category discount: the whole list, replacing the rows; [] removes them. '
+                            . 'id_category from somcp_list_categories, reduction in percent (0 to 100), as '
+                            . 'somcp_get_customer_group reads it.',
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'id_category' => ['type' => 'integer'],
+                                'reduction' => ['type' => 'number'],
+                                'category' => ['type' => ['string', 'null']],
+                            ],
+                            'required' => ['id_category', 'reduction'],
+                        ],
+                    ],
+                    'authorized_modules' => [
+                        'type' => 'array',
+                        'description' => 'Authorized modules: the whole list set to Yes, by technical name of '
+                            . 'somcp_list_modules, as somcp_get_customer_group reads it; every installed module '
+                            . 'left out is set to No.',
+                        'items' => ['type' => 'string'],
+                    ],
+                    'unauthorized_modules' => [
+                        'type' => 'array',
+                        'description' => 'Read by somcp_get_customer_group: taken only when it is exactly the '
+                            . 'installed modules left out of authorized_modules, so the group can be given back '
+                            . 'whole.',
+                        'items' => ['type' => 'string'],
+                    ],
                 ],
                 'required' => ['id_group'],
                 'additionalProperties' => false,
@@ -147,7 +179,7 @@ class SomcpToolUpdateCustomerGroup
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
 
         $errors = SomcpTool::unknownFields($arguments, array_merge(
-            ['id_group', 'languages', 'name', 'names', 'reduction', 'price_display_method', 'show_prices'],
+            ['id_group', 'languages', 'name', 'names', 'reduction', 'price_display_method', 'show_prices', 'category_discounts', 'authorized_modules', 'unauthorized_modules'],
             array_keys(self::READ_ONLY)
         ));
 
@@ -186,6 +218,11 @@ class SomcpToolUpdateCustomerGroup
             }
         }
         unset($given['names']);
+        $modules = null;
+        if ($before !== null) {
+            $modules = self::planModules($given, $before, $errors);
+        }
+        unset($given['authorized_modules'], $given['unauthorized_modules']);
         $plan = self::planGroup($given, $idShop, $errors);
 
         if ($errors !== [] || $plan === null || $group === null) {
@@ -210,6 +247,22 @@ class SomcpToolUpdateCustomerGroup
         }
         if (isset($plan['show_prices']) && $plan['show_prices'] !== (bool) $group->show_prices) {
             $changes[] = ['field' => 'show_prices', 'old' => (bool) $group->show_prices, 'new' => $plan['show_prices']];
+        }
+        $oldDiscounts = [];
+        foreach ($before['category_discounts'] ?? [] as $row) {
+            $oldDiscounts[(int) $row['id_category']] = (float) $row['reduction'];
+        }
+        if (isset($plan['category_discounts']) && !self::sameDiscounts($plan['category_discounts'], $oldDiscounts)) {
+            $changes[] = ['field' => 'category_discounts', 'old' => $before['category_discounts'], 'new' => self::discountRows($plan['category_discounts'])];
+        }
+        $newlyOff = [];
+        if ($modules !== null) {
+            $newNames = array_values($modules);
+            sort($newNames);
+            if ($newNames !== $before['authorized_modules']) {
+                $changes[] = ['field' => 'authorized_modules', 'old' => $before['authorized_modules'], 'new' => $newNames];
+                $newlyOff = array_values(array_diff($before['authorized_modules'], $newNames));
+            }
         }
 
         if ($changes === []) {
@@ -236,27 +289,77 @@ class SomcpToolUpdateCustomerGroup
         // the context's list: Shop association is not taken by this tool.
         $group->id_shop_list = [$idShop];
 
+        $discounts = in_array('category_discounts', $fields, true) ? $plan['category_discounts'] : null;
+        $restrictions = in_array('authorized_modules', $fields, true) && $modules !== null ? array_keys($modules) : null;
+        // Read before the write: the warning names the payments the group loses.
+        $paymentsLost = $newlyOff !== [] ? self::paymentModules($newlyOff, $idShop) : [];
+        $opened = [];
+        $featureOff = false;
+        if ($discounts !== null) {
+            // Read before the write: the warnings name what the save changes.
+            foreach (array_keys($discounts) as $idCategory) {
+                if (!self::seesCategory($idGroup, $idCategory)) {
+                    $category = new Category($idCategory, $idLang, $idShop);
+                    $opened[] = is_string($category->name) ? $category->name : (string) $idCategory;
+                }
+            }
+            $featureOff = $discounts !== [] && !(bool) Configuration::getGlobalValue('PS_GROUP_FEATURE_ACTIVE');
+        }
+
+        $db = Db::getInstance();
+        // One transaction when a list is written, so a group is never left
+        // with its old rows deleted and only part of the new ones saved.
+        $lists = $discounts !== null || $restrictions !== null;
+        $transaction = $lists && $db->execute('START TRANSACTION');
         try {
-            $done = (bool) $group->update();
-            $failure = $done ? '' : 'PrestaShop refused to save it';
+            $done = true;
+            $failure = '';
+            if ($lists && !$transaction) {
+                $done = false;
+                $failure = 'the database refused to open a transaction';
+            } elseif (array_diff($fields, ['category_discounts', 'authorized_modules']) !== [] && !$group->update()) {
+                $done = false;
+                $failure = 'PrestaShop refused to save it';
+            } elseif ($discounts !== null) {
+                $failure = self::writeDiscounts($idGroup, $discounts);
+                $done = $failure === '';
+                if (!$done) {
+                    $failure = 'The category discounts could not be saved: ' . $failure;
+                }
+            }
+            // The shop of the token only: the core passes the shops of the
+            // context, and a token acts for one shop.
+            if ($done && $restrictions !== null && !Group::addModulesRestrictions($idGroup, $restrictions, [$idShop])) {
+                $done = false;
+                $failure = 'The authorized modules could not be saved';
+            }
         } catch (Throwable $e) {
             $done = false;
             $failure = $e->getMessage();
+        }
+        if ($transaction) {
+            $db->execute($done ? 'COMMIT' : 'ROLLBACK');
         }
         if (!$done) {
             SomcpLogger::log('customer_group_update_failed', SomcpLogger::OUTCOME_FAILURE, 'group ' . $idGroup . ': '
                 . Tools::substr($failure, 0, 500), '', $idEmployee);
 
             return SomcpTool::text(
-                'The customer group could not be changed: ' . $failure . '. Read it with somcp_get_customer_group '
-                    . 'before calling again.',
+                (strpos($failure, 'The category discounts') === 0 || strpos($failure, 'The authorized modules') === 0
+                    ? $failure : 'The customer group could not be changed: '
+                    . $failure) . '. Read the group with somcp_get_customer_group before calling again.',
                 true
             );
         }
         // The storefront caches its price blocks: the switch of the list
         // clears them too, so the new prices show.
-        if (array_intersect($fields, ['reduction', 'price_display_method', 'show_prices']) !== []) {
+        if (array_intersect($fields, ['reduction', 'price_display_method', 'show_prices', 'category_discounts']) !== []) {
             Tools::clearSmartyCache();
+        }
+        // The storefront keeps the modules of each hook per group in cache,
+        // as updateRestrictions() knows: cleared so the new list applies.
+        if ($restrictions !== null) {
+            Cache::clean(Hook::MODULE_LIST_BY_HOOK_KEY . '*');
         }
         SomcpLogger::log('customer_group_updated', SomcpLogger::OUTCOME_SUCCESS, 'group ' . $idGroup . ': '
             . implode(', ', $fields), '', $idEmployee);
@@ -277,6 +380,21 @@ class SomcpToolUpdateCustomerGroup
         if (in_array('reduction', $fields, true) && $plan['reduction'] > 0
             && !(bool) Configuration::get('PS_GROUP_FEATURE_ACTIVE', null, $idShopGroup, $idShop)) {
             $warnings[] = SomcpToolGetCustomerGroup::GROUPS_DISABLED;
+        }
+        if ($featureOff) {
+            $warnings[] = 'Customer groups were turned on in Advanced Parameters > Performance, as the back office '
+                . 'does when a category discount is saved.';
+        }
+        if ($discounts !== [] && $discounts !== null && (float) $result['group']['reduction'] > 0) {
+            $warnings[] = 'A category discount replaces the group discount for the products of that category, it '
+                . 'does not add to it; only products whose default category it is are concerned.';
+        }
+        foreach ($opened as $name) {
+            $warnings[] = 'The group can now see the category ' . $name . '.';
+        }
+        if ($paymentsLost !== []) {
+            $warnings[] = 'The customers of this group no longer see these payment modules: '
+                . implode(', ', $paymentsLost) . '.';
         }
         if (($before['default_for'] ?? []) !== []) {
             $warnings[] = 'This group is used for ' . implode(', ', $before['default_for'])
@@ -300,10 +418,11 @@ class SomcpToolUpdateCustomerGroup
      * @param array<string, mixed> $arguments
      * @param int $idShop
      * @param array<int, string> $errors
+     * @param bool $create a creation, which needs a name where a change keeps the stored one
      *
      * @return array<string, mixed>|null null when the languages cannot be read
      */
-    public static function planGroup(array $arguments, int $idShop, array &$errors): ?array
+    public static function planGroup(array $arguments, int $idShop, array &$errors, bool $create = false): ?array
     {
         $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -312,7 +431,7 @@ class SomcpToolUpdateCustomerGroup
         $plan = ['languages' => $languages];
 
         // Given, a name is never empty: the core requires it.
-        $names = SomcpToolCreateProduct::texts($arguments, 'name', 'name', $languages, $errors, array_key_exists('name', $arguments));
+        $names = SomcpToolCreateProduct::texts($arguments, 'name', 'name', $languages, $errors, $create || array_key_exists('name', $arguments));
         if ($names !== null) {
             foreach ($names as $idLang => $name) {
                 $name = trim($name);
@@ -329,13 +448,17 @@ class SomcpToolUpdateCustomerGroup
 
         if (array_key_exists('reduction', $arguments)) {
             $value = $arguments['reduction'];
-            // The rule of validateDiscount(): a price, from 0 to 100; two
-            // decimals, as the column stores them.
-            if ((!is_int($value) && !is_float($value)) || $value < 0 || $value > 100
-                || abs(round((float) $value, 2) - (float) $value) > 0.0000001) {
+            if (!self::isPercent($value)) {
                 $errors[] = 'reduction: a percentage from 0 to 100';
             } else {
                 $plan['reduction'] = round((float) $value, 2);
+            }
+        }
+
+        if (array_key_exists('category_discounts', $arguments)) {
+            $discounts = self::planDiscounts($arguments['category_discounts'], $idShop, $errors);
+            if ($discounts !== null) {
+                $plan['category_discounts'] = $discounts;
             }
         }
 
@@ -357,6 +480,285 @@ class SomcpToolUpdateCustomerGroup
         }
 
         return $plan;
+    }
+
+    /**
+     * The Authorized modules given, checked against the installed modules.
+     *
+     * unauthorized_modules is the other half of the read: taken only when it
+     * is exactly the installed modules not in the list kept, so the read
+     * given back whole passes and a contradiction is not silently dropped.
+     * Public so the creation of a group checks its list by the same rules.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $before the group as the read gives it
+     * @param array<int, string> $errors
+     *
+     * @return array<int, string>|null technical names keyed by module, null when not given or refused
+     */
+    public static function planModules(array $arguments, array $before, array &$errors): ?array
+    {
+        if (!array_key_exists('authorized_modules', $arguments) && !array_key_exists('unauthorized_modules', $arguments)) {
+            return null;
+        }
+        $installed = [];
+        foreach (Module::getModulesInstalled() ?: [] as $row) {
+            $installed[Tools::strtolower((string) $row['name'])] = ['id' => (int) $row['id_module'], 'name' => (string) $row['name']];
+        }
+        $count = count($errors);
+        $plan = null;
+        if (array_key_exists('authorized_modules', $arguments)) {
+            $value = $arguments['authorized_modules'];
+            if (!is_array($value) || array_values($value) !== $value || array_filter($value, 'is_string') !== $value) {
+                $errors[] = 'authorized_modules: a list of module names from somcp_list_modules';
+            } elseif ($value === []) {
+                $errors[] = 'authorized_modules: at least one module - the back office cannot leave a group with none';
+            } else {
+                $plan = [];
+                foreach ($value as $i => $name) {
+                    $key = Tools::strtolower(trim($name));
+                    if (!isset($installed[$key])) {
+                        $errors[] = SomcpTool::notFound('authorized_modules[' . $i . ']', 'installed module', trim($name), 'somcp_list_modules', 'name');
+                    } else {
+                        $plan[$installed[$key]['id']] = $installed[$key]['name'];
+                    }
+                }
+            }
+        }
+        if (array_key_exists('unauthorized_modules', $arguments)) {
+            $kept = $plan !== null ? array_values($plan) : (array) ($before['authorized_modules'] ?? []);
+            $keptKeys = array_map([Tools::class, 'strtolower'], $kept);
+            $expected = [];
+            foreach ($installed as $key => $module) {
+                if (!in_array($key, $keptKeys, true)) {
+                    $expected[] = $key;
+                }
+            }
+            $value = $arguments['unauthorized_modules'];
+            $given = is_array($value) && array_filter($value, 'is_string') === $value
+                ? array_map(static function (string $name): string {
+                    return Tools::strtolower(trim($name));
+                }, array_values($value))
+                : null;
+            if ($given !== null) {
+                sort($given);
+                sort($expected);
+            }
+            if ($given === null || $given !== $expected) {
+                $errors[] = 'unauthorized_modules: the installed modules left out of authorized_modules';
+            }
+        }
+        if (count($errors) !== $count) {
+            return null;
+        }
+
+        return $plan;
+    }
+
+    /**
+     * Which of the modules named hook to the payment step of the shop.
+     *
+     * Read from hook_module for the shop of the token rather than from
+     * Hook::getHookModuleExecList(), which filters by the groups of the
+     * visitor of the context and would miss a payment the group still has.
+     * Public so the creation of a group names the payments it leaves out.
+     *
+     * @param array<int, string> $names technical names
+     * @param int $idShop
+     *
+     * @return array<int, string> the display names, as the block lists them
+     */
+    public static function paymentModules(array $names, int $idShop): array
+    {
+        $rows = Db::getInstance()->executeS(
+            'SELECT m.`name` FROM `' . _DB_PREFIX_ . 'hook_module` hm'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'hook` h ON h.`id_hook` = hm.`id_hook`'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'module` m ON m.`id_module` = hm.`id_module`'
+            . " WHERE h.`name` = '" . pSQL(self::PAYMENT_HOOK) . "' AND hm.`id_shop` = " . (int) $idShop
+        ) ?: [];
+        $wanted = array_map([Tools::class, 'strtolower'], $names);
+        $found = [];
+        foreach ($rows as $row) {
+            $name = (string) $row['name'];
+            if (in_array(Tools::strtolower($name), $wanted, true)) {
+                $module = Module::getInstanceByName($name);
+                $found[] = $module && (string) $module->displayName !== '' ? (string) $module->displayName : $name;
+            }
+        }
+        sort($found);
+
+        return array_values(array_unique($found));
+    }
+
+    /**
+     * The rule of validateDiscount(), for the Discount of the group and of a
+     * category alike: a number from 0 to 100, two decimals as the columns
+     * store them.
+     *
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    private static function isPercent($value): bool
+    {
+        return (is_int($value) || is_float($value)) && $value >= 0 && $value <= 100
+            && abs(round((float) $value, 2) - (float) $value) <= 0.0000001;
+    }
+
+    /**
+     * The Category discount list given, checked as the form checks a row.
+     *
+     * Public so the creation of a group checks its list by the same rules.
+     *
+     * @param mixed $value
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array<int, float>|null percents keyed by category, null when refused
+     */
+    public static function planDiscounts($value, int $idShop, array &$errors): ?array
+    {
+        if (!is_array($value) || array_values($value) !== $value) {
+            $errors[] = 'category_discounts: a list of {id_category, reduction}';
+
+            return null;
+        }
+        $count = count($errors);
+        $root = (int) Configuration::get('PS_ROOT_CATEGORY');
+        $plan = [];
+        foreach ($value as $i => $item) {
+            $path = 'category_discounts[' . $i . ']';
+            if (!is_array($item) || !array_key_exists('id_category', $item) || !array_key_exists('reduction', $item)) {
+                $errors[] = 'category_discounts: a list of {id_category, reduction}';
+                continue;
+            }
+            foreach (array_diff(array_keys($item), ['id_category', 'reduction', 'category']) as $unknown) {
+                $errors[] = $path . '.' . $unknown . ': not a field of a category discount';
+            }
+            $idCategory = SomcpTool::id($item, 'id_category');
+            if ($idCategory === 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_category');
+            } elseif ($idCategory === $root) {
+                // The tree of the form starts at Home: the Root is never offered.
+                $errors[] = $path . '.id_category: the Root category is not in the tree of the form, choose Home or below';
+            } elseif (SomcpToolUpdateCategory::existingCategory($idCategory, $idShop) === null) {
+                $errors[] = SomcpTool::notFound($path . '.id_category', 'category', $idCategory, 'somcp_list_categories');
+            } elseif (isset($plan[$idCategory])) {
+                $errors[] = $path . '.id_category: given twice';
+            }
+            if (!self::isPercent($item['reduction'])) {
+                $errors[] = $path . '.reduction: a percentage from 0 to 100';
+            } elseif ($idCategory > 0) {
+                $plan[$idCategory] = round((float) $item['reduction'], 2);
+            }
+        }
+        if (count($errors) !== $count) {
+            return null;
+        }
+        ksort($plan);
+
+        return $plan;
+    }
+
+    /**
+     * Whether two lists hold the same categories with the same percents, in any order.
+     *
+     * @param array<int, float> $given
+     * @param array<int, float> $stored
+     *
+     * @return bool
+     */
+    private static function sameDiscounts(array $given, array $stored): bool
+    {
+        if (count($given) !== count($stored)) {
+            return false;
+        }
+        foreach ($given as $idCategory => $percent) {
+            if (!isset($stored[$idCategory]) || abs($stored[$idCategory] - $percent) > 0.000001) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The list in the shape the read answers, for the changes of the answer.
+     *
+     * @param array<int, float> $discounts
+     *
+     * @return array<int, array{id_category: int, reduction: float}>
+     */
+    private static function discountRows(array $discounts): array
+    {
+        $rows = [];
+        foreach ($discounts as $idCategory => $percent) {
+            $rows[] = ['id_category' => (int) $idCategory, 'reduction' => $percent];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Whether the group already has access to the category, as category_group holds it.
+     *
+     * @param int $idGroup
+     * @param int $idCategory
+     *
+     * @return bool
+     */
+    private static function seesCategory(int $idGroup, int $idCategory): bool
+    {
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . 'category_group` WHERE `id_category` = ' . (int) $idCategory
+            . ' AND `id_group` = ' . (int) $idGroup
+        );
+    }
+
+    /**
+     * The list written as updateCategoryReduction() writes it.
+     *
+     * The rows are deleted by group, as the controller does: deleting each
+     * GroupReduction object would empty the price cache of every group for
+     * the products of its category. Public so the creation of a group writes
+     * its list the same way.
+     *
+     * @param int $idGroup
+     * @param array<int, float> $discounts percents keyed by category
+     *
+     * @return string the reason of a failure, empty when saved
+     */
+    public static function writeDiscounts(int $idGroup, array $discounts): string
+    {
+        $db = Db::getInstance();
+        if (!$db->execute('DELETE FROM `' . _DB_PREFIX_ . 'group_reduction` WHERE `id_group` = ' . (int) $idGroup)
+            || !$db->execute('DELETE FROM `' . _DB_PREFIX_ . 'product_group_reduction_cache` WHERE `id_group` = ' . (int) $idGroup)) {
+            return 'the old rows could not be removed';
+        }
+        if ($discounts === []) {
+            return '';
+        }
+        if (!Configuration::getGlobalValue('PS_GROUP_FEATURE_ACTIVE')) {
+            Configuration::updateGlobalValue('PS_GROUP_FEATURE_ACTIVE', 1);
+        }
+        foreach ($discounts as $idCategory => $percent) {
+            // Category::getGroups() keeps its answer for the request, and
+            // Group::add() opens the home category to a new group without
+            // clearing it: read again, or the row already there is inserted
+            // twice.
+            Cache::clean('Category::getGroups_' . (int) $idCategory);
+            $category = new Category((int) $idCategory);
+            $category->addGroupsIfNoExist($idGroup);
+            $reduction = new GroupReduction();
+            $reduction->id_group = $idGroup;
+            $reduction->id_category = (int) $idCategory;
+            $reduction->reduction = (float) ($percent / 100);
+            if (!$reduction->add()) {
+                return 'PrestaShop refused the row of category ' . (int) $idCategory;
+            }
+        }
+
+        return '';
     }
 
     /**

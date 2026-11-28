@@ -808,7 +808,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         if (array_key_exists('id_category_default', $group)) {
             $default = self::integer($group['id_category_default']) ?? 0;
             if ($default <= 0) {
-                $errors[] = 'categories.id_category_default: a category identifier';
+                $errors[] = SomcpTool::notAnIdentifier('categories.id_category_default');
 
                 return;
             }
@@ -1056,8 +1056,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 self::onlyAccepted($item, 'combination', $path, $errors);
                 if (!isset($existing[$id])) {
                     $errors[] = $id > 0
-                        ? $path . '.id_product_attribute: no combination of this product has the identifier ' . $id
-                            . ' - find it with somcp_get_product'
+                        ? SomcpTool::notFoundOf($path . '.id_product_attribute', 'combination', 'this product', $id, 'somcp_get_product')
                         : SomcpTool::notAnIdentifier($path . '.id_product_attribute');
                     continue;
                 }
@@ -1250,8 +1249,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             self::onlyAccepted($item, 'rule', $path, $errors);
             if (!in_array($id, $owned, true)) {
                 $errors[] = $id > 0
-                    ? $path . '.id_specific_price: no specific price of this product has the identifier ' . $id
-                        . ' - find it with somcp_get_product'
+                    ? SomcpTool::notFoundOf($path . '.id_specific_price', 'specific price', 'this product', $id, 'somcp_get_product')
                     : SomcpTool::notAnIdentifier($path . '.id_specific_price');
                 continue;
             }
@@ -1382,8 +1380,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             return null;
         }
         if (!SomcpToolGetProduct::combinationBelongs($product, $id, $idShop)) {
-            $errors[] = $path . '.id_product_attribute: no combination of this product has the identifier ' . $id
-                . ' - find it with somcp_get_product';
+            $errors[] = SomcpTool::notFoundOf($path . '.id_product_attribute', 'combination', 'this product', $id, 'somcp_get_product');
 
             return null;
         }
@@ -1629,8 +1626,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $ids = array_values(array_unique(self::ids($given, 'id_product_attribute', $path . '.id_product_attributes', $errors)));
         foreach ($ids as $id) {
             if (!SomcpToolGetProduct::combinationBelongs($product, $id, $idShop)) {
-                $errors[] = $path . '.id_product_attributes: no combination of this product has the identifier ' . $id
-                    . ' - find it with somcp_get_product';
+                $errors[] = SomcpTool::notFoundOf($path . '.id_product_attributes', 'combination', 'this product', $id, 'somcp_get_product');
             } elseif (in_array($id, $plan['combinations']['remove'], true)) {
                 // The combinations are deleted before the image links are
                 // written, so the link would point at a row that is gone.

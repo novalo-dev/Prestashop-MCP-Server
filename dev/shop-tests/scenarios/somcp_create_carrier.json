@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a call without the name and the transit time is refused, both named at once", "arguments": {}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- name: required", "- delay: required, one text per language"]},
+    {"why": "a speed grade out of its range is refused by the rule of a change", "arguments": {"name": "x", "delay": {"en": "2 days"}, "languages": ["en"], "grade": 12}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- grade: an integer from 0 to 9"]},
+    {"why": "a zone the shop does not have is refused, pointing to the list", "arguments": {"name": "x", "delay": {"en": "2 days"}, "languages": ["en"], "zones": [999999]}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- zones[0].id_zone: no zone of this shop has the identifier 999999 - find it with somcp_list_zones"]},
+    {"why": "the identifier of a carrier is not a field of a creation", "arguments": {"name": "x", "delay": {"en": "2 days"}, "languages": ["en"], "id_carrier": 1}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- id_carrier: not a field of this tool"]}
+  ]
+}

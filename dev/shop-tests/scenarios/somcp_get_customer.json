@@ -5,12 +5,13 @@
     {"why": "the names in the shop language given by its code", "arguments": {"email": "pub@prestashop.com", "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused", "arguments": {"email": "pub@prestashop.com", "language": "zz"}, "expect": "error", "contains": ["- language: not one of the shop's languages, which are "]},
     {"why": "a customer that does not exist, worded like every other tool", "arguments": {"id_customer": 999999}, "expect": "error", "contains": ["id_customer: no customer of this shop has the identifier 999999 - find it with somcp_search_customers"]},
-    {"why": "an email nobody has", "arguments": {"email": "nobody-zz@example.invalid"}, "expect": "error", "contains": ["email: no customer of this shop has this email"]},
+    {"why": "an email nobody has", "arguments": {"email": "nobody-zz@example.invalid"}, "expect": "error", "contains": ["email: no customer of this shop has the email nobody-zz@example.invalid - find it with somcp_search_customers"]},
     {"why": "a misspelt field is named, nothing read", "arguments": {"id_customer": 1, "id_customers": 1}, "expect": "error", "contains": ["id_customers: not a field of this tool"]},
     {"why": "neither an identifier nor an email", "arguments": {}, "expect": "error", "contains": ["Give id_customer or email"]},
     {"why": "the first customer by identifier, whoever the demo data made it", "arguments": {"id_customer": 1}, "expect": "any", "contains": []},
     {"why": "the status of the latest orders under the name the order tools use", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["\"status_id\""]},
     {"why": "an identifier that is not a whole number is not read as another customer", "arguments": {"id_customer": "1.5"}, "expect": "error", "contains": ["Give id_customer or email"]},
+    {"why": "the country and the state of each address by ISO code, the names beside them", "arguments": {"id_customer": 2}, "expect": "ok", "contains": ["\"country\": \"US\"", "\"country_name\": \"United States\"", "\"state\": \"FL\"", "\"state_name\": \"Florida\"", "\"country\": \"FR\"", "\"country_iso\": \"FR\""]},
     {"why": "the groups also given as the ids somcp_update_customer and somcp_create_customer take", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["\"group_ids\"", "\"id_default_group\""]}
   ]
 }

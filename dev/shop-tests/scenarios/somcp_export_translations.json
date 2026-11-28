@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {"why": "no language and no part", "arguments": {}, "expect": "error", "contains": ["Nothing was exported.", "language: required"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "xx", "core": ["email"]}, "expect": "error", "contains": ["language: no language of this shop has the iso_code xx - find it with somcp_list_languages"]},
+    {"why": "a box the card does not have", "arguments": {"language": "en", "core": ["emails"]}, "expect": "error", "contains": ["core[0]: one of back_office, front_office, email, other"]},
+    {"why": "nothing chosen to export", "arguments": {"language": "en", "core": []}, "expect": "error", "contains": ["core, theme or module: at least one", "You must select at least one translation type to export translations."]},
+    {"why": "classic, whose wordings are the core's Front office", "arguments": {"language": "en", "theme": "classic"}, "expect": "error", "contains": ["give front_office in core"]},
+    {"why": "a module that is not installed", "arguments": {"language": "en", "module": "no_such_module"}, "expect": "error", "contains": ["module: no installed module of this shop has the name no_such_module - find it with somcp_list_modules"]},
+    {"why": "a field the tool does not take, with every problem at once", "arguments": {"language": "xx", "core": ["emails"], "format": "zip"}, "expect": "error", "contains": ["format: not a field of this tool", "core[0]: one of", "language: no language of this shop"]},
+    {"why": "the e-mails of English, as Export with the box Email", "arguments": {"language": "en", "core": ["email"]}, "expect": "ok", "contains": ["\"exported\": true", "\"locale\": \"en-US\"", "\"email\"", "\"download_ref\": \"translation_export."]},
+    {"why": "the module's own wordings in English, the module named in capitals", "arguments": {"language": "en", "module": "SOMCP"}, "expect": "ok", "contains": ["\"exported\": true", "\"module somcp\""]}
+  ]
+}

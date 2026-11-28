@@ -947,6 +947,11 @@
       <source>Statistics - read</source>
       <target>Statistics - read</target>
     </trans-unit>
+    <!-- Pages - changes -->
+    <trans-unit id="cfcfc41e086aff2aea7bd8f5cb23e195" resname="Pages - changes">
+      <source>Pages - changes</source>
+      <target>Pages - changes</target>
+    </trans-unit>
     <!-- Pages - read -->
     <trans-unit id="213abf6715423d2ea408dd36981f1eee" resname="Pages - read">
       <source>Pages - read</source>
@@ -1102,6 +1107,21 @@
       <source>Change a customer group</source>
       <target>Change a customer group</target>
     </trans-unit>
+    <!-- Change the default customer groups -->
+    <trans-unit id="6c6e89856381efd3cc64ae3f6da693e3" resname="Change the default customer groups">
+      <source>Change the default customer groups</source>
+      <target>Change the default customer groups</target>
+    </trans-unit>
+    <!-- Create a customer group -->
+    <trans-unit id="158fa2016320e92ab36a2d57ee823af7" resname="Create a customer group">
+      <source>Create a customer group</source>
+      <target>Create a customer group</target>
+    </trans-unit>
+    <!-- Delete a customer group -->
+    <trans-unit id="c1ba0f3c46cfa79918fda6329640fec6" resname="Delete a customer group">
+      <source>Delete a customer group</source>
+      <target>Delete a customer group</target>
+    </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
       <source>List return statuses</source>
@@ -1116,6 +1136,11 @@
     <trans-unit id="84e99d3fd81765da665db8112b31e85f" resname="Read a carrier">
       <source>Read a carrier</source>
       <target>Read a carrier</target>
+    </trans-unit>
+    <!-- Create a carrier -->
+    <trans-unit id="ecf7b49edd40aa0c5a915389a5b1bca2" resname="Create a carrier">
+      <source>Create a carrier</source>
+      <target>Create a carrier</target>
     </trans-unit>
     <!-- Change a carrier -->
     <trans-unit id="1beee38e2cf4d04609f880d19fd0e875" resname="Change a carrier">
@@ -1552,6 +1577,66 @@
       <source>List the contacts</source>
       <target>List the contacts</target>
     </trans-unit>
+    <!-- List the stores -->
+    <trans-unit id="4d47291b0a273d43cd013f830022cf92" resname="List the stores">
+      <source>List the stores</source>
+      <target>List the stores</target>
+    </trans-unit>
+    <!-- Create a store -->
+    <trans-unit id="52bd2612c7c5dc55b7b49ea90a8842fa" resname="Create a store">
+      <source>Create a store</source>
+      <target>Create a store</target>
+    </trans-unit>
+    <!-- Change a store -->
+    <trans-unit id="6091069dc5ac043ebb918df2eefab5a1" resname="Change a store">
+      <source>Change a store</source>
+      <target>Change a store</target>
+    </trans-unit>
+    <!-- Delete a store -->
+    <trans-unit id="642a104ac616392bf592beefa6045c50" resname="Delete a store">
+      <source>Delete a store</source>
+      <target>Delete a store</target>
+    </trans-unit>
+    <!-- Add a shop page to SEO &amp; URLs -->
+    <trans-unit id="e5c70cc0efb737fe5165a9fffe52d854" resname="Add a shop page to SEO &amp; URLs">
+      <source>Add a shop page to SEO &amp; URLs</source>
+      <target>Add a shop page to SEO &amp; URLs</target>
+    </trans-unit>
+    <!-- Delete a shop page from SEO &amp; URLs -->
+    <trans-unit id="71ce1782de3e05622b81067e46706fa4" resname="Delete a shop page from SEO &amp; URLs">
+      <source>Delete a shop page from SEO &amp; URLs</source>
+      <target>Delete a shop page from SEO &amp; URLs</target>
+    </trans-unit>
+    <!-- List the search engines -->
+    <trans-unit id="3c24aa8465859c1451d896ef3146a3f0" resname="List the search engines">
+      <source>List the search engines</source>
+      <target>List the search engines</target>
+    </trans-unit>
+    <!-- Create a search engine -->
+    <trans-unit id="89ff040201f8680c9ce18c3959f11f9f" resname="Create a search engine">
+      <source>Create a search engine</source>
+      <target>Create a search engine</target>
+    </trans-unit>
+    <!-- Change a search engine -->
+    <trans-unit id="96727e3cb0657e67732d9ccb4d5385f6" resname="Change a search engine">
+      <source>Change a search engine</source>
+      <target>Change a search engine</target>
+    </trans-unit>
+    <!-- Delete a search engine -->
+    <trans-unit id="5847e8447485017cfc3c0ead2f32a6c3" resname="Delete a search engine">
+      <source>Delete a search engine</source>
+      <target>Delete a search engine</target>
+    </trans-unit>
+    <!-- Get the contact details of the shop -->
+    <trans-unit id="0c66db3c29d38926dcde73447ee2b642" resname="Get the contact details of the shop">
+      <source>Get the contact details of the shop</source>
+      <target>Get the contact details of the shop</target>
+    </trans-unit>
+    <!-- Change the contact details of the shop -->
+    <trans-unit id="6b445ac511f4cf50d3d6d070a99db275" resname="Change the contact details of the shop">
+      <source>Change the contact details of the shop</source>
+      <target>Change the contact details of the shop</target>
+    </trans-unit>
     <!-- Create a contact -->
     <trans-unit id="e4c16f79a29856399a679d5cde54f1ee" resname="Create a contact">
       <source>Create a contact</source>
@@ -1616,6 +1701,21 @@
     <trans-unit id="d0c6e19ce3834c627295b02fa67834c6" resname="Add or update a language from PrestaShop">
       <source>Add or update a language from PrestaShop</source>
       <target>Add or update a language from PrestaShop</target>
+    </trans-unit>
+    <!-- List the translations of a language -->
+    <trans-unit id="8633b57b46abca660850be6465fc7406" resname="List the translations of a language">
+      <source>List the translations of a language</source>
+      <target>List the translations of a language</target>
+    </trans-unit>
+    <!-- Change a translation of a language -->
+    <trans-unit id="7b733ddbc82daec6dba1a87bb8fca223" resname="Change a translation of a language">
+      <source>Change a translation of a language</source>
+      <target>Change a translation of a language</target>
+    </trans-unit>
+    <!-- Export the translations of a language -->
+    <trans-unit id="b2451bccee124f8ae91bf2cc863169fd" resname="Export the translations of a language">
+      <source>Export the translations of a language</source>
+      <target>Export the translations of a language</target>
     </trans-unit>
     <!-- Add a language -->
     <trans-unit id="369b8db3e9651d0b5d8a13a5f7f9a53a" resname="Add a language">
@@ -1927,6 +2027,16 @@
       <source>Read the SEO and URL settings</source>
       <target>Read the SEO and URL settings</target>
     </trans-unit>
+    <!-- Change the schema of URLs -->
+    <trans-unit id="a70e888d4a012e8ac03b4811755e8391" resname="Change the schema of URLs">
+      <source>Change the schema of URLs</source>
+      <target>Change the schema of URLs</target>
+    </trans-unit>
+    <!-- Change the SEO and URL settings -->
+    <trans-unit id="9462b6ff1624620ac6ded24cff1f98a7" resname="Change the SEO and URL settings">
+      <source>Change the SEO and URL settings</source>
+      <target>Change the SEO and URL settings</target>
+    </trans-unit>
     <!-- Read the robots.txt file -->
     <trans-unit id="efb4442b8d63d68974536f8cbfd2375d" resname="Read the robots.txt file">
       <source>Read the robots.txt file</source>
@@ -1982,6 +2092,21 @@
       <source>Generate the llms.txt file</source>
       <target>Generate the llms.txt file</target>
     </trans-unit>
+    <!-- Create a CMS page -->
+    <trans-unit id="d9be187ea385d4af6705f71dcae63c12" resname="Create a CMS page">
+      <source>Create a CMS page</source>
+      <target>Create a CMS page</target>
+    </trans-unit>
+    <!-- Change a CMS page -->
+    <trans-unit id="3810a7de2adbc8626ee181c2bffc0c09" resname="Change a CMS page">
+      <source>Change a CMS page</source>
+      <target>Change a CMS page</target>
+    </trans-unit>
+    <!-- Delete a CMS page -->
+    <trans-unit id="a2e13d6dfac1cab1c245dad01514a8f1" resname="Delete a CMS page">
+      <source>Delete a CMS page</source>
+      <target>Delete a CMS page</target>
+    </trans-unit>
     <!-- Change the SEO of a CMS page -->
     <trans-unit id="39a2ae54e85acae56f94b93320441737" resname="Change the SEO of a CMS page">
       <source>Change the SEO of a CMS page</source>
@@ -2012,6 +2137,11 @@
       <source>List best-selling products</source>
       <target>List best-selling products</target>
     </trans-unit>
+    <!-- Change the content pages of this shop: their titles, texts, categories and whether they are displayed -->
+    <trans-unit id="200ce8e2070f3831eab4022a9aec697c" resname="Change the content pages of this shop: their titles, texts, categories and whether they are displayed">
+      <source>Change the content pages of this shop: their titles, texts, categories and whether they are displayed</source>
+      <target>Change the content pages of this shop: their titles, texts, categories and whether they are displayed</target>
+    </trans-unit>
     <!-- Read the content pages of this shop: their titles, addresses and categories, displayed or not -->
     <trans-unit id="610fc39055cd434848f7a7892e6833aa" resname="Read the content pages of this shop: their titles, addresses and categories, displayed or not">
       <source>Read the content pages of this shop: their titles, addresses and categories, displayed or not</source>
@@ -2026,6 +2156,21 @@
     <trans-unit id="2b602d4c87e39a83741729fe428885d0" resname="Get a content page">
       <source>Get a content page</source>
       <target>Get a content page</target>
+    </trans-unit>
+    <!-- Read a CMS page category -->
+    <trans-unit id="67f1e55ce0ad1c83c177c906619e8c87" resname="Read a CMS page category">
+      <source>Read a CMS page category</source>
+      <target>Read a CMS page category</target>
+    </trans-unit>
+    <!-- Update a CMS page category -->
+    <trans-unit id="42c0e5d925784c9953df933379719e93" resname="Update a CMS page category">
+      <source>Update a CMS page category</source>
+      <target>Update a CMS page category</target>
+    </trans-unit>
+    <!-- Create a CMS page category -->
+    <trans-unit id="57b284948158dc3c9d713f64949d8263" resname="Create a CMS page category">
+      <source>Create a CMS page category</source>
+      <target>Create a CMS page category</target>
     </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
@@ -2322,6 +2467,11 @@
       <source>Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages</source>
       <target>Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages</target>
     </trans-unit>
+    <!-- Change the shop logos -->
+    <trans-unit id="5dd9dae5adec9f3189f2d7c1d91bcc87" resname="Change the shop logos">
+      <source>Change the shop logos</source>
+      <target>Change the shop logos</target>
+    </trans-unit>
     <!-- Change the layout of a page -->
     <trans-unit id="700e8a2aabf5c4faa260afe88162fe2f" resname="Change the layout of a page">
       <source>Change the layout of a page</source>
@@ -2342,10 +2492,10 @@
       <source>Read content pages</source>
       <target>Read content pages</target>
     </trans-unit>
-    <!-- List and read the CMS pages of the PrestaShop shop. -->
-    <trans-unit id="e33bce61c60fa7091d9064f83edd80be" resname="List and read the CMS pages of the PrestaShop shop.">
-      <source>List and read the CMS pages of the PrestaShop shop.</source>
-      <target>List and read the CMS pages of the PrestaShop shop.</target>
+    <!-- List, read and change the CMS pages of the PrestaShop shop. -->
+    <trans-unit id="fed4306ceefac43fa99ef1cec211b98f" resname="List, read and change the CMS pages of the PrestaShop shop.">
+      <source>List, read and change the CMS pages of the PrestaShop shop.</source>
+      <target>List, read and change the CMS pages of the PrestaShop shop.</target>
     </trans-unit>
     <!-- Title of a page -->
     <trans-unit id="f8c68565d064bb35fafebf69ff32f56f" resname="Title of a page">
@@ -3802,6 +3952,11 @@
       <source>Switch a cart rule on or off</source>
       <target>Switch a cart rule on or off</target>
     </trans-unit>
+    <!-- Delete a cart rule -->
+    <trans-unit id="90e9c2b94f47f41bc1bb4515cc544698" resname="Delete a cart rule">
+      <source>Delete a cart rule</source>
+      <target>Delete a cart rule</target>
+    </trans-unit>
     <!-- Sales - changes -->
     <trans-unit id="a1be5de2a33a782765a42196dbdc0c93" resname="Sales - changes">
       <source>Sales - changes</source>
@@ -3826,6 +3981,41 @@
     <trans-unit id="9e9d7a2264656376e54ce95a9d5d98b9" resname="Number of days to look back, 30 by default">
       <source>Number of days to look back, 30 by default</source>
       <target>Number of days to look back, 30 by default</target>
+    </trans-unit>
+    <!-- Turn the server on, copy its address and check your setup. -->
+    <trans-unit id="34f4c5019bb07f9ae8269bfb6136fa8c" resname="Turn the server on, copy its address and check your setup.">
+      <source>Turn the server on, copy its address and check your setup.</source>
+      <target>Turn the server on, copy its address and check your setup.</target>
+    </trans-unit>
+    <!-- The tools and prompts an assistant may use on this shop. -->
+    <trans-unit id="0533c8ab4ba8da3787e28302c7524ca5" resname="The tools and prompts an assistant may use on this shop.">
+      <source>The tools and prompts an assistant may use on this shop.</source>
+      <target>The tools and prompts an assistant may use on this shop.</target>
+    </trans-unit>
+    <!-- Who may connect, how they sign in and what is kept. -->
+    <trans-unit id="95d64dc1de0b1d703b3ea680ceea040e" resname="Who may connect, how they sign in and what is kept.">
+      <source>Who may connect, how they sign in and what is kept.</source>
+      <target>Who may connect, how they sign in and what is kept.</target>
+    </trans-unit>
+    <!-- The assistants connected to this shop, and how to disconnect one. -->
+    <trans-unit id="3294c19e81890be0de710d5a85e7d716" resname="The assistants connected to this shop, and how to disconnect one.">
+      <source>The assistants connected to this shop, and how to disconnect one.</source>
+      <target>The assistants connected to this shop, and how to disconnect one.</target>
+    </trans-unit>
+    <!-- The assistant inside your back office and the models it uses. -->
+    <trans-unit id="c4552e1bba3fd731dd7068baad0afcb8" resname="The assistant inside your back office and the models it uses.">
+      <source>The assistant inside your back office and the models it uses.</source>
+      <target>The assistant inside your back office and the models it uses.</target>
+    </trans-unit>
+    <!-- What the assistants did on this shop, and when. -->
+    <trans-unit id="464404211344947b6b0cf5b43a74f214" resname="What the assistants did on this shop, and when.">
+      <source>What the assistants did on this shop, and when.</source>
+      <target>What the assistants did on this shop, and when.</target>
+    </trans-unit>
+    <!-- The guide, the updates of the module and how to reach us. -->
+    <trans-unit id="2e5fe3ad7c4580a152af2fb50368d2e6" resname="The guide, the updates of the module and how to reach us.">
+      <source>The guide, the updates of the module and how to reach us.</source>
+      <target>The guide, the updates of the module and how to reach us.</target>
     </trans-unit>
     </body>
   </file>

@@ -21,22 +21,38 @@ appearance, system, SEO, AEO and sales. The last ones still to write are tracked
 What comes next is letting an assistant set up a whole shop, in the order a
 merchant does it:
 
-- **Base settings**: shop details, and the countries, states, languages and
-  currencies, which an assistant lists today but cannot change yet. Taxes,
-  tax rules and the tax options are done.
-- **Shipping and payment preferences**: a carrier is read, changed and
-  deleted today, and the delivery zones are listed; creating a carrier and
-  managing the zones come next. **Payment > Preferences** is read and
+- **Base settings**: the contacts of the contact form are read, created,
+  changed and deleted, the stores are read, created, changed and deleted,
+  and the shop's contact details are read and changed. The countries are read and
+  changed, the states, languages and currencies read, created, changed and
+  deleted, with the localization settings; a language's translations are
+  installed from PrestaShop, read and changed wording by wording and exported
+  as a pack.
+  Taxes, tax rules and the tax
+  options are done.
+- **Shipping and payment preferences**: a carrier is read, created, changed
+  and deleted today, the delivery zones are read, created, changed and
+  deleted, and **Shipping > Preferences** is read and changed.
+  **Payment > Preferences** is read and
   changed, module by module. The payment modules themselves,
   their accounts and keys, stay with the merchant.
-- **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
-  never the parent theme or its templates, and the native modules of the
-  storefront those themes show - the slider, the home texts, the footer links,
-  the newsletter block and the like.
+- **Traffic & SEO**: the shop's own pages are read, created, changed and
+  deleted, the search engines are read, added, changed and deleted, and the
+  schema of URLs, Accented URL, the canonical redirect and the attributes in
+  the product meta title are read and changed.
+- **Appearance**: the logos of the shop are read and changed. Next, the
+  `custom.css` of a child theme of Classic or Hummingbird, never the parent
+  theme or its templates, and the native modules of the storefront those
+  themes show - the slider, the home texts, the footer links, the newsletter
+  block and the like.
+- **Pages**: the pages of **Design > Pages** are read, created, changed and
+  deleted, and their categories read, created and changed; deleting a
+  category comes next.
 - **E-mails and preferences**: the e-mail settings are read and changed, the
-  SMTP password and the DKIM key staying with the merchant; the order
-  settings are read; changing them, the shop's e-mails, and the customer and
-  product preferences come next.
+  SMTP password and the DKIM key staying with the merchant; the order, customer
+  and product settings are read and changed, with the customer groups, also
+  created and deleted, the groups given by default to visitors, guests and new customers, and the
+  social titles; the shop's e-mails come next.
 
 The simplest tools, mostly reads, are labelled
 [`good first issue`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).

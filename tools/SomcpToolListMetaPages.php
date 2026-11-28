@@ -29,7 +29,12 @@ declare(strict_types=1);
  * returned too, with configurable saying which is which, so an assistant knows
  * why a page it found has no title rather than concluding the shop forgot it.
  *
- * Nothing is ever written: somcp_update_meta_page changes a page.
+ * The pages that can be added are answered too, as addable_pages: the Page
+ * name list of Add new page, so somcp_create_meta_page is never given a
+ * guessed name.
+ *
+ * Nothing is ever written: somcp_update_meta_page changes a page,
+ * somcp_create_meta_page adds one.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -52,8 +57,8 @@ class SomcpToolListMetaPages
                 . 'best sales, search, account, checkout and module pages - with id_meta, the page name and, in one '
                 . 'language, the Page title, Meta description, Meta keywords (PrestaShop 8, null on 9), Rewritten '
                 . 'URL and public address. configurable is false for the product, category and CMS templates: their '
-                . 'texts come from each product, category or page, and they have no address. Read only. To change a '
-                . 'page, use somcp_update_meta_page.',
+                . 'texts come from each product, category or page, and they have no address. addable_pages: the page '
+                . 'names somcp_create_meta_page takes. Read only. To change a page, use somcp_update_meta_page.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -131,7 +136,27 @@ class SomcpToolListMetaPages
             'pages' => $pages,
             'count' => count($pages),
             'language' => $iso,
+            'addable_pages' => self::addable(),
         ]);
+    }
+
+    /**
+     * The pages Add new page offers: the core and module front controllers
+     * without a row of meta, each with the label the Page name list shows.
+     *
+     * @return array<int, array{page: string, label: string}>
+     */
+    private static function addable(): array
+    {
+        $addable = [];
+        foreach (Meta::getPages(true) as $label => $page) {
+            $addable[] = ['page' => (string) $page, 'label' => (string) $label];
+        }
+        usort($addable, static function (array $a, array $b): int {
+            return strcmp($a['page'], $b['page']);
+        });
+
+        return $addable;
     }
 
     /**
@@ -163,7 +188,8 @@ class SomcpToolListMetaPages
     }
 
     /**
-     * The public address of one page, as the storefront builds it.
+     * The public address of one page, as the storefront builds it. Public:
+     * somcp_create_meta_page answers the address of the page it adds.
      *
      * @param Link $link
      * @param string $page
@@ -172,7 +198,7 @@ class SomcpToolListMetaPages
      *
      * @return string
      */
-    private static function url(Link $link, string $page, int $idLang, int $idShop): string
+    public static function url(Link $link, string $page, int $idLang, int $idShop): string
     {
         // A module page is named module-<module>-<controller>, the pattern
         // Meta::getPages() writes, and is reached through the module's own

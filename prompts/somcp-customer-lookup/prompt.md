@@ -28,7 +28,10 @@ customers between shops.
 1. **Search.** Use `somcp_search_customers`. The email is more reliable than
    the name: when the merchant gives one, pass it as `email`. Otherwise pass
    the words given as `query`; each word must be found in the first name, last
-   name or email (and the company when B2B mode is on).
+   name or email (and the company when B2B mode is on). For the members of a
+   group, pass its `id_group` from `somcp_list_customer_groups`: every customer
+   who belongs to it, as its View page; `id_default_group` finds only those
+   whose default group it is.
 2. **Pick the one the merchant means.** Several matches: show them in one line
    each (name, email, registration date) and let the merchant pick. Never
    choose one for them. Read the next page while `total_count` says there is

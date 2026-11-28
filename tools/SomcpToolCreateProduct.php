@@ -993,7 +993,7 @@ class SomcpToolCreateProduct
         $categories = self::ids($group['categories'] ?? [], 'id_category', 'categories.categories', $errors);
         $default = array_key_exists('id_category_default', $group) ? self::integer($group['id_category_default']) : null;
         if (array_key_exists('id_category_default', $group) && ($default === null || $default <= 0)) {
-            $errors[] = 'categories.id_category_default: a category identifier';
+            $errors[] = SomcpTool::notAnIdentifier('categories.id_category_default');
 
             return;
         }
@@ -1426,8 +1426,7 @@ class SomcpToolCreateProduct
             )) {
                 // A combination belongs to its product, not to the shop: the
                 // product read with somcp_get_product lists the ones it has.
-                $errors[] = $path . '.id_product_attribute: no combination of this product has the identifier '
-                    . $idAttribute . ' - find it with somcp_get_product';
+                $errors[] = SomcpTool::notFoundOf($path . '.id_product_attribute', 'combination', 'this product', $idAttribute, 'somcp_get_product');
                 continue;
             }
             // The pack table holds one row per product and combination.
@@ -2005,7 +2004,9 @@ class SomcpToolCreateProduct
             // rather than answering false, so the code is checked first.
             $idCountry = $iso !== null && Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
             if ($idCountry <= 0) {
-                $errors[] = $at . 'country: no country with this ISO code';
+                // The code given back, so the assistant knows which one of
+                // several rules was refused, and where the right ones are.
+                $errors[] = SomcpTool::notFound($at . 'country', 'country', self::refusedValue($item['country']), 'somcp_list_countries', 'ISO code');
             }
             $rule['id_country'] = $idCountry;
         }
@@ -3158,6 +3159,30 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * The formats the shop writes every image in, as ImageFormatConfiguration::getGenerationFormats() lists them.
+     *
+     * PrestaShop 8.1 added image formats besides JPEG, chosen in the
+     * settings; the JPEG is always made, the others when switched on. Public
+     * because somcp_update_logos writes the logos of the shop in the same
+     * formats as the thumbnails of a product.
+     *
+     * @return array<int, string>
+     */
+    public static function imageFormats(): array
+    {
+        $formats = ['jpg'];
+        if (class_exists('PrestaShop\PrestaShop\Core\Image\ImageFormatConfiguration')) {
+            foreach (explode(',', (string) Configuration::get('PS_IMAGE_FORMAT')) as $format) {
+                if (in_array($format, ['png', 'webp', 'avif'], true) && !in_array($format, $formats, true)) {
+                    $formats[] = $format;
+                }
+            }
+        }
+
+        return $formats;
+    }
+
+    /**
      * Every thumbnail of the image types of one kind of object, as the back office makes them.
      *
      * @param string $source the original, already written as JPEG
@@ -3168,16 +3193,7 @@ class SomcpToolCreateProduct
      */
     protected static function thumbnails(string $source, string $path, string $for = 'products'): void
     {
-        // PrestaShop 8.1 added image formats besides JPEG, chosen in the
-        // settings; the JPEG is always made, the others when switched on.
-        $formats = ['jpg'];
-        if (class_exists('PrestaShop\PrestaShop\Core\Image\ImageFormatConfiguration')) {
-            foreach (explode(',', (string) Configuration::get('PS_IMAGE_FORMAT')) as $format) {
-                if (in_array($format, ['png', 'webp', 'avif'], true)) {
-                    $formats[] = $format;
-                }
-            }
-        }
+        $formats = self::imageFormats();
 
         foreach (ImageType::getImagesTypes($for, true) ?: [] as $type) {
             foreach ($formats as $format) {
@@ -3409,7 +3425,7 @@ class SomcpToolCreateProduct
         foreach (self::items($value, $path, $errors, false) as $item) {
             $id = self::integer(is_array($item) ? ($item[$key] ?? null) : $item);
             if ($id === null || $id <= 0) {
-                $errors[] = $path . ': every item must be an identifier, a whole number above 0';
+                $errors[] = SomcpTool::notAnIdentifier($path);
                 continue;
             }
             $ids[] = $id;
@@ -3735,10 +3751,22 @@ class SomcpToolCreateProduct
         $iso = self::string($value);
         $id = $iso !== null && preg_match('/^[A-Za-z]{3}$/', $iso) ? (int) Currency::getIdByIsoCode(Tools::strtoupper($iso), $idShop) : 0;
         if ($id <= 0) {
-            $errors[] = $path . ': not a currency of this shop';
+            $errors[] = SomcpTool::notFound($path, 'currency', self::refusedValue($value), 'somcp_list_currencies', 'ISO code');
         }
 
         return $id;
+    }
+
+    /**
+     * A value as the call gave it, for a line that names what was refused.
+     *
+     * @param mixed $value
+     *
+     * @return string
+     */
+    protected static function refusedValue($value): string
+    {
+        return is_scalar($value) ? trim((string) $value) : (string) json_encode($value);
     }
 
     /**

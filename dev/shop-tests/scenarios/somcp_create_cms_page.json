@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "the Title is required", "arguments": {}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- title: required, one text per language"]},
+    {"why": "a page category the shop does not have is refused, pointing to the list", "arguments": {"languages": ["en"], "title": {"en": "x"}, "id_cms_category": 999999}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- id_cms_category: no page category of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]},
+    {"why": "a Friendly URL no address can be made from is refused", "arguments": {"languages": ["en"], "title": {"en": "x"}, "link_rewrite": {"en": "!!!"}}, "expect": "error", "contains": ["- link_rewrite (en): no valid friendly URL can be made from it"]},
+    {"why": "the identifier of a page is not a field of the creation", "arguments": {"languages": ["en"], "title": {"en": "x"}, "id_cms": 1}, "expect": "error", "contains": ["- id_cms: not a field of this tool"]},
+    {"why": "Displayed takes a boolean only", "arguments": {"languages": ["en"], "title": {"en": "x"}, "active": "yes"}, "expect": "error", "contains": ["- active: true or false"]},
+    {"why": "a title in a language that is not being filled is refused", "arguments": {"languages": ["en"], "title": {"zz": "x"}}, "expect": "error", "contains": ["- title: \"zz\" is not among the languages being filled"]}
+  ]
+}

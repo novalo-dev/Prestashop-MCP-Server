@@ -162,11 +162,9 @@ class SomcpToolUpdateMetaPage
         $idMeta = SomcpTool::id($arguments, 'id_meta');
         $meta = self::page($idMeta, $idShop);
         if ($meta === null || !(bool) $meta->configurable) {
-            $errors = self::fieldProblems($arguments);
+            $errors = self::fieldProblems($arguments, ['id_meta']);
             if ($meta !== null) {
-                $errors[] = 'id_meta: the page ' . (string) $meta->page . ' takes its texts from each product, '
-                    . 'category or CMS page, and Traffic & SEO does not list it - change the product, category or '
-                    . 'page itself with its own tool';
+                $errors[] = self::notConfigurable($meta);
             } else {
                 $errors[] = $idMeta > 0
                     ? SomcpTool::notFound('id_meta', 'page', $idMeta, 'somcp_list_meta_pages')
@@ -177,7 +175,7 @@ class SomcpToolUpdateMetaPage
         }
 
         $errors = [];
-        $plan = self::plan($arguments, $meta, $idShop, $errors);
+        $plan = self::plan($arguments, $meta, $idShop, $errors, ['id_meta']);
         if ($errors !== []) {
             return SomcpTool::refused('changed', $errors);
         }
@@ -196,18 +194,34 @@ class SomcpToolUpdateMetaPage
     }
 
     /**
+     * Why a page Traffic & SEO does not list is refused: the same sentence
+     * for somcp_delete_meta_page, which refuses those pages too.
+     *
+     * @param Meta $meta
+     *
+     * @return string
+     */
+    public static function notConfigurable(Meta $meta): string
+    {
+        return 'id_meta: the page ' . (string) $meta->page . ' takes its texts from each product, '
+            . 'category or CMS page, and Traffic & SEO does not list it - change the product, category or '
+            . 'page itself with its own tool';
+    }
+
+    /**
      * The misspelt fields, and the former names with the one to send now, in
      * place of the "not a field" line they would otherwise get.
      *
      * @param array<string, mixed> $arguments
+     * @param array<int, string> $own the fields that name the page: id_meta here, page for somcp_create_meta_page
      *
      * @return array<int, string>
      */
-    private static function fieldProblems(array $arguments): array
+    private static function fieldProblems(array $arguments, array $own): array
     {
         return SomcpTool::unknownFields(
             $arguments,
-            array_merge(['id_meta', 'languages'], array_keys(self::TEXTS)),
+            array_merge($own, ['languages'], array_keys(self::TEXTS)),
             [],
             '',
             self::RENAMED
@@ -216,13 +230,14 @@ class SomcpToolUpdateMetaPage
 
     /**
      * The page with its texts in this shop, every language loaded, or null.
+     * Public: somcp_delete_meta_page loads the page it deletes the same way.
      *
      * @param mixed $id
      * @param int $idShop
      *
      * @return Meta|null
      */
-    private static function page($id, int $idShop): ?Meta
+    public static function page($id, int $idShop): ?Meta
     {
         $idMeta = is_int($id) ? $id : 0;
         if ($idMeta <= 0) {
@@ -239,20 +254,23 @@ class SomcpToolUpdateMetaPage
      * What will be written, or every reason the call is refused.
      *
      * A value equal to what the page holds is left out, so what remains is
-     * exactly what changes.
+     * exactly what changes. Public: somcp_create_meta_page checks its texts
+     * here, on a Meta not saved yet whose page is set, so a page is created
+     * under the rules it is later changed with.
      *
      * @param array<string, mixed> $arguments
      * @param Meta $meta
      * @param int $idShop
      * @param array<int, string> $errors
+     * @param array<int, string> $own the fields that name the page in the calling tool
      *
      * @return array{texts: array<string, array<int, string>>, changes: array<int, array<string, mixed>>, moved: array<int, string>, isos: array<int, string>}
      */
-    private static function plan(array $arguments, Meta $meta, int $idShop, array &$errors): array
+    public static function plan(array $arguments, Meta $meta, int $idShop, array &$errors, array $own): array
     {
         $plan = ['texts' => [], 'changes' => [], 'moved' => [], 'isos' => []];
 
-        $errors = array_merge($errors, self::fieldProblems($arguments));
+        $errors = array_merge($errors, self::fieldProblems($arguments, $own));
 
         if (array_key_exists('meta_keywords', $arguments) && !self::hasKeywords()) {
             // The list answers null for the field on PrestaShop 9: that null
@@ -495,14 +513,15 @@ class SomcpToolUpdateMetaPage
 
     /**
      * The page's search engine fields, in the languages changed, under the
-     * names somcp_list_meta_pages uses.
+     * names somcp_list_meta_pages uses. Public: somcp_delete_meta_page
+     * answers the texts of the page it deletes with it.
      *
      * @param Meta $stored
      * @param array<int, string> $isos
      *
      * @return array<string, mixed>
      */
-    private static function describe(Meta $stored, array $isos): array
+    public static function describe(Meta $stored, array $isos): array
     {
         $texts = [];
         foreach ($isos as $idLang => $iso) {

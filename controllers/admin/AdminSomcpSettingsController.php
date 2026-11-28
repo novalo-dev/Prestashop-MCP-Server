@@ -23,15 +23,25 @@ if (!defined('_PS_VERSION_')) {
 require_once _PS_MODULE_DIR_ . 'somcp/classes/SomcpSettingsController.php';
 
 /*
- * The MCP server item under Shop Parameters, whose tabs are the settings
- * pages. It has no page of its own: anybody who lands on it is sent
- * to the first of them.
+ * The MCP server item under Shop Parameters. It opens on one card per
+ * settings page, and shows the page a card asks for.
  */
 class AdminSomcpSettingsController extends SomcpSettingsController
 {
+    /**
+     * @var string Somcp::HOME_PANE, written out: the class of the module is
+     *             not loaded yet when PrestaShop reads this file
+     */
+    protected $somcpPane = 'home';
+
     public function init()
     {
-        Somcp::bootClasses();
-        SomcpHttp::redirect($this->context->link->getAdminLink(Somcp::settingsPages()['config'][0]));
+        // The page asked for by a card; anything else opens on the cards.
+        $pane = (string) Tools::getValue('somcp_pane', '');
+        if (isset(Somcp::settingsPages()[$pane])) {
+            $this->somcpPane = $pane;
+        }
+
+        parent::init();
     }
 }

@@ -32,6 +32,8 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once __DIR__ . '/SomcpToolGetOrder.php';
+
 class SomcpToolGetCustomer
 {
     /** @var int Rows given per list block, as the page shows its newest ones. */
@@ -168,7 +170,7 @@ class SomcpToolGetCustomer
         $ids = array_map('intval', array_column(Db::getInstance()->executeS($query) ?: [], 'id_customer'));
 
         if ($ids === []) {
-            return 'email: no customer of this shop has this email - find one with somcp_search_customers';
+            return SomcpTool::notFound('email', 'customer', $email, 'somcp_search_customers', 'email');
         }
         // A guest and a registered account can share an email: picking one
         // here could show the merchant the wrong person.
@@ -300,8 +302,9 @@ class SomcpToolGetCustomer
                 'address2' => (string) ($row['address2'] ?? ''),
                 'postcode' => (string) ($row['postcode'] ?? ''),
                 'city' => (string) $row['city'],
-                'state' => (string) ($row['state'] ?? ''),
-                'country' => (string) ($row['country'] ?? ''),
+            ] + SomcpToolGetOrder::place(new Address((int) $row['id_address']), $idLang) + [
+                // country_iso is the name of the first releases, kept for the
+                // clients built on it; country now holds the same code.
                 'country_iso' => (string) Country::getIsoById((int) $row['id_country']),
                 'phone' => (string) ($row['phone'] ?? ''),
                 'phone_mobile' => (string) ($row['phone_mobile'] ?? ''),

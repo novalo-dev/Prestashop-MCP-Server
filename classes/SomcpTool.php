@@ -669,6 +669,30 @@ class SomcpTool
     }
 
     /**
+     * The line for something that does not belong to what the call named: a
+     * combination of another product, an address of another customer, a
+     * state of another country.
+     *
+     * notFound() always says "of this shop", which is not where these are
+     * looked for. Built by hand in each tool, the copies had drifted ("read
+     * them with" beside "find it with", a state refused without its list):
+     * one wording, so the assistant applies one recovery.
+     *
+     * @param string $path
+     * @param string $thing the word of the back office, for example combination
+     * @param string $owner what it should belong to, for example this product or US
+     * @param int|string $value
+     * @param string $tool the tool that lists the right ones
+     * @param string $by what the value is, for something found by code rather than by identifier
+     *
+     * @return string
+     */
+    public static function notFoundOf(string $path, string $thing, string $owner, $value, string $tool, string $by = 'identifier'): string
+    {
+        return $path . ': no ' . $thing . ' of ' . $owner . ' has the ' . $by . ' ' . $value . ' - find it with ' . $tool;
+    }
+
+    /**
      * The line for an identifier that is not a whole number above 0.
      *
      * Kept apart from notFound(): a list or a word is a mistake in the call,

@@ -71,6 +71,9 @@ class SomcpScope
     /** @var string Reading content: the CMS pages and their categories. */
     public const CONTENT_READ = 'mcp.content.read';
 
+    /** @var string Changing content: the title, text, category and status of the CMS pages. */
+    public const CONTENT_WRITE = 'mcp.content.write';
+
     /** @var string Reading the modules: which ones the shop has, their version and state. */
     public const MODULES_READ = 'mcp.modules.read';
 
@@ -105,7 +108,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::MODULES_UPLOAD, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE, self::SALES_READ, self::SALES_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::CONTENT_WRITE, self::MODULES_READ, self::MODULES_WRITE, self::MODULES_UPLOAD, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE, self::SALES_READ, self::SALES_WRITE];
     }
 
     /**
@@ -293,6 +296,8 @@ class SomcpScope
                 return $module->l10n('Statistics - read');
             case self::CONTENT_READ:
                 return $module->l10n('Pages - read');
+            case self::CONTENT_WRITE:
+                return $module->l10n('Pages - changes');
             case self::MODULES_READ:
                 return $module->l10n('Modules - read');
             case self::MODULES_WRITE:
@@ -415,6 +420,8 @@ class SomcpScope
                 return $module->l10n('Read the statistics of this shop: revenue, orders, products sold and new customers over a period');
             case self::CONTENT_READ:
                 return $module->l10n('Read the content pages of this shop: their titles, addresses and categories, displayed or not');
+            case self::CONTENT_WRITE:
+                return $module->l10n('Change the content pages of this shop: their titles, texts, categories and whether they are displayed');
             case self::MODULES_READ:
                 return $module->l10n('Read the modules of this shop: their version, author and whether they are installed and enabled');
             case self::MODULES_WRITE:

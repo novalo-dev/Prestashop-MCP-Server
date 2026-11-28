@@ -177,8 +177,7 @@ class SomcpToolListStockMovements
                 $filters['id_product_attribute'],
                 $idShop
             )) {
-                $problems[] = 'id_product_attribute: no combination of this product has the identifier '
-                    . $filters['id_product_attribute'] . ' - find it with somcp_get_stock';
+                $problems[] = SomcpTool::notFoundOf('id_product_attribute', 'combination', 'this product', (int) $filters['id_product_attribute'], 'somcp_get_stock');
             }
         }
         if ($filters['id_category'] > 0 && !self::exists('category_shop', 'id_category', $filters['id_category'], $idShop)) {

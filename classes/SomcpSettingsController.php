@@ -23,11 +23,11 @@ if (!defined('_PS_VERSION_')) {
 /**
  * One page of the module settings.
  *
- * The settings are one template split into panes; each pane is a page of its
- * own, under the module's entry in the Modules menu, so that PrestaShop draws
- * them as tabs under the page title the way it does for Contacts and Stores,
- * with the module's buttons beside the title. A page only names its pane: the
- * module does the rest, exactly as its Configure page always did.
+ * The settings are one template split into panes, with the module's buttons
+ * beside the title. The menu item opens on one card per page, and a page is
+ * the item with the pane asked for (AdminSomcpSettingsController): a page
+ * only names its pane, the module does the rest. The controller of each page
+ * stays for the addresses already handed out, and sends them to the item.
  */
 abstract class SomcpSettingsController extends ModuleAdminController
 {
@@ -49,6 +49,39 @@ abstract class SomcpSettingsController extends ModuleAdminController
         if ($module instanceof Somcp) {
             $this->module = $module;
         }
+    }
+
+    /**
+     * A page reached by its own address is sent to the one address the
+     * settings have: the menu item, with the page asked for. Its own address
+     * is what a bookmark or a link of an earlier version still holds, and the
+     * item is what keeps the menu on the module.
+     */
+    public function init()
+    {
+        if (static::class !== Somcp::SETTINGS_ITEM . 'Controller') {
+            Somcp::bootClasses();
+
+            // On a shop updated in place the pages are still tabs under the
+            // item, and PrestaShop sends the menu to the first of them: the
+            // merchant asked for the settings, not for that page. The tabs
+            // are put where they now belong and the cards are shown.
+            $idItem = (int) Tab::getIdFromClassName(Somcp::SETTINGS_ITEM);
+            $own = new Tab((int) Tab::getIdFromClassName(substr(static::class, 0, -strlen('Controller'))));
+            $fromMenu = $idItem > 0 && (int) $own->id_parent === $idItem;
+            if ($fromMenu) {
+                $this->module->installTabs();
+            }
+
+            SomcpHttp::redirect($this->context->link->getAdminLink(
+                Somcp::SETTINGS_ITEM,
+                true,
+                [],
+                $fromMenu ? [] : ['somcp_pane' => $this->somcpPane]
+            ));
+        }
+
+        parent::init();
     }
 
     /**

@@ -120,11 +120,7 @@ class SomcpToolSetOrderCarrier
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $problems = [];
-
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': not a field of this tool';
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::KEYS);
 
         // Read like the other order tools read identifiers: a cast would turn
         // an array into 1 and put the parcel on a carrier nobody named.

@@ -299,6 +299,83 @@ class SomcpBackOffice
     }
 
     /**
+     * Makes the back office's container the one every module and service
+     * reaches, for the time of one action: an action of the Module Manager,
+     * the export of a language's translations.
+     *
+     * The ModuleManager runs hooks before it installs or upgrades, and the
+     * modules answering them read services the back office's container holds
+     * and the MCP endpoint's does not: ps_distributionapiclient, shipped with
+     * PrestaShop, threw on actionBeforeInstallModule, so no module could be
+     * installed from an assistant. The back office's kernel is booted once
+     * per request, only when the request is not already one of its own (the
+     * built-in assistant, the command line), and the previous container is
+     * put back afterwards. Kept here so that every tool which needs a
+     * service of the back office boots the same kernel once.
+     *
+     * @return callable puts the previous state back
+     */
+    public static function asBackOffice(): callable
+    {
+        global $kernel;
+        $class = self::backOfficeKernel();
+        if ($class === '' || $kernel instanceof $class) {
+            return static function (): void {
+            };
+        }
+
+        static $booted = null;
+        if ($booted === null) {
+            try {
+                $environment = self::constant('_PS_ENV_');
+                /** @var Symfony\Component\HttpKernel\KernelInterface $made */
+                $made = new $class(is_string($environment) ? $environment : 'prod', (bool) self::constant('_PS_MODE_DEV_'));
+                $made->boot();
+                $booted = $made;
+            } catch (Throwable $e) {
+                // Without it the manager is built by hand, as before: some
+                // modules' hooks may still fail, and their message is returned.
+                $booted = false;
+            }
+        }
+        if (!$booted instanceof Symfony\Component\HttpKernel\KernelInterface) {
+            return static function (): void {
+            };
+        }
+
+        $context = Somcp::legacyContext();
+        $previousKernel = $kernel;
+        $previousContainer = $context->container ?? null;
+        $kernel = $booted;
+        $context->container = $booted->getContainer();
+        PrestaShop\PrestaShop\Adapter\SymfonyContainer::resetStaticCache();
+
+        return static function () use ($previousKernel, $previousContainer, $context): void {
+            global $kernel;
+            $kernel = $previousKernel;
+            $context->container = $previousContainer;
+            PrestaShop\PrestaShop\Adapter\SymfonyContainer::resetStaticCache();
+        };
+    }
+
+    /**
+     * The class of the back office's kernel: AdminKernel on PrestaShop 9,
+     * where AppKernel is the abstract parent of every kernel, AppKernel on 8.
+     *
+     * @return string empty when neither can be built
+     */
+    private static function backOfficeKernel(): string
+    {
+        foreach (['AdminKernel', 'AppKernel'] as $class) {
+            if (class_exists($class) && !(new ReflectionClass($class))->isAbstract()) {
+                return $class;
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * A service of the core's Symfony container, when one is running.
      *
      * The MCP endpoint is a front controller, where no kernel is booted and

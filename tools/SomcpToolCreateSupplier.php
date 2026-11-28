@@ -342,7 +342,9 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $idCountry = (int) array_key_first($found);
         $country = $idCountry > 0 ? new Country($idCountry) : null;
         if ($country === null || !Validate::isLoadedObject($country)) {
-            $errors[] = 'country: no country of this shop has the ISO code "' . $iso . '"';
+            // The line of every tool that takes a country: the code given
+            // back, and where the right ones are read.
+            $errors[] = SomcpTool::notFound('country', 'country', $iso, 'somcp_list_countries', 'ISO code');
 
             return null;
         }
@@ -382,13 +384,16 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
     /**
      * The state given, which must be one of the country's when it has states.
      *
+     * Public so the contact details of the shop require and refuse a state
+     * with the same lines as every address tool.
+     *
      * @param array<string, mixed> $arguments
      * @param Country $country
      * @param array<int, string> $errors
      *
      * @return int 0 when the country has no states
      */
-    protected static function supplierState(array $arguments, Country $country, array &$errors): int
+    public static function supplierState(array $arguments, Country $country, array &$errors): int
     {
         $hasStates = (bool) $country->contains_states;
         if (!array_key_exists('state', $arguments) || $arguments['state'] === '' || $arguments['state'] === null) {
@@ -427,7 +432,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $iso = $iso === null ? '' : Tools::strtoupper(trim($iso));
         $idState = Validate::isStateIsoCode($iso) ? (int) State::getIdByIso($iso, (int) $country->id) : 0;
         if ($idState <= 0) {
-            $errors[] = $path . ': ' . $country->iso_code . ' has no state with the ISO code "' . $iso . '"';
+            $errors[] = SomcpTool::notFoundOf($path, 'state', (string) $country->iso_code, $iso, 'somcp_list_states', 'ISO code');
         }
 
         return $idState;

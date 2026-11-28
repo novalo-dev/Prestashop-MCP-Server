@@ -165,9 +165,9 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
             }, ['uploaded' => true, 'file_name' => $fileName]);
         } finally {
             Tools::deleteDirectory($work);
-            // The module's folder under var/, when this call made it: rmdir
-            // refuses it while the uploads or the memory still live there.
-            @rmdir(rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::WORK_DIR);
+            // The module's folder under var/, when this call made it: it stays
+            // while the uploads, the exports or the memory still live there.
+            SomcpUpload::removeEmptyFolder(rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::WORK_DIR);
         }
     }
 

@@ -265,7 +265,8 @@ class SomcpToolListCmsPages
 
     /**
      * Every page category of the shop, root included, with how many pages
-     * each one holds directly.
+     * each one holds directly. Public because somcp_update_cms_page takes a
+     * category only among these, so it refuses what this list does not give.
      *
      * @param int $idLang
      * @param int $idShop
@@ -273,7 +274,7 @@ class SomcpToolListCmsPages
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function categories(int $idLang, int $idShop, array $counts): array
+    public static function categories(int $idLang, int $idShop, array $counts): array
     {
         $query = new DbQuery();
         $query->select('c.`id_cms_category`, c.`id_parent`, c.`position`, c.`active`, cl.`name`, cl.`description`');

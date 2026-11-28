@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "the identifier is required, with the tool that finds it", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_search_engine: required - find it with somcp_list_search_engines"]},
+    {"why": "an identifier of the wrong kind", "arguments": {"id_search_engine": "x"}, "expect": "error", "contains": ["- id_search_engine: a whole number above 0"]},
+    {"why": "an identifier no row has is refused with the list that gives them", "arguments": {"id_search_engine": 999999}, "expect": "error", "contains": ["- id_search_engine: no search engine of this shop has the identifier 999999 - find it with somcp_list_search_engines"]},
+    {"why": "every mistake of the call in one answer", "arguments": {"id_search_engine": 999999, "x": 1}, "expect": "error", "contains": ["- x: not a field of this tool", "- id_search_engine: no search engine of this shop has the identifier 999999 - find it with somcp_list_search_engines"]}
+  ]
+}

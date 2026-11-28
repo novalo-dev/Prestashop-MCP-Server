@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {"why": "the stores of the shop, each with every field of its Edit form", "arguments": {}, "expect": "ok", "contains": ["\"id_store\": 1,", "\"name\": \"Dade County\"", "\"country\": \"US\"", "\"country_name\": \"United States\"", "\"state\": \"FL\"", "\"state_name\": \"Florida\"", "\"hours\": {", "\"monday\": [", "\"image\":", "\"returned\": 5,", "\"total_count\": 5,", "\"language\": \"en\""]},
+    {"why": "the Name filter, without case", "arguments": {"name": "pines"}, "expect": "ok", "contains": ["\"name\": \"Pembroke Pines\"", "\"returned\": 1,", "\"total_count\": 1,"], "lacks": ["Dade County"]},
+    {"why": "the City and Enabled filters, and a sort of the list", "arguments": {"city": "miami", "active": true, "sort": "name_desc", "limit": 2}, "expect": "ok", "contains": ["\"name\": \"Pembroke Pines\"", "\"name\": \"N Miami/Biscayne\"", "\"returned\": 2,", "\"total_count\": 5,"], "lacks": ["Dade County"]},
+    {"why": "the Country filter by ISO code, without case", "arguments": {"country": "us"}, "expect": "ok", "contains": ["\"country\": \"US\"", "\"returned\": 5,", "\"total_count\": 5,"]},
+    {"why": "a country the shop does not have names the tool that lists them", "arguments": {"country": "ZZ"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- country: no country of this shop has the ISO code ZZ - find it with somcp_list_countries"]},
+    {"why": "a sort outside the sortable columns is refused, listing them", "arguments": {"sort": "phone_asc"}, "expect": "error", "contains": ["- sort: one of id_asc, id_desc, name_asc, name_desc, city_asc, city_desc"]},
+    {"why": "a limit of 0 and a negative offset, in one answer", "arguments": {"limit": 0, "offset": -1}, "expect": "error", "contains": ["- limit: a whole number from 1 to 100", "- offset: a whole number, 0 at least"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "xx"}, "expect": "error", "contains": ["- language: not one of the shop's languages, which are "]},
+    {"why": "an unknown field", "arguments": {"x": 1}, "expect": "error", "contains": ["Nothing was read.", "- x: not a field of this tool"]}
+  ]
+}

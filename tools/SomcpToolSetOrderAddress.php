@@ -133,15 +133,11 @@ class SomcpToolSetOrderAddress
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $problems = [];
-
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': not a field of this tool';
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::KEYS);
 
         $type = $arguments['address_type'] ?? null;
         if (!is_string($type) || !in_array($type, self::TYPES, true)) {
-            $problems[] = 'address_type: one of ' . implode(', ', self::TYPES);
+            $problems[] = SomcpTool::oneOf('address_type', self::TYPES);
             $type = null;
         }
 
@@ -150,11 +146,11 @@ class SomcpToolSetOrderAddress
         // nobody named.
         $idAddress = 0;
         if (!array_key_exists('id_address', $arguments)) {
-            $problems[] = 'id_address: give the address identifier, a whole number';
+            $problems[] = 'id_address: required - find it with somcp_get_customer';
         } else {
             $idAddress = SomcpTool::id($arguments, 'id_address');
             if ($idAddress <= 0) {
-                $problems[] = 'id_address: give the address identifier, a whole number';
+                $problems[] = SomcpTool::notAnIdentifier('id_address');
             }
         }
 
@@ -176,8 +172,7 @@ class SomcpToolSetOrderAddress
             if (!Validate::isLoadedObject($address)
                 || (int) $address->deleted === 1
                 || (int) $address->id_customer !== (int) $order->id_customer) {
-                $problems[] = 'id_address: no address of this customer has the identifier ' . $idAddress
-                    . ' - find it with somcp_get_customer';
+                $problems[] = SomcpTool::notFoundOf('id_address', 'address', 'this customer', $idAddress, 'somcp_get_customer');
                 $problems[] = 'addresses of this customer: '
                     . json_encode(self::customerAddresses($order), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
@@ -330,8 +325,10 @@ class SomcpToolSetOrderAddress
                 'address1' => (string) ($row['address1'] ?? ''),
                 'postcode' => (string) ($row['postcode'] ?? ''),
                 'city' => (string) ($row['city'] ?? ''),
-                'country' => (string) ($row['country'] ?? ''),
-            ];
+            ] + array_intersect_key(
+                SomcpToolGetOrder::place(new Address((int) $row['id_address']), $idLang),
+                ['country' => true, 'country_name' => true]
+            );
         }
 
         return $listed;

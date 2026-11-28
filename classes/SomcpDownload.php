@@ -76,12 +76,22 @@ class SomcpDownload
         'order_state_icon' => ['reader' => 'somcp_list_order_statuses'],
         'gender_image' => ['reader' => 'somcp_list_titles'],
         'carrier_logo' => ['reader' => 'somcp_list_carriers'],
+        'store_image' => ['reader' => 'somcp_list_stores'],
         'language_flag' => ['reader' => 'somcp_list_languages'],
         'category_image' => ['reader' => 'somcp_get_category'],
         'category_thumbnail' => ['reader' => 'somcp_get_category'],
         'category_thumbnail_image' => ['reader' => 'somcp_get_category'],
         'shop_logo' => ['reader' => 'somcp_get_theme'],
+        'translation_export' => ['reader' => 'somcp_export_translations'],
     ];
+
+    /**
+     * @var string The folder of the files the module makes for one download, such as a translation pack.
+     *
+     * Kept apart from the deposits: those are files a merchant sent in, these
+     * are files the shop built to be taken away, and each lives TTL seconds.
+     */
+    public const EXPORTS = 'var/somcp/exports/';
 
     /**
      * @var array<string, string> The logos of a shop, by the name somcp_get_theme gives them, and their setting.
@@ -621,6 +631,13 @@ class SomcpDownload
                 $shopTable = 'carrier_shop';
                 $shopKey = 'id_carrier';
                 break;
+            case 'store_image':
+                // The picture of the form, img/st/<id>.jpg on 8 and 9; the
+                // thumbnails beside it are never offered.
+                $path = _PS_STORE_IMG_DIR_ . $number . '.jpg';
+                $shopTable = 'store_shop';
+                $shopKey = 'id_store';
+                break;
             case 'language_flag':
                 // One JPEG per language, img/l/<id_lang>.jpg on 8 and 9.
                 $path = _PS_LANG_IMG_DIR_ . $number . '.jpg';
@@ -663,6 +680,15 @@ class SomcpDownload
                 $path = _PS_IMG_DIR_ . $file;
                 $name = $file;
                 break;
+            case 'translation_export':
+                // The name the module made when it kept the pack (keepExport()),
+                // checked before it becomes a path.
+                if (preg_match('/^[0-9]{14}-[0-9a-f]{16}$/', $id) !== 1) {
+                    return null;
+                }
+                $path = rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::EXPORTS . $id . '.zip';
+
+                return is_file($path) ? ['path' => $path, 'name' => 'translations_export-' . $id . '.zip'] : null;
             default:
                 return null;
         }
@@ -684,6 +710,63 @@ class SomcpDownload
         }
 
         return ['path' => $path, 'name' => $name];
+    }
+
+    /**
+     * Moves a file the core built for one download into the module's folder,
+     * under a name the module makes, and gives that name as the id of a
+     * reference. Moved at once: PrestaShop 8 empties its own export folder at
+     * the next export, which would take the file away from under a reference.
+     *
+     * @param string $source the file the core wrote
+     *
+     * @return string the id, empty when the file could not be kept
+     */
+    public static function keepExport(string $source): string
+    {
+        $directory = SomcpUpload::closedFolder(self::EXPORTS);
+        if ($directory === '' || !is_file($source)) {
+            return '';
+        }
+        self::purgeExports($directory);
+
+        $id = date('YmdHis') . '-' . bin2hex(random_bytes(8));
+        $target = $directory . $id . '.zip';
+        // rename() fails across two devices, where the cache folder may be.
+        if (!@rename($source, $target)) {
+            if (!@copy($source, $target)) {
+                return '';
+            }
+            @unlink($source);
+        }
+
+        return $id;
+    }
+
+    /**
+     * Removes the kept files older than a reference lives, so a reference
+     * never outlives its file and the folder never grows.
+     *
+     * @param string $directory the folder, with a trailing slash
+     */
+    private static function purgeExports(string $directory): void
+    {
+        $entries = @scandir($directory);
+        foreach (is_array($entries) ? $entries : [] as $entry) {
+            $path = $directory . $entry;
+            if (preg_match('/^[0-9]{14}-[0-9a-f]{16}\.zip$/', $entry) === 1 && is_file($path) && (int) @filemtime($path) < time() - self::TTL) {
+                @unlink($path);
+            }
+        }
+    }
+
+    /**
+     * Removes the kept files and their folder. Called on uninstall: a pack
+     * left there would be data nobody can reach any more.
+     */
+    public static function removeExports(): void
+    {
+        SomcpUpload::removeFolder(self::EXPORTS);
     }
 
     /**

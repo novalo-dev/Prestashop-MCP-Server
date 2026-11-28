@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "nothing given", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted.", "- id_cart_rule: required - find it with somcp_list_cart_rules"]},
+    {"why": "not an identifier", "arguments": {"id_cart_rule": "x"}, "expect": "error", "contains": ["Nothing was deleted.", "- id_cart_rule: a whole number above 0"]},
+    {"why": "an unknown rule, named with the tool that lists them", "arguments": {"id_cart_rule": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "- id_cart_rule: no cart rule of this shop has the identifier 999999 - find it with somcp_list_cart_rules"]},
+    {"why": "an unknown rule and an unknown field, both in one answer", "arguments": {"id_cart_rule": 999999, "x": 1}, "expect": "error", "contains": ["Nothing was deleted.", "- x: not a field of this tool", "- id_cart_rule: no cart rule of this shop has the identifier 999999"]}
+  ]
+}

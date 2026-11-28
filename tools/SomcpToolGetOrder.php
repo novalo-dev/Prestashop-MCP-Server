@@ -34,6 +34,8 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once __DIR__ . '/SomcpToolListStores.php';
+
 class SomcpToolGetOrder
 {
     /**
@@ -302,10 +304,6 @@ class SomcpToolGetOrder
             return [];
         }
 
-        $country = new Country((int) $address->id_country, $idLang);
-        // The region is printed in the address blocks of the order page.
-        $state = (int) $address->id_state > 0 ? State::getNameById((int) $address->id_state) : '';
-
         return [
             // What the address tools and the change of address of an order
             // point to; the alias is what the select of the page shows on 9.
@@ -318,13 +316,38 @@ class SomcpToolGetOrder
             'address2' => (string) $address->address2,
             'postcode' => (string) $address->postcode,
             'city' => (string) $address->city,
-            'state' => is_string($state) ? $state : '',
-            'country' => Validate::isLoadedObject($country) ? (string) $country->name : '',
+        ] + self::place($address, $idLang) + [
             'phone' => (string) $address->phone,
             'phone_mobile' => (string) $address->phone_mobile,
             'vat_number' => (string) $address->vat_number,
             'dni' => (string) $address->dni,
             'other' => (string) $address->other,
+        ];
+    }
+
+    /**
+     * The country and the state of an address by ISO code, the names beside
+     * them, as every tool that takes a country or a state wants them.
+     *
+     * Shared by the order, the customer and the change of address of an
+     * order, so an address read anywhere is given back to any tool as it is;
+     * built on SomcpToolListStores::place(), with "" rather than null for
+     * what an address leaves empty, as these reads always answered it.
+     *
+     * @param Address $address
+     * @param int $idLang the language of the names
+     *
+     * @return array{country: string, country_name: string, state: string, state_name: string}
+     */
+    public static function place(Address $address, int $idLang): array
+    {
+        $place = SomcpToolListStores::place((int) $address->id_country, (int) $address->id_state, $idLang);
+
+        return [
+            'country' => (string) $place['country'],
+            'country_name' => (string) $place['country_name'],
+            'state' => (string) $place['state'],
+            'state_name' => (string) $place['state_name'],
         ];
     }
 

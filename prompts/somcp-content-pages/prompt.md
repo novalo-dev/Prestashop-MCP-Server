@@ -9,6 +9,12 @@ hidden or moved at any time.
 - `somcp_ping`
 - `somcp_list_cms_pages`
 - `somcp_get_cms_page`
+- `somcp_get_cms_category`
+- `somcp_create_cms_page`
+- `somcp_update_cms_page`
+- `somcp_create_cms_category`
+- `somcp_update_cms_category`
+- `somcp_delete_cms_page`
 
 ## Know which shop you are in
 
@@ -33,9 +39,76 @@ in mind.
    merchant asks what it says, or about its meta description, keywords or
    indexation: the list does not hold a page's content. Pass the same
    `language` as for the list.
+   For a page category itself - its name, description or SEO texts - read
+   it with `somcp_get_cms_category` and its `id_cms_category`.
 4. **Answer from the page as it is.** Give the title, its address (`url`) and
    whether it is displayed. When asked what a page says, quote its content
    rather than paraphrasing it.
+
+## Creating a page
+
+`somcp_create_cms_page` adds one page, as **Add new page** then **Save** do
+in **Design > Pages**. Only the `title` is required.
+
+- Show the merchant the title and the content and wait for their yes before
+  calling. A second call creates a second page: when an answer is lost, look
+  for the page with `somcp_list_cms_pages` before calling again.
+- The page is created hidden (`active: false`) unless the merchant asks for
+  it to be shown; switch it on with `somcp_update_cms_page` once its texts
+  are checked.
+- Left out, the **Friendly URL** is made from the title: pass on the
+  `warning` that gives it.
+
+## Changing a page
+
+`somcp_update_cms_page` changes the **Title**, the **Page content**, the
+**Page category** and **Displayed** of one page, in the languages filled,
+only what is given.
+
+- Read the page with `somcp_get_cms_page` first, then show the merchant the
+  new title or text and wait for their yes before calling: the text is saved
+  as shown.
+- A page category comes from `categories[]` of `somcp_list_cms_pages`.
+- Hiding a page (`active: false`) breaks its links in the footer and the
+  menu: say so before.
+- `changed: false` means the page already held every value: nothing was
+  written.
+
+## Creating a page category
+
+`somcp_create_cms_category` adds one page category, as **Add new page
+category** then **Save** do. Only the `name` is required.
+
+- Show the merchant the name and the parent and wait for their yes before
+  calling. A second call creates a second category: when an answer is lost,
+  look for it in `categories[]` of `somcp_list_cms_pages` before calling again.
+- Left out, the parent is **Home** and the **Friendly URL** is made from the
+  name: pass on the `warning` that gives it.
+
+## Changing a page category
+
+`somcp_update_cms_category` changes the **Name**, **Displayed**, **Parent
+category**, **Description** and SEO texts of one page category, in the
+languages filled, only what is given.
+
+- Read it with `somcp_get_cms_category` first, then show the merchant what
+  changes and wait for their yes before calling.
+- Hiding a category (`active: false`) takes its pages out of the category
+  listing on the storefront: say so before.
+- `changed: false` means the category already held every value.
+
+## Deleting a page
+
+`somcp_delete_cms_page` deletes one page, by its `id_cms`, and cannot be
+undone.
+
+- Name the page and its Title to the merchant and wait for their yes before
+  calling. When they only want it off the storefront, hide it with
+  `somcp_update_cms_page` (`active: false`) instead.
+- The page customers accept at checkout is refused: another one is chosen
+  first with `somcp_update_order_settings` (`terms_id_cms`).
+- Pass on the `warning`: a footer link block that still lists the page is
+  changed in **Design > Link List**.
 
 ## What the fields mean
 
@@ -57,6 +130,6 @@ in mind.
 
 ## Do not use when
 
-- The merchant wants to change a page's title, meta title, meta description
-  or URL - that is `somcp_update_cms_seo`, in the prompt for auditing SEO.
+- The merchant wants to change a page's meta title, meta description, URL or
+  indexation - that is `somcp_update_cms_seo`, in the prompt for auditing SEO.
 - The merchant asks about product or category texts - that is the catalogue.

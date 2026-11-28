@@ -42,8 +42,11 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpToolUpdateCarrier
 {
-    /** @var array<int, string> The arguments this tool writes, under the names somcp_get_carrier returns. */
-    private const ARGUMENTS = [
+    /**
+     * @var array<int, string> The arguments this tool writes, under the names somcp_get_carrier returns;
+     *                         public for somcp_create_carrier, which takes the same ones but id_carrier and remove_logo
+     */
+    public const ARGUMENTS = [
         'id_carrier', 'languages', 'name', 'delay', 'grade', 'tracking_url', 'active', 'group_access', 'position',
         'is_free', 'handling_costs', 'billing', 'id_tax_rules_group', 'out_of_range', 'max_width', 'max_height',
         'max_depth', 'max_weight', 'logo', 'remove_logo', 'zones', 'ranges',
@@ -91,110 +94,7 @@ class SomcpToolUpdateCarrier
                 . '(somcp_set_order_carrier). Replayable: the same call twice changes nothing the second time.',
             [
                 'type' => 'object',
-                'properties' => [
-                    'id_carrier' => [
-                        'type' => 'integer',
-                        'description' => 'The carrier to change, from somcp_list_carriers or somcp_get_carrier.',
-                    ],
-                    'languages' => [
-                        'type' => 'array',
-                        'items' => ['type' => 'string'],
-                        'description' => 'ISO codes of the languages delay is given in; every active language '
-                            . 'when left out. A language left out keeps its text.',
-                    ],
-                    'name' => [
-                        'type' => 'string',
-                        'description' => 'Carrier name, 64 characters at most.',
-                    ],
-                    'delay' => [
-                        'type' => 'object',
-                        'description' => 'Transit time, keyed by ISO code, for example {"en": "2 to 3 days"}; '
-                            . '512 characters at most.',
-                    ],
-                    'grade' => [
-                        'type' => 'integer',
-                        'description' => 'Speed grade, from 0 (slow) to 9 (fast).',
-                    ],
-                    'tracking_url' => [
-                        'type' => 'string',
-                        'description' => 'Tracking URL, @ where the tracking number goes; an empty text '
-                            . 'removes it.',
-                    ],
-                    'active' => [
-                        'type' => 'boolean',
-                        'description' => 'Whether customers can choose the carrier.',
-                    ],
-                    'group_access' => [
-                        'type' => 'array',
-                        'description' => 'Every customer group allowed to use the carrier after the change, '
-                            . 'as id_group integers from somcp_list_customer_groups or the objects '
-                            . 'somcp_get_carrier answers.',
-                    ],
-                    'zones' => [
-                        'type' => 'array',
-                        'description' => 'Every zone the carrier delivers to after the change, as the objects '
-                            . 'somcp_get_carrier answers or id_zone from somcp_list_zones. An added zone has no '
-                            . 'price until its ranges get one.',
-                    ],
-                    'ranges' => [
-                        'type' => 'array',
-                        'description' => 'Every range after the change, as somcp_get_carrier answers them: {from, to, '
-                            . 'prices: [{id_zone, price_tax_excl}]}, from included, to excluded; null for no price.',
-                    ],
-                    'position' => [
-                        'type' => 'integer',
-                        'description' => 'Merchant. The place among the carriers, from 0 as somcp_list_carriers '
-                            . 'gives it (the back office list shows it plus 1); the others shift.',
-                    ],
-                    'is_free' => [
-                        'type' => 'boolean',
-                        'description' => 'Free shipping. Turned on alone, it turns the handling costs off.',
-                    ],
-                    'handling_costs' => [
-                        'type' => 'boolean',
-                        'description' => 'Whether the carrier adds the handling costs of Shipping > Preferences. '
-                            . 'Turned on alone, it turns Free shipping off.',
-                    ],
-                    'billing' => [
-                        // null too: the billing a free carrier is read with, given back as it is.
-                        'type' => ['string', 'null'],
-                        'description' => 'Billing: "price" or "weight", by the total price or the total weight '
-                            . 'of the order.',
-                    ],
-                    'id_tax_rules_group' => [
-                        'type' => 'integer',
-                        'description' => 'Tax: a tax rule from somcp_list_tax_rules, or 0 for No tax. For the '
-                            . 'shop of the token.',
-                    ],
-                    'out_of_range' => [
-                        'type' => 'string',
-                        'enum' => ['highest_range', 'disable_carrier'],
-                        'description' => 'Out-of-range behavior: charge the highest range, or disable the carrier.',
-                    ],
-                    'max_width' => [
-                        'type' => 'integer',
-                        'description' => 'Largest package width the carrier takes, a whole number in the '
-                            . 'dimension_unit of the shop; 0 for no limit.',
-                    ],
-                    'max_height' => [
-                        'type' => 'integer',
-                        'description' => 'Largest package height, as max_width.',
-                    ],
-                    'max_depth' => [
-                        'type' => 'integer',
-                        'description' => 'Largest package depth, as max_width.',
-                    ],
-                    'max_weight' => [
-                        'type' => 'number',
-                        'description' => 'Heaviest package the carrier takes, in the weight_unit of the shop; 0 '
-                            . 'for no limit.',
-                    ],
-                    'logo' => SomcpUpload::schema('Merchant. A new logo, which replaces the current one.', 'the logo'),
-                    'remove_logo' => [
-                        'type' => 'boolean',
-                        'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
-                    ],
-                ],
+                'properties' => self::properties(),
                 'required' => ['id_carrier'],
             ],
             [SomcpScope::ORDERS_WRITE],
@@ -203,6 +103,123 @@ class SomcpToolUpdateCarrier
             SomcpTool::acts(SomcpPermission::EDIT, 'AdminCarriers'),
             files: ['logo' => SomcpUpload::images()]
         );
+    }
+
+    /**
+     * The properties of the input schema.
+     *
+     * Public because somcp_create_carrier takes the same fields under the same
+     * names and descriptions, so a carrier is described one way whether it is
+     * created or changed.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function properties(): array
+    {
+        return [
+            'id_carrier' => [
+                'type' => 'integer',
+                'description' => 'The carrier to change, from somcp_list_carriers or somcp_get_carrier.',
+            ],
+            'languages' => [
+                'type' => 'array',
+                'items' => ['type' => 'string'],
+                'description' => 'ISO codes of the languages delay is given in; every active language '
+                    . 'when left out. A language left out keeps its text.',
+            ],
+            'name' => [
+                'type' => 'string',
+                'description' => 'Carrier name, 64 characters at most.',
+            ],
+            'delay' => [
+                'type' => 'object',
+                'description' => 'Transit time, keyed by ISO code, for example {"en": "2 to 3 days"}; '
+                    . '512 characters at most.',
+            ],
+            'grade' => [
+                'type' => 'integer',
+                'description' => 'Speed grade, from 0 (slow) to 9 (fast).',
+            ],
+            'tracking_url' => [
+                'type' => 'string',
+                'description' => 'Tracking URL, @ where the tracking number goes; an empty text '
+                    . 'removes it.',
+            ],
+            'active' => [
+                'type' => 'boolean',
+                'description' => 'Whether customers can choose the carrier.',
+            ],
+            'group_access' => [
+                'type' => 'array',
+                'description' => 'Every customer group allowed to use the carrier after the change, '
+                    . 'as id_group integers from somcp_list_customer_groups or the objects '
+                    . 'somcp_get_carrier answers.',
+            ],
+            'zones' => [
+                'type' => 'array',
+                'description' => 'Every zone the carrier delivers to after the change, as the objects '
+                    . 'somcp_get_carrier answers or id_zone from somcp_list_zones. An added zone has no '
+                    . 'price until its ranges get one.',
+            ],
+            'ranges' => [
+                'type' => 'array',
+                'description' => 'Every range after the change, as somcp_get_carrier answers them: {from, to, '
+                    . 'prices: [{id_zone, price_tax_excl}]}, from included, to excluded; null for no price.',
+            ],
+            'position' => [
+                'type' => 'integer',
+                'description' => 'Merchant. The place among the carriers, from 0 as somcp_list_carriers '
+                    . 'gives it (the back office list shows it plus 1); the others shift.',
+            ],
+            'is_free' => [
+                'type' => 'boolean',
+                'description' => 'Free shipping. Turned on alone, it turns the handling costs off.',
+            ],
+            'handling_costs' => [
+                'type' => 'boolean',
+                'description' => 'Whether the carrier adds the handling costs of Shipping > Preferences. '
+                    . 'Turned on alone, it turns Free shipping off.',
+            ],
+            'billing' => [
+                // null too: the billing a free carrier is read with, given back as it is.
+                'type' => ['string', 'null'],
+                'description' => 'Billing: "price" or "weight", by the total price or the total weight '
+                    . 'of the order.',
+            ],
+            'id_tax_rules_group' => [
+                'type' => 'integer',
+                'description' => 'Tax: a tax rule from somcp_list_tax_rules, or 0 for No tax. For the '
+                    . 'shop of the token.',
+            ],
+            'out_of_range' => [
+                'type' => 'string',
+                'enum' => ['highest_range', 'disable_carrier'],
+                'description' => 'Out-of-range behavior: charge the highest range, or disable the carrier.',
+            ],
+            'max_width' => [
+                'type' => 'integer',
+                'description' => 'Largest package width the carrier takes, a whole number in the '
+                    . 'dimension_unit of the shop; 0 for no limit.',
+            ],
+            'max_height' => [
+                'type' => 'integer',
+                'description' => 'Largest package height, as max_width.',
+            ],
+            'max_depth' => [
+                'type' => 'integer',
+                'description' => 'Largest package depth, as max_width.',
+            ],
+            'max_weight' => [
+                'type' => 'number',
+                'description' => 'Heaviest package the carrier takes, in the weight_unit of the shop; 0 '
+                    . 'for no limit.',
+            ],
+            'logo' => SomcpUpload::schema('Merchant. A new logo, which replaces the current one.', 'the logo'),
+            'remove_logo' => [
+                'type' => 'boolean',
+                'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
+            ],
+        ];
     }
 
     /**
@@ -258,6 +275,9 @@ class SomcpToolUpdateCarrier
      * Nothing is written here. A field equal to what the shop holds is left
      * out of the changes, so what remains is exactly what will change. Run
      * even when the carrier is unknown, so every problem is told at once.
+     * Public because somcp_create_carrier checks its arguments here first,
+     * then again against the carrier it has just added, so a carrier is
+     * checked by one set of rules whether it is created or changed.
      *
      * @param array<string, mixed> $arguments
      * @param array<string, mixed>|null $read the carrier as somcp_get_carrier answers it
@@ -268,7 +288,7 @@ class SomcpToolUpdateCarrier
      *
      * @return array<string, mixed>
      */
-    private static function plan(array $arguments, ?array $read, int $idCarrier, int $idShop, array $languages, array &$errors): array
+    public static function plan(array $arguments, ?array $read, int $idCarrier, int $idShop, array $languages, array &$errors): array
     {
         $probe = new Carrier();
         $stored = $read === null ? null : self::stored($idCarrier, $idShop);
@@ -990,10 +1010,15 @@ class SomcpToolUpdateCarrier
             $delay[(int) $line['id_lang']] = (string) $line['delay'];
         }
 
+        // The groups of this shop only, as somcp_get_carrier reads them:
+        // Group::delete() leaves its rows of carrier_group behind, and a row
+        // of a group gone would turn the read given back into a change.
         $groups = [];
         foreach ($db->executeS(
-            'SELECT `id_group` FROM `' . _DB_PREFIX_ . 'carrier_group` WHERE `id_carrier` = ' . $idCarrier
-            . ' ORDER BY `id_group` ASC'
+            'SELECT cg.`id_group` FROM `' . _DB_PREFIX_ . 'carrier_group` cg'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'group_shop` gs ON gs.`id_group` = cg.`id_group` AND gs.`id_shop` = ' . $idShop
+            . ' WHERE cg.`id_carrier` = ' . $idCarrier
+            . ' ORDER BY cg.`id_group` ASC'
         ) ?: [] as $line) {
             $groups[] = (int) $line['id_group'];
         }
@@ -1125,6 +1150,10 @@ class SomcpToolUpdateCarrier
     /**
      * Writes the plan once the logo, if any, is in hand.
      *
+     * Public because somcp_create_carrier writes what follows the name and
+     * the transit time of the carrier it adds through it, so the zones, the
+     * ranges, the tax and the logo are stored one way.
+     *
      * @param int $idCarrier
      * @param int $idShop
      * @param array<string, mixed> $plan
@@ -1135,7 +1164,7 @@ class SomcpToolUpdateCarrier
      *
      * @return array<string, mixed>
      */
-    private static function write(int $idCarrier, int $idShop, array $plan, int $idLang, int $idEmployee, string $logoFile, ?array $logo): array
+    public static function write(int $idCarrier, int $idShop, array $plan, int $idLang, int $idEmployee, string $logoFile, ?array $logo): array
     {
         $carrier = new Carrier($idCarrier);
         $oldGroups = array_map('intval', array_column($carrier->getGroups() ?: [], 'id_group'));
@@ -1456,14 +1485,16 @@ class SomcpToolUpdateCarrier
 
     /**
      * Downloads and checks a logo into a temporary file, through
-     * SomcpUpload::fetchImage() as every other image.
+     * SomcpUpload::fetchImage() as every other image. Public because
+     * somcp_create_carrier fetches the logo before it adds the carrier, so a
+     * logo refused leaves no carrier behind.
      *
      * @param array{url: string, upload_ref: string} $source
      * @param string $file set to the temporary file, which the caller deletes
      *
      * @return string the reason it was refused, '' when the file is in hand
      */
-    private static function fetchLogo(array $source, string &$file): string
+    public static function fetchLogo(array $source, string &$file): string
     {
         $made = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($made === false) {

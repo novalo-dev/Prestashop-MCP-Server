@@ -14,7 +14,15 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_update_cms_seo`
 - `somcp_list_meta_pages`
 - `somcp_update_meta_page`
+- `somcp_create_meta_page`
+- `somcp_delete_meta_page`
+- `somcp_list_search_engines`
+- `somcp_create_search_engine`
+- `somcp_update_search_engine`
+- `somcp_delete_search_engine`
 - `somcp_get_seo_settings`
+- `somcp_update_seo_settings`
+- `somcp_update_url_schema`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
 - `somcp_audit_page`
@@ -32,9 +40,18 @@ installation has its own titles, descriptions and URLs.
 1. **Start with the settings.** Call `somcp_get_seo_settings` once: its
    `warnings` (friendly URLs off, no canonical redirection, no HTTPS, no
    robots.txt, no sitemap) weigh on every page at once, so they come before any
-   single title. Never propose to change these settings yourself: a wrong value
-   breaks every address of the shop, so point the merchant to Shop Parameters >
-   Traffic & SEO and say what to check there. Then call
+   single title. The redirection to the canonical URL is set with
+   `somcp_update_seo_settings` (301 once the shop is live), as are Accented URL
+   and the attributes in the product meta title: ask first, naming each setting
+   and its new value. The URL pattern of a page type (`routes`) is changed with
+   `somcp_update_url_schema`, the route given back with its new pattern: every
+   address of those pages moves and the old ones lead to a page not found, so
+   ask first, showing the old and new pattern with an example address, and
+   remind the merchant to regenerate the sitemap. Never propose to change the
+   other settings yourself (Friendly URL, the language prefix, the Apache
+   options, the shop URL): a wrong value breaks every address of the shop, so
+   point the merchant to Shop Parameters > Traffic & SEO and say what to check
+   there. Then call
    `somcp_get_robots_txt`: a group that blocks the whole site, or a rule that
    blocks product or category pages, hides the shop from search engines
    whatever its titles say. A `Disallow: /` aimed at one named crawler can be
@@ -73,7 +90,26 @@ installation has its own titles, descriptions and URLs.
    `somcp_list_meta_pages` returns: `meta_title`, `meta_description`,
    `meta_keywords` and `link_rewrite`. The home page has no friendly URL, and
    a new one on any other page makes its old address stop working: say so
-   before the call.
+   before the call. A page of the shop or of a module that Traffic & SEO does
+   not list yet is added with `somcp_create_meta_page`, under a page name
+   taken from `addable_pages` of `somcp_list_meta_pages`, with its Rewritten
+   URL at least in the default language: ask first. A page the shop no longer wants in Traffic & SEO is
+   deleted with `somcp_delete_meta_page`: it loses its Rewritten URL, its
+   Page title and its Meta description in every language, and a page of the
+   shop answers again at `index.php?controller=<page>`. Ask first, naming the
+   page and its Rewritten URL, and keep the texts it answers to create it
+   again if the merchant changes his mind.
+   When visits come from a search engine but no keyword shows in the
+   statistics, read `somcp_list_search_engines`: each row gives the Server
+   whose visitors' keywords are kept and the GET variable of its address that
+   holds them. A search engine missing from that list is added with
+   `somcp_create_search_engine`, its Server and its GET variable, so the words
+   its visitors typed reach the statistics: ask first. A row whose GET
+   variable the search engine no longer uses is corrected with
+   `somcp_update_search_engine`, only the field that changes: ask first. A
+   row deleted with `somcp_delete_search_engine` stops the keywords of its
+   Server being read, those already read staying: ask first, naming the Server
+   and its GET variable.
 6. **Check the public page.** A value in the database is not proof of what
    the theme prints: call `somcp_audit_page` with the address or the path of
    the page (`/` for the home page) to see the title, description, headings,

@@ -1,6 +1,6 @@
 {
   "title": "Read content pages",
-  "description": "List and read the CMS pages of the PrestaShop shop.",
+  "description": "List, read and change the CMS pages of the PrestaShop shop.",
   "icon": "page",
   "scopes": [
     "mcp.content.read"
@@ -8,7 +8,13 @@
   "tools": [
     "somcp_ping",
     "somcp_list_cms_pages",
-    "somcp_get_cms_page"
+    "somcp_get_cms_page",
+    "somcp_get_cms_category",
+    "somcp_create_cms_page",
+    "somcp_update_cms_page",
+    "somcp_create_cms_category",
+    "somcp_update_cms_category",
+    "somcp_delete_cms_page"
   ],
   "controller": "AdminCmsContent",
   "action": "view",

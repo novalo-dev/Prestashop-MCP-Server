@@ -66,10 +66,10 @@ class SomcpToolUpdateCmsSeo
      *                            given back as is
      */
     private const KEPT_AS_READ = [
-        'title' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
-        'content' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
-        'id_cms_category' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
-        'active' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
+        'title' => 'not changed by this tool - change it with somcp_update_cms_page',
+        'content' => 'not changed by this tool - change it with somcp_update_cms_page',
+        'id_cms_category' => 'not changed by this tool - change it with somcp_update_cms_page',
+        'active' => 'not changed by this tool - change it with somcp_update_cms_page',
         'position' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
         'seo_title' => 'worked out by the shop from the Meta title and the Title',
         'url' => 'worked out by the shop from the Friendly URL',
@@ -227,7 +227,8 @@ class SomcpToolUpdateCmsSeo
      * languages to fill, or the reason it does not fit them.
      *
      * The plain texts of that answer are in this one language, so it is what
-     * they are filled in when no languages are given.
+     * they are filled in when no languages are given. Public because
+     * somcp_update_cms_page takes the same read back the same way.
      *
      * @param array<string, mixed> $arguments
      * @param int $idShop
@@ -235,7 +236,7 @@ class SomcpToolUpdateCmsSeo
      *
      * @return array<string, mixed>
      */
-    private static function withLanguage(array $arguments, int $idShop, array &$errors): array
+    public static function withLanguage(array $arguments, int $idShop, array &$errors): array
     {
         if (!array_key_exists('language', $arguments)) {
             return $arguments;
@@ -270,17 +271,21 @@ class SomcpToolUpdateCmsSeo
      *
      * Compared with the page read exactly as somcp_get_cms_page reads it, in
      * the language it was read in, rather than a second reading of it here.
+     * Public because somcp_update_cms_page keeps the fields this tool writes
+     * the same way, with its own lines.
      *
      * @param array<string, mixed> $arguments
      * @param CMS $cms
      * @param int $idShop
      * @param array<int, string> $errors
+     * @param array<string, string>|null $kept the fields kept and where they are changed, KEPT_AS_READ by default
      *
      * @return void
      */
-    private static function kept(array $arguments, CMS $cms, int $idShop, array &$errors): void
+    public static function kept(array $arguments, CMS $cms, int $idShop, array &$errors, ?array $kept = null): void
     {
-        if (array_intersect(array_keys(self::KEPT_AS_READ), array_keys($arguments)) === []) {
+        $kept ??= self::KEPT_AS_READ;
+        if (array_intersect(array_keys($kept), array_keys($arguments)) === []) {
             return;
         }
         // The language of the answer given back; the shop default otherwise,
@@ -295,9 +300,9 @@ class SomcpToolUpdateCmsSeo
         }
         [$idLang, $iso] = $language;
         $read = SomcpToolGetCmsPage::cmsPage($cms, $idLang, $iso, $idShop);
-        foreach (self::KEPT_AS_READ as $field => $where) {
+        foreach ($kept as $field => $where) {
             // Compared as JSON, the shape both tools speak.
-            if (array_key_exists($field, $arguments) && json_encode($arguments[$field]) !== json_encode($read[$field])) {
+            if (array_key_exists($field, $arguments) && json_encode($arguments[$field]) !== json_encode($read[$field] ?? null)) {
                 $errors[] = $field . ': ' . $where;
             }
         }
@@ -336,7 +341,8 @@ class SomcpToolUpdateCmsSeo
      * What will be written, or every reason the call is refused.
      *
      * A value equal to what the page holds is left out, so what remains is
-     * exactly what changes.
+     * exactly what changes. Public because somcp_create_cms_page checks its
+     * SEO fields here, against a page not saved yet, so both tools hold one rule.
      *
      * @param array<string, mixed> $arguments
      * @param CMS $cms
@@ -345,7 +351,7 @@ class SomcpToolUpdateCmsSeo
      *
      * @return array{texts: array<string, array<int, string>>, indexation: bool|null, changes: array<int, array<string, mixed>>, moved: array<int, string>, isos: array<int, string>}
      */
-    private static function plan(array $arguments, CMS $cms, int $idShop, array &$errors): array
+    public static function plan(array $arguments, CMS $cms, int $idShop, array &$errors): array
     {
         $plan = ['texts' => [], 'indexation' => null, 'changes' => [], 'moved' => [], 'isos' => []];
 
@@ -418,18 +424,25 @@ class SomcpToolUpdateCmsSeo
 
     /**
      * One text as it will be stored, or null with the reason in $errors.
+     * Public because somcp_create_cms_page makes the Friendly URL of a page
+     * from its Title with the same rule when none is given, and the page
+     * category tools check their Meta title, meta description and Friendly
+     * URL here: one rule for these texts, whatever they belong to.
      *
      * @param string $field
      * @param string $text
      * @param int $idLang
-     * @param CMS $cms
+     * @param ObjectModel $cms a CMS page, or a CMSCategory
      * @param string $where
      * @param array<int, string> $errors
      *
      * @return string|null
      */
-    private static function checked(string $field, string $text, int $idLang, CMS $cms, string $where, array &$errors): ?string
+    public static function checked(string $field, string $text, int $idLang, ObjectModel $cms, string $where, array &$errors): ?string
     {
+        // A page keeps its Meta title in head_seo_title, a page category in
+        // meta_title: the other names are the same column for both.
+        $column = $cms instanceof CMS ? self::COLUMNS[$field] : $field;
         if ($field === 'link_rewrite') {
             // As the back office makes a friendly URL from what is typed.
             $text = (string) Tools::str2url($text);
@@ -448,7 +461,7 @@ class SomcpToolUpdateCmsSeo
             // rule every SEO write shares; the advice it collects is dropped here
             // because warnings() advises on the text actually stored, the page
             // title included when no meta title is set.
-            $max = SomcpTool::columnSize($cms, self::COLUMNS[$field], $field === 'meta_title' ? 255 : 512);
+            $max = SomcpTool::columnSize($cms, $column, $field === 'meta_title' ? 255 : 512);
             $recommended = $field === 'meta_title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
             $advice = [];
             if (!SomcpTool::seoTextLength($where, Tools::strlen($text), $max, $recommended, $errors, $advice)) {
@@ -456,8 +469,8 @@ class SomcpToolUpdateCmsSeo
             }
         }
 
-        // The page's own rule for the column, the one update() would apply.
-        $check = $cms->validateField(self::COLUMNS[$field], $text, $idLang);
+        // The object's own rule for the column, the one update() would apply.
+        $check = $cms->validateField($column, $text, $idLang);
         if ($check !== true) {
             $errors[] = $where . ': ' . (is_string($check) ? strip_tags($check) : 'not accepted by PrestaShop');
 

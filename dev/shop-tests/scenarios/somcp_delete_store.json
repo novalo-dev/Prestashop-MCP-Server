@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "no store named", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_store: required - find it with somcp_list_stores"]},
+    {"why": "an identifier that is not one", "arguments": {"id_store": "x"}, "expect": "error", "contains": ["- id_store: a whole number above 0"]},
+    {"why": "a store that does not exist, naming the list to read", "arguments": {"id_store": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "somcp_list_stores"]},
+    {"why": "an unknown store and an unknown argument in one answer", "arguments": {"id_store": 999999, "x": 1}, "expect": "error", "contains": ["- x: not a field of this tool", "somcp_list_stores"]}
+  ]
+}

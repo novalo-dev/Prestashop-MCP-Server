@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {"why": "a store that does not exist, naming the list to read", "arguments": {"id_store": 999999}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "somcp_list_stores"]},
+    {"why": "no store named", "arguments": {"phone": "0102030405"}, "expect": "error", "contains": ["- id_store: required - find it with somcp_list_stores"]},
+    {"why": "a country the shop does not have", "arguments": {"id_store": 1, "country": "ZZ"}, "expect": "error", "contains": ["- country: no country of this shop has the ISO code ZZ - find it with somcp_list_countries"]},
+    {"why": "a latitude of 0, which the screen refuses", "arguments": {"id_store": 1, "latitude": 0}, "expect": "error", "contains": ["- latitude: required, not 0"]},
+    {"why": "a postcode out of the format of the store's country", "arguments": {"id_store": 1, "postcode": "ABC"}, "expect": "error", "contains": ["- postcode: not in the format of US (00000)"]},
+    {"why": "a read-only name of the country, telling which field to change", "arguments": {"id_store": 1, "country_name": "France"}, "expect": "error", "contains": ["- country_name: read only - change country, its ISO code"]},
+    {"why": "an argument the tool does not take", "arguments": {"id_store": 1, "x": 1}, "expect": "error", "contains": ["- x: not a field of this tool"]},
+    {"why": "the store alone changes nothing", "arguments": {"id_store": 1}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written."]},
+    {"why": "the values it already holds change nothing", "arguments": {"id_store": 1, "country": "US", "state": "FL", "postcode": "33135", "latitude": 25.765005, "longitude": -80.243797, "active": true}, "expect": "ok", "contains": ["\"changed\": false"]}
+  ]
+}

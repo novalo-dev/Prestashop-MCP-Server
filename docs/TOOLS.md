@@ -64,8 +64,11 @@ fetches itself, and on a back office page for the merchant. Who may have a
 file is who may run the tool that reads that kind of file
 (`SomcpDownload::KINDS`), with its scopes and back office rights. A new kind of
 file is one entry of `KINDS` and of `SomcpDownload::stored()`, never a link
-built in the tool: the Tools and prompts check refuses a file of `tools/` that
-calls `getMediaLink()`, `getImageLink()` or the other link builders of files.
+built in the tool; a file the shop builds for one download (the
+`translation_export` pack of `somcp_export_translations`) is kept by
+`SomcpDownload::keepExport()` in `var/somcp/exports/` for 15 minutes. The
+Tools and prompts check refuses a file of `tools/` that calls
+`getMediaLink()`, `getImageLink()` or the other link builders of files.
 
 **Files in.** A tool that takes a file declares the field in `files:` and reads
 it with `SomcpUpload::source()`: a public `url` the shop downloads, or the
@@ -93,7 +96,9 @@ ignored), the file of a virtual product (`virtual_file.file` of
 `somcp_update_product`), the icon of an order status
 (`somcp_update_order_status`) and the attribute value texture
 (`somcp_update_attribute_value`, where a `null` given back for a value that has
-a texture is refused: `remove_texture` removes it). A list of objects read back
+a texture is refused: `remove_texture` removes it) and the picture of a store
+(`somcp_update_store`, where `null` for a store that has one is refused: the
+screen cannot remove it). A list of objects read back
 is taken where the write takes their identifiers, and the schema says so: the
 `groups` of `somcp_get_category` go back to the category writes as they are.
 
@@ -460,15 +465,17 @@ or carts that were never paid for (→ Carts).
 | `delivery_country` | string | no | ISO code of the country of the delivery address; an unknown code is one more line of the refusal |
 | `company` | string | no | customer's company, whole or partial |
 | `only_valid` | boolean | no | paid orders only |
-| `sort` | enum | no | `date_desc` (default), `date_asc`, `total_desc`, `total_asc` |
+| `sort` | enum | no | every column the **Orders** list sorts on, each way: `date_desc` (default), `date_asc` (**Date**), `total_desc`, `total_asc` (**Total**), `id_desc`, `id_asc` (**ID**), `reference_asc`, `reference_desc` (**Reference**), `delivery_country_asc`, `delivery_country_desc` (**Delivery**, by the country name in the language read), `customer_name_asc`, `customer_name_desc` (**Customer**, last name then first name), `company_asc`, `company_desc` (**Company**), `payment_method_asc`, `payment_method_desc` (**Payment**), `status_asc`, `status_desc` (**Status**, by the status name in the language read); equal values end on `id_order` the same way, so pages never overlap |
 | `language` | string | no | ISO code of one of the shop's active languages, for the country and status names, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
 **Returns** - per order: `id_order`, `reference`, `date_add` (ISO 8601 with
 the shop's offset, the name `somcp_get_order` uses) and `date` (the same value,
 the name kept for the clients built on it), `customer_name`,
-`new_client`, `company`, `phone`, `delivery_country` (name in the language
-read), `delivery_country_iso`, `total_paid_tax_incl`, `currency`,
+`new_client`, `company`, `phone`, `delivery_country` (the ISO code, the
+value the `delivery_country` filter takes), `delivery_country_name` (its name
+in the language read), `delivery_country_iso` (the same code, the name kept
+for the clients built on it), `total_paid_tax_incl`, `currency`,
 `payment_method`, `status`, `status_id`, `status_color`. Plus `returned`,
 `total_count`, `offset` and `language`.
 
@@ -493,9 +500,9 @@ whole number above 0 (`id_order: a whole number above 0`; one no order of the
 shop has answers an empty list), or a `status_id` that is not
 a whole number above 0 or matches no order status, a `language` the shop does
 not have, or a `delivery_country` that is no country's ISO code
-(`delivery_country: an ISO code of a country, for example FR`, the line of
-`SomcpToolSearchOrders::deliveryCountry()` that `somcp_get_sales_summary` gives
-too) is refused in one answer, `Nothing was read`, before anything is read:
+(`delivery_country: no country of this shop has the ISO code ZZ - find it with somcp_list_countries`,
+the line of every country refused by its code, given by
+`SomcpToolSearchOrders::deliveryCountry()` to `somcp_get_sales_summary` too) is refused in one answer, `Nothing was read`, before anything is read:
 never ignored, never replaced by the default order.
 
 #### `somcp_get_order`
@@ -529,7 +536,10 @@ them, what the order page shows:
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
 - `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
-  `state` (the region), `dni` (empty when not set);
+  `country` and `state` (the ISO codes, `FR`, `FL`, `""` without a state)
+  with `country_name` and `state_name` beside them, built by
+  `SomcpToolGetOrder::place()`, the shape every tool that takes a country or
+  a state reads; `dni` (empty when not set);
 - `products`, per line: `id_order_detail`, `id_order_invoice` (the invoice
   the line is on, the one `somcp_update_order_product` takes, 0 when on none),
   `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
@@ -1503,7 +1513,7 @@ customer tools), or changing the carrier of the order.
 `previous_address` and `address`, each in the shape of `addresses.delivery` of
 `somcp_get_order` built by the same function (`id_address`, `alias`,
 `firstname`, `lastname`, `company`, `address1`, `address2`, `postcode`, `city`,
-`state`, `country`, ...), `previous_totals` and `totals`, the order totals
+`country`, `country_name`, `state`, `state_name`, ...), `previous_totals` and `totals`, the order totals
 before and after the change, each exactly as `somcp_get_order` returns `totals`
 (built by the same function), and `currency`. The same address as now is
 `changed: false` with a `reason`, and nothing happens.
@@ -1515,7 +1525,7 @@ invoice`; `id_address` missing or not a whole number; `id_address: no address
 of this customer has the identifier <n> - find it with somcp_get_customer` for
 an unknown, deleted or other customer's address, followed in the same answer by
 the list of the customer's addresses (`id_address`, `alias`, `address1`,
-`postcode`, `city`, `country`). A failure inside the core is reported without
+`postcode`, `city`, `country` by ISO code, `country_name`). A failure inside the core is reported without
 its raw message as "The address could not be changed. Read addresses with
 somcp_get_order before trying again: part of the change may have been saved.":
 both handlers save the cart before the order.
@@ -3000,6 +3010,38 @@ before calling again.
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0) and the message of a used state (a sentence on 8.0.1, the generic error of `DeleteStateException` on 9.0.0); the class, the test of the addresses and the table (`state`) are the same.
+
+#### `somcp_create_carrier`
+**State**: written · [issue #482](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/482)
+**Nature**: `acts(ADD, 'AdminCarriers')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates a carrier of **Shipping > Carriers**, as **Add new carrier** then **Save** (9.0.0) or **Finish** (8.0.1) do: its **Carrier name** and **Transit time**, and in the same call any field `somcp_update_carrier` takes - **Speed grade**, **Logo**, **Tracking URL**, **Active**, **Group access**, **Zones**, ranges and prices per zone, **Free shipping**, handling costs, billing, **Tax**, **Out-of-range behavior**, the size and weight limits and the place in the list. One carrier per call.
+
+**Do not use for** - changing a carrier (→ `somcp_update_carrier`); the carrier of one order (→ `somcp_set_order_carrier`).
+
+**Parameters** - the parameters of `somcp_update_carrier`, with the same names, types, rules and error lines (`SomcpToolUpdateCarrier::properties()`), without `id_carrier` and `remove_logo`:
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Carrier name** | string | yes | `name: required`; the rule of `somcp_update_carrier` |
+| `delay` | **Transit time** | object | yes | one text per language filled, through `SomcpToolCreateProduct::texts(..., true)` as `somcp_create_product` takes its `name`; the languages left out of `languages` take the text of the default language |
+| `languages` | | array | no | as `somcp_update_carrier` |
+| `grade` | **Speed grade** | integer | no | 0 when left out, as `CarrierFormDataProvider::getDefaultData()` of 9.0.0 |
+| `active` | **Enabled** / **Active** | boolean | no | `false` when left out, as the form opens: a carrier is offered once its zones and prices are set |
+| `group_access` | **Group access** | array | no | every customer group of the shop when left out (`getDefaultData()`) |
+| `tracking_url`, `logo`, `zones`, `ranges`, `position`, `is_free`, `handling_costs`, `billing`, `id_tax_rules_group`, `out_of_range`, `max_width`, `max_height`, `max_depth`, `max_weight` | as `somcp_update_carrier` | | no | the rules of `somcp_update_carrier`; `billing` left out: by weight when `PS_SHIPPING_METHOD` is 1, by price otherwise, the default of `Carrier::__construct()`; `out_of_range` left out: `highest_range`; `position` may also be the place after the last carrier, where the new one lands |
+
+`id_carrier` and `remove_logo` are refused as `- <key>: not a field of this tool`, and so are the fields of the read (`READ_BACK` and `READ_ONLY` of `somcp_update_carrier`): a creation takes no read given back. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call again:` (`SomcpTool::refused('created', $problems)`), every problem at once: `name` or `delay` missing, the rules of `somcp_update_carrier` (`SomcpToolUpdateCarrier::plan()`, public, called with no carrier first), an unknown argument. A logo the shop refuses stops the creation (`- logo: <reason>`), fetched through `SomcpToolUpdateCarrier::fetchLogo()` before anything is written. A price in a zone the carrier will not serve, or ranges on a free carrier, is found by the second check, made on the carrier just added: the carrier is deleted again and the call refused in the same envelope. A failure once the carrier is added: `The carrier could not be created: <reason>. Nothing was kept.`, the carrier deleted with `Carrier::delete()`, logged `carrier_create_failed`.
+
+**Then** - inside `SomcpToolCreateProduct::asEmployee()`: `new Carrier()` with **Carrier name**, **Transit time** (every language, the ones left out taking the text of the default language), **Speed grade** 0 and **Active** off, `add()` for the shop of the token (`Carrier::add()` puts it after the last carrier and sets its `id_reference`); `setGroups()` with every customer group of the shop; then `SomcpToolUpdateCarrier::plan()` again with the new carrier read, and the changes left written by `SomcpToolUpdateCarrier::write()` (public), so the zones, the ranges, the tax, the logo and the place are stored as a change stores them; no order uses the new carrier, so no new version is made. Logged `carrier_created` with the new identifier and the names of the fields given, never the name typed.
+
+**Returns** - `created: true`, `id_carrier`, `carrier` (as `somcp_get_carrier` answers it, after the write), and `warning`, each sentence when it applies: no zone given, `The carrier serves no zone yet: no customer can choose it until it has zones, with somcp_update_carrier.`; zones given, not free, no price for one of them, the sentence of `somcp_update_carrier` (`The zone(s) <ids> have no price yet: the shop does not offer this carrier there until its ranges get one.`); the carrier off, `The carrier is off: customers can choose it once it is switched on with somcp_update_carrier.`; the shop one of several, `The carrier was created for this shop only.`
+
+**Notes** - changes the shop: the assistant asks first, naming the carrier, its zones and its prices. Not replayable: a second call creates a second carrier; when the answer is lost, read `somcp_list_carriers` first.
+
+**Differences between 8.0.1 and 9.0.0** - the screens differ (the wizard of 8.0.1, the form of 9.0.0), the carrier they save is the same: `Carrier::add()` and the same rows. The tool writes through `Carrier` on both, as `somcp_update_carrier` does.
 
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)
@@ -4538,6 +4580,364 @@ or the contact of **Send emails to**, given in one answer.
 **Differences between 8.0.1 and 9.0.0** - none: `ContactDeleter` and
 `Contact::delete()` are the same on both.
 
+#### `somcp_list_stores`
+**State**: written · [issue #455](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/455)
+**Nature**: `acts(VIEW, 'AdminStores')` · **Scope**: `mcp.customers.read`, as `somcp_list_contacts`
+
+**Does** - lists the stores of **Shop Parameters > Contact**, tab **Stores**
+(`AdminStores`): the stores the storefront page of the stores shows, each with
+every field of its **Edit** form (address, coordinates, hours, picture), so
+the item can be given back whole to the update that follows. Read only,
+replayable.
+
+**Do not use for** - the contact addresses of the contact form (→
+`somcp_list_contacts`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `language` | | string | ISO code of an active language for the texts and the country and state names, by `SomcpTool::readLanguage()`; the shop default when left out; a code the shop does not have is refused |
+| `name` | filter **Name** | string | contains, without case |
+| `city`, `postcode` | filters **City**, **Zip/Postal code** | string | contains, without case |
+| `country` | filter **Country** | string | the ISO code (`US`, without case), read as `somcp_list_states` reads its `country` filter, through `SomcpToolCreateSupplier::shopCountries()`; not a text: `country: an ISO code of 2 letters, for example US`; unknown or not of this shop: `SomcpTool::notFound('country', 'country', <code>, 'somcp_list_countries', 'ISO code')` |
+| `active` | filter **Enabled** | boolean | `active: true or false` otherwise |
+| `sort` | the sortable columns | string | `id_asc` (default, as the screen), `id_desc`, `name_asc`, `name_desc`, `city_asc`, `city_desc`, through `SomcpTool::oneOf()` |
+| `limit`, `offset` | | integers | as `somcp_list_cart_rules`: 20 by default, 100 at most; `offset` 0 at least |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Every mistake in one
+refusal, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns**
+- `stores`: one object per store of the shop of the token (`store_shop`),
+  built by `SomcpToolListStores::item()`, public for the tools that write a
+  store: `id_store`, `name` (**Name**), `address1` (**Address**), `address2`
+  (**Address (2)**), `postcode` (**Zip/Postal code**), `city`, `id_country`,
+  `country` (its ISO code, `US`) and `country_name` (its name in the language
+  read), `id_state`, `state` (its ISO code, `FL`) and `state_name` (`null`
+  without a state), built by `SomcpToolListStores::place()`, `latitude`, `longitude` (numbers), `phone`,
+  `fax`, `email` (**Email address**), `note`, `active` (**Active**: shown on
+  the storefront), `hours`, `image`, `date_add`, `date_upd`
+  (`SomcpTool::isoDate()`);
+- `hours`: the seven days by their English names (`monday` to `sunday`), in
+  the order of the form, each the list `store_lang.hours` stores for that day
+  in the language read (`[]` for an empty day); `null` when the row holds no
+  valid JSON list of seven lists of strings. Never the joined text of the form
+  (` | ` between two openings);
+- `image`: the **Picture**, `SomcpDownload::offer('store_image', <id_store>,
+  <id_shop>)`, `null` without a picture. The kind `store_image` of
+  `SomcpDownload::KINDS`, reader `somcp_list_stores`, is `img/st/<id>.jpg`
+  with `store_shop` as its shop table; the thumbnails
+  (`<id>-stores_default.jpg`) are never offered;
+- `returned`, `total_count`, `offset`, `language`.
+
+**Notes**
+- The texts are those of `language`; `somcp_update_store` takes them per language, as every write does.
+- The JSON scenario reads the 5 demo stores, filters on a name, and checks the refusals; the shop test reads store 1 (**Dade County**) and its Monday hours, and downloads its picture when the shop has one.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list or the form. Only
+the thumbnails written for a new picture differ (8.0.1 `-<type>.jpg` and `2x`
+with `PS_HIGHT_DPI`, 9.0.0 every format of `ImageFormatConfiguration`), which
+the update will follow.
+
+#### `somcp_create_store`
+**State**: written · [issue #461](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/461)
+**Nature**: `acts(ADD, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_create_contact`
+
+**Does** - creates a store of **Shop Parameters > Contact**, tab **Stores**,
+as **Add new store** then **Save**: its name, address, country and state,
+coordinates, phone, e-mail, note, hours and whether it is shown on the
+storefront page of the stores, and its **Picture** (part 2, #463). One
+store per call.
+
+**Do not use for** - the address of the shop itself (→
+`somcp_update_contact_details`); a contact of the contact form (→
+`somcp_create_contact`).
+
+**Parameters** - checked by `SomcpToolCreateStore::planStore(array
+$arguments, int $idShop, array &$errors, bool $required)`, public for the
+update of a store, on the model of `SomcpToolCreateContact::planContact()`:
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `languages` | | array | `SomcpToolCreateProduct::languages()`, every active language by default (#149) |
+| `name`, `address1` | **Name**, **Address** | object | required, one text per language filled keyed by ISO code (`SomcpToolCreateProduct::texts()`), trimmed, never empty (`name (en): required, it cannot be empty`), checked with `Store::validateField()` (`name (<iso>): <rule> - <reason>`); a language not filled takes the default language's text |
+| `address2`, `note` | **Address (2)**, **Note** | object | as `name`, may be empty; empty in every language when left out |
+| `hours` | **Monday** ... **Sunday** | object | the shape `somcp_list_stores` answers (`{"monday": ["09:00AM - 07:00PM"], "sunday": []}`), for every language filled, or one such object per language keyed by ISO code; a day left out is `[]`; an unknown day `hours: one of monday, tuesday, wednesday, thursday, friday, saturday, sunday` (`SomcpTool::oneOf()`); a day that is not a list of texts `hours.<day>: a list of texts`; stored as `json_encode()` of the seven lists in the order of the form |
+| `postcode` | **Zip/Postal code** | string | the three rules of `AdminStoresController::postProcess()` in its order (`SomcpToolCreateStore::postcodeProblem()`): `postcode: not in the format of US (00000)`, `postcode: required by <iso>` when `need_zip_code`, `postcode: letters, digits, spaces and - only` (`Validate::isPostCode()`); 12 characters at most |
+| `city` | **City** | string | required, `validateField()` |
+| `country` | **Country** | string | required, ISO code, `SomcpToolCreateSupplier::supplierCountry()` |
+| `state` | **State** | string | ISO code, `SomcpToolCreateSupplier::supplierState()`: `state: required, US has states - give the ISO code of one`, `state: FR has no states, leave the field out` |
+| `latitude`, `longitude` | **Latitude / Longitude** | number | both required and not 0 (`latitude: required, not 0`), `Validate::isCoordinate()` within -90 to 90 and -180 to 180, rounded to 8 decimals as the screen saves them |
+| `phone`, `fax`, `email` | **Phone**, **Fax**, **Email address** | string | optional, `validateField()` |
+| `active` | **Active** | boolean | `true` when left out, as the form |
+| `image` | **Picture** | object | `SomcpUpload::schema('Picture: the storefront picture of the store.', 'the picture')`, read in `planStore()` with `SomcpUpload::argument($arguments, 'image', $errors, 'image')`, as the `image` of `somcp_create_title`; `files: ['image' => SomcpUpload::images()]` |
+
+Unknown arguments through `SomcpTool::unknownFields()`: an item of
+`somcp_list_stores` given back is not a creation, `id_store` is refused as
+unknown. Every mistake in one answer, in the envelope `Nothing was created.
+Correct these and call again:`.
+
+**Returns** - `created: true`, `store`: the store as `somcp_list_stores`
+answers one item, read again by `SomcpToolListStores::read()` (the query of
+the list, then `item()`), in the shop's default language, `language` beside
+it; `warning` when the shop runs several shops: `The store was created for
+this shop only.` A `false` or an exception of `Store::add()`: `The store
+could not be created: <reason>.`, nothing else written. A picture the shop
+refuses deletes the store just created: `The store could not be created: the
+picture <reason>.`
+
+**Notes**
+- `new Store()`, filled, `id_shop_list` set to the shop of the token, then
+  `add()`: the rows of `store`, `store_lang` (every language) and
+  `store_shop`.
+- The picture after `add()`, through `SomcpToolCreateStore::storePicture()`,
+  which calls `SomcpToolCreateManufacturer::storeLogoIn()` (shared with the
+  brands and suppliers): `img/st/<id_store>.jpg`, one thumbnail per image
+  type `stores` in every format switched on (made on a create too, which the
+  screen does not), the cached `img/tmp/store_<id_store>.jpg` removed.
+- The module's log line `store_created` names the `id_store` only.
+- Changes the shop: the assistant asks first. Not replayable: a second call
+  creates a second store.
+- The JSON scenario checks the refusals; the shop test creates a store in
+  Miami, reads it in `somcp_list_stores` and deletes it with
+  `somcp_delete_store`, `Store::delete()` in a `finally` only when that tool
+  failed. Stores 1 to 5 are never changed.
+
+**Differences between 8.0.1 and 9.0.0** - the size of `note` and `hours`
+(65 000 on 8.0.1, the medium text limit on 9.0.0), which the definition of the
+running version decides through `validateField()`. The rest is the same.
+
+#### `somcp_update_store`
+**State**: written · [issue #462](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/462)
+**Nature**: `acts(EDIT, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_update_contact`
+
+**Does** - changes a store of **Shop Parameters > Contact**, tab **Stores**,
+as **Edit** then **Save**, and switches it on or off as the **Enabled**
+switch of the list and **Enable selection** / **Disable selection** do (an
+`active`-only call, one store at a time), and replaces its **Picture**. One
+store per call.
+
+**Do not use for** - creating a store (→ `somcp_create_store`); the address
+of the shop itself (→ `somcp_update_contact_details`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_store` | integer | required, a store of the shop of the token (`store_shop`): `SomcpTool::notAnIdentifier('id_store')`, `SomcpTool::notFound('id_store', 'store', <id>, 'somcp_list_stores')` |
+| every field of `somcp_create_store` | | optional: only what is given changes, checked by `SomcpToolCreateStore::planStore($arguments, $idShop, $errors, false)` |
+| `image` | object | a new picture, as in the create; the `download_ref` `somcp_list_stores` read for this store, or `null` when it has none, is unchanged (`SomcpUpload::same($given, 'store_image', <id_store>)`); `null` for a store that has one is refused: `image: the back office cannot remove a store's picture - give a new one or leave the field out` |
+| `id_country`, `id_state`, `country_name`, `state_name`, `date_add`, `date_upd` | | read only: accepted when equal to the store as read, `<field>: read only` otherwise; `country_name` / `state_name` tell to change `country` / `state` |
+
+Rules of a change:
+- The checks compare first: a field equal to the store as read is left out
+  of the plan and never refused, even when the screen would refuse it today,
+  as #436 decided for the cart rules. A changed `country` re-checks the
+  `state` and the `postcode` against it; a changed `state` or `postcode` is
+  checked against the store's country, as the screen sends them together.
+- A translated text given as one text, as the list answers it in one
+  language, is unchanged when it is the stored text of a language; keyed by
+  ISO code, as in the create (`languages` to fill only some).
+- `hours` in the shape of the list (seven days) is unchanged when equal to
+  the hours of a language as stored; keyed by ISO code, a language left out
+  keeps its hours; a day left out of a language given is `[]`.
+- An item of `somcp_list_stores` given back whole changes nothing.
+
+**Returns** - `changed`, `changes` (`field`, `old`, `new`; a translated text
+and the hours as `<field> (<iso>)`), `store` read again by
+`SomcpToolListStores::read()` in the shop's default language, `language`.
+`changed: false` with `reason: The store already holds every value given.
+Nothing was written.` `warning` when the store is tied to several shops
+(`store_shop`): `This store is shown on <n> shops: the change applies to all
+of them.` A `false` or an exception of `Store::update()`: `The store could
+not be changed: <reason>.` A new picture is written after the fields, over
+the current files under the same names (`storePicture()`): `changes` names
+`image` with `old` and `new` `null`, never an address, and `image` beside
+`store` holds the `url` or `upload_ref` given with `stored: true` or
+`refused: <reason>`, as `somcp_update_manufacturer` answers `logo`; a refused
+picture leaves the store with the one it had and the fields saved.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: those of `somcp_create_store` for a changed field, an unknown or
+foreign `id_store`, a read-only field changed, an unknown argument.
+
+**Notes**
+- `new Store($idStore)`, the fields changed set, `id_shop_list` set to the
+  shop of the token, then `update()`; `store_shop` keeps its rows.
+- The module's log line `store_updated` names the `id_store` and the fields
+  changed, never their values.
+- Changes the shop: the assistant asks first. Replayable: the same call twice
+  changes nothing the second time.
+- The JSON scenario checks the refusals on store 1 and an item given back;
+  the shop test gives store 1 back whole, then changes the phone and the
+  Monday hours of a store made by `somcp_create_store`, switches it off and
+  reads it back. Stores 1 to 5 are never changed.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form or its saving.
+
+#### `somcp_delete_store`
+**State**: written · [issue #464](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/464)
+**Nature**: `acts(DELETE, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_delete_contact`
+
+**Does** - deletes a store of **Shop Parameters > Contact**, tab **Stores**,
+as the row action **Delete** and the bulk action **Delete selected** do, one
+store per call, its picture with it.
+
+**Do not use for** - hiding a store without losing it (→
+`somcp_update_store` with `active: false`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_store` | integer | required, a store of the shop of the token: `SomcpTool::notAnIdentifier('id_store')`, `SomcpTool::notFound('id_store', 'store', <id>, 'somcp_list_stores')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every mistake in one
+answer, in the envelope `Nothing was deleted. Correct these and call again:`.
+
+**Returns** - `deleted: true`, `id_store` and `store`: the item as
+`SomcpToolListStores::read()` answered it before, in the shop's default
+language, as `somcp_delete_contact` answers. `warning` when another shop
+still shows the store (`The store was removed from this shop; <n> other
+shops still show it.`), when it was the last store of the shop (`The shop has
+no store left: the storefront page of the stores is empty.`), and when a file
+of the picture could not be removed. A `false` or an exception of
+`Store::delete()`: `The store could not be deleted: <reason>. Read it with
+somcp_list_stores before calling again.`
+
+**Notes**
+- `AdminStoresController` sets `$this->deleted = false`, so a delete really
+  deletes: `new Store($idStore)`, `id_shop_list` set to the shop of the
+  token, `delete()`, which removes the rows of `store_shop`, then `store` and
+  `store_lang` once no shop holds the store.
+- Neither version removes `img/st/<id>.jpg` nor its thumbnails; once the
+  `store` row is gone the tool does, with
+  `SomcpToolCreateManufacturer::removeLogoIn($idStore, _PS_STORE_IMG_DIR_,
+  'stores', 'store')`: the original, every thumbnail in every format and the
+  cached copies, as #441 decided for a title. A file left does not undo the
+  deletion.
+- The module's log line `store_deleted` names the `id_store` only.
+- Changes the shop and cannot be undone: the assistant asks first. Not
+  replayable: a second call answers that the store is unknown.
+- The JSON scenario checks the refusals; the shop test deletes the store made
+  by `somcp_create_store` with its picture, then checks the list no longer
+  answers it and no `img/st/<id>` file is left. Stores 1 to 5 are never
+  deleted.
+
+**Differences between 8.0.1 and 9.0.0** - none.
+
+#### `somcp_get_contact_details`
+**State**: written · [issue #456](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/456)
+**Nature**: `acts(VIEW, 'AdminStores')` · **Scope**: `mcp.customers.read`, as `somcp_list_contacts`
+
+**Does** - reads the card **Contact details** of **Shop Parameters >
+Contact**, tab **Stores**: the shop's own name, e-mail, registration number,
+address and phone, which the e-mails, the invoices and the page titles print.
+Read only, replayable; one object per shop.
+
+**Do not use for** - the stores shown on the storefront (→
+`somcp_list_stores`); the addresses of the contact form (→
+`somcp_list_contacts`).
+
+**Parameters** - none (`additionalProperties: false`), as
+`somcp_get_general_settings`; an unknown argument through
+`SomcpTool::unknownFields()`.
+
+**Returns**
+- `contact_details`, built by `SomcpToolGetContactDetails::details()`, public
+  for the change that follows, each key read for the shop of the token and
+  its group through `SomcpToolGetGeneralSettings::stored()`:
+
+| Field | Screen | Setting |
+|---|---|---|
+| `shop_name` | **Store name** | `PS_SHOP_NAME` |
+| `shop_email` | **Shop email** | `PS_SHOP_EMAIL` |
+| `registration_number` | **Registration number** | `PS_SHOP_DETAILS` |
+| `address1` | **Shop address line 1** | `PS_SHOP_ADDR1` |
+| `address2` | **Shop address line 2** | `PS_SHOP_ADDR2` |
+| `postcode` | **Zip/Postal code** | `PS_SHOP_CODE` |
+| `city` | **City** | `PS_SHOP_CITY` |
+| `id_country`, `country`, `country_name` | **Country** | `PS_SHOP_COUNTRY_ID` |
+| `id_state`, `state`, `state_name` | **State** | `PS_SHOP_STATE_ID` |
+| `phone` | **Phone** | `PS_SHOP_PHONE` |
+| `fax` | **Fax** | `PS_SHOP_FAX` |
+
+- `id_country` and `id_state` are `null` for 0 or no row, with `country`,
+  `country_name`, `state` and `state_name` `null`; otherwise `country` and
+  `state` are the ISO codes (`US`, `FL`) every other tool takes, and
+  `country_name` and `state_name` the names in the shop's default language,
+  from the identifiers (never `PS_SHOP_COUNTRY` and `PS_SHOP_STATE`, which the
+  screen writes beside them), in the shape of `somcp_list_stores`
+  (`SomcpToolListStores::place()`);
+- `language`: the ISO code of the names;
+- `warning` when no country is saved: `No country is saved: the screen
+  preselects <name of the context country>, which the shop does not use until
+  it is saved.` The answer never gives that preselected country as the shop's.
+
+**Notes** - the e-mail is the shop's, not a person's: it is answered as the
+screen shows it. The field names are those of the change, which takes the same
+object back.
+
+**Differences between 8.0.1 and 9.0.0** - none in the card
+(`_getDefaultFieldsContent()` is the same on both).
+
+#### `somcp_update_contact_details`
+**State**: written · [issue #457](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/457)
+**Nature**: `acts(EDIT, 'AdminStores')` · **Scope**: `mcp.customers.write`, as `somcp_update_contact`
+
+**Does** - the **Save** of the card **Contact details** of **Shop Parameters >
+Contact**, tab **Stores**: changes the shop's name, e-mail, registration
+number, address, country, state and phone. Only the fields given change; the
+`contact_details` of `somcp_get_contact_details` given back whole changes
+nothing.
+
+**Do not use for** - a store of the storefront page (→ `somcp_list_stores`);
+an address of the contact form (→ `somcp_update_contact`).
+
+**Parameters** - `contact_details` (required), an object with the fields of
+`somcp_get_contact_details`, every one optional. The `language` and the
+`warning` of the read, given back beside it, are no change.
+
+| Name | Screen | Rule, refusal |
+|---|---|---|
+| `shop_name` | **Store name** | required, `Validate::isGenericName()`, 255 characters: `contact_details.shop_name: a name without < > = { }` |
+| `shop_email` | **Shop email** | required, `Validate::isEmail()`: `contact_details.shop_email: an e-mail address` |
+| `registration_number`, `postcode`, `city`, `phone`, `fax` | **Registration number**, **Zip/Postal code**, **City**, **Phone**, **Fax** | `isGenericName`, may be empty |
+| `address1`, `address2` | **Shop address line 1**, **line 2** | `Validate::isAddress()`, may be empty |
+| `country` | **Country** | the ISO code of a country of the shop, through `SomcpToolCreateSupplier::supplierCountry()`: `contact_details.country: no country of this shop has the ISO code ZZ - find it with somcp_list_countries`; `null` or empty refused when one is saved (`contact_details.country: the back office cannot empty a saved country`) |
+| `state` | **State** | the ISO code of a state of the country given or saved, through `SomcpToolCreateSupplier::supplierState()`: `contact_details.state: no state of US has the ISO code ZZ - find it with somcp_list_states`, `contact_details.state: required, US has states - give the ISO code of one` when the country changes to one with states, `contact_details.state: FR has no states, leave the field out`; enabled, as `AdminStoresController::beforeUpdateOptions()`: `contact_details.state: not an enabled state of US - find one with somcp_list_states`; `null` refused when one is saved and the country does not change |
+| `id_country`, `country_name`, `id_state`, `state_name` | | read only: accepted when equal to the read, else `contact_details.id_country: read only - change country` (or `state`) |
+
+Every mistake in one answer (`SomcpTool::refused('changed', ...)`), an unknown
+field through `SomcpTool::unknownFields()`.
+
+**Returns** - as `somcp_update_general_settings`: `changed`; `changes`
+(`field`, `old`, `new`; the country and the state as `country` and `state`,
+by ISO code); `contact_details` read again by
+`SomcpToolGetContactDetails::details()`; `language`; `warning` when
+`shop_email` changes (`The e-mails of the shop are now sent from <address>.`,
+since `Mail::send()` takes `PS_SHOP_EMAIL` as the sender) and when the shop is
+one of several (`The settings changed for this shop only, as the back office
+saves them in a shop context.`). Nothing different: `changed: false`, `The
+contact details already hold every value given. Nothing was written.`
+
+**Notes**
+- Each key differing is written with `Configuration::updateValue($key, $value,
+  false, $idShopGroup, $idShop)` for the shop of the token, html off as the
+  screen; with the country and the state, their names `PS_SHOP_COUNTRY` and
+  `PS_SHOP_STATE` in the shop's default language, which the screen keeps in
+  step. A key refused: `SomcpToolUpdateGeneralSettings::failed()`, naming what
+  was saved before it.
+- The screen never writes a 0 country or state (`if (!$this->errors &&
+  $value)`), so a saved one cannot be emptied, here as there.
+- The module's log line `contact_details_updated` names the fields changed,
+  never their values.
+- The refusals carry the path `contact_details.`, as the other tools that take
+  a nested object.
+
+**Differences between 8.0.1 and 9.0.0** - none in the card or its saving.
+
 #### `somcp_list_tax_rules`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`
@@ -4790,9 +5190,9 @@ entry, so a row read there can be given here.
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
 | `id_tax_rules_group` | the rule edited | integer | yes | from `somcp_list_tax_rules`; unknown, deleted or not in the token's shop: not found, through `SomcpToolGetTaxRule::existingRule()` |
-| `country` | **Country** | string or `null` | yes | ISO code, read through `SomcpToolCreateSupplier::supplierCountry()`, as the supplier and manufacturer address tools (`country: no country of this shop has the ISO code "ZZ"`); `null` is **All**: one row, `id_state` 0, for each country of the shop (`country_shop`), active or not, as `processCreateRule()` loops over `Country::getCountries()`, read through `SomcpToolCreateSupplier::shopCountries()`, the join `supplierCountry()` uses. Left out stays `country: required, the ISO code of the country`: **All** is asked for, never the result of a field left out |
-| `state` | **State** | string or `null` | no | one state, as `somcp_get_tax_rule` gives it: one ISO code of the country's states through `SomcpToolCreateSupplier::stateOf()` (`state: US has no state with the ISO code "ZZ"`), one row; `null` is **All**; a code for a country without states: `state: FR has no states, leave the field out` (`null` is accepted there). With `states` in the same call: `state: state or states, not both`, `state: null` counting as given |
-| `states` | **State** | array of strings | no | the list for several: ISO codes of the country's states, one row each, each through `SomcpToolCreateSupplier::stateOf()` (`states: US has no state with the ISO code "ZZ"`); left out or empty: **All** (one row, `id_state` 0); given for a country without states: `states: FR has no states, leave the field out`; a code twice counts once |
+| `country` | **Country** | string or `null` | yes | ISO code, read through `SomcpToolCreateSupplier::supplierCountry()`, as the supplier and manufacturer address tools (`country: no country of this shop has the ISO code ZZ - find it with somcp_list_countries`); `null` is **All**: one row, `id_state` 0, for each country of the shop (`country_shop`), active or not, as `processCreateRule()` loops over `Country::getCountries()`, read through `SomcpToolCreateSupplier::shopCountries()`, the join `supplierCountry()` uses. Left out stays `country: required, the ISO code of the country`: **All** is asked for, never the result of a field left out |
+| `state` | **State** | string or `null` | no | one state, as `somcp_get_tax_rule` gives it: one ISO code of the country's states through `SomcpToolCreateSupplier::stateOf()` (`state: no state of US has the ISO code ZZ - find it with somcp_list_states`), one row; `null` is **All**; a code for a country without states: `state: FR has no states, leave the field out` (`null` is accepted there). With `states` in the same call: `state: state or states, not both`, `state: null` counting as given |
+| `states` | **State** | array of strings | no | the list for several: ISO codes of the country's states, one row each, each through `SomcpToolCreateSupplier::stateOf()` (`states: no state of US has the ISO code ZZ - find it with somcp_list_states`); left out or empty: **All** (one row, `id_state` 0); given for a country without states: `states: FR has no states, leave the field out`; a code twice counts once |
 | `zipcode_from` | **Zip/Postal code range**, first bound | string | no | `Validate::isPostCode()`, no hyphen, the size of the column at most (12), and `Country::checkZipCode()` when the country has `need_zip_code` and a `zip_code_format` (`zipcode_from: not in the format of US (00000)`) |
 | `zipcode_to` | **Zip/Postal code range**, second bound | string | no | the same checks; only with `zipcode_from` (`zipcode_to: only with zipcode_from`); the two ordered and folded by `TaxRule::breakDownZipCode()` |
 | `behavior` | **Behavior** | string | no | `this_tax_only` (the default, first option of the form), `combine` or `one_after_another`, the values of `SomcpToolGetTaxRule::BEHAVIORS` |
@@ -4861,7 +5261,7 @@ changes.
 |---|---|---|---|---|
 | `id_tax_rule` | the row edited | integer | yes | from `somcp_get_tax_rule`; found as `somcp_delete_country_rule` finds it, through `SomcpToolDeleteCountryRule::ruleOf()`: `id_tax_rule: no country row of a tax rule of this shop has the identifier <n> - find it with somcp_get_tax_rule` |
 | `country` | **Country** | string | no | ISO code, through `SomcpToolCreateSupplier::supplierCountry()`, as `somcp_add_country_rule`. Changed alone, the stored state must belong to the new country, otherwise `state: AL is not a state of FR - give state too, or null for All` |
-| `state` | **State** | string or `null` | no | one ISO code of the country's states, through `SomcpToolCreateSupplier::stateOf()` (`state: US has no state with the ISO code "ZZ"`); `null` is **All** (`id_state` 0); given for a country without states: `state: FR has no states, leave the field out`. Singular, as `somcp_get_tax_rule` gives it |
+| `state` | **State** | string or `null` | no | one ISO code of the country's states, through `SomcpToolCreateSupplier::stateOf()` (`state: no state of US has the ISO code ZZ - find it with somcp_list_states`); `null` is **All** (`id_state` 0); given for a country without states: `state: FR has no states, leave the field out`. Singular, as `somcp_get_tax_rule` gives it |
 | `zipcode_from` | **Zip/Postal code range**, first bound | string or `null` | no | the checks of `SomcpToolAddCountryRule::zipcodes()`, against the country the row will have (run again when the country changes); `null` removes the range, both bounds |
 | `zipcode_to` | **Zip/Postal code range**, second bound | string or `null` | no | the same checks; ordered and folded by `TaxRule::breakDownZipCode()` with the resulting `zipcode_from`; given without a range left: `zipcode_to: only with zipcode_from` |
 | `behavior` | **Behavior** | string | no | the values of `SomcpToolGetTaxRule::BEHAVIORS`, through `SomcpToolAddCountryRule::behavior()` |
@@ -5301,6 +5701,167 @@ The folder of the shop is taken out of the core's messages.
 - A real install reaches PrestaShop's server and rewrites translation files: the scenario only checks the refusals, made before any download.
 
 **Differences between 8.0.1 and 9.0.0** - none in the card, the controller, `LanguagePackImporter` or `LanguagePackInstaller`; 9.0.0 tries the download three times before giving up, 8.0.1 once, each attempt waiting 20 seconds.
+
+#### `somcp_export_translations`
+**State**: written · [issue #452](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/452)
+**Nature**: `acts(ADD, 'AdminTranslations')` · **Scope**: `mcp.catalog.write`
+
+**Does** - builds the translation pack of one language as a zip of XLF files,
+as the card **Export a language** of **International > Translations** does
+(button **Export**): the core parts, a theme and a module, any of them
+together, with the shop's own changes of the wordings over the files. The zip
+is handed over as a `download_ref`, kept 15 minutes.
+
+**Do not use for** - installing a language with PrestaShop's translations (→
+`somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | **Language** | string | yes | the ISO code of an installed language of the shop of the token, as `somcp_list_languages` answers `iso_code`; another: `SomcpTool::notFound('language', 'language', <code>, 'somcp_list_languages', 'iso_code')`; missing: `language: required` |
+| `core` | **PrestaShop translations** (boxes **Back office**, **Front office**, **Email**, **Other**) | array of strings | no | any of `back_office`, `front_office`, `email`, `other`, sent to the core as `back`, `front`, `mails`, `others`; `email` adds `mails_body`, as the screen does; another value: `core[<i>]: one of back_office, front_office, email, other` |
+| `theme` | **Theme translations** | string | no | the name of an installed theme other than `classic` (`somcp_get_theme`, `name`); `classic`: `theme: the wordings of classic are the core's Front office - give front_office in core`, as `ExportCataloguesType::excludeDefaultThemeFromChoices()` leaves it out; another: `SomcpTool::notFound('theme', 'theme', <name>, 'somcp_get_theme', 'name')` |
+| `module` | **Installed module translations** | string | no | the technical name of an installed module, compared without case (`somcp_list_modules`, `name`); another: `SomcpTool::notFound('module', 'installed module', <name>, 'somcp_list_modules', 'name')` |
+
+None of `core`, `theme`, `module` given, or `core: []` alone: `core, theme or
+module: at least one - You must select at least one translation type to export
+translations.`. Unknown arguments through `SomcpTool::unknownFields()`; every
+problem in one answer, in the envelope `Nothing was exported. Correct these and
+call again:`.
+
+**Then**
+- `@set_time_limit(120)` when `max_execution_time` is above 0 and below 120, as `somcp_install_language_pack` does: the back office catalogue of a language is over 10 000 wordings;
+- inside `SomcpBackOffice::asBackOffice()` (the back office's kernel, shared with the Module Manager tools), `prestashop.translation.export.translation_catalogue` (`TranslationCatalogueExporter::export($selections, $locale)`), the selections built as `TranslationsController::exportCataloguesAction()` builds them, the locale read with `Language::getLocaleByIso()`;
+- the zip the core answers moved at once (`SomcpDownload::keepExport()`: `rename()`, or `copy()` then `unlink()` across devices) to `var/somcp/exports/`, closed as the deposits are (`SomcpUpload::closedFolder()`), under `<YmdHis>-<16 hex>.zip`: PrestaShop 8 empties its own export folder at the next export. The files there older than 15 minutes are removed first, and the folder on uninstall (`SomcpDownload::removeExports()`).
+
+**Returns** - `exported: true`, `language`, `locale`, `parts` (`back_office`,
+`front_office`, `email`, `other`, `theme <name>`, `module <name>`, in the order
+given), `file` (`{"download_ref": "translation_export.<id>.<expiry>.<signature>"}`,
+kind `translation_export` of `SomcpDownload::KINDS`, whose reader is this
+tool), `bytes`, `expires_at`, `then`.
+
+**Errors** - a failure of the core (an exception of `export()`, the kernel not
+booting): `The translations could not be exported: <message, 500 characters at
+most>.`, nothing kept; the folder of the shop is taken out of the message.
+
+**Notes**
+- Changes nothing of the shop: it writes one file of its own, kept 15 minutes. The pack is what **Add / Update a language** of another shop imports; this tool does not import one.
+- Logged as `translations_exported` or `translations_export_failed` with the language and the parts, never the file name.
+
+**Differences between 8.0.1 and 9.0.0** - 8.0.1 empties the whole export folder before each export, 9.0.0 works in `export/<uniqid()>/` and keeps the others (left to the core, as the screen leaves it); the themes offered (none but `classic` on 8.0.1, `hummingbird` on 9.0.0).
+
+#### `somcp_list_translations`
+**State**: written · [issue #453](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/453)
+**Nature**: `acts(VIEW, 'AdminTranslations')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the translations of a language as the card **Modify
+translations** of **International > Translations** shows them (button
+**Modify**): without `domain`, the domains of one type of wordings with their
+counts, the tree on the left of the editor; with `domain`, its wordings, each
+with the source, the translation of the files and the shop's own.
+
+**Do not use for** - the pack of a language as a file (→
+`somcp_export_translations`); installing PrestaShop's translations (→
+`somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | **Select your language** | string | yes | ISO code of an installed language, as `somcp_list_languages` answers `iso_code`, checked by `SomcpToolExportTranslations::locale()`; another: `SomcpTool::notFound('language', 'language', <code>, 'somcp_list_languages', 'iso_code')` |
+| `type` | **Type of translation**, **Select the type of email content** | string | yes | `back_office`, `front_office`, `module`, `email_subject`, `email_body`, `other`, sent as `back`, `themes`, `modules`, `mails`, `mails_body`, `others`; missing: `type: required, one of ...`; another: `type: one of ...` |
+| `theme` | **Select your theme** | string | no | with `front_office` only: an installed theme (`somcp_get_theme`, `name`); left out or `classic`: **Core (no theme selected)**, the core's front office; another: `SomcpTool::notFound('theme', 'theme', <name>, 'somcp_get_theme', 'name')`; with another type: `theme: only with type front_office` |
+| `module` | **Select your module** | string | with `module` | an installed module compared without case (`somcp_list_modules`, `name`), through `SomcpToolExportTranslations::module()`; missing: `module: required with type module - find it with somcp_list_modules`; with another type: `module: only with type module` |
+| `domain` | the tree | string | no | a `domain` this tool answers without it (`AdminCatalogFeature`, `ShopThemeCheckout`...); not in the tree: `SomcpTool::notFound('domain', 'domain', <name>, 'somcp_list_translations', 'domain')` |
+| `search` | **Search translations** | string | no | words, all found without case in the source, the file or the shop's translation (`Message::contains()`); with or without `domain` |
+| `missing_only` | the red count of a node | boolean | no | the domains with a wording missing, or the wordings with neither file nor shop translation; default false |
+| `limit`, `offset` | | integers | no | with `domain`: `limit` 20 by default and 100 at most (`limit: a whole number from 1 to 100`), `offset` 0 at least (`offset: a whole number, 0 at least`) |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every problem in one
+answer, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Then** - inside `SomcpBackOffice::asBackOffice()`:
+- the tree: `prestashop.translation.builder.translation_catalogue` (`getRawCatalogue()->buildTree()`, shaped as the editor's `TranslationsTreeBuilder` shapes it, without its API links, whose router needs a session on PrestaShop 8) on the definition of `prestashop.translation.factory.provider_definition` (`build($type, $selected)`), `themes` with no theme or `classic` read as `front`, as `listTreeAction()` does; the leaves flattened in the tree's order;
+- a domain: `prestashop.translation.builder.translation_catalogue` (`getDomainCatalogue()`) with `ModuleProviderDefinition(<module>)`, else `ThemeProviderDefinition(<theme>)`, else `CoreDomainProviderDefinition(<domain>)`, as `listDomainTranslationAction()` does; `Messages` is the catalogue `messages` of the other wordings.
+
+**Returns**
+- without `domain`: `language`, `locale`, `type`, `theme`, `module`, `total_translations`, `total_missing_translations`, `domains` (each `domain`, `name`, `path`, `total_translations`, `total_missing_translations`);
+- with `domain`: the same header, `domain`, `total_translations`, `total_missing_translations`, `returned`, `total_count`, `offset`, `translations` (each `source`, `file_translation`, `shop_translation`, `shown` = `shop_translation ?? file_translation ?? source`).
+
+**Errors** - a failure of the core (`TranslationFilesNotFoundException`, the
+kernel not booting): `The translations could not be read: <message, 500
+characters at most>.`; the folder of the shop is taken out of the message.
+
+**Notes** - read only. A wording keeps its placeholders (`%s`, `%1$s`,
+`%name%`) as the source writes them.
+
+**Differences between 8.0.1 and 9.0.0** - the themes offered (`classic` on
+8.0.1; `classic` and `hummingbird` on 9.0.0); the code read is the same.
+
+#### `somcp_update_translation`
+**State**: written · [issue #454](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/454)
+**Nature**: `acts(EDIT, 'AdminTranslations')` · **Scope**: `mcp.catalog.write`
+
+**Does** - the changing half of the card **Modify translations** of
+**International > Translations**: saves the shop's own translation of one
+wording (**Save**), or removes it (**Reset**) so the translation of the files
+shows again.
+
+**Do not use for** - reading the wordings (→ `somcp_list_translations`);
+installing PrestaShop's translations (→ `somcp_install_language_pack`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language`, `type`, `theme`, `module` | as `somcp_list_translations` | | `language`, `type` | checked by `SomcpToolListTranslations::selection()`, the same rules and messages |
+| `domain` | the tree | string | yes | a `domain` `somcp_list_translations` answers; missing: `domain: required, ...`; not in the tree: `SomcpTool::notFound('domain', 'domain', <name>, 'somcp_list_translations', 'domain')` |
+| `source` | the source above the box | string | yes | the `source` of a wording of that domain; missing: `source: required, ...`; not in the domain: `SomcpTool::notFound('source', 'wording', <text, 100 characters>, 'somcp_list_translations', 'source')` |
+| `translation` | the box | string | without `reset` | the shop's translation, 4000 characters at most; empty after `trim()`: `translation: a text - use reset to show the translation of the files again`; not the same number of placeholders as the source (`PassVsprintf`, `Translator::$regexSprintfParams`): `translation: keep the placeholders of the source (<the placeholders>)` |
+| `reset` | **Reset** | boolean | no | true: the shop's translation removed; with `translation`: `reset: without translation` |
+| `file_translation`, `shop_translation`, `shown` | | | no | read only: accepted when equal to the read; another value: `<field>: read only - change translation` |
+
+Unknown arguments through `SomcpTool::unknownFields()`; the problems in the
+envelope `Nothing was changed. Correct these and call again:`.
+
+**Then** - inside `SomcpBackOffice::asBackOffice()`, the wording read as
+`somcp_list_translations` reads it; `translation` equal to its
+`shop_translation`, or `reset` when it has none: `changed: false`, nothing
+written. Otherwise `prestashop.service.translation`: `findLanguageByLocale()`,
+then `saveTranslationMessage($lang, <domain>, <source>, <translation>, <theme>)`
+or `resetTranslationMessage(<id_lang>, <domain>, <source>, <theme>)`, the theme
+`null` for the core's wordings and `classic`, as the editor sends them, and
+`Messages` saved in the catalogue `messages`; then `Tools::clearSf2Cache()`
+(removed once the answer is sent, as PrestaShop 9's clearer does) and, for
+`AdminNavigationMenu`, the translator cleared for the language and the `tab`
+names translated again for the shop of the token, as
+`translateMultilingualContent()` does. Logger line `translation_updated`: the
+language, the domain, `saved` or `reset`, never the wording.
+
+**Returns** - `changed`, `language`, `type`, `domain`, `changes` (`field`
+`translation`, `old`, `new`) when changed, and `translation`: the wording read
+again as `somcp_list_translations` answers it; `warning` for
+`AdminNavigationMenu` (`The back office menu is translated again for this
+language.`) and in multistore (`The translations are shared by every shop.`).
+
+**Errors** - `saveTranslationMessage()` refusing: `The translation could not
+be saved. Read the wording with somcp_list_translations before calling
+again.`; a failure of the core: `The translation could not be saved: <message,
+500 characters at most>.`, the folder of the shop taken out.
+
+**Notes** - one wording per call. The table `translation` has no shop: the
+change reaches every shop.
+
+The JSON scenario covers the refusals, the save, the same save again and the
+two resets; the shop test reads the saved wording with
+`somcp_list_translations`, gives its row back whole (`changed: false`, no
+`changes`), then resets it whatever failed.
+
+**Differences between 8.0.1 and 9.0.0** - the right the screen asks (`create`
+or `update`); the cache clearer of the API (an in-process `cache:clear` on 8,
+a clearing at the end of the request on 9), both replaced by
+`Tools::clearSf2Cache()`.
 
 #### `somcp_get_localization_settings`
 **State**: written · [issue #382](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/382)
@@ -6260,8 +6821,8 @@ customers (**Default groups options**). It is the source of the `id_group`
 that `somcp_create_customer`, `somcp_update_customer`, the category tools and
 the specific prices of the product tools take. Read only.
 
-**Do not use for** - the customers of a group (→ `somcp_search_customers`);
-one customer's groups (→ `somcp_get_customer`).
+**Do not use for** - the members of a group (→ `somcp_search_customers` with
+`id_group`); one customer's groups (→ `somcp_get_customer`).
 
 **Parameters**
 
@@ -6270,7 +6831,13 @@ one customer's groups (→ `somcp_get_customer`).
 | `id_group` | integer | no | **ID**: keeps the group with this identifier; a group this shop does not have gives an empty list, as the filter on screen |
 | `name` | string | no | part of **Group name**, case-insensitive; the same parameter as `somcp_list_suppliers`, `somcp_list_manufacturers` and `somcp_list_attachments` |
 | `show_prices` | boolean | no | **Show prices** (**Yes** / **No**): `true` for the groups that show prices, `false` for those that hide them; every group when left out |
+| `reduction_min` / `reduction_max` | number | no | **Discount (%)**, the `reduction` answered, 0 to 100, both included: `reduction_min: 0.01` lists the groups that give a discount |
+| `members_min` / `members_max` | integer | no | **Members**, the `members_count` answered, 0 at least, both included, applied after the count so the filter and the answer never disagree: `members_max: 0` lists the empty groups |
+| `date_from` / `date_to` | string | no | **Creation date** (`date_add`), YYYY-MM-DD, both days included, read with `SomcpTool::day()` |
+| `sort` | string | no | `id_asc` (default), `id_desc`, `name_asc`, `name_desc`, `reduction_asc`, `reduction_desc`, `members_asc`, `members_desc`, `date_add_asc`, `date_add_desc` (`SomcpToolListCustomerGroups::SORTS`, the `<column>_<way>` of `somcp_list_cart_rules`); no **Show prices** sort, as on screen; ties by `id_group` ascending |
 | `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
+
+All filters combine with AND.
 
 **Returns** - `groups`, per group:
 
@@ -6288,12 +6855,19 @@ one customer's groups (→ `somcp_get_customer`).
 Plus `count`, `customer_groups_enabled` (**Customer groups** of
 **Performance**: when false the shop ignores groups for prices) and
 `language`. Groups of the token's shop only (`group_shop`), sorted by
-**ID** as the list.
+**ID** as the list unless `sort` says otherwise.
 
 **Errors** - every problem at once, nothing read, each under "Nothing was read.
 Correct these and call again:": a field the tool does not take; `id_group: a
-whole number above 0`; `name: a text`; `show_prices: true or false`; a language
-the shop does not have, with the ones it has.
+whole number above 0`; `name: a text`; `show_prices: true or false`;
+`reduction_min: a number from 0 to 100` (the same for `reduction_max`),
+`reduction_max: a number not below reduction_min`; `members_min: a whole
+number, 0 at least`, `members_max: a whole number not below members_min`
+(`SomcpToolListCartRules::checkWholeRange()`); `date_from: a date,
+YYYY-MM-DD`, `date_to: a date not before date_from`
+(`SomcpToolListCartRules::checkPeriod()`); `sort: one of ...`
+(`SomcpTool::oneOf()`); a language the shop does not have, with the ones it
+has.
 
 **Notes**
 - Read with one query on `group`, `group_lang` and `group_shop` for the
@@ -6319,7 +6893,8 @@ Groups** in full, as its **Edit** form shows it: what
 replayable.
 
 **Do not use for** - the list of groups (→ `somcp_list_customer_groups`); the
-customers of a group (→ `somcp_search_customers`); changing a group (→
+members of a group (→ `somcp_search_customers` with `id_group`); changing a
+group (→
 `somcp_update_customer_group`).
 
 **Parameters**
@@ -6373,12 +6948,11 @@ modules differ between the shops.
 
 **Does** - changes a customer group of **Shop Parameters > Customer Settings >
 Groups**, as its **Edit** form then **Save** do: its name in each language,
-its **Discount**, its **Price display method** and **Show prices**. Only the
-fields given change. One group per call. **Category discount** (#444) and
-**Authorized modules** (#445) are left as they are.
+its **Discount**, its **Price display method**, **Show prices** and its
+**Category discount** list (#444) and its **Authorized modules** (#445). Only
+the fields given change. One group per call.
 
-**Do not use for** - the category discounts and the modules, not changed yet;
-the groups of one customer (→ `somcp_update_customer`).
+**Do not use for** - the groups of one customer (→ `somcp_update_customer`).
 
 **Parameters**
 
@@ -6390,15 +6964,17 @@ the groups of one customer (→ `somcp_update_customer`).
 | `reduction` | **Discount** | number | percent as shown, 0 to 100, at most 2 decimals, the rule of `validateDiscount()`: `reduction: a percentage from 0 to 100` |
 | `price_display_method` | **Price display method** | string | `tax_excluded` or `tax_included`, the words of `somcp_list_customer_groups`; anything else: `SomcpTool::oneOf()` |
 | `show_prices` | **Show prices** | boolean | `show_prices: true or false` |
+| `category_discounts` | **Category discount** | array | the whole list, as the form saves it: each item `{"id_category": <int>, "reduction": <number>}`, the shape `somcp_get_customer_group` answers (its `category` name is accepted and ignored); `[]` removes every row. Not a list of objects: `category_discounts: a list of {id_category, reduction}`; `id_category` not an identifier (`SomcpTool::notAnIdentifier()`) or not of this shop (`SomcpToolUpdateCategory::existingCategory()`): `SomcpTool::notFound('category_discounts[<i>].id_category', 'category', <id>, 'somcp_list_categories')`; the Root category (`PS_ROOT_CATEGORY`), not in the tree of the form: `category_discounts[<i>].id_category: the Root category is not in the tree of the form, choose Home or below`; `reduction` by the rule of the Discount: `category_discounts[<i>].reduction: a percentage from 0 to 100`; the same category twice: `category_discounts[<i>].id_category: given twice`; another key of an item: `category_discounts[<i>].<key>: not a field of a category discount` |
+| `authorized_modules` | **Authorized modules:** | array of strings | the whole list of the modules set to **Yes**, by technical name, the shape `somcp_get_customer_group` answers; every installed module left out is set to **No**. Not a list of strings: `authorized_modules: a list of module names from somcp_list_modules`; a name that is not an installed module (`Module::getModulesInstalled()`, compared without case, as `somcp_get_module` does): `SomcpTool::notFound('authorized_modules[<i>]', 'installed module', <name>, 'somcp_list_modules', 'name')`; `[]`: `authorized_modules: at least one module - the back office cannot leave a group with none`, as the screen |
+| `unauthorized_modules` | | array of strings | the other half of the read: accepted only when it is exactly the installed modules not in `authorized_modules` (or not in the stored list when `authorized_modules` is left out), compared without case and in any order; otherwise `unauthorized_modules: the installed modules left out of authorized_modules` |
 
 The read given back whole changes nothing: the other fields of the `group` of
 `somcp_get_customer_group` (`names`, `members_count`, `date_add`,
-`default_for`, `category_discounts`, `authorized_modules`,
-`unauthorized_modules`) are declared in the schema and accepted unchanged;
-given with another value they are refused (`members_count: read only`,
-`date_add: read only`, `default_for: chosen in Customer Settings > Groups,
-Default groups options`, `category_discounts: not changed by this tool yet`,
-the same for both module lists). `name` and `names` given back are read by
+`default_for`) are declared in the schema and accepted unchanged; given with
+another value they are refused (`members_count: read only`, `date_add: read
+only`, `default_for: chosen in Customer Settings > Groups, Default groups
+options`). The `category_discounts` and the `authorized_modules` given back as
+read (same rows, any order) are no change. `name` and `names` given back are read by
 `SomcpToolCreateProduct::nameGivenBack()`, as `somcp_update_title` reads them:
 a plain `name` equal to a stored text is no change. Unknown arguments through
 `SomcpTool::unknownFields()`.
@@ -6410,8 +6986,33 @@ the `Group` object with the fields given, `update()` on the shop of the token
 (`id_shop_list`). A `false` or an exception: a tool error `The customer group
 could not be changed: <reason>. Read it with somcp_get_customer_group before
 calling again.`, logged as `customer_group_update_failed`.
-`Tools::clearSmartyCache()` when `reduction`, `price_display_method` or
-`show_prices` changed, as the **Show prices** switch of the list does. Logged as
+
+A `category_discounts` that differs is written as `updateCategoryReduction()`
+of `AdminGroupsController` writes it, in one database transaction with the
+`Group` fields: `DELETE` of the rows of the group in `group_reduction` and
+`product_group_reduction_cache` (a direct write, as the controller does:
+`GroupReduction::delete()` would empty the price cache of every group for the
+products of the category); when the list is not empty,
+`Configuration::updateGlobalValue('PS_GROUP_FEATURE_ACTIVE', 1)` if it was
+off; then per row `Category::addGroupsIfNoExist()` (the group is given access
+to the category) and a `GroupReduction` (`reduction` = percent / 100)
+`add()`, which fills `product_group_reduction_cache`. A failure rolls the
+transaction back and answers `The category discounts could not be saved:
+<reason>. Read the group with somcp_get_customer_group before calling again.`
+
+An `authorized_modules` that differs is written as `updateRestrictions()` of
+`AdminGroupsController` writes it, in the same transaction:
+`Group::addModulesRestrictions(<id_group>, <id_module of each name>,
+[<shop of the token>])`, never the shops of the context (a token acts for one
+shop, and `module_group` of another shop is never touched), then
+`Cache::clean(Hook::MODULE_LIST_BY_HOOK_KEY . '*')`. The tool writes no SQL of
+its own for it. A `false` rolls back and answers `The authorized modules could
+not be saved. Read the group with somcp_get_customer_group before calling
+again.`; the log line names `authorized_modules` among the fields changed,
+never the modules.
+
+`Tools::clearSmartyCache()` when `reduction`, `price_display_method`,
+`show_prices` or `category_discounts` changed, as the **Show prices** switch of the list does. Logged as
 `customer_group_updated` with the `id_group` and the names of the fields
 changed.
 
@@ -6424,7 +7025,20 @@ Settings instead.`; `reduction` above 0 while customer groups are still
 disabled after the save (`Group::update()` turns the global value on by
 itself): `SomcpToolGetCustomerGroup::GROUPS_DISABLED`; a default group
 (`default_for` not empty): `This group is used for <visitors, guests,
-customers>: the change reaches every one of them.`
+customers>: the change reaches every one of them.`; customer groups turned on
+by a category discount: `Customer groups were turned on in Advanced
+Parameters > Performance, as the back office does when a category discount is
+saved.`; a category discount list not empty while the group **Discount** is
+above 0, the two warnings of the screen in one sentence: `A category discount
+replaces the group discount for the products of that category, it does not add
+to it; only products whose default category it is are concerned.`; a category
+the group could not see before (`category_group`, read before the write): `The
+group can now see the category <name>.`; a module newly set to **No** that is
+hooked to `paymentOptions` for the shop of the token (`hook_module`, read
+before the write; `Hook::getHookModuleExecList()` filters by the groups of the
+visitor of the context and would miss one): `The customers of this group no
+longer see these payment modules: <display names>.`, since a group left
+without a payment module cannot order.
 
 **Errors** - in the envelope `Nothing was changed. Correct these and call
 again:`: an unknown argument; `id_group` missing, not an identifier or not of
@@ -6432,11 +7046,209 @@ this shop; the rules above; a read only field given with another value.
 
 **Notes** - changes the shop: the assistant asks first. Replayable: a second
 identical call changes nothing. The shop test gives back the read of group 3,
-sets its Discount to 5 and back to 0, and Show prices off and back on, and
-restores the group whatever happens.
+sets its Discount to 5 and back to 0, Show prices off and back on, and its
+category discounts to 10 % on Clothes, given back unchanged, then `[]`, gives
+its `authorized_modules` back unchanged, then without `ps_checkpayment` (the
+payment warning) and the full list again, and restores the group whatever
+happens.
 
 **Differences between 8.0.1 and 9.0.0** - none: the same legacy controller,
 the same `Group` definition.
+
+#### `somcp_update_default_groups`
+**State**: written · [issue #465](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/465)
+**Nature**: `acts(EDIT, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer_group`
+
+**Does** - saves the card **Default groups options** of **Shop Parameters >
+Customer Settings**, tab **Groups**: which group a visitor, a guest and a
+newly registered customer belong to. Only the fields given change. The read is
+`somcp_list_customer_groups`, which answers `default_for` (`visitors`,
+`guests`, `customers`) on each group.
+
+**Do not use for** - changing a group itself (→ `somcp_update_customer_group`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `visitors_group` | **Visitors group** | integer | optional, an `id_group` of the shop of the token (`SomcpToolGetCustomerGroup::inShop()`, as `somcp_update_customer_group` checks one); `SomcpTool::notAnIdentifier('visitors_group')`; `SomcpTool::notFound('visitors_group', 'customer group', <id>, 'somcp_list_customer_groups')` |
+| `guests_group` | **Guests group** | integer | the same |
+| `customers_group` | **Customers group** | integer | the same |
+
+At least one: `give at least one of visitors_group, guests_group,
+customers_group`. Unknown arguments through `SomcpTool::unknownFields()`. One
+group may hold several roles. Customer groups switched off
+(`PS_GROUP_FEATURE_ACTIVE` 0): refused, `customer groups are disabled in
+Advanced Parameters > Performance, so the back office does not show these
+options`, as the card is hidden.
+
+**Then** - every check first, every mistake in one answer. Each key that
+differs (`PS_UNIDENTIFIED_GROUP`, `PS_GUEST_GROUP`, `PS_CUSTOMER_GROUP`)
+through `Configuration::updateValue($key, $id, false, $idShopGroup, $idShop)`,
+the shop of the token, as `AdminController::processUpdateOptions()` saves the
+card. Nothing different: `changed: false`, `The default groups already hold
+every value given. Nothing was written.`. A key refused:
+`SomcpToolUpdateGeneralSettings::failed()`, logged as
+`default_groups_update_failed`. Logged as `default_groups_updated` with the
+fields changed.
+
+**Returns** - `changed`, `changes` (`field`, `old`, `new`, the `id_group`
+before and after) and `default_groups`: `{"visitors_group": 1,
+"guests_group": 2, "customers_group": 3}` read again. `warning` when the shop
+is one of several: `The settings changed for this shop only, as the back
+office saves them in a shop context.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`: an unknown argument; no field given; a group not an identifier or not
+of this shop; customer groups disabled.
+
+**Notes** - changes the shop: the assistant asks first; the prices and
+discounts a visitor or a new customer sees follow the group chosen.
+Replayable. The shop test gives the three demo groups back (no change), sets
+the Guests group to 3, checks `default_for` of group 3 with
+`somcp_list_customer_groups`, and gives group 2 back whatever happens.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same legacy controller.
+
+#### `somcp_create_customer_group`
+**State**: written · [issue #467](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/467), [#468](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/468)
+**Nature**: `acts(ADD, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer_group`
+
+**Does** - creates a customer group of **Shop Parameters > Customer
+Settings > Groups**, as **Add new group** then **Save** do: its name in each
+language, its **Discount**, its **Price display method**, **Show prices**, its
+**Category discount** and its **Modules authorization**, every installed
+module authorized by default as the form shows a new group. One group per
+call.
+
+**Do not use for** - changing a group (→ `somcp_update_customer_group`);
+choosing the group of visitors, guests or customers (→
+`somcp_update_default_groups`); putting a customer in a group (→
+`somcp_update_customer`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `languages` | | | as `somcp_update_customer_group` |
+| `name` | **Name** | object | required, per language keyed by ISO code, in every language being filled, through `SomcpToolUpdateCustomerGroup::planGroup()`: trimmed, never empty, 32 characters at most (`name (<iso>): 32 characters at most`), `Validate::isGenericName()` (`name (<iso>): no <, >, =, { or }`); the languages not filled take the text of the default language |
+| `reduction` | **Discount** | number | optional, 0 by default; percent as shown, 0 to 100, at most 2 decimals (`reduction: a percentage from 0 to 100`) |
+| `price_display_method` | **Price display method** | string | optional, `tax_excluded` or `tax_included`; left out, the value of `PRICE_DISPLAY_METHOD` for the shop of the token, as the form presets it |
+| `show_prices` | **Show prices** | boolean | optional, `true` by default |
+| `category_discounts` | **Category discount** | array | optional, none by default; the list of `{id_category, reduction}` of `somcp_update_customer_group`, through `SomcpToolUpdateCustomerGroup::planDiscounts()`: `id_category` from `somcp_list_categories`, of the shop, once, never the Root; `reduction` 0 to 100 |
+| `authorized_modules` | **Modules authorization** (set to Yes) | array | optional, every installed module by default; through `SomcpToolUpdateCustomerGroup::planModules()`: technical names of `somcp_list_modules`, at least one (`authorized_modules: at least one module - the back office cannot leave a group with none`) |
+| `unauthorized_modules` | | array | optional, taken only when it is exactly the installed modules left out of `authorized_modules`, so the read of a group given back to create a copy passes |
+
+Any other field of the read (`id_group`, `names`, `members_count`,
+`date_add`, `default_for`): `<field>: not a field of this tool` through
+`SomcpTool::unknownFields()`.
+
+**Then** - every check first, every mistake in one answer
+(`SomcpTool::refused('created', ...)`). `Group` filled from the plan, for the
+shop of the token only (`id_shop_list`), then `add()`, which turns
+`PS_GROUP_FEATURE_ACTIVE` on, gives the group the home category
+(`Category::setNewGroupForHome()`) and every carrier. Then, in the same
+transaction, the category discounts through
+`SomcpToolUpdateCustomerGroup::writeDiscounts()` (each category given a
+discount is opened to the group), written to the new group where the core
+writes them with `id_group` 0 and loses them, and the modules authorized for
+the shop of the token (`Group::addModulesRestrictions()`). A failure rolls
+everything back, so no group is left without its rows: `The customer group
+could not be created: <reason>. Nothing was created.`, `The category discounts
+could not be saved: <reason>. Nothing was created.` or `The authorized modules
+could not be saved. Nothing was created.`, logged as
+`customer_group_create_failed`. Logged as `customer_group_created` with the
+new `id_group` only.
+
+**Returns** - `created: true`, `id_group`, and `group`: the answer of
+`somcp_get_customer_group` for the new group, by the same function
+(`SomcpToolGetCustomerGroup::group()`). `warning`, always `The group sees
+only the home category: give it the other categories with the groups field of
+somcp_update_category, or its members see no product of them.` (`the home
+category and <names>` when discounts opened other categories), followed, when
+it applies, by the payment modules left out of `authorized_modules`
+(`SomcpToolUpdateCustomerGroup::paymentModules()`: `The customers of this
+group no longer see these payment modules: <names>.`), the sentence of
+`SomcpToolGetCustomerGroup::GROUPS_DISABLED` (a discount or category
+discounts while customer groups are off), the sentence of
+`somcp_update_customer_group` on prices hidden while catalog mode is off, and
+`The group was created for this shop only.` in a shop of several.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`: an unknown argument; `name` missing or empty in a language being
+filled; the rules above, the errors of the two lists worded as in
+`somcp_update_customer_group`.
+
+**Notes** - changes the shop: the assistant asks first. Not replayable: a
+second call creates a second group; when the answer is lost, read
+`somcp_list_customer_groups` first. The shop test creates a group named in
+every active language, then one with a 10 % discount on Home and every module
+but Payments by check, reads each with `somcp_get_customer_group`, and removes
+them whatever happens, so the demo data keeps its three groups.
+
+**Differences between 8.0.1 and 9.0.0** - the multistore box reads **Shop
+association** on 8.0.1, **Store association** on 9.0.0 (the tool takes no
+shop: the shop of the token). Otherwise the same legacy controller, the same
+`Group` definition and `Group::add()`.
+
+#### `somcp_delete_customer_group`
+**State**: written · [issue #469](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/469)
+**Nature**: `acts(DELETE, 'AdminGroups')` · **Scope**: `mcp.customers.write`, as `somcp_update_customer_group`
+
+**Does** - deletes a customer group of **Shop Parameters > Customer
+Settings > Groups**, as the row action **Delete** and the bulk action
+**Delete selected** do, one group per call. The three groups of **Default groups
+options** are refused, as the list shows no **Delete** for them.
+
+**Do not use for** - taking one customer out of a group (→
+`somcp_update_customer`); changing which group visitors, guests or customers
+get (→ `somcp_update_default_groups`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_group` | integer | required, a group of the shop of the token (`SomcpToolGetCustomerGroup::inShop()`): `id_group: required - find it with somcp_list_customer_groups`, `SomcpTool::notAnIdentifier('id_group')`, `SomcpTool::notFound('id_group', 'customer group', <id>, 'somcp_list_customer_groups')`; one of the three default groups (`PS_UNIDENTIFIED_GROUP`, `PS_GUEST_GROUP`, `PS_CUSTOMER_GROUP` of the shop): `id_group: the group of <visitors / guests / customers> cannot be deleted - choose another one with somcp_update_default_groups first` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the group read first with `SomcpToolGetCustomerGroup::group()`,
+and counted: its members (`customer_group`), the customers whose default
+group it is, the cart rules kept to it alone, its specific prices. Then
+`Group::delete()`, the core's own deletion (the group in every shop, its rows
+of `cart_rule_group`, `customer_group`, `category_group`, `group_reduction`,
+`product_group_reduction_cache` and `module_group`; the customers left in no
+group put in the Customers group, the default group of the others given
+again), never rows deleted by hand. A refusal: `The customer group could not
+be deleted: <reason>. Read it with somcp_get_customer_group before calling
+again.`, logged as `customer_group_delete_failed`. Then
+`Tools::clearSmartyCache()`, since the members now see the prices of another
+group. Logged as `customer_group_deleted` with the `id_group` and the counts
+only.
+
+**Returns** - `deleted: true`, `id_group` and `group`: the group as read
+before. `warning`, each when it applies: `Its <n> members keep their other
+groups; those left in none were put in <name of the Customers group>.`; `<n>
+customers had it as default group: each now has the first group he is in.`;
+`<n> cart rules were kept to this group only: no customer can use them any
+more - change them with somcp_update_cart_rule.`; `<n> specific prices were
+for this group: they no longer apply to anyone.`; in a shop of several,
+`This group also belonged to the shops <names>: it is deleted for all of
+them.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`: `id_group` missing, not an identifier, unknown or of another shop, or
+a default group; an unknown argument.
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first,
+naming the members counted. Not replayable: when the answer is lost, read
+`somcp_list_customer_groups` first. The shop test creates a group with
+`somcp_create_customer_group`, deletes it, and checks that
+`somcp_get_customer_group` answers it unknown; groups 1 to 3 are never
+deleted.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same `Group::delete()`
+and the same skip list of the row action.
 
 ### Diagnostics
 
@@ -8092,6 +8904,7 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 | `query` | string | no | words matched against first name, last name, email, and company when B2B mode is on, each word in at least one of them, as the header search **Customers by name**: "doe pub@" finds John DOE |
 | `email` | string | no | exact email address |
 | `id_default_group` | integer | no | default group (**Group** filter) |
+| `id_group` | integer | no | the **members** of a group (`customer_group`), whatever their default group, as the **View** page of **Shop Parameters > Customer Settings > Groups** lists them (`INNER JOIN customer_group`); with `id_default_group`, both apply. In a multistore that shares customers, `members_count` of `somcp_list_customer_groups` also counts the customers of the shops that share them, as the **Members** column does |
 | `id_gender` | integer | no | social title (**Social title** filter) |
 | `active` / `newsletter` / `partner_offers` | boolean | no | each left out = All, as the list |
 | `is_guest` | boolean | no | `false` registered accounts only, `true` guests only; both when left out |
@@ -8109,8 +8922,8 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 - Shop: the customers of the token's shop (`c.id_shop`), as the grid, even in a multistore with **Share customers** on.
 - `sales_tax_incl` sums `total_paid_tax_incl / conversion_rate` of the customer's valid orders in this shop, `0` when none (the grid shows "--"). PrestaShop 8.0 sums `total_paid_real` on its **Sales** column instead, so the figure can differ from the 8.0 screen for an order not fully paid; 9.0 sums the same total as the tool.
 - `last_visit` is the latest `connections.date_add` of a visitor tied to the customer, as the **Last visit** column.
-- A field the tool does not take, a `sort` or `order` outside its list, a yes/no filter that is not true or false, a date that is not YYYY-MM-DD, or an `id_default_group` or `id_gender` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
-- An `id_default_group` the shop does not have is refused in the same answer, `id_default_group: no customer group of this shop has the identifier <n> - find it with somcp_list_customer_groups`; an `id_gender` it does not have with the list of its social titles, worded as `somcp_create_customer` words it (`id_gender: not a social title of this shop, which has 1 Mr., 2 Mrs.`), named in the language asked. Neither is answered with an empty list.
+- A field the tool does not take, a `sort` or `order` outside its list, a yes/no filter that is not true or false, a date that is not YYYY-MM-DD, or an `id_default_group`, `id_group` or `id_gender` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
+- An `id_default_group` or an `id_group` the shop does not have is refused in the same answer (`SomcpToolListCatalogPriceRules::groupOfShop()`), `id_default_group: no customer group of this shop has the identifier <n> - find it with somcp_list_customer_groups`; an `id_gender` it does not have with the list of its social titles, worded as `somcp_create_customer` words it (`id_gender: not a social title of this shop, which has 1 Mr., 2 Mrs.`), named in the language asked. Neither is answered with an empty list.
 - A read: nothing written, nothing to retry.
 
 #### `somcp_get_customer`
@@ -8129,12 +8942,12 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 | `email` | string | one of the two | exact; an email shared by several accounts of the shop (a guest and a registered account) is refused with the `id_customer` of each |
 | `language` | string | no | ISO code of one of the shop's active languages, for the social title, group, country, order status and product names; refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default language when left out |
 
-A misspelt field is named and nothing is read. A customer of another shop, or deleted with their data kept (`deleted = 1`), answers as unknown in the shared envelope: `id_customer: no customer of this shop has the identifier <n> - find it with somcp_search_customers`; an email nobody has, `email: no customer of this shop has this email - find one with somcp_search_customers`.
+A misspelt field is named and nothing is read. A customer of another shop, or deleted with their data kept (`deleted = 1`), answers as unknown in the shared envelope: `id_customer: no customer of this shop has the identifier <n> - find it with somcp_search_customers`; an email nobody has, `SomcpTool::notFound('email', 'customer', <email>, 'somcp_search_customers', 'email')`: `email: no customer of this shop has the email <email> - find it with somcp_search_customers`.
 
 **Returns**
 - `customer`: `id_customer`, `firstname`, `lastname`, `email`, `id_gender`, `social_title`, `birthday` (`YYYY-MM-DD`, `null` when none), `age` (`null` when no birthday), `date_add`, `last_visit` (`null` when never), `customer_language` (ISO code of the language the customer uses), `newsletter`, `newsletter_date_add`, `group_ids` (every group's `id_group`, in `groups` order) and `id_default_group`, the names `somcp_update_customer` and `somcp_create_customer` take, `partner_offers`, `date_upd`, `active`, `is_guest`, `private_note` (as `somcp_get_order` names it), and the B2B fields, always given and empty when unset: `company`, `siret`, `ape`, `website`, `allowed_outstanding_amount` with `currency` (the default currency), `max_payment_days`, `id_risk`, `risk`.
 - `groups`: each `id_group`, `name`, `default` (the names for the merchant; the ids to give back are `group_ids` and `id_default_group` in `customer`).
-- `addresses`: each `id_address`, `alias`, `company`, `firstname`, `lastname`, `address1`, `address2`, `postcode`, `city`, `state`, `country`, `country_iso`, `phone`, `phone_mobile`, `vat_number`, `dni`, `other` (the names of the addresses of `somcp_get_order`).
+- `addresses`: each `id_address`, `alias`, `company`, `firstname`, `lastname`, `address1`, `address2`, `postcode`, `city`, `country` and `state` (ISO codes, `""` without a state), `country_name` and `state_name`, from `SomcpToolGetOrder::place()`, `country_iso` (the same code as `country`, the name kept for the clients built on it), `phone`, `phone_mobile`, `vat_number`, `dni`, `other` (the names of the addresses of `somcp_get_order`).
 - `orders`: `count`, `valid_count`, `valid_total_tax_incl` with `currency` (**for a total amount of**, `SUM(total_paid_tax_incl / conversion_rate)` of the valid orders, in the default currency), `invalid_count`, `sales_rank` (`null` with no valid order), and `latest`, the 10 newest: `id_order`, `reference`, `date_add`, `payment`, `status` (`status_id`, `name`), `products_count` (units ordered), `total_paid_tax_incl`, `currency` (the order's). More with `somcp_search_orders` (`customer_email`).
 - `carts`: `count` and `latest`, the 10 newest: `id_cart`, `date_add`, `carrier`, `total_tax_incl` (`null` when the cart cannot be priced any more), `currency`, `id_order` (`null` when not ordered).
 - `purchased_products`: the 10 newest order lines, every order valid or not: `date_add`, `id_order`, `valid`, `id_product`, `id_product_attribute`, `name` (with its combination), `quantity`.
@@ -8374,6 +9187,182 @@ Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `lin
 **Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_list_cms_pages` and `somcp_update_cms_seo`, never by the column name. Read through the core object `CMS`, not raw SQL. The texts are per language and per shop (`cms_lang.id_shop`). The form's **SEO preview** is built from the fields above and stores nothing.
 
 **Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only (field and column `cms_lang.meta_keywords`): `meta_keywords` is `null` on 9.0.0. The content is a `longtext` column on both, returned whole.
+
+#### `somcp_get_cms_category`
+**State**: written · [issue #488](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/488)
+**Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.content.read`
+
+**Does** - returns one page category of **Design > Pages** of the token's shop as its form **Edit** shows it: **Name**, **Displayed**, **Parent category**, **Description**, **Meta title**, **Meta description**, **Meta keywords** (PrestaShop 8 only) and **Friendly URL**, with its level, its position and how many pages and categories it holds.
+
+**Do not use for** - listing the categories or the pages they hold (→ `somcp_list_cms_pages`), reading a page (→ `somcp_get_cms_page`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cms_category` | integer | yes | from `categories[]` of `somcp_list_cms_pages`. A category the token's shop does not have (absent from `cms_category_shop`) is refused as unknown, never read from another shop, as the list leaves it out |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise with `SomcpTool::languageProblem()`; the shop default when left out |
+
+**Returns** - `id_cms_category`; `language` (ISO code the texts are in); `name` (**Name**); `active` (**Displayed**, boolean); `id_parent` (**Parent category**, 0 for **Home**) and `parent_name` (its name in the language read, `null` for **Home**); `level_depth` (1 for **Home**); `position` (from 0, as in `somcp_list_cms_pages`); `description` (**Description**, the stored HTML as is); `meta_title`, `meta_description` (**Meta title**, **Meta description**); `meta_keywords` (**Meta keywords**, PrestaShop 8 only, absent on 9, read from `CMSCategory::$definition`, never the version number); `link_rewrite` (**Friendly URL**); `date_add`, `date_upd`; `pages_count` and `categories_count` (the pages and the categories of the shop directly in it). The texts are those of the token's shop (`cms_category_lang.id_shop`). The names are those of `somcp_list_cms_pages` and of the page tools, so the answer can be given back as it is to the tool that changes a category.
+
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); a missing `id_cms_category`: `id_cms_category: required - find it with somcp_list_cms_pages`; one that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, the line `somcp_list_cms_pages` gives for its filter; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages.
+
+**Notes** - read only, replayable. Read through the core object `CMSCategory`, not raw SQL; only the two counts are queried. The demo data has one category, 1 **Home**, holding the 5 pages of the install.
+
+**Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only: `meta_keywords` is absent from the answer on 9.0.0. **Name** and **Friendly URL** take 64 characters on 8.0.1 and 128 on 9.0.0.
+
+#### `somcp_create_cms_category`
+**State**: written · [issue #490](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/490)
+**Nature**: `acts(ADD, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - creates a page category of **Design > Pages**, as **Add new page category** then **Save** do, so the pages of a shop can be sorted (for example a **Help** category under **Home**).
+
+**Do not use for** - a page (→ `somcp_create_cms_page`); changing a category (→ `somcp_update_cms_category`).
+
+**Parameters** - the fields of `somcp_update_cms_category`, under the same names and checked by its plan run on a category not saved yet (`SomcpToolUpdateCmsCategory::plan()`, public), never copied:
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages`, `language` | | array, string | no | the languages the texts are given in, all active ones by default; the other languages take the text of the default one, as the back office saves a field left empty |
+| `name` | **Name** | object or string | yes | per language; missing: `name: required, one text per language (<isos>)` (`SomcpToolCreateProduct::texts(..., true)`); otherwise the rule of `somcp_update_cms_category` |
+| `description`, `meta_title`, `meta_description`, `meta_keywords`, `active`, `id_parent` | **Description**, **Meta title**, **Meta description**, **Meta keywords**, **Displayed**, **Parent category** | | no | the rules of `somcp_update_cms_category`; `active` **true** when left out, as the switch of this form opens; `id_parent` **1** (Home) when left out, as the tree of the form opens on it |
+| `link_rewrite` | **Friendly URL** | object or string | no | the rule of `somcp_update_cms_category`; left out, made from the **Name** of each language filled with the same rule (`SomcpToolUpdateCmsSeo::checked()`): `link_rewrite (<iso>), made from the name: ...` when it cannot be |
+
+`id_cms_category` and the fields the read works out: `<key>: not a field of this tool`, as any other key, through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call again:` (`SomcpTool::refused('created', $problems)`), every problem at once. A failed save: `The page category could not be created: <reason>.`, logged `cms_category_create_failed`.
+
+**Then** - `new CMSCategory()`, the fields set for every language, `validateFields(false)` and `validateFieldsLang(false)`, then `CMSCategory::add()` for the shop of the token (`id_shop_list`), as `AddCmsPageCategoryHandler` does: last of its parent (`getLastPosition()`), its level worked out. Logged `cms_category_created` with the new `id_cms_category`, never the texts.
+
+**Returns** - `created: true`, `id_cms_category`, `category` (as `somcp_get_cms_category` answers it in the first language filled), and `warning`, each sentence when it applies: the Friendly URL made from the name, `Its Friendly URL was made from the name: <url> (<iso>), ...`; the shop one of several, `The page category was created for this shop only.`
+
+**Notes** - changes the shop: the assistant asks first, showing the name and the parent. Not replayable: a second call creates a second category; when the answer is lost, read `somcp_list_cms_pages` first.
+
+**Differences between 8.0.1 and 9.0.0** - as `somcp_update_cms_category`.
+
+#### `somcp_update_cms_category`
+**State**: written · [issue #489](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/489)
+**Nature**: `acts(EDIT, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - changes one page category of **Design > Pages**, as its form **Edit** then **Save** do: **Name**, **Displayed**, **Parent category**, **Description**, **Meta title**, **Meta description**, **Meta keywords** (PrestaShop 8 only) and **Friendly URL**, per language for the texts. Only what is given changes.
+
+**Do not use for** - the pages of the category (→ `somcp_update_cms_page`); reading it first (→ `somcp_get_cms_category`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cms_category` | | integer | yes | the three lines of `somcp_get_cms_category` (`SomcpToolGetCmsCategory::lookup()`); **1** (Home) is accepted, as its form opens |
+| `languages`, `language` | | array, string | no | as `somcp_update_cms_page` (`SomcpToolUpdateCmsSeo::withLanguage()`, `SomcpToolCreateProduct::languages()`): all active languages by default, `language` of a read given back filled alone |
+| `name` | **Name** | object or string | no | per language (`SomcpToolCreateProduct::texts()`), never empty (`name: required in the default language <iso>`, `name (<iso>): a text, never empty`), then `CMSCategory::validateField('name')`: no `;=#{}`, 64 characters on 8.0.1 and 128 on 9.0.0 |
+| `description` | **Description** | object or string | no | per language, cleaned by `SomcpToolCreateProduct::html()` as the **Page content** of a page; the stored HTML given back is no change |
+| `meta_title`, `meta_description`, `meta_keywords` | **Meta title**, **Meta description**, **Meta keywords** | object or string | no | per language, through `SomcpToolUpdateCmsSeo::checked()`, the rule of the page SEO texts; `meta_keywords` refused on 9.0.0 with `SomcpTool::notOnThisVersion()` unless `null` |
+| `link_rewrite` | **Friendly URL** | object or string | no | per language, through `SomcpToolUpdateCmsSeo::checked()` (`Tools::str2url()`, `isLinkRewrite`), then the size of the category: 64 on 8.0.1, 128 on 9.0.0 |
+| `active` | **Displayed** | boolean | no | `active: true or false` |
+| `id_parent` | **Parent category** | integer | no | an `id_cms_category` of the shop, worded as `id_cms_category`; `id_parent: a page category cannot be moved under itself or one of its own categories` when `CMSCategory::checkBeforeMove()` says no; for Home, `id_parent: Home has no parent` unless 0 is given back. A move puts the category last of its new parent (`CMSCategory::getLastPosition()`) and closes the gap in the old one (`cleanPositions()`) |
+
+`SomcpToolUpdateCmsSeo::checked()` takes an `ObjectModel`: a page keeps its **Meta title** in `cms_lang.head_seo_title`, a category in `cms_category_lang.meta_title`, and the other columns have the same names. The fields the read works out (`parent_name`, `level_depth`, `position`, `pages_count`, `categories_count`, `date_add`, `date_upd`): given back as read, no change; different, `<key>: not changed by this tool`. Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call again:` (`SomcpTool::refused('changed', $problems)`), every problem at once. A failed save: `The page category could not be changed: <reason>. Read it with somcp_get_cms_category before calling again.`, logged `cms_category_update_failed`.
+
+**Then** - nothing differs from what is stored: no write, `changed: false` with `The page category already holds every value given. Nothing was written.` Otherwise the texts set for the languages given, the others kept, `id_shop_list` the shop of the token, `validateFields(false)`, `validateFieldsLang(false)` and `CMSCategory::update()`, which works the level out again. Logged `cms_category_updated` with the `id_cms_category` and the field names, never the texts.
+
+**Returns** - `changed`, `id_cms_category`, `changes` (`field`, `language` for a text, `old`, `new`; the length for the description), `category` (as `somcp_get_cms_category` answers it, in the first language filled), and `warning` when `active` turns false while the category holds displayed pages: `Its pages are no longer listed under this category on the storefront.`
+
+**Notes** - changes the shop: the assistant asks first, showing what changes. Replayable: a second call changes nothing.
+
+**Differences between 8.0.1 and 9.0.0** - `meta_keywords` on 8.0.1 only; 64 characters for **Name** and **Friendly URL** on 8.0.1, 128 on 9.0.0.
+
+#### `somcp_create_cms_page`
+**State**: written · [issue #486](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/486)
+**Nature**: `acts(ADD, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - creates a page of **Design > Pages**, as **Add new page** then **Save** do: its **Page category**, **Title**, **Page content**, **Displayed**, and in the same call its **Meta title**, **Meta description**, **Meta keywords** (8.0.1 only), **Friendly URL** and **Indexation by search engines**, per language for the texts.
+
+**Do not use for** - changing a page (→ `somcp_update_cms_page`, `somcp_update_cms_seo`); a page category (capability noted for later).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | | array | no | as `somcp_update_cms_seo` and `somcp_update_cms_page`: the languages the texts are given in, all active ones by default; the other languages take the text of the default one, as the back office saves a field left empty |
+| `title` | **Title** | object or string | yes | per language, keyed by ISO code; missing: `title: required, one text per language (<isos>)` (`SomcpToolCreateProduct::texts(..., true)`); otherwise the rule of `somcp_update_cms_page` |
+| `content` | **Page content** | object or string | no | empty when left out; the rule of `somcp_update_cms_page` (`SomcpToolCreateProduct::html()`) |
+| `id_cms_category` | **Page category** | integer | no | `1`, the root category, when left out, as the tree of the form opens on it; the rule of `somcp_update_cms_page` |
+| `active` | **Displayed** | boolean | no | `false` when left out, as the switch of the form opens; `active: true or false` |
+| `meta_title`, `meta_description`, `meta_keywords`, `indexation` | **Meta title**, **Meta description**, **Meta keywords**, **Indexation by search engines** | object, boolean | no | the rules of `somcp_update_cms_seo`; `meta_keywords` refused on 9.0.0 with `SomcpTool::notOnThisVersion()`; `indexation` false when left out |
+| `link_rewrite` | **Friendly URL** | object | no | the rule of `somcp_update_cms_seo`; left out, made from the **Title** of each language filled with the same rule (`SomcpToolUpdateCmsSeo::checked()`, public), as the copier of the screen does: `link_rewrite (<iso>), made from the title: no valid friendly URL can be made from it; ...` or `... 128 characters at most` when it cannot be |
+
+`id_cms` and the fields the read works out (`seo_title`, `url`, `position`, `language`): `<key>: not a field of this tool`, as any other key, through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call again:` (`SomcpTool::refused('created', $problems)`), every problem at once: `title` missing, the rules above, an unknown argument. The checks are those of `somcp_update_cms_page` and `somcp_update_cms_seo`, called on a page not saved yet (`SomcpToolUpdateCmsPage::plan()` and `SomcpToolUpdateCmsSeo::plan()`, public), never copied. A failed save: `The page could not be created: <reason>.`, logged `cms_page_create_failed`.
+
+**Then** - `new CMS()`, the fields set for every language, `validateFields(false)` and `validateFieldsLang(false)`, then `CMS::add()` for the shop of the token (`id_shop_list`), as `AddCmsPageHandler` does: the page goes last of its category (`CMS::getLastPosition()`). Two pages may share a **Friendly URL**: the default route of a page carries its identifier (`content/{id}-{rewrite}`), so their addresses differ, as the back office allows. Logged `cms_page_created` with the new `id_cms`, never the texts.
+
+**Returns** - `created: true`, `id_cms`, `page` (as `somcp_get_cms_page` answers it in the first language filled), and `warning`, each sentence when it applies: `active` false, `The page is not shown on the storefront yet: switch it on with somcp_update_cms_page once its texts are checked.`; the Friendly URL made from the title, `Its Friendly URL was made from the title: <url> (<iso>), ...`; the content cleaned, `Some HTML of the content was removed by the shop's cleaning: read the page again to see what was kept.`; the shop one of several, `The page was created for this shop only.`
+
+**Notes** - changes the shop: the assistant asks first, showing the title and the content. Not replayable: a second call creates a second page; when the answer is lost, read `somcp_list_cms_pages` first.
+
+**Differences between 8.0.1 and 9.0.0** - `meta_keywords` on 8.0.1 only, as in `somcp_update_cms_seo`.
+
+#### `somcp_update_cms_page`
+**State**: written · [issue #484](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/484)
+**Nature**: `acts(EDIT, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - changes a page of **Design > Pages**, as **Edit** then **Save** do, for the fields `somcp_update_cms_seo` leaves to the back office: **Title**, **Page content**, **Page category** and **Displayed**, per language for the texts. Only what is given changes.
+
+**Do not use for** - the **Meta title**, **Meta description**, **Friendly URL** and **Indexation** (→ `somcp_update_cms_seo`); creating a page (→ `somcp_create_cms_page`); deleting one (→ `somcp_delete_cms_page`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cms` | | integer | yes | from `somcp_list_cms_pages`; the page loaded by `SomcpToolUpdateCmsSeo::page()` and refused with the same lines as `somcp_update_cms_seo` |
+| `languages` | | array | no | as `somcp_update_cms_seo` (`withLanguage()`, public): the languages the texts are given in |
+| `title` | **Title** | object or string | no | per language, keyed by ISO code, through `SomcpToolCreateProduct::texts()`; trimmed; empty: `title: required in the default language <iso>` (another language: `title (<iso>): a text, never empty`); `Validate::isGenericName()`: `title (<iso>): no <>={}`; 255 characters (`SomcpTool::columnSize()`) |
+| `content` | **Page content** | object or string | no | per language, keyed by ISO code; cleaned and checked by `SomcpToolCreateProduct::html($html, 'content (<iso>)', $errors)`, the rule of product descriptions; the stored HTML given back is no change; an empty text empties the page in that language |
+| `id_cms_category` | **Page category** | integer | no | an `id_cms_category` of `somcp_list_cms_pages` (`SomcpToolListCmsPages::categories()`, public): `SomcpTool::notAnIdentifier('id_cms_category')`, `SomcpTool::notFound('id_cms_category', 'page category', <id>, 'somcp_list_cms_pages')` |
+| `active` | **Displayed** | boolean | no | `active: true or false` |
+| `language` | | string | no | as `somcp_get_cms_page` returns it, as in `somcp_update_cms_seo` |
+| `meta_title`, `meta_description`, `link_rewrite`, `meta_keywords`, `indexation`, `position`, `seo_title`, `url` | as read | | no | the read of `somcp_get_cms_page` given back whole: equal to the read, taken out; different, refused through `SomcpToolUpdateCmsSeo::kept()` (public) with `<field>: not changed by this tool - change it with somcp_update_cms_seo` for the SEO fields, `the merchant changes it in Design > Pages` for `position`, `worked out by the shop ...` for `seo_title` and `url` |
+
+Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call again:` (`SomcpTool::refused('changed', $problems)`), every problem at once: `id_cms` missing or unknown, an unknown category, a field of the read that differs, the rules above. A failed save: `The page could not be changed: <reason>. Read it with somcp_get_cms_page before calling again.`, logged `cms_page_update_failed`.
+
+**Then** - a value equal to the stored one is no change; nothing to change: `changed: false`, `reason` `The page already holds every value given. Nothing was written.`, `page` (the read). Otherwise the texts set for the languages given, the others kept, `validateFields(false)` and `validateFieldsLang(false)` before `CMS::update()`, as `EditCmsPageHandler` does, for the shop of the token. A new **Page category**: the page put last of it (`CMS::getLastPosition()`), as `CMS::add()` places a new page, since the old position number could tie with a page already there, and the positions of the category it leaves cleaned (`CMS::cleanPositions()`). Logged `cms_page_updated` with the `id_cms` and the names of the fields changed, never the texts.
+
+**Returns** - `changed`, `id_cms`, `changes` (`{field, language, old, new}` for the texts, the content given as its length in characters before and after, not the HTML; `{field, old, new}` for the others), `page` (as `somcp_get_cms_page` answers it in the first language filled, after the write), and `warning`, each sentence when it applies: `active` false, `The page is no longer shown on the storefront: its links in the footer and the menu lead to a page not found.`; `content` emptied in a language, `The page shows only its title in <iso>.`; the content cleaned, `Some HTML of the content was removed by the shop's cleaning: read the page again to see what was kept.`; the shop one of several, `The texts changed for this shop only; the category and Displayed are shared by every shop of the page.`
+
+**Notes** - changes the shop: the assistant asks first, showing the new text. Replayable: a second identical call changes nothing. Needs the scope `mcp.content.write` (**Pages - changes**), the first write of the section: a client already connected accepts it at its next connection.
+
+**Differences between 8.0.1 and 9.0.0** - none for these four fields; `meta_keywords` of the read exists on 8.0.1 only, taken out like the other SEO fields.
+
+#### `somcp_delete_cms_page`
+**State**: written · [issue #485](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/485)
+**Nature**: `acts(DELETE, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - deletes a page of **Design > Pages**, as the row action **Delete** and the bulk action **Delete selected** do, one page per call: `CMS::delete()`, as `DeleteCmsPageHandler` calls it, removes its texts in every language for the shop of the token, and the pages after it in its category move up one place (`cleanPositions()`).
+
+**Do not use for** - hiding a page (→ `somcp_update_cms_page`, `active` false).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cms` | integer | yes | from `somcp_list_cms_pages`: missing, `id_cms: required - find it with somcp_list_cms_pages`; not a whole number, `SomcpTool::notAnIdentifier('id_cms')`; unknown, `SomcpTool::notFound('id_cms', 'CMS page', <id>, 'somcp_list_cms_pages')`, the line of `somcp_get_cms_page` and `somcp_update_cms_page`; the page loaded by `SomcpToolUpdateCmsSeo::page()`. The page of the terms of the checkout (`PS_CONDITIONS_CMS_ID`) while **Terms and conditions** is on (`PS_CONDITIONS`): `id_cms: the page customers accept at checkout - choose another one first with somcp_update_order_settings (terms_id_cms)` |
+
+Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:` (`SomcpTool::refused('deleted', $problems)`), every problem at once: `id_cms` missing, not an identifier, unknown or the terms page; an unknown argument. A failed deletion: `The page could not be deleted: <reason>.`, logged `cms_page_delete_failed`.
+
+**Then** - the page read first with `SomcpToolGetCmsPage::cmsPage()` in the default language, then `CMS::delete()` for the shop of the token (`id_shop_list`), the core's own deletion, never rows deleted by hand. Logged `cms_page_deleted` with the `id_cms` only. The terms page is refused although the back office deletes it, because the checkout would then ask customers to accept a page that no longer exists: another page is chosen first with `somcp_update_order_settings` (`terms_id_cms`), then this one is deleted.
+
+**Returns** - `deleted: true`, `id_cms`, `page` (what it was, as `somcp_get_cms_page` answers it), and `warning`, each sentence when it applies: a link block of `ps_linklist` names the page in its `cms` list (the module does not update it when a page is deleted), `The footer link block(s) <ids> still list this page: change them in Design > Link List.`; the page still belongs to another shop, `The page stays in the other shops it belongs to.`; always, `Links to its address now lead to a page not found.`
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first, naming the page and its Title. Not replayable: a second call answers the page unknown.
+
+**Differences between 8.0.1 and 9.0.0** - none.
 
 ### Modules
 
@@ -8685,7 +9674,7 @@ Classic 2.0.6 on 8.0.1, 3.0.2 on 9.0.0; 9.0.0 also ships **Hummingbird** (instal
 
 **Does** - sets the layout of one page of the theme of the token's shop, as one row of **Design > Theme & Logo > Choose layouts** followed by **Save** does. Every other page keeps its setting.
 
-**Do not use for** - installing or switching themes; uploading a logo; the meta title or URL of a page (→ `somcp_update_meta_page`); reading the layouts (→ `somcp_get_theme`).
+**Do not use for** - installing or switching themes; changing a logo (→ `somcp_update_logos`); the meta title or URL of a page (→ `somcp_update_meta_page`); reading the layouts (→ `somcp_get_theme`).
 
 **Parameters**
 
@@ -8701,6 +9690,34 @@ Classic 2.0.6 on 8.0.1, 3.0.2 on 9.0.0; 9.0.0 also ships **Hummingbird** (instal
 **Notes** - the core setter `Theme::setPageLayouts()` replaces the whole of `theme_settings.layouts`, and the screen always sends every page: the tool reads `getPageLayouts()`, sets the one page and hands the whole array back, so no other page loses its setting, and a page with no stored value gets one only when it is the page asked. The theme is loaded as `somcp_get_theme` loads it (`ThemeManagerBuilder::buildRepository()` for the token's shop), saved by `ThemeManager::saveTheme()` from `ThemeManagerBuilder::build()`, which writes the token's shop's own `config/themes/<theme>/shop<id>.json` and no other shop's, then the Smarty cache is cleared, as `ThemePageLayoutsCustomizer::customize()` does. Refused in demo mode (`_PS_MODE_DEMO_`), as the back office. One page per call; not replayable: on a lost answer, read `somcp_get_theme`. Other theme settings (logos, switching or deleting themes, the `ps_themecusto` tabs) are out of scope on purpose.
 
 Same form, field names and four layouts on Classic on 8.0.1 (2.0.6) and 9.0.0 (3.0.2). The page titles differ in places (**Best sales** on 8.0.1, **Best sellers** on 9.0.0): `page` is the stable name, never the title.
+
+#### `somcp_update_logos`
+**State**: written · [issue #483](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/483)
+**Nature**: `acts(EDIT, 'AdminThemes')` · **Scope**: `mcp.appearance.write`
+
+**Does** - changes the logos of the panel **Logo** of **Design > Theme & Logo**, as choosing a file then **Save** does there: the **Header logo**, the **Mail logo** and the **Invoice logo**, each by `url` or `upload_ref`, as every image of the module is given. They are the `logos` `somcp_get_theme` reads (a `download_ref` each), so a read given back changes nothing.
+
+**Do not use for** - the logo of a carrier (→ `somcp_update_carrier`), of a brand or a supplier (→ their own tools); the **Favicon**, which takes an `.ico` file, a type the module never takes in (`SomcpUpload::typeOf()`), and an **SVG** header logo: both stay with the back office (decision of 2026-11-28).
+
+**Parameters** - all optional; none given, or only what the shop holds: `changed: false`.
+
+| Name | On screen | Type | Role |
+|---|---|---|---|
+| `header` | **Header logo** | object | `SomcpUpload::schema()`, read with `SomcpUpload::argument()`; JPEG, PNG, GIF or WebP; its own `download_ref` given back alone is no change (`SomcpUpload::same($given, 'shop_logo', 'header')`) |
+| `mail` | **Mail logo** | object | as `header`, of the mail logo; `null` given back as read is no change |
+| `invoice` | **Invoice logo** | object | as `header`, of the invoice logo; `null` given back as read is no change |
+
+`favicon`, `mail_uses_header` and `invoice_uses_header` given back as read are taken out; `favicon` with a `url` or an `upload_ref`: `favicon: an .ico file, changed in Design > Theme & Logo only`; `mail_uses_header` or `invoice_uses_header` that differs: `worked out by the shop, so it is not written here` (`SomcpTool::unknownFields()` with them in `$computed`). Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call again:` (`SomcpTool::refused('changed', $problems)`), every problem at once: an image refused or not reachable (`<field>: <reason>`, fetched through `SomcpUpload::fetchImage()` before anything is written, so no logo changes while another is refused), `favicon` given, an unknown argument. In demo mode, as the back office: `This shop runs in demo mode, where the logos cannot be changed. Nothing was changed.` A failure while writing: `SomcpToolUpdateGeneralSettings::failed($saved, '<field> could not be saved', ...)`, `The logos could not be changed: ...`, naming the logos already saved and `somcp_get_theme`, logged `logos_update_failed`.
+
+**Then** - `LogoUploader::update()` takes its file through `move_uploaded_file()`, which refuses a file the module already holds, so the tool writes the same files itself: `PS_IMG_UPDATE_TIME` set to the time of the call for the shop of the token, as `UploadLogosHandler::handle()` does on both versions, so the new files get new names; then, in the order of the screen, for each logo given, the files written in `img/` under the name of `LogoUploader::getLogoName()` (`logo`, `logo_mail` or `logo_invoice`, `-`, the time, the shop number once there are several shops), one per format of `SomcpToolCreateProduct::imageFormats()` (the JPEG always, and the formats of `PS_IMAGE_FORMAT` on 8.1 and later, as `ImageFormatConfiguration::getGenerationFormats()`), by `ImageManager::resize()`; `PS_LOGO`, `PS_LOGO_MAIL` or `PS_LOGO_INVOICE` updated for the shop of the token with the `.jpg` name; the old file removed unless another row of `configuration` (another shop, its group or the whole installation) still names it, the rule of `LogoUploader::update()`; for the header, `SHOP_LOGO_WIDTH` and `SHOP_LOGO_HEIGHT` from `getimagesize()` of the new file, as `updateHeader()` does. Logged `logos_updated` with the names of the logos changed.
+
+**Returns** - `changed`, `changes` (the names of the logos written), `logos` (as `somcp_get_theme` answers them, after the write, through the public `SomcpToolGetTheme::logos()`), and `warning`, each sentence when it applies: `mail` or `invoice` written while the header logo stood in for it, `The <e-mails / invoices> now carry this logo instead of the header logo.`; the shop one of several, `The logos changed for this shop only.`
+
+**Notes** - changes the shop: the assistant asks first, showing the image. Replayable: the read given back changes nothing.
+
+**Differences between 8.0.1 and 9.0.0** - 9.0.0 writes one file per format of **Image Settings**, 8.0.1 one `.jpg`; the rest is the same.
 
 ### System
 
@@ -8900,7 +9917,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 **Does** - changes the meta title, meta description, friendly URL and indexing flag of one CMS page.
 
-**Do not use for** - the page's content (a Content tool), or a product, category or brand (→ their update tools).
+**Do not use for** - the page's Title, content, category or Displayed (→ `somcp_update_cms_page`), or a product, category or brand (→ their update tools).
 
 **Parameters**
 
@@ -8914,7 +9931,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `meta_keywords` | object | no | per ISO code, comma separated; the form's **Meta keywords**, PrestaShop 8 only: a value is refused on 9, which has none, and `null` is skipped |
 | `indexation` | boolean | no | whether search engines may index the page (**Indexation by search engines**) |
 | `language` | string | no | as `somcp_get_cms_page` returns it: the language its plain texts are in, read as `languages: ["<iso>"]` when `languages` is left out; next to a `languages` that does not hold it, refused as `language: not one of languages`; one the shop does not have is refused once, with the shop's languages, as every tool words it (`language: not one of the shop's languages, which are en, fr - leave language out for the shop default`) |
-| `title`, `content`, `id_cms_category`, `active`, `position`, `seo_title`, `url` | as read | no | what `somcp_get_cms_page` returns and this tool does not write, accepted unchanged so a page read there can be given back whole; a different value is refused with where it is changed (`not changed by this tool - the merchant changes it in Design > Pages > Edit`, or `worked out by the shop from the Meta title and the Title` / `from the Friendly URL`) |
+| `title`, `content`, `id_cms_category`, `active`, `position`, `seo_title`, `url` | as read | no | what `somcp_get_cms_page` returns and this tool does not write, accepted unchanged so a page read there can be given back whole; a different value is refused with where it is changed (`not changed by this tool - change it with somcp_update_cms_page` for `title`, `content`, `id_cms_category` and `active`, `not changed by this tool - the merchant changes it in Design > Pages > Edit` for `position`, or `worked out by the shop from the Meta title and the Title` / `from the Friendly URL`) |
 
 **Returns** - `changed`, `id_cms`; when something changed, `changes` (each a `field`, named `<field> (<iso>)` for a text, its `old` and `new` value, as the other update tools give them), `seo_warnings` (per ISO code) and `page` (`id_cms`, `active`, `indexation`, and per language changed its `title`, `meta_title`, `seo_title` - the title search engines read -, `meta_description`, `meta_keywords` (`null` on PrestaShop 9) and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
 
@@ -8940,7 +9957,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
-**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `meta_title` (the **Page title**), `meta_description` (the **Meta description**), `meta_keywords` (the **Meta keywords**, PrestaShop 8 only, `null` on 9), `link_rewrite` (the **Rewritten URL**), `url`, `configurable`. Plus `count` and the `language` read.
+**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `meta_title` (the **Page title**), `meta_description` (the **Meta description**), `meta_keywords` (the **Meta keywords**, PrestaShop 8 only, `null` on 9), `link_rewrite` (the **Rewritten URL**), `url`, `configurable`. Plus `count`, the `language` read, and `addable_pages`: the pages **Add new page** offers in its **Page name** list (`Meta::getPages(true)`: the front controllers of the core and of the modules that have no row yet), each `{"page": "<value>", "label": "<the label of the list>"}` (`<module> - <controller>` for a module page), sorted by `page`, the values `somcp_create_meta_page` takes.
 
 **Notes**
 - Read from `meta` and `meta_lang` of the token's shop, as the Traffic & SEO page lists them, in one query, without paging: a shop has a few dozen pages.
@@ -8978,13 +9995,299 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
 - `seo_warnings`, for each language changed: a `meta_title` over 70 characters, a `meta_description` over 160 (the lengths every SEO tool advises past and the audits flag), each with its length in the sentence of `SomcpTool::metaLengthAdvice()` every SEO write gives (`meta_title is 85 characters: past 70, a search result cuts it`), and a new `link_rewrite`, whose old address breaks; the assistant tells the merchant before the call.
 
+#### `somcp_create_meta_page`
+**State**: written · [issue #471](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/471)
+**Nature**: `acts(ADD, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - creates a page of **Shop Parameters > Traffic & SEO > SEO &
+URLs**, as **Add new page** then **Save** do (**New page configuration**): a
+**Page name** that has no row yet, with its **Page title**, **Meta
+description** and **Rewritten URL** per language. One page per call.
+
+**Do not use for** - changing a page (→ `somcp_update_meta_page`); a
+product, a category or a CMS page (→ their own tools).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `page` | **Page name** | string | required (`page: required - take one of addable_pages of somcp_list_meta_pages`); one of the values of `Meta::getPages(true)`, given as `addable_pages` by `somcp_list_meta_pages` (`page: not a page that can be added - take one of addable_pages of somcp_list_meta_pages`); a page that already has a row: `page: <page> already has its page - change it with somcp_update_meta_page (id_meta <id>)` |
+| `languages` | | array | as `somcp_update_meta_page` |
+| `meta_title` | **Page title** | object | per ISO code, the rules of `somcp_update_meta_page` |
+| `meta_description` | **Meta description** | object | per ISO code, the same |
+| `meta_keywords` | **Meta keywords** | object | PrestaShop 8 only (`SomcpToolUpdateMetaPage::hasKeywords()`), the same |
+| `link_rewrite` | **Rewritten URL** | object | per ISO code: required in the shop default language unless `page` is `index` (`link_rewrite (<iso>): required in the shop default language, the page needs an address`); the rules and messages of `somcp_update_meta_page` (`Validate::isLinkRewrite()`, 254 characters at most, unique in the shop); a language left empty takes the text of the default language, as the core does |
+
+The texts are checked by `SomcpToolUpdateMetaPage::plan()`, called with a
+`Meta` not saved yet whose `page` is set, never copied. Unknown arguments
+through `SomcpTool::unknownFields()`: `id_meta`, `url` and `configurable`,
+fields of the list, answer `<field>: not a field of this tool`. Every mistake
+in one answer, in the envelope `Nothing was created. Correct these and call
+again:`.
+
+**Returns** - `created: true`, `id_meta`, and the page as
+`somcp_list_meta_pages` reads it in the shop default language (`page`,
+`meta_title`, `meta_description`, `meta_keywords` (`null` on PrestaShop 9),
+`link_rewrite`, `url`, `configurable`), then `texts`: per ISO code of the
+languages filled, the four texts as `SomcpToolUpdateMetaPage::describe()`
+reads them back. `warning` when the shop is one of several: `The page exists
+for every shop; its texts were written for this shop only.` A `false` or an
+exception of `Meta::add()`: a tool error `The page could not be created:
+<reason>.`
+
+**Notes**
+- `Meta` filled as `AddMetaHandler` fills it on 8.0 and 9.0 (`configurable`
+  1, an empty Rewritten URL taking the one of the default language),
+  `id_shop_list` set to the shop of the token (`meta_lang` is kept by shop),
+  `add()`, then `Hook::exec('actionAdminMetaSave')` as the screen does, so a
+  module keeping its own list of addresses (a sitemap) hears of it.
+- Logged as `meta_page_created` with the new `id_meta` and the `page` only.
+- Changes the shop: the assistant asks first. Not replayable: a second call
+  is refused (`already has its page`).
+- **Meta keywords** on 8.0 only; otherwise the same handler and the same
+  `Meta::getPages()` on 8.0 and 9.0.
+
+#### `somcp_delete_meta_page`
+**State**: written · [issue #470](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/470)
+**Nature**: `acts(DELETE, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - deletes a page of **Shop Parameters > Traffic & SEO > SEO &
+URLs**, as the row action **Delete** and the bulk action **Delete selected**
+of the list do, one page per call: its **Page title**, **Meta description**
+and **Rewritten URL** in every language go with it, and the page goes back to
+the **Page name** list of **Add new page**.
+
+**Do not use for** - emptying a text (→ `somcp_update_meta_page`); the SEO of
+a product, a category or a CMS page (→ their own tools).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_meta` | integer | required, from `somcp_list_meta_pages`: `id_meta: required - find it with somcp_list_meta_pages`, `SomcpTool::notAnIdentifier('id_meta')`, `SomcpTool::notFound('id_meta', 'page', <id>, 'somcp_list_meta_pages')`; a page whose `configurable` is false (`product`, `category`, `cms` and the module pages of the payment steps) is refused with the sentence of `somcp_update_meta_page` (`SomcpToolUpdateMetaPage::notConfigurable()`), since the list does not show them and the screen cannot delete them |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every mistake in one
+answer, in the envelope `Nothing was deleted. Correct these and call again:`.
+
+**Returns** - `deleted: true`, `id_meta`, `page` and `texts`: per ISO code of
+the shop's active languages, the `meta_title`, `meta_description`,
+`meta_keywords` (`null` on PrestaShop 9) and `link_rewrite` the page had, read
+before the deletion by `SomcpToolUpdateMetaPage::describe()`, so the page can
+be created again with the same texts. `warning`, each when it applies:
+- `page` is a page of the core (no `module-` prefix): `<page> no longer has a
+  Rewritten URL: it answers at index.php?controller=<page>, and links to its
+  old address lead nowhere.`;
+- `page` is `index`: `The home page no longer has a page title nor a meta
+  description of its own.`;
+- `.htaccess` could not be written again: `The page was deleted, but the
+  .htaccess file could not be written again: save Set up URLs once in Traffic
+  & SEO.`;
+- the shop is one of several: `The page is deleted for every shop: its texts
+  were kept by shop, the page itself is shared.`
+
+A `false` or an exception of `Meta::delete()` with the page still there: a
+tool error `The page could not be deleted: <reason>.`
+
+**Notes**
+- The page is loaded as `somcp_update_meta_page` loads it
+  (`SomcpToolUpdateMetaPage::page()`, `new Meta($id, null, $idShop)`), then
+  `Meta::delete()`, the core's own deletion that `MetaEraser` calls on 8.0 and
+  9.0: `ObjectModel::delete()` removes `meta` and `meta_lang` of every shop (a
+  page has no shop of its own), then `Tools::generateHtaccess()` writes the
+  rewriting rules again. `Meta::delete()` also answers `false` when the rows
+  are gone and only `.htaccess` failed: `meta` is read again to tell the two
+  apart.
+- No other table holds an `id_meta`: the storefront finds a page by its name
+  (`Meta::getMetaByPage()`), and a page without its row answers at
+  `index.php?controller=<page>` with the shop's default title.
+- Logged as `meta_page_deleted` with the `id_meta` and the `page` only.
+- Changes the shop and cannot be undone: the assistant asks first, naming the
+  page and its Rewritten URL. Not replayable: when the answer is lost, read
+  `somcp_list_meta_pages` first.
+- No difference between 8.0 and 9.0 in the deletion; `meta_keywords` exists
+  on 8.0 only (`SomcpToolUpdateMetaPage::hasKeywords()`).
+
+#### `somcp_list_search_engines`
+**State**: written · [issue #472](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/472)
+**Nature**: `acts(VIEW, 'AdminSearchEngines')` · **Scope**: `mcp.seo.read`, as `somcp_list_meta_pages`
+
+**Does** - lists the search engines of **Shop Parameters > Traffic & SEO >
+Search Engines**, as the list of that tab shows them: each **Server** and its
+**GET variable**, with the filters, the sort and the paging of the list. A row
+tells the shop where the words a visitor typed sit in the address he came
+from: `SearchEngine::getKeywords()` takes the first row whose **Server** is
+part of the referrer's host and reads its **GET variable**, and
+`connections_source.keywords`, which the keyword statistics read, keeps them.
+
+**Do not use for** - the keywords visitors typed (the statistics); the shop's
+own search (**Shop Parameters > Search**).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_search_engine` | **ID** filter | integer | optional, exact; `SomcpTool::notAnIdentifier('id_search_engine')` |
+| `server` | **Server** filter | string | optional, part of the server, without case |
+| `get_variable` | **GET variable** filter | string | optional, part of the variable, without case |
+| `sort` | the sortable columns | string | `id_asc` (default, as the list), `id_desc`, `server_asc`, `server_desc`, `get_variable_asc`, `get_variable_desc`; anything else through `SomcpTool::oneOf()` |
+| `limit`, `offset` | the paging | integer | as `somcp_list_stores`: `limit` 1 to 100, 20 by default; `offset` 0 at least |
+
+Unknown arguments through `SomcpTool::unknownFields()`; every mistake in one
+answer, in the envelope `Nothing was read. Correct these and call again:`.
+
+**Returns** - `search_engines`: each `{id_search_engine, server,
+get_variable}`, the words of the screen (`get_variable` is the column
+`getvar`); `returned`, `total_count` (the rows matching the filters), `limit`,
+`offset`, as every paged list.
+
+**Notes**
+- Read with one `DbQuery` on `search_engine`: the filters through `pSQL()` and
+  `LIKE`, with `%` and `_` escaped so they match themselves, the sort from a
+  fixed map, never from the argument, the identifier breaking ties.
+- `search_engine` has no shop and no language: every shop reads the same rows.
+- The install gives 38 rows (1 `google` / `q`, 3 `yandex` / `text`, 6 `yahoo` /
+  `p`, 13 `bing` / `q`, 38 `rambler` / `words`).
+- Read only, replayable. No difference between 8.0 and 9.0: the same grid,
+  form and table.
+
+#### `somcp_create_search_engine`
+**State**: written · [issue #473](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/473)
+**Nature**: `acts(ADD, 'AdminSearchEngines')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - creates a search engine of **Shop Parameters > Traffic & SEO >
+Search Engines**, as **Add new search engine** then **Save** do: its
+**Server** and its **$_GET variable**, so the statistics read the keywords of
+the visitors it sends. One row per call.
+
+**Do not use for** - changing a row (`somcp_update_search_engine`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `server` | **Server** | string | required (`server: required`); trimmed, kept in lower case as the list shows them; 64 characters at most (`server: 64 characters at most`); `Validate::isUrl()` (`server: a host name or a part of one, such as google or search.yahoo`); not already the server of another row (`server: already the server of search engine <id> - change that one with somcp_update_search_engine`) |
+| `get_variable` | **$_GET variable** | string | required (`get_variable: required`); trimmed; 16 characters at most (`get_variable: 16 characters at most`); `Validate::isModuleName()` (`get_variable: letters, digits, _ and - only`) |
+
+The checks are in one public function,
+`SomcpToolCreateSearchEngine::plan(array $arguments, ?int $idSearchEngine,
+array &$errors): array`, which `somcp_update_search_engine` calls with the
+row it changes, so both tools refuse the same values with the same words. Unknown arguments
+through `SomcpTool::unknownFields()`: `id_search_engine` answers
+`- id_search_engine: not a field of this tool`. Every mistake in one answer,
+in the envelope `Nothing was created. Correct these and call again:`.
+
+**Returns** - `created: true`, `id_search_engine`, and `search_engine`: the
+row read back, as `somcp_list_search_engines` answers it
+(`{id_search_engine, server, get_variable}`, by
+`SomcpToolListSearchEngines::row()`).
+
+**Notes**
+- `SearchEngine` filled, `validateFields()`, `add()`, as
+  `AddSearchEngineHandler`; a `false` or an exception answers `The search
+  engine could not be created: <reason>.`.
+- The back office accepts two rows for one server; this tool does not:
+  `SearchEngine::getKeywords()` takes the first row that matches the
+  referrer, so the second would never be read.
+- Logged as `search_engine_created` with the identifier and the server.
+- Changes the shop: the assistant asks first. Not replayable: a second call
+  is refused (`already the server of search engine <id>`).
+- No difference between 8.0 and 9.0: the same form and table.
+
+#### `somcp_update_search_engine`
+**State**: written · [issue #474](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/474)
+**Nature**: `acts(EDIT, 'AdminSearchEngines')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - changes a search engine of **Shop Parameters > Traffic & SEO >
+Search Engines**, as **Edit** then **Save** do: its **Server** and its
+**$_GET variable**. Only the fields given change; the row of
+`somcp_list_search_engines` given back as it is changes nothing. One row per
+call.
+
+**Do not use for** - adding a row (`somcp_create_search_engine`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_search_engine` | | integer | required, from `somcp_list_search_engines`: `id_search_engine: required - find it with somcp_list_search_engines`, `SomcpTool::notAnIdentifier('id_search_engine')`, `SomcpTool::notFound('id_search_engine', 'search engine', <id>, 'somcp_list_search_engines')` |
+| `server` | **Server** | string | optional; the rules of `somcp_create_search_engine`, an empty text answering `server: cannot be empty`; not the server of another row than this one |
+| `get_variable` | **$_GET variable** | string | optional; the rules of `somcp_create_search_engine`, an empty text answering `get_variable: cannot be empty` |
+
+The checks through `SomcpToolCreateSearchEngine::plan($arguments,
+$idSearchEngine, $errors)`, never a second copy. Unknown arguments through
+`SomcpTool::unknownFields()`. Every mistake in one answer, in the envelope
+`Nothing was changed. Correct these and call again:`.
+
+**Returns** - `changed` (`true` or `false`), `fields` (the names written),
+and `search_engine`: the row as `somcp_list_search_engines` answers it, read
+after the write. Nothing to change: `changed: false` with `The search engine
+already holds every value given. Nothing was written.`. `warning` when
+`server` changed: `Visitors sent by <old server> are no longer told apart:
+their keywords are not read any more.`
+
+**Notes**
+- `SearchEngine` loaded, the fields given set, `validateFields()`,
+  `update()`, as `EditSearchEngineHandler`; a `false` or an exception answers
+  `The search engine could not be changed: <reason>. Read it with
+  somcp_list_search_engines before calling again.`.
+- Logged as `search_engine_updated` with the identifier and the names of the
+  fields changed.
+- Changes the shop: the assistant asks first. Replayable: a second identical
+  call changes nothing.
+- No difference between 8.0 and 9.0: the same form and table.
+
+#### `somcp_delete_search_engine`
+**State**: written · [issue #479](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/479)
+**Nature**: `acts(DELETE, 'AdminSearchEngines')` · **Scope**: `mcp.seo.write`, as `somcp_update_search_engine`
+
+**Does** - deletes a search engine of **Shop Parameters > Traffic & SEO >
+Search Engines**, as the row action **Delete** and the bulk action **Delete
+selected** do, one row per call: the statistics stop reading the keywords of
+the visitors sent by its **Server**.
+
+**Do not use for** - correcting a Server or a GET variable
+(`somcp_update_search_engine`).
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `id_search_engine` | | integer | required, from `somcp_list_search_engines`: `id_search_engine: required - find it with somcp_list_search_engines`, `SomcpTool::notAnIdentifier('id_search_engine')`, `SomcpTool::notFound('id_search_engine', 'search engine', <id>, 'somcp_list_search_engines')`, as `somcp_update_search_engine` |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Every mistake in one
+answer, in the envelope `Nothing was deleted. Correct these and call again:`.
+
+**Returns** - `deleted: true`, `id_search_engine`, and `search_engine`: the
+row it was (`{id_search_engine, server, get_variable}`, as
+`somcp_list_search_engines` answers it, read with
+`SomcpToolCreateSearchEngine::stored()` before the deletion), so it can be
+added again with `somcp_create_search_engine`. `warning`: `Visitors sent by
+<server> are no longer told apart: their keywords are not read any more. The
+keywords already read stay in the statistics.`, ending with `Their visits are
+now read with search engine <id> (<server>).` when another row's Server is
+part of the deleted one (`yahoo` for `search.yahoo`; the lowest identifier
+when several are), since `SearchEngine::getKeywords()` takes the first row
+whose Server is part of the referrer's host.
+
+**Notes**
+- `(new SearchEngine($id))->delete()`, as `DeleteSearchEngineHandler`: the
+  table has no shop and no language, and no other table holds an
+  `id_search_engine`; `connections_source.keywords` keeps the words already
+  read. A `false` or an exception answers `The search engine could not be
+  deleted: <reason>.`.
+- Logged as `search_engine_deleted` with the identifier and the server.
+- Changes the shop and cannot be undone except by adding the row again: the
+  assistant asks first, naming the Server and its GET variable. Not
+  replayable: a second call answers the row unknown.
+- No difference between 8.0 and 9.0: the same list and table.
+
 #### `somcp_get_seo_settings`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
 **Does** - returns the shop's SEO and URL settings, and what each one means for search engines.
 
-**Do not use for** - changing them, which stays in the back office: these settings break every URL of the shop when wrong.
+**Do not use for** - changing them: the URL patterns (`routes`) are changed with `somcp_update_url_schema`; **Accented URL**, **Redirect to the canonical URL** and **Display attributes in the product meta title** with `somcp_update_seo_settings`; the others (Friendly URL, the language prefix, the Apache options, the shop URL) stay in the back office, since they break every URL of the shop when wrong.
 
 **Parameters**
 
@@ -8998,6 +10301,161 @@ None.
 - `sitemap_module.active` is read from `module_shop` for the shop of the token, since `Module::isEnabled()` answers for the shop of the global context.
 - A language's `url_prefix` follows what the storefront does: the ISO code is in the addresses only when the shop serves more than one active language, and then every language carries it, except the default language on PrestaShop 9 when **Use prefix for default language** is off.
 - `warnings` names what costs rankings: friendly URLs off (`friendly_urls_off`), no canonical redirection (`no_canonical_redirect`), a shop not served in HTTPS (`not_https`, or `https_not_everywhere` on PrestaShop 8), no robots.txt (`no_robots_txt`), no sitemap module (`no_sitemap_module`).
+
+#### `somcp_update_seo_settings`
+**State**: written · [issue #481](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/481)
+**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - changes three settings of **Shop Parameters > Traffic & SEO > SEO &
+URLs**, as **Save** does on its cards **Set up URLs** and **SEO options**:
+**Accented URL**, **Redirect to the canonical URL** and **Display attributes
+in the product meta title**, the settings `somcp_get_seo_settings` reads and
+warns about (`no_canonical_redirect`).
+
+**Do not use for** - the addresses of each page type (`somcp_update_url_schema`);
+the title and Friendly URL of the shop's own pages (`somcp_update_meta_page`).
+Left out on purpose: **Friendly URL** and **Use prefix for default language**
+change the address of every page, the module's own included; **Disable
+Apache's MultiViews option** and **Disable Apache's mod_security module**
+write `.htaccess`, whose failed write switches Friendly URL off; **Set shop
+URL** moves the whole shop. They stay with the back office.
+
+**Parameters**
+
+All optional; nothing that changes answers `changed: false`.
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `accented_urls` | **Accented URL** | boolean | `accented_urls: true or false`; `PS_ALLOW_ACCENTED_CHARS_URL` |
+| `canonical_redirect` | **Redirect to the canonical URL** | string | `none`, `302` or `301`, as the read answers it (stored 0, 1, 2 in `PS_CANONICAL_REDIRECT`); otherwise `SomcpTool::oneOf('canonical_redirect', ['none', '302', '301'])` |
+| `product_attributes_in_title` | **Display attributes in the product meta title** | boolean | `product_attributes_in_title: true or false`; `PS_PRODUCT_ATTRIBUTES_IN_TITLE` |
+
+The read given back whole is accepted: the other fields of
+`somcp_get_seo_settings` are taken out when equal to the read
+(`SomcpToolGetSeoSettings::sameAsRead()`), a `null` left out, as a setting the
+version lacks reads null. One that differs is refused with its own line:
+`routes: change them with somcp_update_url_schema`; any other `<field>: not
+changed by this tool - change it in Shop Parameters > Traffic & SEO`. Any
+other key through `SomcpTool::unknownFields()`. Every mistake in one answer,
+in the envelope `Nothing was changed. Correct these and call again:`.
+
+**Returns** - as `somcp_update_general_settings`: `changed`, `changes`
+(`{field, old, new}` each, the values under the names and codes of the
+parameters), `settings` (the whole read of `somcp_get_seo_settings`, through
+`SomcpToolGetSeoSettings::settings()`, after the write), and `warning`, each
+sentence when it applies:
+- `accented_urls` set to false: `Friendly URLs can now hold only letters
+  without accents, digits, _ and -: a product, category, brand, supplier or
+  page whose Friendly URL has an accent is refused at its next save until it
+  is corrected.`;
+- `accented_urls` set to true: `New friendly URLs may now hold accented
+  letters; those already saved keep theirs.`;
+- `canonical_redirect` set to `none`: the `why` of the read's
+  `no_canonical_redirect`;
+- `product_attributes_in_title` changed: `The meta title of a product page
+  with a combination now <shows / no longer shows> its attributes.`;
+- the shop is one of several: `The settings changed for this shop only, as
+  the back office saves them in a shop context.`
+
+Nothing to change: `changed: false`, `reason` `The SEO settings already hold
+every value given. Nothing was written.`, and `settings` (the read).
+
+**Notes**
+- Each key with `Configuration::updateValue($key, $value, false,
+  $idShopGroup, $idShop)` for the shop of the token, in the order of the
+  screen; a `false` stops with `SomcpToolUpdateGeneralSettings::failed()`:
+  `The SEO settings could not be changed: <field> could not be saved...`.
+  `.htaccess` is never written: the three settings change no address.
+- Logged as `seo_settings_updated` with the names of the fields changed.
+- Changes the shop: the assistant asks first, naming each setting and its new
+  value. Replayable: a second identical call changes nothing.
+- No difference between 8.0 and 9.0 for the three fields. In the read,
+  `default_language_url_prefix` is null on 8.0 and `https_everywhere` null on
+  9.0: given back as read, they are taken out like the rest.
+
+#### `somcp_update_url_schema`
+**State**: written · [issue #480](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/480)
+**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - changes the routes of the card **Schema of URLs** of **Shop
+Parameters > Traffic & SEO > SEO & URLs**, as **Save** does there: the pattern
+of the addresses of the products, categories, suppliers, brands, pages and
+page categories. They are the `routes` of `somcp_get_seo_settings`, given back
+with a new pattern; the default pattern of the version restores the default.
+
+**Do not use for** - the Friendly URL of one product, category or page (their
+own tools); the other settings of the page (`somcp_update_seo_settings`, or
+the back office).
+**Route to modules** (`module`) is left out on purpose: it carries the address
+of every module page, this module's own included, and an assistant that
+changed it could not reach the shop again.
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `routes` | **Schema of URLs** | object | required, at least one route (`routes: required - at least one route, as somcp_get_seo_settings reads them`); keys among `product`, `category`, `supplier`, `brand`, `cms`, `cms_category` (`SomcpToolGetSeoSettings::ROUTES`); `module` given back as read is taken out, different it answers `routes.module: changed in the back office only - it carries the address of every module page` |
+| `routes.<name>.pattern` | **Route to ...** | string | required in each route (`routes.<name>.pattern: required`); trimmed; `Validate::isRoutePattern()` (`routes.<name>.pattern: only letters, digits and _ ( ) . { } : / -`, with `and accented letters` when **Accented URL** is on); each required keyword, as `Dispatcher::validateRoute()` tests it (`routes.<name>.pattern: keyword {<keyword>} required`, one line per keyword); each keyword written one of the route's (`routes.<name>.pattern: {<keyword>} is not a keyword of this route - one of <list>`), which the back office accepts and the storefront then writes as nothing |
+| `routes.<name>.customized` | | boolean | worked out by the shop: taken out when equal to what the pattern gives (true when it differs from the default), otherwise `routes.<name>.customized: worked out by the shop, so it is not written here` |
+
+The keywords and the defaults are read from `Dispatcher::$default_routes`
+through `get_class_vars('Dispatcher')`, as `SomcpToolGetSeoSettings::routes()`
+does, never written in the tool: they differ between versions.
+
+| Route | Required keywords | Default, 9.0 | Default, 8.0 |
+|---|---|---|---|
+| `product` | `id`, `id_product_attribute`, `rewrite` | `{id}{-:id_product_attribute}-{rewrite}.html` | `{category:/}{id}{-:id_product_attribute}-{rewrite}{-:ean13}.html` |
+| `category` | `id` | `{id}-{rewrite}` | `{id}-{rewrite}` |
+| `supplier` | `id` | `supplier/{id}-{rewrite}` | the same |
+| `brand` | `id` | `brand/{id}-{rewrite}` | the same |
+| `cms` | `id` | `content/{id}-{rewrite}` | the same |
+| `cms_category` | `id` | `content/category/{id}-{rewrite}` | the same |
+
+The other fields of `somcp_get_seo_settings` given back with `routes` are
+taken out when equal to the read (`SomcpToolGetSeoSettings::sameAsRead()`), a
+`null` left out; one that differs answers `<field>: not changed by this tool -
+change it in Shop Parameters > Traffic & SEO`, or `<field>: not changed by
+this tool - change it with somcp_update_seo_settings` for `accented_urls`,
+`canonical_redirect` and `product_attributes_in_title`. Any other key through
+`SomcpTool::unknownFields()`, with the path `routes.` for the keys of `routes`.
+Every mistake in one answer, in the envelope `Nothing was changed. Correct
+these and call again:`.
+
+**Returns** - `changed`, `changes` (`{route, old, new}` each, the patterns),
+`routes` (the `routes` of `somcp_get_seo_settings`, read back after the
+write), and `warning`, each sentence when it applies:
+- for each route changed: `The addresses of all <products / categories /
+  suppliers / brands / pages / page categories> change: links and search
+  results that point to the old ones lead to a page not found. Regenerate the
+  sitemap so search engines find the new ones.`;
+- `friendly_urls` of the read is false: `Friendly URL is off: the patterns
+  apply only once it is switched on in Traffic & SEO.`;
+- a route changed and another one end with the same pattern once the keywords
+  are taken out (such as `{id}-{rewrite}` for both the categories and the
+  pages): `<a> and <b> now have addresses of the same shape: the storefront
+  takes the first route that matches, so some pages open the wrong kind of
+  page.`;
+- the shop is one of several: `The routes changed for this shop only, as the
+  back office saves them in a shop context.`
+
+Nothing to change: `changed: false`, `reason` `The routes already hold every
+pattern given. Nothing was written.`, and `routes` (the read).
+
+**Notes**
+- `Configuration::updateValue('PS_ROUTE_<route id>', <pattern>, false,
+  $idShopGroup, $idShop)` for the shop of the token; the default stored as an
+  empty value, which `Dispatcher::loadRoutes()` and the read take as the
+  default of the running version. A `false` stops with
+  `SomcpToolUpdateGeneralSettings::failed()`: `The routes could not be
+  changed: the route of <name> could not be saved...`. No `.htaccess`
+  written: the routes are matched by `Dispatcher`, not by the server.
+- Logged as `url_schema_updated` with the names of the routes changed.
+- Changes the shop and every address of the page types changed: the assistant
+  asks first, showing the old and new pattern with an example address.
+  Replayable: a second identical call changes nothing.
+- Differences between 8.0 and 9.0: the keywords and defaults of the table
+  above; `meta_keywords` exists on 8.0 only, `categories` of the category
+  route on 9.0 only.
 
 #### `somcp_get_robots_txt`
 **State**: written
@@ -9698,7 +11156,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Does** - switches one cart rule on or off: the **Status** switch of the list **Catalog > Discounts > Cart Rules**, and of **Information** > **Status** in its form. Nothing else changes.
 
-**Do not use for** - changing anything else of the rule (→ `somcp_update_cart_rule`), deleting it (back office).
+**Do not use for** - changing anything else of the rule (→ `somcp_update_cart_rule`), deleting it (→ `somcp_delete_cart_rule`).
 
 **Parameters**
 
@@ -9720,6 +11178,32 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Differences between 8.0.1 and 9.0.0**
 - None: the same list, the same switch and the same column.
+
+#### `somcp_delete_cart_rule`
+**State**: written · [issue #466](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/466)
+**Nature**: `acts(DELETE, 'AdminCartRules')` · **Scope**: `mcp.sales.write`, as `somcp_set_cart_rule_active`
+
+**Does** - deletes a cart rule of **Catalog > Discounts > Cart Rules**, as the row action **Delete** and the bulk action **Delete selected** do, one rule per call, with every row of its conditions and actions.
+
+**Do not use for** - switching a rule off (→ `somcp_set_cart_rule_active`); changing it (→ `somcp_update_cart_rule`).
+
+**Parameters**
+
+| Name | Type | Rule |
+|---|---|---|
+| `id_cart_rule` | integer | required, a rule of the shop of the token, by the test of the list (`SomcpToolSetCartRuleActive::existing()`, `SomcpToolListCartRules::inShop()`): `SomcpTool::notAnIdentifier('id_cart_rule')`, `SomcpTool::notFound('id_cart_rule', 'cart rule', <id>, 'somcp_list_cart_rules')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Then** - the rule read first with `SomcpToolGetCartRule::byId()` (the shop's default language), to answer it, and its rows of `cart_cart_rule` counted. Then `CartRule::delete()`, the core's own deletion, with the employee of the token on the context (`SomcpToolCreateProduct::asEmployee()`): `cart_rule` and `cart_rule_lang`, then `cart_cart_rule` (the rule leaves the carts in progress), `cart_rule_carrier`, `cart_rule_shop`, `cart_rule_group`, `cart_rule_country`, `cart_rule_combination` (both sides), `cart_rule_product_rule_group` and the orphan `cart_rule_product_rule` and `cart_rule_product_rule_value`; `PS_CART_RULE_FEATURE_ACTIVE` is set again from the rules left, globally. `order_cart_rule` is untouched. A `false` or an exception: a tool error `The cart rule could not be deleted: <reason>. Read it with somcp_get_cart_rule before calling again.`, logged as `cart_rule_delete_failed`. Logged as `cart_rule_deleted` with the `id_cart_rule` only (a rule may hold a customer).
+
+**Returns** - `deleted: true`, `id_cart_rule` and `cart_rule`: the rule as read before, as `somcp_delete_contact` answers. `warning`, each when it applies: `<n> orders used this rule: they keep their discount.` (its `times_used`); `It was removed from <n> carts in progress.`; `No cart rule is active any more: the voucher field is no longer shown at checkout.` (`PS_CART_RULE_FEATURE_ACTIVE` went from 1 to 0); the shop is one of several and the rule was not kept to this shop: `This rule also applied to <every shop / the shops ...>: it is deleted for all of them.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: `id_cart_rule` missing, not an identifier, unknown or of another shop; an unknown argument.
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first. Not replayable. To stop a rule without losing it: `somcp_set_cart_rule_active`. The shop test creates a rule with `somcp_create_cart_rule`, deletes it, checks that `somcp_get_cart_rule` answers it unknown and that `PS_CART_RULE_FEATURE_ACTIVE` is what it was before, and puts it back whatever happens; rule 1 of the demo data is never deleted.
+
+**Differences between 8.0.1 and 9.0.0** - none: the same `CartRule::delete()` body.
 
 #### `somcp_list_catalog_price_rules`
 **State**: written · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)
@@ -9857,7 +11341,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_list_languages`, `somcp_create_language`, `somcp_update_language`, `somcp_delete_language`, `somcp_install_language_pack`, `somcp_export_translations`, `somcp_list_translations`, `somcp_update_translation`, `somcp_get_localization_settings`, `somcp_update_localization_settings`, `somcp_import_localization_pack`, `somcp_get_general_settings`, `somcp_update_general_settings`, `somcp_get_maintenance_settings`, `somcp_update_maintenance_settings`, `somcp_list_currencies`, `somcp_get_currency`, `somcp_create_currency`, `somcp_update_currency`, `somcp_delete_currency`, `somcp_update_exchange_rates`, `somcp_create_tax`, `somcp_update_tax`, `somcp_delete_tax`, `somcp_get_tax_options`, `somcp_update_tax_options`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_add_country_rule`, `somcp_update_country_rule`, `somcp_delete_country_rule`, `somcp_list_customer_groups`, `somcp_get_customer_group`, `somcp_update_customer_group`, `somcp_update_default_groups`, `somcp_create_customer_group`, `somcp_delete_customer_group`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_get_shipping_preferences`, `somcp_update_shipping_preferences`, `somcp_get_payment_preferences`, `somcp_update_payment_restrictions`, `somcp_list_contacts`, `somcp_create_contact`, `somcp_update_contact`, `somcp_delete_contact`, `somcp_list_stores`, `somcp_create_store`, `somcp_update_store`, `somcp_delete_store`, `somcp_get_contact_details`, `somcp_update_contact_details`, `somcp_get_email_settings`, `somcp_update_email_settings`, `somcp_list_email_logs`, `somcp_delete_email_log`, `somcp_erase_email_logs`, `somcp_send_test_email`, `somcp_get_order_settings`, `somcp_update_order_settings`, `somcp_get_product_settings`, `somcp_update_product_settings`, `somcp_get_customer_settings`, `somcp_update_customer_settings`, `somcp_list_titles`, `somcp_create_title`, `somcp_update_title`, `somcp_delete_title`, `somcp_list_zones`, `somcp_create_zone`, `somcp_update_zone`, `somcp_delete_zone`, `somcp_list_countries`, `somcp_get_country`, `somcp_update_country`, `somcp_get_country_options`, `somcp_update_country_options`, `somcp_list_states`, `somcp_create_state`, `somcp_update_state`, `somcp_delete_state`, `somcp_create_carrier`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 
@@ -9885,7 +11369,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `customer` (name, email or company).
 
-**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_list_customer_groups`, `somcp_get_customer_group`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search, then read the one customer the merchant means; the email is more reliable than the name; personal data stays in the answer it was asked for; no password ever goes through the conversation.
 
@@ -9909,11 +11393,11 @@ request: one line, stroke paths on a 24 px grid.
 
 **Title** - Read content pages
 
-**Description** - List and read the CMS pages of the PrestaShop shop.
+**Description** - List, read and change the CMS pages of the PrestaShop shop.
 
 **Arguments** - `page` (title of a page).
 
-**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`, `somcp_create_cms_page`, `somcp_update_cms_page`, `somcp_delete_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 
@@ -9941,7 +11425,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - none.
 
-**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_update_theme_setting`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_update_theme_setting`, `somcp_update_logos`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 
@@ -9969,7 +11453,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `focus` (optional: products, categories, pages or the whole shop).
 
-**Tools** - `somcp_ping`, `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_update_cms_seo`, `somcp_list_meta_pages`, `somcp_update_meta_page`, `somcp_get_seo_settings`, `somcp_get_robots_txt`, `somcp_generate_robots_txt`, `somcp_audit_page`, `somcp_check_links`, `somcp_audit_sitemap`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_update_cms_seo`, `somcp_list_meta_pages`, `somcp_update_meta_page`, `somcp_create_meta_page`, `somcp_delete_meta_page`, `somcp_get_seo_settings`, `somcp_get_robots_txt`, `somcp_generate_robots_txt`, `somcp_audit_page`, `somcp_check_links`, `somcp_audit_sitemap`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - start with `somcp_get_seo_settings` and the audits, then sort what was found by its effect on sales: products that sell or should sell first; propose every new title or description to the merchant before writing it, in each language of the shop; change a URL of a live page only after saying that the old one stops working; after a change, check the public page with `somcp_audit_page`, since a value in the database is not proof of what the theme prints.
 
@@ -9997,6 +11481,6 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `period` (optional: the number of days to look back, 30 by default).
 
-**Tools** - `somcp_ping`, `somcp_list_abandoned_carts`, `somcp_list_search_terms`, `somcp_list_viewed_not_sold`, `somcp_list_unsold_products`, `somcp_list_cart_rules`, `somcp_get_cart_rule`, `somcp_create_cart_rule`, `somcp_update_cart_rule`, `somcp_set_cart_rule_active`, `somcp_list_catalog_price_rules`, `somcp_create_catalog_price_rule`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_abandoned_carts`, `somcp_list_search_terms`, `somcp_list_viewed_not_sold`, `somcp_list_unsold_products`, `somcp_list_cart_rules`, `somcp_get_cart_rule`, `somcp_create_cart_rule`, `somcp_update_cart_rule`, `somcp_set_cart_rule_active`, `somcp_delete_cart_rule`, `somcp_list_catalog_price_rules`, `somcp_create_catalog_price_rule`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - start from data, never from a guess: abandoned carts, searches with no result, products viewed but not sold, products that stopped selling; propose each promotion with its cost (the discount times the expected quantity) before creating it; a cart rule is created inactive unless the merchant says otherwise; never email or contact a customer: report the carts, the merchant decides.

@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "a call without a page is refused", "arguments": {}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_cms: a whole number above 0"]},
+    {"why": "a page the shop does not have is refused, pointing to the list", "arguments": {"id_cms": 999999}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_cms: no CMS page of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]},
+    {"why": "a title in a language that is not being filled is refused", "arguments": {"id_cms": 5, "title": {"zz": "x"}}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- title: \"zz\" is not among the languages being filled"]},
+    {"why": "a page category the shop does not have is refused, pointing to the list", "arguments": {"id_cms": 5, "id_cms_category": 999999}, "expect": "error", "contains": ["- id_cms_category: no page category of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]},
+    {"why": "a Meta title is refused, naming the tool that changes it", "arguments": {"id_cms": 5, "meta_title": "x"}, "expect": "error", "contains": ["- meta_title: not changed by this tool - change it with somcp_update_cms_seo"]},
+    {"why": "Displayed takes a boolean only", "arguments": {"id_cms": 5, "active": "yes"}, "expect": "error", "contains": ["- active: true or false"]},
+    {"why": "the same Displayed again changes nothing", "arguments": {"id_cms": 5, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "The page already holds every value given. Nothing was written."]}
+  ]
+}

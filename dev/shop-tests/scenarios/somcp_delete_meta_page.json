@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "nothing given: the page is required", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_meta: required - find it with somcp_list_meta_pages"]},
+    {"why": "a word is not an identifier", "arguments": {"id_meta": "x"}, "expect": "error", "contains": ["- id_meta:"]},
+    {"why": "a page that does not exist", "arguments": {"id_meta": 999999}, "expect": "error", "contains": ["- id_meta: no page of this shop has the identifier 999999 - find it with somcp_list_meta_pages"]},
+    {"why": "a template page, which Traffic & SEO does not list, is refused (27 is not the same template on every version)", "arguments": {"id_meta": 27}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", " takes its texts from each product, category or CMS page, and Traffic & SEO does not list it"]},
+    {"why": "every mistake in one answer", "arguments": {"id_meta": 999999, "x": 1}, "expect": "error", "contains": ["- x: not a field of this tool", "- id_meta: no page of this shop has the identifier 999999"]}
+  ]
+}

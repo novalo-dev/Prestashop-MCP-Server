@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "nothing given: the group is required", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_group: required - find it with somcp_list_customer_groups"]},
+    {"why": "a word is not an identifier", "arguments": {"id_group": "x"}, "expect": "error", "contains": ["- id_group:"]},
+    {"why": "a group that does not exist", "arguments": {"id_group": 999999}, "expect": "error", "contains": ["- id_group: no customer group of this shop has the identifier 999999 - find it with somcp_list_customer_groups"]},
+    {"why": "the group of customers is one of the default groups", "arguments": {"id_group": 3}, "expect": "error", "contains": ["- id_group: the group of customers cannot be deleted - choose another one with somcp_update_default_groups first"]},
+    {"why": "every mistake in one answer", "arguments": {"id_group": 999999, "x": 1}, "expect": "error", "contains": ["- x: not a field of this tool", "- id_group: no customer group of this shop has the identifier 999999"]}
+  ]
+}

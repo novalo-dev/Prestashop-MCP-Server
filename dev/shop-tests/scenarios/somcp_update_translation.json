@@ -1,0 +1,15 @@
+{
+  "calls": [
+    {"why": "no source", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "translation": "Save now"}, "expect": "error", "contains": ["Nothing was changed.", "source: required"]},
+    {"why": "a source the domain does not have", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "No such wording here", "translation": "x"}, "expect": "error", "contains": ["source: no wording of this shop has the source No such wording here - find it with somcp_list_translations"]},
+    {"why": "a domain the tree does not have", "arguments": {"language": "en", "type": "back_office", "domain": "NoSuchDomain", "source": "Save", "translation": "x"}, "expect": "error", "contains": ["domain: no domain of this shop has the domain NoSuchDomain - find it with somcp_list_translations"]},
+    {"why": "a blank translation", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "translation": " "}, "expect": "error", "contains": ["translation: a text - use reset to show the translation of the files again"]},
+    {"why": "a translation and a reset together", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "translation": "Save now", "reset": true}, "expect": "error", "contains": ["reset: without translation"]},
+    {"why": "a placeholder the source does not have", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "translation": "Save %s"}, "expect": "error", "contains": ["translation: keep the placeholders of the source"]},
+    {"why": "a read-only field changed", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "translation": "Save now", "shown": "Other"}, "expect": "error", "contains": ["shown: read only - change translation"]},
+    {"why": "the shop's translation of Save", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "translation": "Save now"}, "expect": "ok", "contains": ["\"changed\": true", "\"shop_translation\": \"Save now\""]},
+    {"why": "the same translation again changes nothing", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "translation": "Save now"}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "the shop's translation removed, the shop left as it was", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "reset": true}, "expect": "ok", "contains": ["\"changed\": true", "\"shop_translation\": null"]},
+    {"why": "a reset with nothing to remove changes nothing", "arguments": {"language": "en", "type": "back_office", "domain": "AdminActions", "source": "Save", "reset": true}, "expect": "ok", "contains": ["\"changed\": false"]}
+  ]
+}

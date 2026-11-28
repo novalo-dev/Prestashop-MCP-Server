@@ -524,7 +524,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                 $appliesTo = $appliesTo['type'] ?? null;
             }
             if (!is_string($appliesTo) || !array_key_exists($appliesTo, self::APPLIES_TO)) {
-                $errors[] = 'reduction_applies_to: one of ' . implode(', ', array_keys(self::APPLIES_TO));
+                $errors[] = SomcpTool::oneOf('reduction_applies_to', array_keys(self::APPLIES_TO));
             } else {
                 $target = $appliesTo;
             }
@@ -639,8 +639,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             if ($idCombination <= 0) {
                 $errors[] = 'gift.id_product_attribute: required, this product has combinations - find them with somcp_get_product';
             } elseif (!SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
-                $errors[] = 'gift.id_product_attribute: no combination of product ' . $idProduct . ' has the identifier ' . $idCombination
-                    . ' - find it with somcp_get_product';
+                $errors[] = SomcpTool::notFoundOf('gift.id_product_attribute', 'combination', 'product ' . $idProduct, $idCombination, 'somcp_get_product');
             }
         } elseif ($idCombination !== 0) {
             $errors[] = 'gift.id_product_attribute: this product has no combinations, give 0 or leave it out';
@@ -1091,7 +1090,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                 $rulePath = $groupPath . '.rules[' . $r . ']';
                 $type = is_array($rule) ? ($rule['type'] ?? null) : null;
                 if (!is_string($type) || !isset(self::PRODUCT_RULE_TYPES[$type])) {
-                    $errors[] = $rulePath . '.type: one of ' . implode(', ', array_keys(self::PRODUCT_RULE_TYPES));
+                    $errors[] = SomcpTool::oneOf($rulePath . '.type', array_keys(self::PRODUCT_RULE_TYPES));
                     $refused = true;
                     continue;
                 }

@@ -1132,6 +1132,11 @@
       <source>Read a carrier</source>
       <target>Read a carrier</target>
     </trans-unit>
+    <!-- Create a carrier -->
+    <trans-unit id="ecf7b49edd40aa0c5a915389a5b1bca2" resname="Create a carrier">
+      <source>Create a carrier</source>
+      <target>Create a carrier</target>
+    </trans-unit>
     <!-- Change a carrier -->
     <trans-unit id="1beee38e2cf4d04609f880d19fd0e875" resname="Change a carrier">
       <source>Change a carrier</source>

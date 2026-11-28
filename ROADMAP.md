@@ -30,10 +30,10 @@ merchant does it:
   as a pack.
   Taxes, tax rules and the tax
   options are done.
-- **Shipping and payment preferences**: a carrier is read, changed and
-  deleted today, the delivery zones are read, created, changed and deleted,
-  and **Shipping > Preferences** is read and changed; creating a carrier comes
-  next. **Payment > Preferences** is read and
+- **Shipping and payment preferences**: a carrier is read, created, changed
+  and deleted today, the delivery zones are read, created, changed and
+  deleted, and **Shipping > Preferences** is read and changed.
+  **Payment > Preferences** is read and
   changed, module by module. The payment modules themselves,
   their accounts and keys, stay with the merchant.
 - **Traffic & SEO**: the shop's own pages are read, created, changed and

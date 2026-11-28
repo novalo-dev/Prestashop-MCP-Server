@@ -112,6 +112,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_state`
 - `somcp_update_state`
 - `somcp_delete_state`
+- `somcp_create_carrier`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_product`
@@ -402,6 +403,10 @@ changes its ISO code or zone, or switches it off so the address form stops
 offering it; a state used by addresses or tax rule rows keeps its country.
 `somcp_delete_state` deletes a state no address and no tax rule row uses;
 give its rows to `somcp_delete_country_rule` first, and tell the merchant.
+To add a carrier, confirm with the merchant its name, its zones and its
+prices, then use `somcp_create_carrier`: it is created off unless the
+merchant wants it offered at once, and a second call would create a second
+carrier, so when an answer is lost read `somcp_list_carriers` first.
 To rename a carrier, change its transit time, speed grade, logo, tracking URL,
 status, customer groups, zones, ranges and their prices per zone, place in the
 list, free shipping, handling costs, billing, tax, out-of-range behavior or size and weight limits, use

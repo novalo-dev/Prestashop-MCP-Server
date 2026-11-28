@@ -330,6 +330,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_return_statuses` | ● List return statuses | Statuses › view |
 | `somcp_list_carriers` | ● List carriers | Carriers › view |
 | `somcp_get_carrier` | ● Read a carrier | Carriers › view |
+| `somcp_create_carrier` | ✎ Create a carrier | Carriers › add |
 | `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
 | `somcp_delete_carrier` | ✎ Delete a carrier | Carriers › delete |
 | `somcp_get_shipping_preferences` | ● Read the shipping preferences | Shipping preferences › view |

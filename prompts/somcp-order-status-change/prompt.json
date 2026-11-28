@@ -27,6 +27,7 @@
     "somcp_create_state",
     "somcp_update_state",
     "somcp_delete_state",
+    "somcp_create_carrier",
     "somcp_update_carrier",
     "somcp_delete_carrier",
     "somcp_create_return_status",

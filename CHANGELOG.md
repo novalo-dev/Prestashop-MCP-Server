@@ -18,6 +18,16 @@ are:
 
 ### Added
 
+**Create a carrier.** The new tool somcp_create_carrier does what Add new
+carrier then Save (or Finish) do on Shipping > Carriers: a Carrier name and a
+Transit time, and in the same call its zones, ranges and prices per zone, logo,
+tracking URL, customer groups, free shipping, handling costs, billing, tax,
+out-of-range behavior and size and weight limits, under the same rules as when
+a carrier is changed. The carrier is created off unless the merchant asks for
+it on, with every customer group when none is given, and the answer says when
+it serves no zone yet or a zone has no price. Every mistake is told before
+anything is written, and a carrier that cannot be saved whole is not kept.
+
 **Change the SEO and URL settings.** The new tool somcp_update_seo_settings
 does what Save does on the cards Set up URLs and SEO options of Shop Parameters
 > Traffic & SEO > SEO & URLs for three settings: Accented URL, Redirect to the

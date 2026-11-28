@@ -4211,6 +4211,57 @@ if ($getCarrier !== null && $updateCarrier !== null) {
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_carrier (a carrier logo changed): ' . get_class($e) . ' - ' . $e->getMessage();
     }
+
+    // A carrier created, read and deleted again (#482): the JSON scenario
+    // cannot give the new identifier to the next call. It is created billed by
+    // weight in the first zone, with one priced range, and always deleted, so
+    // the demo data keeps its four carriers for the tools after it.
+    $createCarrier = $registry->get('somcp_create_carrier');
+    $deleteCarrier = $registry->get('somcp_delete_carrier');
+    $listZones = $registry->get('somcp_list_zones');
+    if ($createCarrier !== null && $deleteCarrier !== null && $listZones !== null) {
+        $calls += 4;
+        $idCreated = 0;
+        try {
+            [, , $zoneList] = $carrierCall($listZones, []);
+            $idZone = (int) ($zoneList['zones'][0]['id_zone'] ?? 0);
+            $delay = [];
+            foreach (Language::getLanguages(true, (int) $context->shop->id) as $language) {
+                $delay[Tools::strtolower((string) $language['iso_code'])] = '2 to 3 days';
+            }
+            [$result, $text, $created] = $carrierCall($createCarrier, [
+                'name' => 'somcp-test-carrier',
+                'delay' => $delay,
+                'zones' => [$idZone],
+                'billing' => 'weight',
+                'ranges' => [['from' => 0, 'to' => 10, 'prices' => [['id_zone' => $idZone, 'price_tax_excl' => 4.5]]]],
+            ]);
+            $idCreated = (int) ($created['id_carrier'] ?? 0);
+            $price = $created['carrier']['ranges'][0]['prices'][0]['price_tax_excl'] ?? null;
+            if (!empty($result['isError']) || $idZone === 0 || $idCreated === 0 || ($created['created'] ?? null) !== true
+                || ($created['carrier']['active'] ?? null) !== false || (float) $price !== 4.5
+                || strpos($text, 'The carrier is off') === false) {
+                $failures[] = 'somcp_create_carrier (a carrier with a zone and a priced range): expected it created off, its price read back - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_carrier (a carrier with a zone and a priced range, created off)');
+            }
+            [$result, $text] = $carrierCall($getCarrier, ['id_carrier' => $idCreated]);
+            if (!empty($result['isError']) || strpos($text, '"name": "somcp-test-carrier"') === false) {
+                $failures[] = 'somcp_create_carrier (the new carrier read): expected it under its new identifier - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_carrier (the new carrier read with somcp_get_carrier)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_carrier (a carrier created and deleted): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idCreated > 0) {
+                [$result] = $carrierCall($deleteCarrier, ['id_carrier' => $idCreated]);
+                if (!empty($result['isError'])) {
+                    $failures[] = 'somcp_create_carrier (the new carrier deleted again): ' . excerpt($result);
+                }
+            }
+        }
+    }
 }
 
 // A carrier deleted (#321): the JSON scenario cannot read the default carrier

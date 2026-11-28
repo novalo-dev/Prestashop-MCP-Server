@@ -10,6 +10,7 @@ hidden or moved at any time.
 - `somcp_list_cms_pages`
 - `somcp_get_cms_page`
 - `somcp_update_cms_page`
+- `somcp_delete_cms_page`
 
 ## Know which shop you are in
 
@@ -52,6 +53,19 @@ only what is given.
   menu: say so before.
 - `changed: false` means the page already held every value: nothing was
   written.
+
+## Deleting a page
+
+`somcp_delete_cms_page` deletes one page, by its `id_cms`, and cannot be
+undone.
+
+- Name the page and its Title to the merchant and wait for their yes before
+  calling. When they only want it off the storefront, hide it with
+  `somcp_update_cms_page` (`active: false`) instead.
+- The page customers accept at checkout is refused: another one is chosen
+  first with `somcp_update_order_settings` (`terms_id_cms`).
+- Pass on the `warning`: a footer link block that still lists the page is
+  changed in **Design > Link List**.
 
 ## What the fields mean
 

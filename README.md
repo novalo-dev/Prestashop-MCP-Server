@@ -605,6 +605,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_audit_cms_seo` | ● Audit the SEO of CMS pages | Pages › view |
 | `somcp_audit_brand_seo` | ● Audit the SEO of brands | Brands › view |
 | `somcp_update_cms_page` | ✎ Change a CMS page | Pages › edit |
+| `somcp_delete_cms_page` | ✎ Delete a CMS page | Pages › delete |
 | `somcp_update_cms_seo` | ✎ Change the SEO of a CMS page | Pages › edit |
 | `somcp_update_meta_page` | ✎ Change the SEO of a shop page | SEO & URLs › edit |
 | `somcp_create_meta_page` | ✎ Add a shop page to SEO & URLs | SEO & URLs › add |

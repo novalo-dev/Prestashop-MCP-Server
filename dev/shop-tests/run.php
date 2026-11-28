@@ -4342,6 +4342,77 @@ if ($updateCmsPage !== null && $getCmsPage !== null) {
     }
 }
 
+// A page deleted (#485): the JSON scenario never deletes a page of the
+// install. A page made here in category 1 is deleted by the tool, then is
+// no longer listed, and a second deletion answers it unknown.
+$deleteCmsPage = $registry->get('somcp_delete_cms_page');
+$listCmsPages = $registry->get('somcp_list_cms_pages');
+if ($deleteCmsPage !== null && $listCmsPages !== null) {
+    $calls += 3;
+    $cmsCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $testPage = null;
+    try {
+        $testPage = new CMS();
+        $testPage->id_cms_category = 1;
+        $testPage->active = true;
+        $testPage->indexation = false;
+        foreach (Language::getIDs(false) as $idLang) {
+            $testPage->meta_title[(int) $idLang] = 'somcp test page';
+            $testPage->link_rewrite[(int) $idLang] = 'somcp-test-page';
+            $testPage->content[(int) $idLang] = '<p>somcp test page</p>';
+        }
+        if (!$testPage->add()) {
+            $failures[] = 'somcp_delete_cms_page (a page made for the test): the shop refused to add it';
+            $testPage = null;
+        } else {
+            $idTestPage = (int) $testPage->id;
+            [$result, $text] = $cmsCall($deleteCmsPage, ['id_cms' => $idTestPage]);
+            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false || strpos($text, 'somcp test page') === false) {
+                $failures[] = 'somcp_delete_cms_page (a page deleted, answered as it was): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_cms_page (a page deleted, answered as it was)');
+            }
+            [$result, $text] = $cmsCall($listCmsPages, []);
+            if (!empty($result['isError']) || preg_match('/"id_cms": ' . $idTestPage . '\b/', $text) === 1) {
+                $failures[] = 'somcp_delete_cms_page (the page no longer listed): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_cms_page (the page no longer listed)');
+            }
+            [$result, $text] = $cmsCall($deleteCmsPage, ['id_cms' => $idTestPage]);
+            if (empty($result['isError']) || strpos($text, 'no CMS page of this shop has the identifier ' . $idTestPage) === false) {
+                $failures[] = 'somcp_delete_cms_page (a page deleted twice is unknown the second time): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_cms_page (a page deleted twice is unknown the second time)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_cms_page (a page deleted): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // The page made here never outlives the test, whatever the tool did.
+        if ($testPage !== null && Validate::isLoadedObject(new CMS((int) $testPage->id))) {
+            $testPage->delete();
+        }
+    }
+}
+
 // The mail logo changed and put back (#483): the JSON scenario cannot send
 // an image nor read the files it leaves. The header logo of the demo is never
 // touched, since the shop deletes the file a logo replaces: the mail logo,

@@ -1670,6 +1670,10 @@ T = {
  "Modifier une page CMS",
  "Modificar una página CMS",
  "Eine CMS-Seite ändern"),
+"Delete a CMS page": (
+ "Supprimer une page CMS",
+ "Eliminar una página CMS",
+ "Eine CMS-Seite löschen"),
 "Change the SEO of a CMS page": (
  "Modifier le SEO d'une page CMS",
  "Cambiar el SEO de una página CMS",

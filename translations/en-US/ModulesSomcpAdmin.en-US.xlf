@@ -2097,6 +2097,11 @@
       <source>Change a CMS page</source>
       <target>Change a CMS page</target>
     </trans-unit>
+    <!-- Delete a CMS page -->
+    <trans-unit id="a2e13d6dfac1cab1c245dad01514a8f1" resname="Delete a CMS page">
+      <source>Delete a CMS page</source>
+      <target>Delete a CMS page</target>
+    </trans-unit>
     <!-- Change the SEO of a CMS page -->
     <trans-unit id="39a2ae54e85acae56f94b93320441737" resname="Change the SEO of a CMS page">
       <source>Change the SEO of a CMS page</source>

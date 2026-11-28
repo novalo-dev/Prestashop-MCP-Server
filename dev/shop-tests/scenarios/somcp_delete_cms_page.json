@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "the identifier is required, with the tool that finds it", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_cms: required - find it with somcp_list_cms_pages"]},
+    {"why": "an identifier of the wrong kind", "arguments": {"id_cms": "x"}, "expect": "error", "contains": ["- id_cms: a whole number above 0"]},
+    {"why": "an identifier no page has is refused with the list that gives them", "arguments": {"id_cms": 999999}, "expect": "error", "contains": ["- id_cms: no CMS page of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]},
+    {"why": "the page customers accept at checkout is refused", "arguments": {"id_cms": 3}, "expect": "error", "contains": ["- id_cms: the page customers accept at checkout - choose another one first with somcp_update_order_settings (terms_id_cms)"]},
+    {"why": "every mistake of the call in one answer", "arguments": {"id_cms": 999999, "x": 1}, "expect": "error", "contains": ["- x: not a field of this tool", "- id_cms: no CMS page of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]}
+  ]
+}

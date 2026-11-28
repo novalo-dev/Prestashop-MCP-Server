@@ -9194,7 +9194,7 @@ Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `lin
 
 **Does** - changes a page of **Design > Pages**, as **Edit** then **Save** do, for the fields `somcp_update_cms_seo` leaves to the back office: **Title**, **Page content**, **Page category** and **Displayed**, per language for the texts. Only what is given changes.
 
-**Do not use for** - the **Meta title**, **Meta description**, **Friendly URL** and **Indexation** (→ `somcp_update_cms_seo`); creating or deleting a page.
+**Do not use for** - the **Meta title**, **Meta description**, **Friendly URL** and **Indexation** (→ `somcp_update_cms_seo`); creating a page; deleting one (→ `somcp_delete_cms_page`).
 
 **Parameters**
 
@@ -9220,6 +9220,32 @@ Any other key through `SomcpTool::unknownFields()`.
 **Notes** - changes the shop: the assistant asks first, showing the new text. Replayable: a second identical call changes nothing. Needs the scope `mcp.content.write` (**Pages - changes**), the first write of the section: a client already connected accepts it at its next connection.
 
 **Differences between 8.0.1 and 9.0.0** - none for these four fields; `meta_keywords` of the read exists on 8.0.1 only, taken out like the other SEO fields.
+
+#### `somcp_delete_cms_page`
+**State**: written · [issue #485](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/485)
+**Nature**: `acts(DELETE, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - deletes a page of **Design > Pages**, as the row action **Delete** and the bulk action **Delete selected** do, one page per call: `CMS::delete()`, as `DeleteCmsPageHandler` calls it, removes its texts in every language for the shop of the token, and the pages after it in its category move up one place (`cleanPositions()`).
+
+**Do not use for** - hiding a page (→ `somcp_update_cms_page`, `active` false).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cms` | integer | yes | from `somcp_list_cms_pages`: missing, `id_cms: required - find it with somcp_list_cms_pages`; not a whole number, `SomcpTool::notAnIdentifier('id_cms')`; unknown, `SomcpTool::notFound('id_cms', 'CMS page', <id>, 'somcp_list_cms_pages')`, the line of `somcp_get_cms_page` and `somcp_update_cms_page`; the page loaded by `SomcpToolUpdateCmsSeo::page()`. The page of the terms of the checkout (`PS_CONDITIONS_CMS_ID`) while **Terms and conditions** is on (`PS_CONDITIONS`): `id_cms: the page customers accept at checkout - choose another one first with somcp_update_order_settings (terms_id_cms)` |
+
+Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:` (`SomcpTool::refused('deleted', $problems)`), every problem at once: `id_cms` missing, not an identifier, unknown or the terms page; an unknown argument. A failed deletion: `The page could not be deleted: <reason>.`, logged `cms_page_delete_failed`.
+
+**Then** - the page read first with `SomcpToolGetCmsPage::cmsPage()` in the default language, then `CMS::delete()` for the shop of the token (`id_shop_list`), the core's own deletion, never rows deleted by hand. Logged `cms_page_deleted` with the `id_cms` only. The terms page is refused although the back office deletes it, because the checkout would then ask customers to accept a page that no longer exists: another page is chosen first with `somcp_update_order_settings` (`terms_id_cms`), then this one is deleted.
+
+**Returns** - `deleted: true`, `id_cms`, `page` (what it was, as `somcp_get_cms_page` answers it), and `warning`, each sentence when it applies: a link block of `ps_linklist` names the page in its `cms` list (the module does not update it when a page is deleted), `The footer link block(s) <ids> still list this page: change them in Design > Link List.`; the page still belongs to another shop, `The page stays in the other shops it belongs to.`; always, `Links to its address now lead to a page not found.`
+
+**Notes** - changes the shop and cannot be undone: the assistant asks first, naming the page and its Title. Not replayable: a second call answers the page unknown.
+
+**Differences between 8.0.1 and 9.0.0** - none.
 
 ### Modules
 
@@ -11254,7 +11280,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `page` (title of a page).
 
-**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`, `somcp_update_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`, `somcp_update_cms_page`, `somcp_delete_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 

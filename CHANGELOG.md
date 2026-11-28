@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Delete a CMS page.** The new tool somcp_delete_cms_page does what Delete
+does on a row of Design > Pages: the page goes with its texts, and the pages
+after it in its category move up one place. The page answered is the page it
+was. The page customers accept at checkout is refused until another one is
+chosen with somcp_update_order_settings, and the answer names the footer link
+blocks that still list the deleted page.
+
 **Change a CMS page.** The new tool somcp_update_cms_page does what Edit then
 Save do on a page of Design > Pages for its Title, Page content, Page category
 and Displayed, per language for the texts, so the delivery, legal notice and

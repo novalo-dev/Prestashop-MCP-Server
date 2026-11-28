@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Change a CMS page category.** The new tool somcp_update_cms_category does
+what Edit then Save do on a page category of Design > Pages: the Name,
+Displayed, Parent category and Description, with the Meta title, meta
+description, Friendly URL and, on PrestaShop 8, the Meta keywords, per
+language for the texts. The texts are checked by the rules of the page tools,
+a category cannot be moved under one of its own, and the category read
+given back changes nothing.
+
 **Read a CMS page category.** The new tool somcp_get_cms_category reads one
 page category of Design > Pages as its Edit form shows it: the Name,
 Displayed, Parent category and Description, with the Meta title, meta

@@ -12,6 +12,7 @@ hidden or moved at any time.
 - `somcp_get_cms_category`
 - `somcp_create_cms_page`
 - `somcp_update_cms_page`
+- `somcp_update_cms_category`
 - `somcp_delete_cms_page`
 
 ## Know which shop you are in
@@ -71,6 +72,18 @@ only what is given.
   menu: say so before.
 - `changed: false` means the page already held every value: nothing was
   written.
+
+## Changing a page category
+
+`somcp_update_cms_category` changes the **Name**, **Displayed**, **Parent
+category**, **Description** and SEO texts of one page category, in the
+languages filled, only what is given.
+
+- Read it with `somcp_get_cms_category` first, then show the merchant what
+  changes and wait for their yes before calling.
+- Hiding a category (`active: false`) takes its pages out of the category
+  listing on the storefront: say so before.
+- `changed: false` means the category already held every value.
 
 ## Deleting a page
 

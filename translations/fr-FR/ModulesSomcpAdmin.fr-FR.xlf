@@ -2162,6 +2162,11 @@
       <source>Read a CMS page category</source>
       <target>Lire une catégorie de pages CMS</target>
     </trans-unit>
+    <!-- Update a CMS page category -->
+    <trans-unit id="42c0e5d925784c9953df933379719e93" resname="Update a CMS page category">
+      <source>Update a CMS page category</source>
+      <target>Modifier une catégorie de pages CMS</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

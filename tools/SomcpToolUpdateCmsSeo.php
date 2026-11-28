@@ -425,19 +425,24 @@ class SomcpToolUpdateCmsSeo
     /**
      * One text as it will be stored, or null with the reason in $errors.
      * Public because somcp_create_cms_page makes the Friendly URL of a page
-     * from its Title with the same rule when none is given.
+     * from its Title with the same rule when none is given, and the page
+     * category tools check their Meta title, meta description and Friendly
+     * URL here: one rule for these texts, whatever they belong to.
      *
      * @param string $field
      * @param string $text
      * @param int $idLang
-     * @param CMS $cms
+     * @param ObjectModel $cms a CMS page, or a CMSCategory
      * @param string $where
      * @param array<int, string> $errors
      *
      * @return string|null
      */
-    public static function checked(string $field, string $text, int $idLang, CMS $cms, string $where, array &$errors): ?string
+    public static function checked(string $field, string $text, int $idLang, ObjectModel $cms, string $where, array &$errors): ?string
     {
+        // A page keeps its Meta title in head_seo_title, a page category in
+        // meta_title: the other names are the same column for both.
+        $column = $cms instanceof CMS ? self::COLUMNS[$field] : $field;
         if ($field === 'link_rewrite') {
             // As the back office makes a friendly URL from what is typed.
             $text = (string) Tools::str2url($text);
@@ -456,7 +461,7 @@ class SomcpToolUpdateCmsSeo
             // rule every SEO write shares; the advice it collects is dropped here
             // because warnings() advises on the text actually stored, the page
             // title included when no meta title is set.
-            $max = SomcpTool::columnSize($cms, self::COLUMNS[$field], $field === 'meta_title' ? 255 : 512);
+            $max = SomcpTool::columnSize($cms, $column, $field === 'meta_title' ? 255 : 512);
             $recommended = $field === 'meta_title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
             $advice = [];
             if (!SomcpTool::seoTextLength($where, Tools::strlen($text), $max, $recommended, $errors, $advice)) {
@@ -464,8 +469,8 @@ class SomcpToolUpdateCmsSeo
             }
         }
 
-        // The page's own rule for the column, the one update() would apply.
-        $check = $cms->validateField(self::COLUMNS[$field], $text, $idLang);
+        // The object's own rule for the column, the one update() would apply.
+        $check = $cms->validateField($column, $text, $idLang);
         if ($check !== true) {
             $errors[] = $where . ': ' . (is_string($check) ? strip_tags($check) : 'not accepted by PrestaShop');
 

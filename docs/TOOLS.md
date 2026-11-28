@@ -9211,6 +9211,39 @@ Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `lin
 
 **Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only: `meta_keywords` is absent from the answer on 9.0.0. **Name** and **Friendly URL** take 64 characters on 8.0.1 and 128 on 9.0.0.
 
+#### `somcp_update_cms_category`
+**State**: written · [issue #489](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/489)
+**Nature**: `acts(EDIT, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - changes one page category of **Design > Pages**, as its form **Edit** then **Save** do: **Name**, **Displayed**, **Parent category**, **Description**, **Meta title**, **Meta description**, **Meta keywords** (PrestaShop 8 only) and **Friendly URL**, per language for the texts. Only what is given changes.
+
+**Do not use for** - the pages of the category (→ `somcp_update_cms_page`); reading it first (→ `somcp_get_cms_category`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cms_category` | | integer | yes | the three lines of `somcp_get_cms_category` (`SomcpToolGetCmsCategory::lookup()`); **1** (Home) is accepted, as its form opens |
+| `languages`, `language` | | array, string | no | as `somcp_update_cms_page` (`SomcpToolUpdateCmsSeo::withLanguage()`, `SomcpToolCreateProduct::languages()`): all active languages by default, `language` of a read given back filled alone |
+| `name` | **Name** | object or string | no | per language (`SomcpToolCreateProduct::texts()`), never empty (`name: required in the default language <iso>`, `name (<iso>): a text, never empty`), then `CMSCategory::validateField('name')`: no `;=#{}`, 64 characters on 8.0.1 and 128 on 9.0.0 |
+| `description` | **Description** | object or string | no | per language, cleaned by `SomcpToolCreateProduct::html()` as the **Page content** of a page; the stored HTML given back is no change |
+| `meta_title`, `meta_description`, `meta_keywords` | **Meta title**, **Meta description**, **Meta keywords** | object or string | no | per language, through `SomcpToolUpdateCmsSeo::checked()`, the rule of the page SEO texts; `meta_keywords` refused on 9.0.0 with `SomcpTool::notOnThisVersion()` unless `null` |
+| `link_rewrite` | **Friendly URL** | object or string | no | per language, through `SomcpToolUpdateCmsSeo::checked()` (`Tools::str2url()`, `isLinkRewrite`), then the size of the category: 64 on 8.0.1, 128 on 9.0.0 |
+| `active` | **Displayed** | boolean | no | `active: true or false` |
+| `id_parent` | **Parent category** | integer | no | an `id_cms_category` of the shop, worded as `id_cms_category`; `id_parent: a page category cannot be moved under itself or one of its own categories` when `CMSCategory::checkBeforeMove()` says no; for Home, `id_parent: Home has no parent` unless 0 is given back. A move puts the category last of its new parent (`CMSCategory::getLastPosition()`) and closes the gap in the old one (`cleanPositions()`) |
+
+`SomcpToolUpdateCmsSeo::checked()` takes an `ObjectModel`: a page keeps its **Meta title** in `cms_lang.head_seo_title`, a category in `cms_category_lang.meta_title`, and the other columns have the same names. The fields the read works out (`parent_name`, `level_depth`, `position`, `pages_count`, `categories_count`, `date_add`, `date_upd`): given back as read, no change; different, `<key>: not changed by this tool`. Any other key through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call again:` (`SomcpTool::refused('changed', $problems)`), every problem at once. A failed save: `The page category could not be changed: <reason>. Read it with somcp_get_cms_category before calling again.`, logged `cms_category_update_failed`.
+
+**Then** - nothing differs from what is stored: no write, `changed: false` with `The page category already holds every value given. Nothing was written.` Otherwise the texts set for the languages given, the others kept, `id_shop_list` the shop of the token, `validateFields(false)`, `validateFieldsLang(false)` and `CMSCategory::update()`, which works the level out again. Logged `cms_category_updated` with the `id_cms_category` and the field names, never the texts.
+
+**Returns** - `changed`, `id_cms_category`, `changes` (`field`, `language` for a text, `old`, `new`; the length for the description), `category` (as `somcp_get_cms_category` answers it, in the first language filled), and `warning` when `active` turns false while the category holds displayed pages: `Its pages are no longer listed under this category on the storefront.`
+
+**Notes** - changes the shop: the assistant asks first, showing what changes. Replayable: a second call changes nothing.
+
+**Differences between 8.0.1 and 9.0.0** - `meta_keywords` on 8.0.1 only; 64 characters for **Name** and **Friendly URL** on 8.0.1, 128 on 9.0.0.
+
 #### `somcp_create_cms_page`
 **State**: written · [issue #486](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/486)
 **Nature**: `acts(ADD, 'AdminCmsContent')` · **Scope**: `mcp.content.write`

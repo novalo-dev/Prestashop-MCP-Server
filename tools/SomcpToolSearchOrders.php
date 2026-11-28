@@ -43,8 +43,35 @@ class SomcpToolSearchOrders
     /** @var int Most a single call will return, whatever it asks for. */
     private const MAX_LIMIT = 100;
 
-    /** @var array<int, string> Sort keys offered, read by the schema and the check of the call alike. */
-    private const SORTS = ['date_desc', 'date_asc', 'total_desc', 'total_asc'];
+    /**
+     * Every column the order list of the back office sorts on, each way, and
+     * the ORDER BY it stands for. Read by the schema, the check of the call
+     * and the query alike, so a key offered is always a key sorted on; the
+     * query never takes the caller's string. Delivery and Status sort on the
+     * names in the language read, as the columns show them.
+     *
+     * @var array<string, string>
+     */
+    private const SORTS = [
+        'date_desc' => 'o.`date_add` DESC',
+        'date_asc' => 'o.`date_add` ASC',
+        'total_desc' => 'o.`total_paid_tax_incl` DESC',
+        'total_asc' => 'o.`total_paid_tax_incl` ASC',
+        'id_desc' => 'o.`id_order` DESC',
+        'id_asc' => 'o.`id_order` ASC',
+        'reference_asc' => 'o.`reference` ASC',
+        'reference_desc' => 'o.`reference` DESC',
+        'delivery_country_asc' => 'ctryl.`name` ASC',
+        'delivery_country_desc' => 'ctryl.`name` DESC',
+        'customer_name_asc' => 'c.`lastname` ASC, c.`firstname` ASC',
+        'customer_name_desc' => 'c.`lastname` DESC, c.`firstname` DESC',
+        'company_asc' => 'c.`company` ASC',
+        'company_desc' => 'c.`company` DESC',
+        'payment_method_asc' => 'o.`payment` ASC',
+        'payment_method_desc' => 'o.`payment` DESC',
+        'status_asc' => 'osl.`name` ASC',
+        'status_desc' => 'osl.`name` DESC',
+    ];
 
     /**
      * @return SomcpTool
@@ -122,8 +149,9 @@ class SomcpToolSearchOrders
                     ],
                     'sort' => [
                         'type' => 'string',
-                        'enum' => self::SORTS,
-                        'description' => 'Order of the results. Most recent first by default.',
+                        'enum' => array_keys(self::SORTS),
+                        'description' => 'Order of the results, on any column of the Orders list, each way. '
+                            . 'Most recent first by default; equal values keep the order of id_order.',
                     ],
                     'language' => [
                         'type' => 'string',
@@ -314,8 +342,8 @@ class SomcpToolSearchOrders
         if (array_key_exists('new_client', $arguments) && !is_bool($arguments['new_client'])) {
             $errors[] = 'new_client: true or false';
         }
-        if (array_key_exists('sort', $arguments) && !in_array($arguments['sort'], self::SORTS, true)) {
-            $errors[] = SomcpTool::oneOf('sort', self::SORTS);
+        if (array_key_exists('sort', $arguments) && (!is_string($arguments['sort']) || !isset(self::SORTS[$arguments['sort']]))) {
+            $errors[] = SomcpTool::oneOf('sort', array_keys(self::SORTS));
         }
 
         return $errors;
@@ -340,12 +368,20 @@ class SomcpToolSearchOrders
             return 0;
         }
         // A list or an object is no code: refused rather than cast.
-        $iso = is_scalar($value) ? trim((string) $value) : '';
+        if (!is_scalar($value)) {
+            $problems[] = 'delivery_country: an ISO code of 2 letters, for example FR';
+
+            return 0;
+        }
+        $iso = Tools::strtoupper(trim((string) $value));
         // Country::getByIso() stops the request on a malformed code
         // rather than answering false, so the code is checked first.
         $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
         if ($idCountry <= 0) {
-            $problems[] = 'delivery_country: an ISO code of a country, for example FR';
+            // The line of every other country refused by its code, with the
+            // code given and the tool that lists the right ones, so the
+            // assistant looks the code up instead of guessing another.
+            $problems[] = SomcpTool::notFound('delivery_country', 'country', $iso, 'somcp_list_countries', 'ISO code');
 
             return 0;
         }
@@ -452,16 +488,17 @@ class SomcpToolSearchOrders
     private static function sort(array $arguments): string
     {
         // An allowed list, not the caller's string: this goes into an ORDER BY.
-        switch ((string) ($arguments['sort'] ?? '')) {
-            case 'date_asc':
-                return 'o.`date_add` ASC';
-            case 'total_desc':
-                return 'o.`total_paid_tax_incl` DESC';
-            case 'total_asc':
-                return 'o.`total_paid_tax_incl` ASC';
-            default:
-                return 'o.`date_add` DESC';
+        $sort = isset($arguments['sort']) && is_string($arguments['sort']) && isset(self::SORTS[$arguments['sort']])
+            ? $arguments['sort'] : 'date_desc';
+        if ($sort === 'id_desc' || $sort === 'id_asc') {
+            return self::SORTS[$sort];
         }
+        // Equal values (orders of one day, one customer, one status) end on
+        // the identifier the same way, so a page read twice holds the same
+        // rows and the next page never repeats one.
+        $way = substr($sort, -4) === 'desc' ? 'DESC' : 'ASC';
+
+        return self::SORTS[$sort] . ', o.`id_order` ' . $way;
     }
 
     /**

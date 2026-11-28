@@ -163,6 +163,13 @@ shop e-mail address.
 
 ### Changed
 
+**Sort the orders on every column.** The order search sorts, each way, on
+every column of the Orders list: ID, Reference, Delivery, Customer, Company,
+Total, Payment, Status and Date. Orders with the same value keep the order of
+their identifier, so a page read twice holds the same orders. An unknown
+delivery country is refused with the code given and the tool that lists the
+countries, in the order search and in the sales summary.
+
 **A combination, an address or a state that is not the right one.** A
 combination of another product, an address of another customer or a state of
 another country is now refused in the same words by every tool, with the value

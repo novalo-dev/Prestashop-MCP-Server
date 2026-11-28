@@ -16,6 +16,8 @@ are:
 
 ## Unreleased
 
+## 2.1.0 - 2026-11-28
+
 ### Added
 
 **Create a CMS page category.** The new tool somcp_create_cms_category does

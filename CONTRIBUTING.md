@@ -397,7 +397,7 @@ any tool whose `acts()` is not a `view`.
      first, then **●** for a read or **✎** for a write and the tool's title as
      the code gives it, then the back office page as the menu names it and the
      right it needs (`view`, `add`, `edit` or `delete`);
-   - nothing on the settings page: the **Tools and prompts** tab lists the
+   - nothing on the settings page: the **Tools and prompts** page lists the
      tool under the group of its scope by itself, with the group's switches
      (see "Switching a group off" in `docs/TOOLS.md`);
    - a line in `CHANGELOG.md`, under `## Unreleased`;

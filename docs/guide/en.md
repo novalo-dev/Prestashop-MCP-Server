@@ -24,7 +24,9 @@ subtitle: Connect Claude, ChatGPT and other AI assistants to your PrestaShop sho
 
 ### Step 2 - Open the settings
 
-**Configure**. The settings are in **Shop Parameters > MCP server**.
+**Configure**. The settings are in **Shop Parameters > MCP server**, which opens on one card per page: click a card ① to open its page. Each page ends on a button back to the cards.
+
+![Shop Parameters > MCP server](images/19-cards.png)
 
 To update later, upload the new zip the same way. Settings are kept.
 

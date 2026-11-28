@@ -1,8 +1,12 @@
 name: Sponsor label
 
-# Sponsors are promised that their issues are read first. This marks every
-# issue a sponsor opens with the `sponsor` label, so the maintainer and the
-# scheduled tasks can find them at a glance.
+# Marks every issue a sponsor opens with the label of what they give, so the
+# maintainer and the scheduled tasks know at a glance how to order the work:
+#
+#   Backer     a monthly sponsorship of 25 dollars or more
+#   Supporter  a monthly sponsorship below that
+#   One time   a one-time payment: one issue per payment, the next ones are
+#              ordinary issues until the sponsor pays again
 #
 # Only GitHub's GraphQL API tells whether someone sponsors the maintainer, and
 # only with a token of the maintainer's own account: SPONSORS_TOKEN, a classic
@@ -18,38 +22,125 @@ on:
 permissions:
   issues: write
 
+env:
+  # The monthly amount, in dollars, from which a sponsor is a Backer.
+  BACKER_FROM: 25
+
 jobs:
   label:
     runs-on: ubuntu-latest
     # The maintainer does not sponsor himself, and bots never do.
     if: github.event.issue.user.login != github.repository_owner && github.event.issue.user.type == 'User'
     steps:
-      - name: Check whether the author sponsors the maintainer
+      - name: Read what the author gives
         id: check
         env:
           GH_TOKEN: ${{ secrets.SPONSORS_TOKEN }}
           AUTHOR: ${{ github.event.issue.user.login }}
         run: |
+          echo "label=" >> "$GITHUB_OUTPUT"
           if [ -z "$GH_TOKEN" ]; then
             echo "SPONSORS_TOKEN is not set: nothing to check." >> "$GITHUB_STEP_SUMMARY"
-            echo "sponsor=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # "Viewer" is the owner of the token, the maintainer. A label is
-          # public, so a sponsor who chose to stay private gets none: putting
-          # it on their issue would tell everyone what they kept to themselves.
-          LEVEL=$(gh api graphql -f query='query($login: String!) { user(login: $login) { sponsorshipForViewerAsSponsorable(activeOnly: true) { privacyLevel } } }' \
-            -f login="$AUTHOR" --jq '.data.user.sponsorshipForViewerAsSponsorable.privacyLevel // ""')
-          if [ "$LEVEL" = "PUBLIC" ]; then
-            echo "sponsor=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "sponsor=false" >> "$GITHUB_OUTPUT"
+
+          # "Viewer" is the owner of the token, the maintainer. The last
+          # sponsorship of the author, ended or not: a one-time payment stops
+          # being active on its own, and the issue it pays for may come later.
+          SPONSORSHIP=$(gh api graphql -f query='
+            query($login: String!) {
+              user(login: $login) {
+                sponsorshipForViewerAsSponsorable(activeOnly: false) {
+                  isActive
+                  isOneTimePayment
+                  privacyLevel
+                  tier { monthlyPriceInDollars isOneTime }
+                }
+              }
+            }' -f login="$AUTHOR" --jq '.data.user.sponsorshipForViewerAsSponsorable // empty')
+          if [ -z "$SPONSORSHIP" ]; then
+            echo "$AUTHOR does not sponsor the maintainer." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
 
-      - name: Add the sponsor label
-        if: steps.check.outputs.sponsor == 'true'
+          # A label is public, so a sponsor who chose to stay private gets
+          # none: putting it on their issue would tell everyone what they kept
+          # to themselves.
+          if [ "$(jq -r '.privacyLevel' <<< "$SPONSORSHIP")" != "PUBLIC" ]; then
+            echo "A private sponsorship: no label." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          ACTIVE=$(jq -r '.isActive' <<< "$SPONSORSHIP")
+          ONE_TIME=$(jq -r '(.isOneTimePayment // false) or (.tier.isOneTime // false)' <<< "$SPONSORSHIP")
+          AMOUNT=$(jq -r '.tier.monthlyPriceInDollars // 0' <<< "$SPONSORSHIP")
+
+          if [ "$ACTIVE" = "true" ] && [ "$ONE_TIME" = "false" ]; then
+            if [ "$AMOUNT" -ge "$BACKER_FROM" ]; then
+              echo "label=Backer" >> "$GITHUB_OUTPUT"
+            else
+              echo "label=Supporter" >> "$GITHUB_OUTPUT"
+            fi
+            echo "A monthly sponsorship of $AMOUNT dollars." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # One-time payments: each pays for one issue. The payments are the
+          # one-time sponsorships this author started, read from the activity
+          # of the maintainer's sponsors page; the issues already paid for
+          # are the ones of this author that carry the label, counted in the
+          # next step. Written to the summary, so a count that looks wrong
+          # can be checked against the sponsors dashboard.
+          PAID=0
+          AFTER=""
+          while :; do
+            PAGE=$(gh api graphql -f query='
+              query($after: String) {
+                viewer {
+                  sponsorsActivities(first: 100, after: $after, period: ALL, actions: [NEW_SPONSORSHIP]) {
+                    pageInfo { hasNextPage endCursor }
+                    nodes {
+                      sponsor { ... on User { login } ... on Organization { login } }
+                      sponsorsTier { isOneTime }
+                    }
+                  }
+                }
+              }' ${AFTER:+-f after="$AFTER"} --jq '.data.viewer.sponsorsActivities')
+            COUNT=$(jq --arg login "$AUTHOR" '[.nodes[] | select(.sponsor.login == $login and .sponsorsTier.isOneTime == true)] | length' <<< "$PAGE")
+            PAID=$((PAID + COUNT))
+            if [ "$(jq -r '.pageInfo.hasNextPage' <<< "$PAGE")" != "true" ]; then
+              break
+            fi
+            AFTER=$(jq -r '.pageInfo.endCursor' <<< "$PAGE")
+          done
+          echo "paid=$PAID" >> "$GITHUB_OUTPUT"
+          echo "One-time payments of $AUTHOR: $PAID." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Count the issues the one-time payments already paid for
+        id: used
+        if: steps.check.outputs.paid != '' && steps.check.outputs.paid != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          PAID: ${{ steps.check.outputs.paid }}
+        run: |
+          # Open or closed, and never this issue itself: reopened, it keeps
+          # the label it was given and does not count against the author.
+          USED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues?creator=$AUTHOR&labels=One%20time&state=all&per_page=100" \
+            --jq "[.[] | select(.pull_request == null and .number != $NUMBER)] | length" | awk '{ total += $1 } END { print total + 0 }')
+          echo "Issues already paid for: $USED of $PAID." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$USED" -lt "$PAID" ]; then
+            echo "label=One time" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add the label
+        if: steps.check.outputs.label != '' || steps.used.outputs.label != ''
         env:
           GH_TOKEN: ${{ github.token }}
           NUMBER: ${{ github.event.issue.number }}
+          LABEL: ${{ steps.check.outputs.label || steps.used.outputs.label }}
         # Adding a label that does not exist yet creates it.
-        run: gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$NUMBER/labels" -f "labels[]=sponsor" --silent
+        run: gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$NUMBER/labels" -f "labels[]=$LABEL" --silent

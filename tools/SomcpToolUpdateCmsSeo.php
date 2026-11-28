@@ -341,7 +341,8 @@ class SomcpToolUpdateCmsSeo
      * What will be written, or every reason the call is refused.
      *
      * A value equal to what the page holds is left out, so what remains is
-     * exactly what changes.
+     * exactly what changes. Public because somcp_create_cms_page checks its
+     * SEO fields here, against a page not saved yet, so both tools hold one rule.
      *
      * @param array<string, mixed> $arguments
      * @param CMS $cms
@@ -350,7 +351,7 @@ class SomcpToolUpdateCmsSeo
      *
      * @return array{texts: array<string, array<int, string>>, indexation: bool|null, changes: array<int, array<string, mixed>>, moved: array<int, string>, isos: array<int, string>}
      */
-    private static function plan(array $arguments, CMS $cms, int $idShop, array &$errors): array
+    public static function plan(array $arguments, CMS $cms, int $idShop, array &$errors): array
     {
         $plan = ['texts' => [], 'indexation' => null, 'changes' => [], 'moved' => [], 'isos' => []];
 
@@ -423,6 +424,8 @@ class SomcpToolUpdateCmsSeo
 
     /**
      * One text as it will be stored, or null with the reason in $errors.
+     * Public because somcp_create_cms_page makes the Friendly URL of a page
+     * from its Title with the same rule when none is given.
      *
      * @param string $field
      * @param string $text
@@ -433,7 +436,7 @@ class SomcpToolUpdateCmsSeo
      *
      * @return string|null
      */
-    private static function checked(string $field, string $text, int $idLang, CMS $cms, string $where, array &$errors): ?string
+    public static function checked(string $field, string $text, int $idLang, CMS $cms, string $where, array &$errors): ?string
     {
         if ($field === 'link_rewrite') {
             // As the back office makes a friendly URL from what is typed.

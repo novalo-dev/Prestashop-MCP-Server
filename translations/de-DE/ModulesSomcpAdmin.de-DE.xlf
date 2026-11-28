@@ -2092,6 +2092,11 @@
       <source>Generate the llms.txt file</source>
       <target>Die Datei llms.txt erzeugen</target>
     </trans-unit>
+    <!-- Create a CMS page -->
+    <trans-unit id="d9be187ea385d4af6705f71dcae63c12" resname="Create a CMS page">
+      <source>Create a CMS page</source>
+      <target>Eine CMS-Seite erstellen</target>
+    </trans-unit>
     <!-- Change a CMS page -->
     <trans-unit id="3810a7de2adbc8626ee181c2bffc0c09" resname="Change a CMS page">
       <source>Change a CMS page</source>

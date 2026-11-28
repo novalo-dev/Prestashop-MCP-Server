@@ -9188,13 +9188,45 @@ Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `lin
 
 **Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only (field and column `cms_lang.meta_keywords`): `meta_keywords` is `null` on 9.0.0. The content is a `longtext` column on both, returned whole.
 
+#### `somcp_create_cms_page`
+**State**: written · [issue #486](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/486)
+**Nature**: `acts(ADD, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
+
+**Does** - creates a page of **Design > Pages**, as **Add new page** then **Save** do: its **Page category**, **Title**, **Page content**, **Displayed**, and in the same call its **Meta title**, **Meta description**, **Meta keywords** (8.0.1 only), **Friendly URL** and **Indexation by search engines**, per language for the texts.
+
+**Do not use for** - changing a page (→ `somcp_update_cms_page`, `somcp_update_cms_seo`); a page category (capability noted for later).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | | array | no | as `somcp_update_cms_seo` and `somcp_update_cms_page`: the languages the texts are given in, all active ones by default; the other languages take the text of the default one, as the back office saves a field left empty |
+| `title` | **Title** | object or string | yes | per language, keyed by ISO code; missing: `title: required, one text per language (<isos>)` (`SomcpToolCreateProduct::texts(..., true)`); otherwise the rule of `somcp_update_cms_page` |
+| `content` | **Page content** | object or string | no | empty when left out; the rule of `somcp_update_cms_page` (`SomcpToolCreateProduct::html()`) |
+| `id_cms_category` | **Page category** | integer | no | `1`, the root category, when left out, as the tree of the form opens on it; the rule of `somcp_update_cms_page` |
+| `active` | **Displayed** | boolean | no | `false` when left out, as the switch of the form opens; `active: true or false` |
+| `meta_title`, `meta_description`, `meta_keywords`, `indexation` | **Meta title**, **Meta description**, **Meta keywords**, **Indexation by search engines** | object, boolean | no | the rules of `somcp_update_cms_seo`; `meta_keywords` refused on 9.0.0 with `SomcpTool::notOnThisVersion()`; `indexation` false when left out |
+| `link_rewrite` | **Friendly URL** | object | no | the rule of `somcp_update_cms_seo`; left out, made from the **Title** of each language filled with the same rule (`SomcpToolUpdateCmsSeo::checked()`, public), as the copier of the screen does: `link_rewrite (<iso>), made from the title: no valid friendly URL can be made from it; ...` or `... 128 characters at most` when it cannot be |
+
+`id_cms` and the fields the read works out (`seo_title`, `url`, `position`, `language`): `<key>: not a field of this tool`, as any other key, through `SomcpTool::unknownFields()`.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call again:` (`SomcpTool::refused('created', $problems)`), every problem at once: `title` missing, the rules above, an unknown argument. The checks are those of `somcp_update_cms_page` and `somcp_update_cms_seo`, called on a page not saved yet (`SomcpToolUpdateCmsPage::plan()` and `SomcpToolUpdateCmsSeo::plan()`, public), never copied. A failed save: `The page could not be created: <reason>.`, logged `cms_page_create_failed`.
+
+**Then** - `new CMS()`, the fields set for every language, `validateFields(false)` and `validateFieldsLang(false)`, then `CMS::add()` for the shop of the token (`id_shop_list`), as `AddCmsPageHandler` does: the page goes last of its category (`CMS::getLastPosition()`). Two pages may share a **Friendly URL**: the default route of a page carries its identifier (`content/{id}-{rewrite}`), so their addresses differ, as the back office allows. Logged `cms_page_created` with the new `id_cms`, never the texts.
+
+**Returns** - `created: true`, `id_cms`, `page` (as `somcp_get_cms_page` answers it in the first language filled), and `warning`, each sentence when it applies: `active` false, `The page is not shown on the storefront yet: switch it on with somcp_update_cms_page once its texts are checked.`; the Friendly URL made from the title, `Its Friendly URL was made from the title: <url> (<iso>), ...`; the content cleaned, `Some HTML of the content was removed by the shop's cleaning: read the page again to see what was kept.`; the shop one of several, `The page was created for this shop only.`
+
+**Notes** - changes the shop: the assistant asks first, showing the title and the content. Not replayable: a second call creates a second page; when the answer is lost, read `somcp_list_cms_pages` first.
+
+**Differences between 8.0.1 and 9.0.0** - `meta_keywords` on 8.0.1 only, as in `somcp_update_cms_seo`.
+
 #### `somcp_update_cms_page`
 **State**: written · [issue #484](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/484)
 **Nature**: `acts(EDIT, 'AdminCmsContent')` · **Scope**: `mcp.content.write`
 
 **Does** - changes a page of **Design > Pages**, as **Edit** then **Save** do, for the fields `somcp_update_cms_seo` leaves to the back office: **Title**, **Page content**, **Page category** and **Displayed**, per language for the texts. Only what is given changes.
 
-**Do not use for** - the **Meta title**, **Meta description**, **Friendly URL** and **Indexation** (→ `somcp_update_cms_seo`); creating a page; deleting one (→ `somcp_delete_cms_page`).
+**Do not use for** - the **Meta title**, **Meta description**, **Friendly URL** and **Indexation** (→ `somcp_update_cms_seo`); creating a page (→ `somcp_create_cms_page`); deleting one (→ `somcp_delete_cms_page`).
 
 **Parameters**
 
@@ -11280,7 +11312,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `page` (title of a page).
 
-**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`, `somcp_update_cms_page`, `somcp_delete_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`, `somcp_create_cms_page`, `somcp_update_cms_page`, `somcp_delete_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 

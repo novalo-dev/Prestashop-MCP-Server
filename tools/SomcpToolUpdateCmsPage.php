@@ -180,7 +180,8 @@ class SomcpToolUpdateCmsPage
      * What will be written, or every reason the call is refused, in $errors.
      *
      * A value equal to what the page holds is left out, so what remains is
-     * exactly what changes.
+     * exactly what changes. Public because somcp_create_cms_page checks its
+     * fields here, against a page not saved yet, so both tools hold one rule.
      *
      * @param array<string, mixed> $arguments
      * @param CMS $cms
@@ -190,7 +191,7 @@ class SomcpToolUpdateCmsPage
      *
      * @return array{texts: array<string, array<int, string>>, set: array<string, mixed>, changes: array<int, array<string, mixed>>, emptied: array<int, string>, cleaned: bool}
      */
-    private static function plan(array $arguments, CMS $cms, array $languages, int $idShop, array &$errors): array
+    public static function plan(array $arguments, CMS $cms, array $languages, int $idShop, array &$errors): array
     {
         $plan = ['texts' => [], 'set' => [], 'changes' => [], 'emptied' => [], 'cleaned' => false];
         $default = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);

@@ -4413,6 +4413,74 @@ if ($deleteCmsPage !== null && $listCmsPages !== null) {
     }
 }
 
+// A page created (#486): the JSON scenario never creates a page of the
+// install. A page made by the tool with a title only gets its Friendly URL
+// from the title, stays hidden and goes last of the root category; it is
+// then deleted with somcp_delete_cms_page, and by the core if that failed.
+$createCmsPage = $registry->get('somcp_create_cms_page');
+if ($createCmsPage !== null && $deleteCmsPage !== null) {
+    $calls += 2;
+    $cmsCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $idCreated = 0;
+    try {
+        $iso = (string) Language::getIsoById((int) Configuration::get('PS_LANG_DEFAULT'));
+        // Read before the call, so the check holds whatever the earlier
+        // blocks left in the category.
+        $expectedPosition = (int) CMS::getLastPosition(1);
+        [$result, $text] = $cmsCall($createCmsPage, [
+            'languages' => [$iso],
+            'title' => [$iso => 'somcp test page'],
+            'content' => [$iso => '<p>somcp test page</p>'],
+        ]);
+        if (preg_match('/"id_cms": (\d+)/', $text, $match) === 1) {
+            $idCreated = (int) $match[1];
+        }
+        if (!empty($result['isError']) || $idCreated <= 0 || strpos($text, '"created": true') === false
+            || strpos($text, '"link_rewrite": "somcp-test-page"') === false || strpos($text, '"active": false') === false
+            || strpos($text, '"position": ' . $expectedPosition) === false) {
+            $failures[] = 'somcp_create_cms_page (a page made from its title, hidden, last of its category): unexpected - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_cms_page (a page made from its title, hidden, last of its category)');
+        }
+        if ($idCreated > 0) {
+            [$result, $text] = $cmsCall($deleteCmsPage, ['id_cms' => $idCreated]);
+            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false) {
+                $failures[] = 'somcp_create_cms_page (the page created is deleted by somcp_delete_cms_page): unexpected - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_cms_page (the page created is deleted by somcp_delete_cms_page)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_cms_page (a page created): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // The page made here never outlives the test, whatever the tools did.
+        if ($idCreated > 0) {
+            $left = new CMS($idCreated);
+            if (Validate::isLoadedObject($left)) {
+                $left->delete();
+            }
+        }
+    }
+}
+
 // The mail logo changed and put back (#483): the JSON scenario cannot send
 // an image nor read the files it leaves. The header logo of the demo is never
 // touched, since the shop deletes the file a logo replaces: the mail logo,

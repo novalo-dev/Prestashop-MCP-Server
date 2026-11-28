@@ -9,6 +9,7 @@
     "somcp_ping",
     "somcp_list_cms_pages",
     "somcp_get_cms_page",
+    "somcp_create_cms_page",
     "somcp_update_cms_page",
     "somcp_delete_cms_page"
   ],

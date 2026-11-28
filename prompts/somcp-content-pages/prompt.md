@@ -9,6 +9,7 @@ hidden or moved at any time.
 - `somcp_ping`
 - `somcp_list_cms_pages`
 - `somcp_get_cms_page`
+- `somcp_create_cms_page`
 - `somcp_update_cms_page`
 - `somcp_delete_cms_page`
 
@@ -38,6 +39,20 @@ in mind.
 4. **Answer from the page as it is.** Give the title, its address (`url`) and
    whether it is displayed. When asked what a page says, quote its content
    rather than paraphrasing it.
+
+## Creating a page
+
+`somcp_create_cms_page` adds one page, as **Add new page** then **Save** do
+in **Design > Pages**. Only the `title` is required.
+
+- Show the merchant the title and the content and wait for their yes before
+  calling. A second call creates a second page: when an answer is lost, look
+  for the page with `somcp_list_cms_pages` before calling again.
+- The page is created hidden (`active: false`) unless the merchant asks for
+  it to be shown; switch it on with `somcp_update_cms_page` once its texts
+  are checked.
+- Left out, the **Friendly URL** is made from the title: pass on the
+  `warning` that gives it.
 
 ## Changing a page
 

@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Create a CMS page.** The new tool somcp_create_cms_page does what Add new
+page then Save do on Design > Pages: the Title, Page content, Page category
+and Displayed, with the Meta title, meta description, Friendly URL and
+Indexation, per language for the texts. Only the Title is needed: the
+Friendly URL is then made from it, as the form does, and the page is created
+hidden until the merchant switches it on. Every field is checked as the tools
+that change a page check it.
+
 **Delete a CMS page.** The new tool somcp_delete_cms_page does what Delete
 does on a row of Design > Pages: the page goes with its texts, and the pages
 after it in its category move up one place. The page answered is the page it

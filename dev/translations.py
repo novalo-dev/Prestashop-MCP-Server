@@ -1666,6 +1666,10 @@ T = {
  "Générer le fichier llms.txt",
  "Generar el archivo llms.txt",
  "Die Datei llms.txt erzeugen"),
+"Create a CMS page": (
+ "Créer une page CMS",
+ "Crear una página CMS",
+ "Eine CMS-Seite erstellen"),
 "Change a CMS page": (
  "Modifier une page CMS",
  "Modificar una página CMS",

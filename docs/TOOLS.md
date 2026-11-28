@@ -9188,6 +9188,29 @@ Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `lin
 
 **Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only (field and column `cms_lang.meta_keywords`): `meta_keywords` is `null` on 9.0.0. The content is a `longtext` column on both, returned whole.
 
+#### `somcp_get_cms_category`
+**State**: written · [issue #488](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/488)
+**Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.content.read`
+
+**Does** - returns one page category of **Design > Pages** of the token's shop as its form **Edit** shows it: **Name**, **Displayed**, **Parent category**, **Description**, **Meta title**, **Meta description**, **Meta keywords** (PrestaShop 8 only) and **Friendly URL**, with its level, its position and how many pages and categories it holds.
+
+**Do not use for** - listing the categories or the pages they hold (→ `somcp_list_cms_pages`), reading a page (→ `somcp_get_cms_page`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cms_category` | integer | yes | from `categories[]` of `somcp_list_cms_pages`. A category the token's shop does not have (absent from `cms_category_shop`) is refused as unknown, never read from another shop, as the list leaves it out |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise with `SomcpTool::languageProblem()`; the shop default when left out |
+
+**Returns** - `id_cms_category`; `language` (ISO code the texts are in); `name` (**Name**); `active` (**Displayed**, boolean); `id_parent` (**Parent category**, 0 for **Home**) and `parent_name` (its name in the language read, `null` for **Home**); `level_depth` (1 for **Home**); `position` (from 0, as in `somcp_list_cms_pages`); `description` (**Description**, the stored HTML as is); `meta_title`, `meta_description` (**Meta title**, **Meta description**); `meta_keywords` (**Meta keywords**, PrestaShop 8 only, absent on 9, read from `CMSCategory::$definition`, never the version number); `link_rewrite` (**Friendly URL**); `date_add`, `date_upd`; `pages_count` and `categories_count` (the pages and the categories of the shop directly in it). The texts are those of the token's shop (`cms_category_lang.id_shop`). The names are those of `somcp_list_cms_pages` and of the page tools, so the answer can be given back as it is to the tool that changes a category.
+
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); a missing `id_cms_category`: `id_cms_category: required - find it with somcp_list_cms_pages`; one that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, the line `somcp_list_cms_pages` gives for its filter; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages.
+
+**Notes** - read only, replayable. Read through the core object `CMSCategory`, not raw SQL; only the two counts are queried. The demo data has one category, 1 **Home**, holding the 5 pages of the install.
+
+**Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only: `meta_keywords` is absent from the answer on 9.0.0. **Name** and **Friendly URL** take 64 characters on 8.0.1 and 128 on 9.0.0.
+
 #### `somcp_create_cms_page`
 **State**: written · [issue #486](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/486)
 **Nature**: `acts(ADD, 'AdminCmsContent')` · **Scope**: `mcp.content.write`

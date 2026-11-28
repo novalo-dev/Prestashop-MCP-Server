@@ -2157,6 +2157,11 @@
       <source>Get a content page</source>
       <target>Eine Inhaltsseite abrufen</target>
     </trans-unit>
+    <!-- Read a CMS page category -->
+    <trans-unit id="67f1e55ce0ad1c83c177c906619e8c87" resname="Read a CMS page category">
+      <source>Read a CMS page category</source>
+      <target>Eine CMS-Seitenkategorie lesen</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

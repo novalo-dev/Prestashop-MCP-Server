@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "reads Home, the one page category of the demo shop, with every field of its edit form", "arguments": {"id_cms_category": 1}, "expect": "ok", "contains": ["\"id_cms_category\": 1", "\"language\": \"en\"", "\"name\": \"Home\"", "\"active\": true", "\"id_parent\": 0", "\"parent_name\": null", "\"level_depth\": 1", "\"description\"", "\"meta_title\"", "\"meta_description\"", "\"link_rewrite\": \"home\"", "\"date_add\"", "\"date_upd\"", "\"pages_count\": 5", "\"categories_count\": 0"]},
+    {"why": "the texts read in a language the shop has, said by its code", "arguments": {"id_cms_category": 1, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"name\": \"Home\""]},
+    {"why": "an identifier given as a string of digits is read as that category, as in the other tools", "arguments": {"id_cms_category": "1"}, "expect": "ok", "contains": ["\"id_cms_category\": 1", "\"name\": \"Home\""]},
+    {"why": "a missing identifier is refused, pointing to the list", "arguments": {}, "expect": "error", "contains": ["Nothing was read.", "id_cms_category: required - find it with somcp_list_cms_pages"]},
+    {"why": "an identifier that is not a whole number is refused, naming the field", "arguments": {"id_cms_category": "x"}, "expect": "error", "contains": ["Nothing was read.", "id_cms_category: a whole number above 0"]},
+    {"why": "a category the shop does not have is refused, pointing to the list", "arguments": {"id_cms_category": 999999}, "expect": "error", "contains": ["Nothing was read.", "id_cms_category: no page category of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]},
+    {"why": "a misspelt field is named rather than ignored", "arguments": {"id_cms_category": 1, "id_category": 1}, "expect": "error", "contains": ["Nothing was read.", "id_category: not a field of this tool"]},
+    {"why": "a category nobody has and a language the shop does not have, reported together", "arguments": {"id_cms_category": 999999, "language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages, which are ", "- id_cms_category: no page category of this shop has the identifier 999999"]}
+  ]
+}

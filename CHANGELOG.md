@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Read a CMS page category.** The new tool somcp_get_cms_category reads one
+page category of Design > Pages as its Edit form shows it: the Name,
+Displayed, Parent category and Description, with the Meta title, meta
+description, Friendly URL and, on PrestaShop 8, the Meta keywords, and how
+many pages and categories it holds. Until now the SEO texts of a category
+were read nowhere.
+
 **Create a CMS page.** The new tool somcp_create_cms_page does what Add new
 page then Save do on Design > Pages: the Title, Page content, Page category
 and Displayed, with the Meta title, meta description, Friendly URL and

@@ -9,6 +9,7 @@ hidden or moved at any time.
 - `somcp_ping`
 - `somcp_list_cms_pages`
 - `somcp_get_cms_page`
+- `somcp_get_cms_category`
 - `somcp_create_cms_page`
 - `somcp_update_cms_page`
 - `somcp_delete_cms_page`
@@ -36,6 +37,8 @@ in mind.
    merchant asks what it says, or about its meta description, keywords or
    indexation: the list does not hold a page's content. Pass the same
    `language` as for the list.
+   For a page category itself - its name, description or SEO texts - read
+   it with `somcp_get_cms_category` and its `id_cms_category`.
 4. **Answer from the page as it is.** Give the title, its address (`url`) and
    whether it is displayed. When asked what a page says, quote its content
    rather than paraphrasing it.

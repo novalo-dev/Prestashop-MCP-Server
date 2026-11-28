@@ -559,6 +559,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_list_cms_pages` | ● List content pages | Pages › view |
 | `somcp_get_cms_page` | ● Get a content page | Pages › view |
+| `somcp_get_cms_category` | ● Read a CMS page category | Pages › view |
 
 ### 🧩 Modules
 

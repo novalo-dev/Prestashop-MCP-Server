@@ -18,6 +18,17 @@ are:
 
 ### Added
 
+**Change the schema of URLs.** The new tool somcp_update_url_schema does what
+Save does on the card Schema of URLs of Shop Parameters > Traffic & SEO > SEO &
+URLs: the pattern of the addresses of the products, categories, suppliers,
+brands, pages and page categories, checked as the back office checks it, and
+an unknown keyword refused where the back office would let the storefront
+write it as nothing. The default pattern of the version restores the default.
+The answer warns that the old addresses lead to a page not found, and when two
+routes end with addresses of the same shape. The route to modules stays with
+the back office, since it carries the address the assistant is connected
+through. somcp_get_seo_settings now names this tool for the patterns.
+
 **Delete a search engine.** The new tool somcp_delete_search_engine does what
 Delete does on a row of Shop Parameters > Traffic & SEO > Search Engines, one
 row per call. It answers the row it was, so it can be added again, and warns

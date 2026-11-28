@@ -2017,6 +2017,11 @@
       <source>Read the SEO and URL settings</source>
       <target>Die SEO- und URL-Einstellungen lesen</target>
     </trans-unit>
+    <!-- Change the schema of URLs -->
+    <trans-unit id="a70e888d4a012e8ac03b4811755e8391" resname="Change the schema of URLs">
+      <source>Change the schema of URLs</source>
+      <target>Das URL-Schema ändern</target>
+    </trans-unit>
     <!-- Read the robots.txt file -->
     <trans-unit id="efb4442b8d63d68974536f8cbfd2375d" resname="Read the robots.txt file">
       <source>Read the robots.txt file</source>

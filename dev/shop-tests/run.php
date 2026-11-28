@@ -3479,6 +3479,63 @@ if ($createEngine !== null && $updateEngine !== null && $deleteEngine !== null &
     }
 }
 
+// The route of the suppliers changed, read back customized, then given its
+// default back (#480). The JSON scenario only covers the refusals and the call
+// that changes nothing, since a pattern left behind would move the supplier
+// addresses the tools after it read; the finally puts the default back
+// whatever happens.
+$updateSchema = $registry->get('somcp_update_url_schema');
+$getSeo = $registry->get('somcp_get_seo_settings');
+if ($updateSchema !== null && $getSeo !== null) {
+    $calls += 2;
+    $schemaContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($updateSchema->getRequiredScopes(), $getSeo->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $schemaText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $seoBefore = json_decode(trim($schemaText($getSeo->call([], $schemaContext))), true);
+    $supplierDefault = (string) ($seoBefore['routes']['supplier']['pattern'] ?? '');
+    try {
+        $moved = $updateSchema->call(['routes' => ['supplier' => ['pattern' => 'suppliers/{id}-{rewrite}']]], $schemaContext);
+        $move = json_decode(trim($schemaText($moved)), true);
+        $seoAfter = json_decode(trim($schemaText($getSeo->call([], $schemaContext))), true);
+        $expected = ['pattern' => 'suppliers/{id}-{rewrite}', 'customized' => true];
+        if (!empty($moved['isError']) || ($move['changed'] ?? null) !== true
+            || ($move['changes'] ?? null) !== [['route' => 'supplier', 'old' => $supplierDefault, 'new' => 'suppliers/{id}-{rewrite}']]
+            || ($move['routes']['supplier'] ?? null) !== $expected || ($seoAfter['routes']['supplier'] ?? null) !== $expected
+            || strpos((string) ($move['warning'] ?? ''), 'The addresses of all suppliers change') !== 0) {
+            $failures[] = 'somcp_update_url_schema (the route of the suppliers changed, then read customized): unexpected - ' . excerpt($moved);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_url_schema (the route of the suppliers changed, then read customized)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_url_schema: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $back = $updateSchema->call(['routes' => ['supplier' => ['pattern' => $supplierDefault]]], $schemaContext);
+        $restored = json_decode(trim($schemaText($back)), true);
+        if (!empty($back['isError']) || ($restored['routes']['supplier'] ?? null) !== ['pattern' => $supplierDefault, 'customized' => false]
+            || (string) Configuration::get('PS_ROUTE_supplier_rule', null, null, (int) $context->shop->id) !== '') {
+            $failures[] = 'somcp_update_url_schema (the default pattern given back restores the default): unexpected - ' . excerpt($back);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_url_schema (the default pattern given back restores the default)');
+        }
+    }
+}
+
 // A customer group restriction set on a cart rule, read back, then lifted
 // (#406), and the same for Product selection (#433): the JSON scenario only
 // covers the refusals, since a restriction left on a demo rule would change

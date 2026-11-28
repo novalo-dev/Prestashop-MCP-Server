@@ -592,6 +592,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | Tool | What it does | Needs, in Team › Permissions |
 |---|---|---|
 | `somcp_get_seo_settings` | ● Read the SEO and URL settings | SEO & URLs › view |
+| `somcp_update_url_schema` | ✎ Change the schema of URLs | SEO & URLs › edit |
 | `somcp_list_meta_pages` | ● List the shop pages and their SEO | SEO & URLs › view |
 | `somcp_audit_page` | ● Audit a public page of the shop | SEO & URLs › view |
 | `somcp_check_links` | ● Check the links of the shop's public pages | SEO & URLs › view |

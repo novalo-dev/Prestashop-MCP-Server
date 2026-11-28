@@ -10051,7 +10051,7 @@ whose Server is part of the referrer's host.
 
 **Does** - returns the shop's SEO and URL settings, and what each one means for search engines.
 
-**Do not use for** - changing them, which stays in the back office: these settings break every URL of the shop when wrong.
+**Do not use for** - changing them: the URL patterns (`routes`) are changed with `somcp_update_url_schema`; the others stay in the back office, since these settings break every URL of the shop when wrong.
 
 **Parameters**
 
@@ -10065,6 +10065,87 @@ None.
 - `sitemap_module.active` is read from `module_shop` for the shop of the token, since `Module::isEnabled()` answers for the shop of the global context.
 - A language's `url_prefix` follows what the storefront does: the ISO code is in the addresses only when the shop serves more than one active language, and then every language carries it, except the default language on PrestaShop 9 when **Use prefix for default language** is off.
 - `warnings` names what costs rankings: friendly URLs off (`friendly_urls_off`), no canonical redirection (`no_canonical_redirect`), a shop not served in HTTPS (`not_https`, or `https_not_everywhere` on PrestaShop 8), no robots.txt (`no_robots_txt`), no sitemap module (`no_sitemap_module`).
+
+#### `somcp_update_url_schema`
+**State**: written · [issue #480](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/480)
+**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - changes the routes of the card **Schema of URLs** of **Shop
+Parameters > Traffic & SEO > SEO & URLs**, as **Save** does there: the pattern
+of the addresses of the products, categories, suppliers, brands, pages and
+page categories. They are the `routes` of `somcp_get_seo_settings`, given back
+with a new pattern; the default pattern of the version restores the default.
+
+**Do not use for** - the Friendly URL of one product, category or page (their
+own tools); the other settings of the page, which stay in the back office.
+**Route to modules** (`module`) is left out on purpose: it carries the address
+of every module page, this module's own included, and an assistant that
+changed it could not reach the shop again.
+
+**Parameters**
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `routes` | **Schema of URLs** | object | required, at least one route (`routes: required - at least one route, as somcp_get_seo_settings reads them`); keys among `product`, `category`, `supplier`, `brand`, `cms`, `cms_category` (`SomcpToolGetSeoSettings::ROUTES`); `module` given back as read is taken out, different it answers `routes.module: changed in the back office only - it carries the address of every module page` |
+| `routes.<name>.pattern` | **Route to ...** | string | required in each route (`routes.<name>.pattern: required`); trimmed; `Validate::isRoutePattern()` (`routes.<name>.pattern: only letters, digits and _ ( ) . { } : / -`, with `and accented letters` when **Accented URL** is on); each required keyword, as `Dispatcher::validateRoute()` tests it (`routes.<name>.pattern: keyword {<keyword>} required`, one line per keyword); each keyword written one of the route's (`routes.<name>.pattern: {<keyword>} is not a keyword of this route - one of <list>`), which the back office accepts and the storefront then writes as nothing |
+| `routes.<name>.customized` | | boolean | worked out by the shop: taken out when equal to what the pattern gives (true when it differs from the default), otherwise `routes.<name>.customized: worked out by the shop, so it is not written here` |
+
+The keywords and the defaults are read from `Dispatcher::$default_routes`
+through `get_class_vars('Dispatcher')`, as `SomcpToolGetSeoSettings::routes()`
+does, never written in the tool: they differ between versions.
+
+| Route | Required keywords | Default, 9.0 | Default, 8.0 |
+|---|---|---|---|
+| `product` | `id`, `id_product_attribute`, `rewrite` | `{id}{-:id_product_attribute}-{rewrite}.html` | `{category:/}{id}{-:id_product_attribute}-{rewrite}{-:ean13}.html` |
+| `category` | `id` | `{id}-{rewrite}` | `{id}-{rewrite}` |
+| `supplier` | `id` | `supplier/{id}-{rewrite}` | the same |
+| `brand` | `id` | `brand/{id}-{rewrite}` | the same |
+| `cms` | `id` | `content/{id}-{rewrite}` | the same |
+| `cms_category` | `id` | `content/category/{id}-{rewrite}` | the same |
+
+The other fields of `somcp_get_seo_settings` given back with `routes` are
+taken out when equal to the read (`SomcpToolGetSeoSettings::sameAsRead()`), a
+`null` left out; one that differs answers `<field>: not changed by this tool -
+change it in Shop Parameters > Traffic & SEO`. Any other key through
+`SomcpTool::unknownFields()`, with the path `routes.` for the keys of `routes`.
+Every mistake in one answer, in the envelope `Nothing was changed. Correct
+these and call again:`.
+
+**Returns** - `changed`, `changes` (`{route, old, new}` each, the patterns),
+`routes` (the `routes` of `somcp_get_seo_settings`, read back after the
+write), and `warning`, each sentence when it applies:
+- for each route changed: `The addresses of all <products / categories /
+  suppliers / brands / pages / page categories> change: links and search
+  results that point to the old ones lead to a page not found. Regenerate the
+  sitemap so search engines find the new ones.`;
+- `friendly_urls` of the read is false: `Friendly URL is off: the patterns
+  apply only once it is switched on in Traffic & SEO.`;
+- a route changed and another one end with the same pattern once the keywords
+  are taken out (such as `{id}-{rewrite}` for both the categories and the
+  pages): `<a> and <b> now have addresses of the same shape: the storefront
+  takes the first route that matches, so some pages open the wrong kind of
+  page.`;
+- the shop is one of several: `The routes changed for this shop only, as the
+  back office saves them in a shop context.`
+
+Nothing to change: `changed: false`, `reason` `The routes already hold every
+pattern given. Nothing was written.`, and `routes` (the read).
+
+**Notes**
+- `Configuration::updateValue('PS_ROUTE_<route id>', <pattern>, false,
+  $idShopGroup, $idShop)` for the shop of the token; the default stored as an
+  empty value, which `Dispatcher::loadRoutes()` and the read take as the
+  default of the running version. A `false` stops with
+  `SomcpToolUpdateGeneralSettings::failed()`: `The routes could not be
+  changed: the route of <name> could not be saved...`. No `.htaccess`
+  written: the routes are matched by `Dispatcher`, not by the server.
+- Logged as `url_schema_updated` with the names of the routes changed.
+- Changes the shop and every address of the page types changed: the assistant
+  asks first, showing the old and new pattern with an example address.
+  Replayable: a second identical call changes nothing.
+- Differences between 8.0 and 9.0: the keywords and defaults of the table
+  above; `meta_keywords` exists on 8.0 only, `categories` of the category
+  route on 9.0 only.
 
 #### `somcp_get_robots_txt`
 **State**: written

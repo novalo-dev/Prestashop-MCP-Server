@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {"why": "the routes are required", "arguments": {}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- routes: required - at least one route, as somcp_get_seo_settings reads them"]},
+    {"why": "a required keyword missing is named", "arguments": {"routes": {"supplier": {"pattern": "supplier/{rewrite}"}}}, "expect": "error", "contains": ["- routes.supplier.pattern: keyword {id} required"]},
+    {"why": "a keyword the route does not have is refused with the route's list", "arguments": {"routes": {"cms": {"pattern": "content/{id}-{nope}"}}}, "expect": "error", "contains": ["- routes.cms.pattern: {nope} is not a keyword of this route - one of id, rewrite"]},
+    {"why": "a character the back office refuses", "arguments": {"routes": {"cms": {"pattern": "content/{id} x"}}}, "expect": "error", "contains": ["- routes.cms.pattern: only letters, digits and _ ( ) . { } : / -"]},
+    {"why": "the route to modules stays with the back office", "arguments": {"routes": {"module": {"pattern": "m/{module}{/:controller}"}}}, "expect": "error", "contains": ["- routes.module: changed in the back office only - it carries the address of every module page"]},
+    {"why": "every mistake of the call in one answer", "arguments": {"routes": {"product": {"pattern": "x"}, "x": {}}}, "expect": "error", "contains": ["- routes.x: not a field of this tool", "- routes.product.pattern: keyword {id} required", "- routes.product.pattern: keyword {rewrite} required"]},
+    {"why": "customized is worked out by the shop", "arguments": {"routes": {"category": {"pattern": "{id}-{rewrite}", "customized": true}}}, "expect": "error", "contains": ["- routes.category.customized: worked out by the shop, so it is not written here"]},
+    {"why": "the default pattern given back as read changes nothing", "arguments": {"routes": {"category": {"pattern": "{id}-{rewrite}", "customized": false}}}, "expect": "ok", "contains": ["\"changed\": false", "The routes already hold every pattern given. Nothing was written."]},
+    {"why": "another setting of the read that differs is refused", "arguments": {"routes": {"category": {"pattern": "{id}-{rewrite}"}}, "robots_txt_present": "x"}, "expect": "error", "contains": ["- robots_txt_present: not changed by this tool - change it in Shop Parameters > Traffic & SEO"]}
+  ]
+}

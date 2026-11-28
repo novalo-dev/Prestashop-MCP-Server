@@ -21,6 +21,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_update_search_engine`
 - `somcp_delete_search_engine`
 - `somcp_get_seo_settings`
+- `somcp_update_url_schema`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
 - `somcp_audit_page`
@@ -38,9 +39,14 @@ installation has its own titles, descriptions and URLs.
 1. **Start with the settings.** Call `somcp_get_seo_settings` once: its
    `warnings` (friendly URLs off, no canonical redirection, no HTTPS, no
    robots.txt, no sitemap) weigh on every page at once, so they come before any
-   single title. Never propose to change these settings yourself: a wrong value
-   breaks every address of the shop, so point the merchant to Shop Parameters >
-   Traffic & SEO and say what to check there. Then call
+   single title. The URL pattern of a page type (`routes`) is changed with
+   `somcp_update_url_schema`, the route given back with its new pattern: every
+   address of those pages moves and the old ones lead to a page not found, so
+   ask first, showing the old and new pattern with an example address, and
+   remind the merchant to regenerate the sitemap. Never propose to change the
+   other settings yourself: a wrong value breaks every address of the shop, so
+   point the merchant to Shop Parameters > Traffic & SEO and say what to check
+   there. Then call
    `somcp_get_robots_txt`: a group that blocks the whole site, or a rule that
    blocks product or category pages, hides the shop from search engines
    whatever its titles say. A `Disallow: /` aimed at one named crawler can be

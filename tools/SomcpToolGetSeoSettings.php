@@ -28,8 +28,10 @@ declare(strict_types=1);
  * A key the running version no longer has is returned as null rather than
  * guessed from another one.
  *
- * Nothing is ever written: a wrong value here breaks every address of the
- * shop at once, so changing them stays in the back office.
+ * The URL patterns are changed by somcp_update_url_schema, which reads them
+ * through routes() and answers settings(). The rest is never written here: a
+ * wrong value breaks every address of the shop at once, so it stays in the
+ * back office.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -40,9 +42,10 @@ class SomcpToolGetSeoSettings
 {
     /**
      * The URL patterns returned, by the name the merchant reads, with the
-     * route identifier the core stores them under.
+     * route identifier the core stores them under. Public because
+     * somcp_update_url_schema takes the routes under the same names.
      */
-    private const ROUTES = [
+    public const ROUTES = [
         'product' => 'product_rule',
         'category' => 'category_rule',
         'brand' => 'manufacturer_rule',
@@ -65,9 +68,10 @@ class SomcpToolGetSeoSettings
             'Reads the shop\'s SEO and URL settings and says which ones cost rankings: friendly and accented '
                 . 'URLs, the redirect to the canonical URL, HTTPS, the shop domains, the URL patterns of each page '
                 . 'type and whether they were changed, robots.txt, the sitemap module, the languages in the '
-                . 'addresses, and warnings. A setting the running version lacks is null. Read only: these settings '
-                . 'stay in the back office, since a wrong value breaks every address. For the titles and addresses '
-                . 'of the shop\'s own pages, use somcp_list_meta_pages.',
+                . 'addresses, and warnings. A setting the running version lacks is null. The URL patterns are '
+                . 'changed with somcp_update_url_schema; the other settings stay in the back office, since a wrong '
+                . 'value breaks every address. For the titles and addresses of the shop\'s own pages, use '
+                . 'somcp_list_meta_pages.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),
@@ -97,7 +101,22 @@ class SomcpToolGetSeoSettings
             return SomcpTool::refused('read', $problems);
         }
 
-        $idShop = Somcp::currentShopId();
+        return SomcpTool::json(self::settings(Somcp::currentShopId()));
+    }
+
+    /**
+     * The whole read, for the shop given.
+     *
+     * Public so the tools that change these settings compare what they are
+     * given back with it and answer it after their write, in the very shape
+     * of this read.
+     *
+     * @param int $idShop
+     *
+     * @return array<string, mixed>
+     */
+    public static function settings(int $idShop): array
+    {
         $idShopGroup = (int) Shop::getGroupFromShop($idShop);
 
         $friendlyUrls = self::flag('PS_REWRITING_SETTINGS', $idShopGroup, $idShop);
@@ -153,7 +172,7 @@ class SomcpToolGetSeoSettings
             ];
         }
 
-        return SomcpTool::json([
+        return [
             'friendly_urls' => $friendlyUrls,
             'accented_urls' => self::flag('PS_ALLOW_ACCENTED_CHARS_URL', $idShopGroup, $idShop),
             // Use prefix for default language: PrestaShop 9 only, null on 8
@@ -175,7 +194,41 @@ class SomcpToolGetSeoSettings
             'sitemap_module' => $sitemap,
             'languages' => self::languages($idShopGroup, $idShop),
             'warnings' => $warnings,
-        ]);
+        ];
+    }
+
+    /**
+     * Whether a value given back is the one this read answered.
+     *
+     * The keys of an object may come back in another order, the items of a
+     * list may not; a scalar is compared strictly, so true and 1 differ as
+     * they do in the answer. Public so the tools that take this read back
+     * whole tell the same fields unchanged.
+     *
+     * @param mixed $given
+     * @param mixed $read
+     *
+     * @return bool
+     */
+    public static function sameAsRead($given, $read): bool
+    {
+        if (!is_array($given) || !is_array($read)) {
+            return $given === $read;
+        }
+        if (count($given) !== count($read)) {
+            return false;
+        }
+        $list = array_keys($read) === range(0, count($read) - 1);
+        if ($list && array_keys($given) !== array_keys($read)) {
+            return false;
+        }
+        foreach ($read as $key => $value) {
+            if (!array_key_exists($key, $given) || !self::sameAsRead($given[$key], $value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -278,13 +331,15 @@ class SomcpToolGetSeoSettings
 
     /**
      * The URL pattern of each page type, as the storefront applies it.
+     * Public because somcp_update_url_schema compares the patterns it is
+     * given with these and reads them back after its write.
      *
      * @param int $idShopGroup
      * @param int $idShop
      *
      * @return array<string, array{pattern: string|null, customized: bool}>
      */
-    private static function routes(int $idShopGroup, int $idShop): array
+    public static function routes(int $idShopGroup, int $idShop): array
     {
         // The defaults are read from the class rather than written here: they
         // differ between versions (PrestaShop 8 puts the category and the

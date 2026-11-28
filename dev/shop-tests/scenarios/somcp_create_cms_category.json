@@ -4,7 +4,7 @@
     {"why": "a parent the shop does not have is refused, pointing to the list", "arguments": {"languages": ["en"], "name": {"en": "x"}, "id_parent": 999999}, "expect": "error", "contains": ["Nothing was created.", "id_parent: no page category of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]},
     {"why": "a Friendly URL nothing valid can be made from is refused with the rule of the page tools", "arguments": {"languages": ["en"], "name": {"en": "x"}, "link_rewrite": {"en": "!!!"}}, "expect": "error", "contains": ["Nothing was created.", "link_rewrite (en): no valid friendly URL can be made from it"]},
     {"why": "the identifier is not a field of a creation", "arguments": {"languages": ["en"], "name": {"en": "x"}, "id_cms_category": 1}, "expect": "error", "contains": ["Nothing was created.", "id_cms_category: not a field of this tool"]},
-    {"why": "a name with a character the form refuses is refused", "arguments": {"languages": ["en"], "name": {"en": "a=b"}}, "expect": "error", "contains": ["Nothing was created.", "name (en):"]},
+    {"why": "a name with a character the form refuses is refused", "arguments": {"languages": ["en"], "name": {"en": "a{b"}}, "expect": "error", "contains": ["Nothing was created.", "name (en):"]},
     {"why": "a Displayed that is not a boolean is refused", "arguments": {"languages": ["en"], "name": {"en": "x"}, "active": "yes"}, "expect": "error", "contains": ["active: true or false"]}
   ]
 }

@@ -60,15 +60,15 @@ class SomcpToolUpdateUrlSchema
      */
     private const KEPT_AS_READ = [
         'friendly_urls' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
-        'accented_urls' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
+        'accented_urls' => 'not changed by this tool - change it with somcp_update_seo_settings',
         'default_language_url_prefix' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
-        'canonical_redirect' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
+        'canonical_redirect' => 'not changed by this tool - change it with somcp_update_seo_settings',
         'disable_apache_multiviews' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
         'disable_apache_mod_security' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
         'https' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
         'https_everywhere' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
         'domains' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
-        'product_attributes_in_title' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
+        'product_attributes_in_title' => 'not changed by this tool - change it with somcp_update_seo_settings',
         'robots_txt_present' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
         'sitemap_module' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',
         'languages' => 'not changed by this tool - change it in Shop Parameters > Traffic & SEO',

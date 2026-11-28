@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Change the SEO and URL settings.** The new tool somcp_update_seo_settings
+does what Save does on the cards Set up URLs and SEO options of Shop Parameters
+> Traffic & SEO > SEO & URLs for three settings: Accented URL, Redirect to the
+canonical URL and Display attributes in the product meta title, so the warning
+of somcp_get_seo_settings about a missing canonical redirection can be acted
+on. The read given back whole changes nothing. Friendly URL, the language
+prefix, the Apache options and the shop URL stay with the back office, since
+they move the address the assistant is connected through.
+
 **Change the schema of URLs.** The new tool somcp_update_url_schema does what
 Save does on the card Schema of URLs of Shop Parameters > Traffic & SEO > SEO &
 URLs: the pattern of the addresses of the products, categories, suppliers,

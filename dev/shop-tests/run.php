@@ -3536,6 +3536,67 @@ if ($updateSchema !== null && $getSeo !== null) {
     }
 }
 
+// Display attributes in the product meta title switched, read back, then the
+// first read given back whole (#481). The JSON scenario only covers the
+// refusals and the call that changes nothing, since the demo values differ
+// between versions; the finally gives the first read back whatever happens.
+$updateSeo = $registry->get('somcp_update_seo_settings');
+$readSeo = $registry->get('somcp_get_seo_settings');
+if ($updateSeo !== null && $readSeo !== null) {
+    $calls += 2;
+    $seoContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', array_unique(array_merge($updateSeo->getRequiredScopes(), $readSeo->getRequiredScopes()))),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $seoText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $firstRead = json_decode(trim($seoText($readSeo->call([], $seoContext))), true);
+    $firstRead = is_array($firstRead) ? $firstRead : [];
+    $wasShown = ($firstRead['product_attributes_in_title'] ?? null) === true;
+    $switched = false;
+    try {
+        $toggled = $updateSeo->call(['product_attributes_in_title' => !$wasShown], $seoContext);
+        $toggle = json_decode(trim($seoText($toggled)), true);
+        $switched = ($toggle['changed'] ?? null) === true;
+        $secondRead = json_decode(trim($seoText($readSeo->call([], $seoContext))), true);
+        if (!empty($toggled['isError']) || !$switched
+            || ($toggle['changes'] ?? null) !== [['field' => 'product_attributes_in_title', 'old' => $wasShown, 'new' => !$wasShown]]
+            || ($toggle['settings']['product_attributes_in_title'] ?? null) !== !$wasShown
+            || ($secondRead['product_attributes_in_title'] ?? null) !== !$wasShown
+            || strpos((string) ($toggle['warning'] ?? ''), 'The meta title of a product page with a combination now') !== 0) {
+            $failures[] = 'somcp_update_seo_settings (the attributes in the product meta title switched, then read back): unexpected - ' . excerpt($toggled);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_seo_settings (the attributes in the product meta title switched, then read back)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_seo_settings: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($firstRead !== []) {
+            $back = $updateSeo->call($firstRead, $seoContext);
+            $restored = json_decode(trim($seoText($back)), true);
+            if (!empty($back['isError']) || ($restored['changed'] ?? null) !== $switched
+                || ($restored['settings']['product_attributes_in_title'] ?? null) !== $wasShown) {
+                $failures[] = 'somcp_update_seo_settings (the first read given back whole puts it back): unexpected - ' . excerpt($back);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_seo_settings (the first read given back whole puts it back)');
+            }
+        }
+    }
+}
+
 // A customer group restriction set on a cart rule, read back, then lifted
 // (#406), and the same for Product selection (#433): the JSON scenario only
 // covers the refusals, since a restriction left on a demo rule would change

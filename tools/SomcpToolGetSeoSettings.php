@@ -29,9 +29,10 @@ declare(strict_types=1);
  * guessed from another one.
  *
  * The URL patterns are changed by somcp_update_url_schema, which reads them
- * through routes() and answers settings(). The rest is never written here: a
- * wrong value breaks every address of the shop at once, so it stays in the
- * back office.
+ * through routes(), and Accented URL, the canonical redirect and the
+ * attributes in the product meta title by somcp_update_seo_settings; both
+ * answer settings(). The rest is never written by the module: a wrong value
+ * breaks every address of the shop at once, so it stays in the back office.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -66,12 +67,11 @@ class SomcpToolGetSeoSettings
             'somcp_get_seo_settings',
             Somcp::t('Read the SEO and URL settings'),
             'Reads the shop\'s SEO and URL settings and says which ones cost rankings: friendly and accented '
-                . 'URLs, the redirect to the canonical URL, HTTPS, the shop domains, the URL patterns of each page '
-                . 'type and whether they were changed, robots.txt, the sitemap module, the languages in the '
-                . 'addresses, and warnings. A setting the running version lacks is null. The URL patterns are '
-                . 'changed with somcp_update_url_schema; the other settings stay in the back office, since a wrong '
-                . 'value breaks every address. For the titles and addresses of the shop\'s own pages, use '
-                . 'somcp_list_meta_pages.',
+                . 'URLs, the canonical redirect, HTTPS, the shop domains, the URL patterns of each page type and '
+                . 'whether they were changed, robots.txt, the sitemap module, the languages in the addresses, and '
+                . 'warnings. A setting the version lacks is null. Change the patterns with somcp_update_url_schema, '
+                . 'accented URLs, the canonical redirect and attributes in titles with somcp_update_seo_settings; '
+                . 'the rest stays in the back office. For the shop\'s own pages, use somcp_list_meta_pages.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),
@@ -107,9 +107,9 @@ class SomcpToolGetSeoSettings
     /**
      * The whole read, for the shop given.
      *
-     * Public so the tools that change these settings compare what they are
-     * given back with it and answer it after their write, in the very shape
-     * of this read.
+     * Public so somcp_update_url_schema and somcp_update_seo_settings compare
+     * what they are given back with it and answer it after their write, in
+     * the very shape of this read.
      *
      * @param int $idShop
      *

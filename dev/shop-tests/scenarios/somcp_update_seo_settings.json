@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "nothing given changes nothing", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false", "The SEO settings already hold every value given. Nothing was written.", "\"settings\":"]},
+    {"why": "a redirection outside the three choices is refused with them", "arguments": {"canonical_redirect": "303"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- canonical_redirect: one of none, 302, 301"]},
+    {"why": "every mistake of the call in one answer", "arguments": {"accented_urls": "yes", "product_attributes_in_title": 1}, "expect": "error", "contains": ["- accented_urls: true or false", "- product_attributes_in_title: true or false"]},
+    {"why": "Friendly URL stays with the back office", "arguments": {"friendly_urls": "off"}, "expect": "error", "contains": ["- friendly_urls: not changed by this tool - change it in Shop Parameters > Traffic & SEO"]},
+    {"why": "the routes have their own tool", "arguments": {"routes": {"product": {"pattern": "x", "customized": true}}}, "expect": "error", "contains": ["- routes: change them with somcp_update_url_schema"]},
+    {"why": "a misspelt field is refused", "arguments": {"x": 1}, "expect": "error", "contains": ["- x: not a field of this tool"]}
+  ]
+}

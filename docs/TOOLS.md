@@ -10051,7 +10051,7 @@ whose Server is part of the referrer's host.
 
 **Does** - returns the shop's SEO and URL settings, and what each one means for search engines.
 
-**Do not use for** - changing them: the URL patterns (`routes`) are changed with `somcp_update_url_schema`; the others stay in the back office, since these settings break every URL of the shop when wrong.
+**Do not use for** - changing them: the URL patterns (`routes`) are changed with `somcp_update_url_schema`; **Accented URL**, **Redirect to the canonical URL** and **Display attributes in the product meta title** with `somcp_update_seo_settings`; the others (Friendly URL, the language prefix, the Apache options, the shop URL) stay in the back office, since they break every URL of the shop when wrong.
 
 **Parameters**
 
@@ -10066,6 +10066,77 @@ None.
 - A language's `url_prefix` follows what the storefront does: the ISO code is in the addresses only when the shop serves more than one active language, and then every language carries it, except the default language on PrestaShop 9 when **Use prefix for default language** is off.
 - `warnings` names what costs rankings: friendly URLs off (`friendly_urls_off`), no canonical redirection (`no_canonical_redirect`), a shop not served in HTTPS (`not_https`, or `https_not_everywhere` on PrestaShop 8), no robots.txt (`no_robots_txt`), no sitemap module (`no_sitemap_module`).
 
+#### `somcp_update_seo_settings`
+**State**: written · [issue #481](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/481)
+**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
+
+**Does** - changes three settings of **Shop Parameters > Traffic & SEO > SEO &
+URLs**, as **Save** does on its cards **Set up URLs** and **SEO options**:
+**Accented URL**, **Redirect to the canonical URL** and **Display attributes
+in the product meta title**, the settings `somcp_get_seo_settings` reads and
+warns about (`no_canonical_redirect`).
+
+**Do not use for** - the addresses of each page type (`somcp_update_url_schema`);
+the title and Friendly URL of the shop's own pages (`somcp_update_meta_page`).
+Left out on purpose: **Friendly URL** and **Use prefix for default language**
+change the address of every page, the module's own included; **Disable
+Apache's MultiViews option** and **Disable Apache's mod_security module**
+write `.htaccess`, whose failed write switches Friendly URL off; **Set shop
+URL** moves the whole shop. They stay with the back office.
+
+**Parameters**
+
+All optional; nothing that changes answers `changed: false`.
+
+| Name | Screen | Type | Rule |
+|---|---|---|---|
+| `accented_urls` | **Accented URL** | boolean | `accented_urls: true or false`; `PS_ALLOW_ACCENTED_CHARS_URL` |
+| `canonical_redirect` | **Redirect to the canonical URL** | string | `none`, `302` or `301`, as the read answers it (stored 0, 1, 2 in `PS_CANONICAL_REDIRECT`); otherwise `SomcpTool::oneOf('canonical_redirect', ['none', '302', '301'])` |
+| `product_attributes_in_title` | **Display attributes in the product meta title** | boolean | `product_attributes_in_title: true or false`; `PS_PRODUCT_ATTRIBUTES_IN_TITLE` |
+
+The read given back whole is accepted: the other fields of
+`somcp_get_seo_settings` are taken out when equal to the read
+(`SomcpToolGetSeoSettings::sameAsRead()`), a `null` left out, as a setting the
+version lacks reads null. One that differs is refused with its own line:
+`routes: change them with somcp_update_url_schema`; any other `<field>: not
+changed by this tool - change it in Shop Parameters > Traffic & SEO`. Any
+other key through `SomcpTool::unknownFields()`. Every mistake in one answer,
+in the envelope `Nothing was changed. Correct these and call again:`.
+
+**Returns** - as `somcp_update_general_settings`: `changed`, `changes`
+(`{field, old, new}` each, the values under the names and codes of the
+parameters), `settings` (the whole read of `somcp_get_seo_settings`, through
+`SomcpToolGetSeoSettings::settings()`, after the write), and `warning`, each
+sentence when it applies:
+- `accented_urls` set to false: `Friendly URLs can now hold only letters
+  without accents, digits, _ and -: a product, category, brand, supplier or
+  page whose Friendly URL has an accent is refused at its next save until it
+  is corrected.`;
+- `accented_urls` set to true: `New friendly URLs may now hold accented
+  letters; those already saved keep theirs.`;
+- `canonical_redirect` set to `none`: the `why` of the read's
+  `no_canonical_redirect`;
+- `product_attributes_in_title` changed: `The meta title of a product page
+  with a combination now <shows / no longer shows> its attributes.`;
+- the shop is one of several: `The settings changed for this shop only, as
+  the back office saves them in a shop context.`
+
+Nothing to change: `changed: false`, `reason` `The SEO settings already hold
+every value given. Nothing was written.`, and `settings` (the read).
+
+**Notes**
+- Each key with `Configuration::updateValue($key, $value, false,
+  $idShopGroup, $idShop)` for the shop of the token, in the order of the
+  screen; a `false` stops with `SomcpToolUpdateGeneralSettings::failed()`:
+  `The SEO settings could not be changed: <field> could not be saved...`.
+  `.htaccess` is never written: the three settings change no address.
+- Logged as `seo_settings_updated` with the names of the fields changed.
+- Changes the shop: the assistant asks first, naming each setting and its new
+  value. Replayable: a second identical call changes nothing.
+- No difference between 8.0 and 9.0 for the three fields. In the read,
+  `default_language_url_prefix` is null on 8.0 and `https_everywhere` null on
+  9.0: given back as read, they are taken out like the rest.
+
 #### `somcp_update_url_schema`
 **State**: written · [issue #480](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/480)
 **Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`, as `somcp_update_meta_page`
@@ -10077,7 +10148,8 @@ page categories. They are the `routes` of `somcp_get_seo_settings`, given back
 with a new pattern; the default pattern of the version restores the default.
 
 **Do not use for** - the Friendly URL of one product, category or page (their
-own tools); the other settings of the page, which stay in the back office.
+own tools); the other settings of the page (`somcp_update_seo_settings`, or
+the back office).
 **Route to modules** (`module`) is left out on purpose: it carries the address
 of every module page, this module's own included, and an assistant that
 changed it could not reach the shop again.
@@ -10106,7 +10178,9 @@ does, never written in the tool: they differ between versions.
 The other fields of `somcp_get_seo_settings` given back with `routes` are
 taken out when equal to the read (`SomcpToolGetSeoSettings::sameAsRead()`), a
 `null` left out; one that differs answers `<field>: not changed by this tool -
-change it in Shop Parameters > Traffic & SEO`. Any other key through
+change it in Shop Parameters > Traffic & SEO`, or `<field>: not changed by
+this tool - change it with somcp_update_seo_settings` for `accented_urls`,
+`canonical_redirect` and `product_attributes_in_title`. Any other key through
 `SomcpTool::unknownFields()`, with the path `routes.` for the keys of `routes`.
 Every mistake in one answer, in the envelope `Nothing was changed. Correct
 these and call again:`.

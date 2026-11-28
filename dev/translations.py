@@ -1610,6 +1610,10 @@ T = {
  "Modifier le schéma des URL",
  "Modificar el esquema de las URL",
  "Das URL-Schema ändern"),
+"Change the SEO and URL settings": (
+ "Modifier les réglages SEO et URL",
+ "Modificar los ajustes de SEO y URL",
+ "Die SEO- und URL-Einstellungen ändern"),
 "Read the robots.txt file": (
  "Lire le fichier robots.txt",
  "Leer el archivo robots.txt",

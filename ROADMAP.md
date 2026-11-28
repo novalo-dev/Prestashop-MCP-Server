@@ -38,7 +38,8 @@ merchant does it:
   their accounts and keys, stay with the merchant.
 - **Traffic & SEO**: the shop's own pages are read, created, changed and
   deleted, the search engines are read, added, changed and deleted, and the
-  schema of URLs is read and changed.
+  schema of URLs, Accented URL, the canonical redirect and the attributes in
+  the product meta title are read and changed.
 - **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
   never the parent theme or its templates, and the native modules of the
   storefront those themes show - the slider, the home texts, the footer links,

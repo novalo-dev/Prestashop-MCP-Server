@@ -21,6 +21,7 @@
     "somcp_update_search_engine",
     "somcp_delete_search_engine",
     "somcp_get_seo_settings",
+    "somcp_update_seo_settings",
     "somcp_update_url_schema",
     "somcp_get_robots_txt",
     "somcp_generate_robots_txt",

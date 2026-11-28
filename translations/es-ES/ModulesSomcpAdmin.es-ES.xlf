@@ -2022,6 +2022,11 @@
       <source>Change the schema of URLs</source>
       <target>Modificar el esquema de las URL</target>
     </trans-unit>
+    <!-- Change the SEO and URL settings -->
+    <trans-unit id="9462b6ff1624620ac6ded24cff1f98a7" resname="Change the SEO and URL settings">
+      <source>Change the SEO and URL settings</source>
+      <target>Modificar los ajustes de SEO y URL</target>
+    </trans-unit>
     <!-- Read the robots.txt file -->
     <trans-unit id="efb4442b8d63d68974536f8cbfd2375d" resname="Read the robots.txt file">
       <source>Read the robots.txt file</source>

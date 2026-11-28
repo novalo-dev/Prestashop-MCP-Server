@@ -45,6 +45,9 @@ merchant does it:
   theme or its templates, and the native modules of the storefront those
   themes show - the slider, the home texts, the footer links, the newsletter
   block and the like.
+- **Pages**: the pages of **Design > Pages** are read, created, changed and
+  deleted, and their categories read, created and changed; deleting a
+  category comes next.
 - **E-mails and preferences**: the e-mail settings are read and changed, the
   SMTP password and the DKIM key staying with the merchant; the order, customer
   and product settings are read and changed, with the customer groups, also

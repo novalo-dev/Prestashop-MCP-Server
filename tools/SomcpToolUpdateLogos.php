@@ -50,11 +50,11 @@ class SomcpToolUpdateLogos
         'invoice' => 'logo_invoice',
     ];
 
-    /** @var array<string, string> What the shop prints each logo on, for the answer. */
+    /** @var array<string, string> Each logo as a refusal names it: SomcpUpload::source() puts the article itself. */
     private const ON = [
-        'header' => 'the header logo',
-        'mail' => 'the mail logo',
-        'invoice' => 'the invoice logo',
+        'header' => 'header logo',
+        'mail' => 'mail logo',
+        'invoice' => 'invoice logo',
     ];
 
     /** @var array<int, string> The keys of the read the shop works out. */

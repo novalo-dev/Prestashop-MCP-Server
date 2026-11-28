@@ -3982,6 +3982,41 @@
       <source>Number of days to look back, 30 by default</source>
       <target>Number of days to look back, 30 by default</target>
     </trans-unit>
+    <!-- Turn the server on, copy its address and check your setup. -->
+    <trans-unit id="34f4c5019bb07f9ae8269bfb6136fa8c" resname="Turn the server on, copy its address and check your setup.">
+      <source>Turn the server on, copy its address and check your setup.</source>
+      <target>Turn the server on, copy its address and check your setup.</target>
+    </trans-unit>
+    <!-- The tools and prompts an assistant may use on this shop. -->
+    <trans-unit id="0533c8ab4ba8da3787e28302c7524ca5" resname="The tools and prompts an assistant may use on this shop.">
+      <source>The tools and prompts an assistant may use on this shop.</source>
+      <target>The tools and prompts an assistant may use on this shop.</target>
+    </trans-unit>
+    <!-- Who may connect, how they sign in and what is kept. -->
+    <trans-unit id="95d64dc1de0b1d703b3ea680ceea040e" resname="Who may connect, how they sign in and what is kept.">
+      <source>Who may connect, how they sign in and what is kept.</source>
+      <target>Who may connect, how they sign in and what is kept.</target>
+    </trans-unit>
+    <!-- The assistants connected to this shop, and how to disconnect one. -->
+    <trans-unit id="3294c19e81890be0de710d5a85e7d716" resname="The assistants connected to this shop, and how to disconnect one.">
+      <source>The assistants connected to this shop, and how to disconnect one.</source>
+      <target>The assistants connected to this shop, and how to disconnect one.</target>
+    </trans-unit>
+    <!-- The assistant inside your back office and the models it uses. -->
+    <trans-unit id="c4552e1bba3fd731dd7068baad0afcb8" resname="The assistant inside your back office and the models it uses.">
+      <source>The assistant inside your back office and the models it uses.</source>
+      <target>The assistant inside your back office and the models it uses.</target>
+    </trans-unit>
+    <!-- What the assistants did on this shop, and when. -->
+    <trans-unit id="464404211344947b6b0cf5b43a74f214" resname="What the assistants did on this shop, and when.">
+      <source>What the assistants did on this shop, and when.</source>
+      <target>What the assistants did on this shop, and when.</target>
+    </trans-unit>
+    <!-- The guide, the updates of the module and how to reach us. -->
+    <trans-unit id="2e5fe3ad7c4580a152af2fb50368d2e6" resname="The guide, the updates of the module and how to reach us.">
+      <source>The guide, the updates of the module and how to reach us.</source>
+      <target>The guide, the updates of the module and how to reach us.</target>
+    </trans-unit>
     </body>
   </file>
 </xliff>

@@ -3167,6 +3167,34 @@ T = {
  "Nombre de jours à remonter, 30 par défaut",
  "Número de días hacia atrás, 30 por defecto",
  "Anzahl der Tage zurück, standardmäßig 30"),
+"Turn the server on, copy its address and check your setup.": (
+ "Activer le serveur, copier son adresse et vérifier votre installation.",
+ "Activar el servidor, copiar su dirección y comprobar su instalación.",
+ "Den Server einschalten, seine Adresse kopieren und Ihre Einrichtung prüfen."),
+"The tools and prompts an assistant may use on this shop.": (
+ "Les outils et les prompts qu'un assistant peut utiliser sur cette boutique.",
+ "Las herramientas y los prompts que un asistente puede usar en esta tienda.",
+ "Die Tools und Prompts, die ein Assistent in diesem Shop nutzen darf."),
+"Who may connect, how they sign in and what is kept.": (
+ "Qui peut se connecter, comment, et ce qui est conservé.",
+ "Quién puede conectarse, cómo, y qué se conserva.",
+ "Wer sich verbinden darf, wie, und was aufbewahrt wird."),
+"The assistants connected to this shop, and how to disconnect one.": (
+ "Les assistants connectés à cette boutique, et comment en déconnecter un.",
+ "Los asistentes conectados a esta tienda, y cómo desconectar uno.",
+ "Die mit diesem Shop verbundenen Assistenten, und wie man einen trennt."),
+"The assistant inside your back office and the models it uses.": (
+ "L'assistant de votre back-office et les modèles qu'il utilise.",
+ "El asistente de su back office y los modelos que utiliza.",
+ "Der Assistent in Ihrem Back Office und die Modelle, die er nutzt."),
+"What the assistants did on this shop, and when.": (
+ "Ce que les assistants ont fait sur cette boutique, et quand.",
+ "Lo que los asistentes han hecho en esta tienda, y cuándo.",
+ "Was die Assistenten in diesem Shop getan haben, und wann."),
+"The guide, the updates of the module and how to reach us.": (
+ "Le guide, les mises à jour du module et comment nous joindre.",
+ "La guía, las actualizaciones del módulo y cómo contactarnos.",
+ "Die Anleitung, die Updates des Moduls und wie Sie uns erreichen."),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

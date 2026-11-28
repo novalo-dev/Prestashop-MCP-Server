@@ -267,6 +267,14 @@ shop e-mail address.
 
 ### Changed
 
+**The settings open on one card per page.** MCP server, under Shop
+Parameters, showed its seven pages as tabs under the page title, where the
+last ones no longer held on a narrow screen. It now opens on a card for each
+page - Configuration, Tools and prompts, Access and security, Connected
+assistants, Built-in assistant, Security log, Help and updates - with a line
+on what is set there, and each page ends on a button back to the cards. The
+address of a page kept in a bookmark still leads to it.
+
 **Sort the orders on every column.** The order search sorts, each way, on
 every column of the Orders list: ID, Reference, Delivery, Customer, Company,
 Total, Payment, Status and Date. Orders with the same value keep the order of

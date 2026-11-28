@@ -53,6 +53,11 @@ class Somcp extends Module
     /** The module's item under Shop Parameters; the settings pages are its tabs. */
     public const SETTINGS_ITEM = 'AdminSomcpSettings';
 
+    /**
+     * The pane the settings open on: one card per page, and no page shown.
+     */
+    public const HOME_PANE = 'home';
+
     /** Where the "Support us" button leads. */
     public const SPONSOR_URL = 'https://github.com/sponsors/novalo-dev';
 
@@ -621,12 +626,12 @@ class Somcp extends Module
     /**
      * The Configure button of the module manager.
      *
-     * The settings are split into pages of the module, one per tab, so that
-     * PrestaShop draws the tabs under the page title as on its own pages; this
-     * only sends the merchant to the first of them. A shop whose pages are
+     * The settings are split into pages, opened from the cards of the MCP
+     * server item under Shop Parameters; this only sends the merchant to
+     * those cards. A shop whose pages are
      * missing or misplaced - installed from an earlier copy - gets them put
      * right here, and
-     * falls back to drawing the first page in place if they still cannot be
+     * falls back to drawing the cards in place if they still cannot be
      * created, rather than leaving the merchant on an error.
      *
      * @return string
@@ -637,13 +642,12 @@ class Somcp extends Module
 
         // Puts back any page that is missing or out of place; every step
         // leaves alone what is already right, so this costs a few reads.
-        $first = self::settingsPages()['config'][0];
         $this->installTabs();
-        if (Tab::getIdFromClassName($first)) {
-            SomcpHttp::redirect($this->context->link->getAdminLink($first));
+        if (Tab::getIdFromClassName(self::SETTINGS_ITEM)) {
+            SomcpHttp::redirect($this->context->link->getAdminLink(self::SETTINGS_ITEM));
         }
 
-        return $this->renderSettings('config');
+        return $this->renderSettings((string) Tools::getValue('somcp_pane', self::HOME_PANE));
     }
 
     /**
@@ -668,6 +672,37 @@ class Somcp extends Module
     }
 
     /**
+     * The cards the settings open on: one per page, with a line on what is
+     * set there.
+     *
+     * @return array<int, array{id: string, name: string, description: string, icon: string, url: string}>
+     */
+    private function settingsCards(): array
+    {
+        $lines = [
+            'config' => ['icon-cogs', $this->l10n('Turn the server on, copy its address and check your setup.')],
+            'tools' => ['icon-wrench', $this->l10n('The tools and prompts an assistant may use on this shop.')],
+            'access' => ['icon-lock', $this->l10n('Who may connect, how they sign in and what is kept.')],
+            'assistants' => ['icon-plug', $this->l10n('The assistants connected to this shop, and how to disconnect one.')],
+            'assistant' => ['icon-comments', $this->l10n('The assistant inside your back office and the models it uses.')],
+            'log' => ['icon-list-alt', $this->l10n('What the assistants did on this shop, and when.')],
+            'help' => ['icon-life-ring', $this->l10n('The guide, the updates of the module and how to reach us.')],
+        ];
+        $cards = [];
+        foreach (self::settingsPages() as $pane => [, $label]) {
+            $cards[] = [
+                'id' => $pane,
+                'name' => $this->l10n($label),
+                'description' => $lines[$pane][1],
+                'icon' => $lines[$pane][0],
+                'url' => $this->paneUrl($pane),
+            ];
+        }
+
+        return $cards;
+    }
+
+    /**
      * One settings page.
      *
      * Every pane is drawn on every page and only the asked one is shown: the
@@ -684,7 +719,7 @@ class Somcp extends Module
         self::bootClasses();
         SomcpBackOffice::rememberAdminDir();
 
-        $this->settingsPane = isset(self::settingsPages()[$pane]) ? $pane : 'config';
+        $this->settingsPane = isset(self::settingsPages()[$pane]) ? $pane : self::HOME_PANE;
 
         // A second chance for the deposits to be cleared. The purge otherwise
         // runs only when a new file request is opened, so a shop where nobody
@@ -892,6 +927,12 @@ class Somcp extends Module
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
             'somcp_pane' => $this->settingsPane,
+            'somcp_cards' => $this->settingsCards(),
+            'somcp_home_url' => $this->paneUrl(self::HOME_PANE),
+            'somcp_home_name' => $this->l10n('MCP server'),
+            'somcp_pane_name' => isset(self::settingsPages()[$this->settingsPane])
+                ? $this->l10n(self::settingsPages()[$this->settingsPane][1])
+                : '',
             'somcp_sponsor_url' => self::SPONSOR_URL,
             'somcp_name' => $this->displayName,
             'somcp_version' => $this->version,
@@ -1566,12 +1607,30 @@ class Somcp extends Module
      */
     private function selfUrl(array $extra = []): string
     {
-        $controller = self::settingsPages()[$this->settingsPane][0];
-        if (Tab::getIdFromClassName($controller)) {
-            return $this->context->link->getAdminLink($controller, true, [], $extra);
+        return $this->paneUrl($this->settingsPane, $extra);
+    }
+
+    /**
+     * The address of a settings page, or of the cards.
+     *
+     * One address for every page: the menu item, with the page asked for.
+     * The settings open on its cards, and a page is a card followed.
+     *
+     * @param string $pane a key of settingsPages(), or HOME_PANE for the cards
+     * @param array<string, int|string> $extra extra query parameters
+     *
+     * @return string
+     */
+    private function paneUrl(string $pane, array $extra = []): string
+    {
+        if ($pane !== self::HOME_PANE) {
+            $extra = array_merge(['somcp_pane' => $pane], $extra);
+        }
+        if (Tab::getIdFromClassName(self::SETTINGS_ITEM)) {
+            return $this->context->link->getAdminLink(self::SETTINGS_ITEM, true, [], $extra);
         }
 
-        // The pages are missing: the settings are drawn by the Configure page.
+        // The item is missing: the settings are drawn by the Configure page.
         return $this->context->link->getAdminLink('AdminModules', true, [], array_merge([
             'configure' => $this->name,
             'tab_module' => $this->tab,
@@ -1775,11 +1834,12 @@ class Somcp extends Module
     /**
      * The settings pages and the menu item above them.
      *
-     * One item, MCP server, under Shop Parameters right after General, with
-     * the settings as its pages: a setting of the shop among the others
-     * rather than an entry of its own in the side menu. That depth is what
-     * makes PrestaShop draw the pages as tabs under the page title, on 8 and
-     * 9 alike, as for Contacts and Stores under Shop Parameters > Contact.
+     * One item, MCP server, under Shop Parameters right after General: a
+     * setting of the shop among the others rather than an entry of its own
+     * in the side menu. It opens on one card per page. The pages keep a menu
+     * entry each, out of the menu: seven tabs under the page title did not
+     * hold on a narrow screen, and an entry under the item is what makes
+     * PrestaShop draw one.
      *
      * Every tab is put where it belongs whether it is new or not, so a shop
      * that got the pages from an earlier development build, under Modules or
@@ -1799,8 +1859,10 @@ class Somcp extends Module
         }
         $this->placeAfter($idItem, 'AdminParentPreferences');
 
+        // Out of the menu, still reachable: the pages are opened from the
+        // cards of the item, and PrestaShop draws no tab under the title.
         foreach (self::settingsPages() as [$controller, $label]) {
-            if ($this->placeTab($controller, $idItem, $label, '') <= 0) {
+            if ($this->placeTab($controller, -1, $label, '') <= 0) {
                 return false;
             }
         }

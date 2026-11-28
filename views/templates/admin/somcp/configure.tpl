@@ -26,11 +26,30 @@
         <div class="alert alert-danger">{$error|escape:'html':'UTF-8'}</div>
     {/foreach}
 
-    {* One page of the module per pane, each its own entry under the module in
-       the back office menu: PrestaShop draws the tabs under the page title,
-       as on Contacts and Stores. Every pane is still written into every page,
-       hidden but not removed, because the settings form spans two of them and
-       must post all its fields from whichever page holds the Save button. *}
+    {* One page of the module per pane. Every pane is still written into every
+       page, hidden but not removed, because the settings form spans two of
+       them and must post all its fields from whichever page holds the Save
+       button. *}
+    {* The settings open on one card per page; a page ends on the way back
+       to them. A list group of PrestaShop's: PrestaShop 9 underlines every
+       link of a page except those of its own components. *}
+    {if $somcp_pane === 'home'}
+        <div class="nv-centre">
+            <div class="list-group nv-cards">
+                {foreach from=$somcp_cards item=card}
+                    <a class="list-group-item nv-card" href="{$card.url|escape:'html':'UTF-8'}" id="somcp-card-{$card.id|escape:'html':'UTF-8'}">
+                        <i class="{$card.icon|escape:'html':'UTF-8'}" aria-hidden="true"></i>
+                        <span class="nv-card-text">
+                            <strong>{$card.name|escape:'html':'UTF-8'}</strong>
+                            <small>{$card.description|escape:'html':'UTF-8'}</small>
+                        </span>
+                        <i class="icon-chevron-right nv-card-go" aria-hidden="true"></i>
+                    </a>
+                {/foreach}
+            </div>
+        </div>
+    {/if}
+
     <div class="somcp-pane" id="somcp-pane-config" data-somcp-pane="config" role="tabpanel"{if $somcp_pane !== 'config'} hidden{/if}>
 
         {* The switch leads the first tab, where a merchant looks first. Its fields
@@ -1255,6 +1274,13 @@
             </a>
         </div>
     </div>
+
+    {if $somcp_pane !== 'home'}
+        <p class="nv-back">
+            <a class="btn btn-default" href="{$somcp_home_url|escape:'html':'UTF-8'}" id="somcp-back"><i class="icon-chevron-left" aria-hidden="true"></i> {$somcp_home_name|escape:'html':'UTF-8'}</a>
+            {if $somcp_pane_name}<span class="nv-back-trail">{$somcp_pane_name|escape:'html':'UTF-8'}</span>{/if}
+        </p>
+    {/if}
 
     <p class="somcp-foot text-center text-muted">
         {$somcp_name|escape:'html':'UTF-8'} {$somcp_version|escape:'html':'UTF-8'}
